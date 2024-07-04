@@ -15,6 +15,13 @@ namespace ice
     };
 
     inline auto execute_detached_task(
+        ice::Task<> task
+    ) noexcept -> ice::DetachedTask
+    {
+        co_await task;
+    }
+
+    inline auto execute_detached_task(
         ice::Task<> task,
         ice::HasSetMethod auto& event
     ) noexcept -> ice::DetachedTask
@@ -200,9 +207,9 @@ namespace ice
                 scheduler_queue.push_back(&awaitable);
             }
 
-            constexpr void await_resume() const noexcept
+            inline bool await_resume() const noexcept
             {
-                return;
+                return (bool) awaitable._coro;
             }
         };
         return Awaitable{ queue, result_ptr, scheduler };

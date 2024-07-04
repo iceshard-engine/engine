@@ -2,6 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#include <ice/base.hxx>
 #include <hailstorm/hailstorm.hxx>
 
 auto hailstorm_validate_header(

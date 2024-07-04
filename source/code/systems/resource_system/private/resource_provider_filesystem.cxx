@@ -169,7 +169,7 @@ namespace ice
             {
                 request->remaining += 1;
                 ice::Allocator& alloc = request->self._allocator;
-                ice::schedule_task_on(
+                ice::schedule_task(
                     request->self.create_resource_from_file_async(request->base_path, { alloc, path }, *request),
                     *request->worker_thread
                 );
@@ -184,7 +184,7 @@ namespace ice
             request->remaining += 1;
 
             ice::Allocator& alloc = request->self._allocator;
-            ice::schedule_task_on(
+            ice::schedule_task(
                 request->self.traverse_async({ alloc, path }, *request),
                 *request->worker_thread
             );

@@ -164,7 +164,7 @@ namespace ice::gfx
         //TODO: Currently the container should be "dead" after it's await scheduled on
         {
             ice::Array<ice::Task<>> tasks = _gfx_tasks.extract_tasks();
-            co_await ice::v2::await_scheduled(tasks, _scheduler);
+            co_await ice::await_scheduled(tasks, _scheduler);
         }
 
         ice::gfx::GfxFrameStages gpu_stages{
@@ -178,7 +178,7 @@ namespace ice::gfx
             IPT_ZONE_SCOPED_NAMED("gfx_resume_prepare_tasks");
             // The tasks here might take more than a frame to finish. We should track them somewhere else.
             ice::Array<ice::Task<>> tasks = _gfx_tasks.extract_tasks();
-            ice::resume_tasks_on(tasks, _scheduler);
+            ice::execute_tasks(tasks);
         }
 
         if (_queue_transfer.any() || _gfx_tasks.running_tasks() > 0)
@@ -199,7 +199,7 @@ namespace ice::gfx
             }
 
             // Resumes all queued awaitables on the scheduler with this thread as the final awaitable.
-            bool const has_work = co_await ice::await_queue_on(_queue_transfer, &transfer_buffer, _scheduler);
+            bool const has_work = co_await ice::await_scheduled_queue(_queue_transfer, &transfer_buffer, _scheduler);
 
             // TODO: Log how many tasks are still around
             _context->device().get_commands().end(transfer_buffer);
@@ -223,7 +223,7 @@ namespace ice::gfx
             _present_fence->wait(10'000'000);
         }
 
-        co_await ice::await_queue_on(_queue_end, _scheduler);
+        co_await ice::await_scheduled_queue(_queue_end, _scheduler);
         co_return;
     }
 
@@ -291,11 +291,11 @@ namespace ice::gfx
                 if (self._rendergraph->prepare(frame_stages, stages, self._gfx_tasks))
                 {
                     ice::Array<ice::Task<>> tasks = self._gfx_tasks.extract_tasks();
-                    co_await ice::v2::await_all(tasks);
+                    co_await ice::await_tasks(tasks);
                 }
             };
 
-            ice::v2::wait_for(gpu_graph_task(*this, params, gpu_stages, *_stages));
+            ice::wait_for(gpu_graph_task(*this, params, gpu_stages, *_stages));
         }
 
         return true;

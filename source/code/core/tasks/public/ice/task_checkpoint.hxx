@@ -29,7 +29,7 @@ namespace ice
         auto reached() noexcept -> ice::Task<ReachedReset>
         {
             _reached.test_and_set(std::memory_order_relaxed); // Set the reached flag
-            co_await ice::await_queue_on(_queue, _scheduler);
+            co_await ice::await_scheduled_queue(_queue, _scheduler);
             co_return ReachedReset{ _reached };
         };
 

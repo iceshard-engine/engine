@@ -64,7 +64,7 @@ namespace ice
                 ICE_ASSERT_CORE(ice::count(group.tasks) < ice::u8_max);
 
                 group.barrier->reset(ice::u8(ice::count(group.tasks)));
-                ice::v2::manual_wait_for(*group.barrier, group.tasks);
+                ice::manual_wait_for(*group.barrier, group.tasks);
                 ice::array::clear(group.tasks);
             }
         }

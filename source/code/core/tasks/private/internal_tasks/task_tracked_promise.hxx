@@ -10,8 +10,7 @@ namespace ice
 
     struct TrackedTaskPromise
     {
-        static std::atomic_uint32_t tracker;
-        ~TrackedTaskPromise() noexcept { tracker.fetch_sub(1); }
+        ~TrackedTaskPromise() noexcept { }
 
         std::coroutine_handle<> awaiting_continuation;
         std::atomic_uint32_t& awaiting_count;
@@ -20,16 +19,12 @@ namespace ice
             : awaiting_continuation{ continuation }
             , awaiting_count{ remaining }
         {
-            int x = tracker.fetch_add(1);
-            ICE_ASSERT_CORE(x < 10000);
         }
 
         inline TrackedTaskPromise(ice::Task<> const&, std::coroutine_handle<> continuation, std::atomic_uint32_t& remaining, ice::TaskScheduler&) noexcept
             : awaiting_continuation{ continuation }
             , awaiting_count{ remaining }
         {
-            int x = tracker.fetch_add(1);
-            ICE_ASSERT_CORE(x < 10000);
         }
 
         // Returns 'false' when the current task should run the final continuation
@@ -93,7 +88,5 @@ namespace ice
             ICE_ASSERT(false, "Unexpected coroutine exception!");
         }
     };
-
-    std::atomic_uint32_t TrackedTaskPromise::tracker = 0;
 
 } // namespace ice

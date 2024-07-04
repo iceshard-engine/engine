@@ -162,7 +162,7 @@ namespace ice
             for (ice::Task<>& pending_task : _pending_tasks)
             {
                 // We schedule the task on the given scheduler.
-                ice::schedule_task_on(execute_internal(ice::move(pending_task)), _scheduler);
+                ice::schedule_task(execute_internal(ice::move(pending_task)), _scheduler);
             }
             ice::array::clear(_pending_tasks);
         }

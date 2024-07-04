@@ -103,7 +103,7 @@ namespace ice
                 ice::array::push_back(tasks, fn_validate(compiler, source, resource_tracker, all_sources_valid));
             }
 
-            co_await ice::v2::await_all(tasks);
+            co_await ice::await_tasks(tasks);
 
             ice::array::clear(tasks);
 
@@ -156,11 +156,11 @@ namespace ice
             }
 
             // ... and wait for them to finish
-            co_await ice::v2::await_all(tasks);
+            co_await ice::await_tasks(tasks);
 
             // Build the metadata
             ice::MutableMetadata meta{ alloc };
-            if (ice::wait_for(compiler.fn_build_metadata(ctx, asset_entry->resource_handle, resource_tracker, compiled_sources, dependencies, meta)))
+            if (ice::wait_for_result(compiler.fn_build_metadata(ctx, asset_entry->resource_handle, resource_tracker, compiled_sources, dependencies, meta)))
             {
                 asset_entry->metadata_baked = ice::meta_save(meta, alloc);
 

@@ -2,163 +2,109 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/task_utils_v2.hxx>
 #include <ice/task.hxx>
 #include <ice/task_types.hxx>
 #include <ice/task_scheduler.hxx>
+#include <ice/sync_manual_events.hxx>
 #include <ice/span.hxx>
 #include <ice/profiler.hxx>
 
 namespace ice
 {
 
-    //! \brief Executes the given task and blocks until finished.
-    //! \param[in] task A valid task object to be executed.
-    //! \returns Result of the executed task.
+    // Awaiters
+
+    // Resumes the current task on a different thread
+    inline auto resume_on(ice::TaskScheduler& scheduler) noexcept;
+
+    // Executes tasks (1) on this thread, waits for finish and resumes (2) on given thread
+
+    inline auto await_tasks(ice::Span<ice::Task<>> tasks) noexcept -> ice::Task<>;
+
+    auto await_on(ice::Task<> task, ice::TaskScheduler& resumer) noexcept -> ice::Task<>;
+
+    auto await_on(ice::Span<ice::Task<>> tasks, ice::TaskScheduler& resumer) noexcept -> ice::Task<>;
+
     template<typename T>
-    inline auto wait_for(ice::Task<T> task) noexcept -> T;
+    inline auto await_on(ice::Task<T> task, ice::TaskScheduler& resumer) noexcept -> ice::Task<T>;
 
-    // //! \brief Executes the given task and blocks until finished.
-    // //! \param[in] task Valid task object to be executed.
-    // void wait_for(ice::Task<void> task) noexcept;
+    // Schedules (2) tasks (1) and resumes after all have been finished (resuming on unspecified thread)
 
-    // //! \brief Executes the given list of tasks and blocks until all finish.
-    // //! \param[in] tasks List of valid task objects to be executed.
-    // void wait_for_all(ice::Span<ice::Task<void>> tasks) noexcept;
+    auto await_scheduled(ice::Task<> task, ice::TaskScheduler& scheduler) noexcept -> ice::Task<>;
 
-    // //! \brief Executes the given task and returns immediately. The passed result variable is not valid until the task finishes.
-    // //! \note The passed 'ManualResetEvent' object will be notifed when the task finishes execution.
-    // //! \param[in] task Valid task object to be executed.
-    // //! \param[inout] manual_event Synchronization event object to be notified when the task finishes.
-    // //! \param[out] out_result Variable where to store the task result.
-    // template<typename T>
-    // inline void manual_wait_for(ice::Task<T> task, ice::ManualResetEvent& manual_event, T& out_result) noexcept;
+    auto await_scheduled(ice::Span<ice::Task<>> tasks, ice::TaskScheduler& scheduler) noexcept -> ice::Task<>;
 
-    // //! \brief Executes the given task and returns immediately.
-    // //! \note The passed 'ManualResetEvent' object will be notifed when the task finishes execution.
-    // //! \param[in] task Valid task object to be executed.
-    // //! \param[inout] manual_event Synchronization event object to be notified when the task finishes.
-    // void manual_wait_for(ice::Task<void> task, ice::ManualResetEvent& manual_event) noexcept;
+    template<typename T>
+    inline auto await_scheduled(ice::Task<T> task, ice::TaskScheduler& scheduler) noexcept -> ice::Task<T>;
 
-    // //! \brief Executes the given task and returns immediately.
-    // //! \note The passed 'ManualResetEvent' object will be notifed when all tasks finish execution.
-    // //! \param[in] tasks List of valid task objects to be executed.
-    // //! \param[inout] manual_barrier Synchronization event object to be notified when all tasks finish.
-    // void manual_wait_for_all(ice::Span<ice::Task<void>>, ice::ManualResetBarrier& manual_barrier) noexcept;
+    // Schedules (2) queue (1) and resumes after all have been scheduled (tasks might not have started or finished, resuming on scheduler thread)
 
-    //! \brief Helper task to await another task after it's scheduled on the given thread.
-    //! \param[in] task Valid task object to be awaited.
-    //! \param[in] scheduler Scheduler object for the target thread.
-    template<typename Value>
-    inline auto schedule_on(ice::Task<Value> task, ice::TaskScheduler& scheduler) noexcept -> ice::Task<Value>;
+    auto await_scheduled_queue(ice::TaskQueue& queue, ice::TaskScheduler& scheduler) noexcept -> ice::Task<bool>;
 
-    //! \brief Helper task to await another task after it's scheduled on the given thread.
-    //! \param[in] task Valid task object to be awaited.
-    //! \param[in] scheduler Scheduler object for the target thread.
-    inline auto schedule_on(ice::Task<void> task, ice::TaskScheduler& scheduler) noexcept -> ice::Task<void>;
+    auto await_scheduled_queue(ice::TaskQueue& queue, void* result_ptr, ice::TaskScheduler& scheduler) noexcept -> ice::Task<bool>;
 
-    // //! \brief Helper task to await list of tasks.
-    // //! \warning The awaiting task is resumed on the thread of the last finished task.
-    // //! \param[in] tasks List of tasks to be awaited for completion.
-    // auto await_all(ice::Span<ice::Task<void>> tasks) noexcept -> ice::Task<void>;
+    // Schedules (2) tasks (1) and resumes on resumer (3) after all have finished
 
-    // //! \brief Helper task to await list of tasks. The helper task will be scheduled on the provided thread before tasks are executed.
-    // //! \warning The awaiting task is resumed on the thread of the last finished task.
-    // //! \param[in] tasks List of tasks to be awaited for completion.
-    // //! \param[in] scheduler Scheduler object transfering execution to associated threads.
-    // auto await_all_scheduled(ice::Span<ice::Task<void>> tasks, ice::TaskScheduler& scheduler) noexcept -> ice::Task<void>;
+    auto await_scheduled_on(ice::Task<> task, ice::TaskScheduler& scheduler, ice::TaskScheduler& resumer) noexcept -> ice::Task<>;
 
-    // //! \brief Helper task to await list of tasks. Resumes the awaiting task on the resumer thread.
-    // //! \note Tasks will be executed on the current thread.
-    // //! \param[in] tasks List of tasks to be awaited for completion.
-    // //! \param[in] resumer Resumer object transfering execution to associated threads after.
-    // auto await_all_on(ice::Span<ice::Task<void>> tasks, ice::TaskScheduler& resumer) noexcept -> ice::Task<void>;
+    auto await_scheduled_on(ice::Span<ice::Task<>> tasks, ice::TaskScheduler& scheduler, ice::TaskScheduler& resumer) noexcept -> ice::Task<>;
 
-    // //! \brief Helper task to await list of tasks.
-    // //! \note The helper task will be scheduled on the provided thread before tasks are executed.
-    // //! \note Resumes the awaiting task on the resumer thread.
-    // //! \param[in] tasks List of tasks to be awaited for completion.
-    // //! \param[in] resumer Resumer object transfering execution to associated threads after.
-    // //! \param[in] scheduler Scheduler object transfering execution to associated threads.
-    // auto await_all_on_scheduled(ice::Span<ice::Task<void>> tasks, ice::TaskScheduler& resumer, ice::TaskScheduler& scheduler) noexcept -> ice::Task<void>;
+    auto await_scheduled_queue_on(ice::TaskQueue& queue, ice::TaskScheduler& scheduler, ice::TaskScheduler& resumer) noexcept -> ice::Task<>;
 
-    auto await_queue_on(ice::TaskQueue& queue, ice::TaskScheduler& resumer) noexcept -> ice::Task<bool>;
+    auto await_scheduled_queue_on(ice::TaskQueue& queue, void* result_ptr, ice::TaskScheduler& scheduler, ice::TaskScheduler& resumer) noexcept -> ice::Task<>;
 
-    auto await_queue_on(ice::TaskQueue& queue, void* result, ice::TaskScheduler& resumer) noexcept -> ice::Task<bool>;
 
+    // Detached schedulers
+
+    bool execute_task(ice::Task<> task) noexcept;
+
+    bool execute_tasks(ice::Span<ice::Task<>> tasks) noexcept;
+
+    // Schedules (2) tasks (1) and resumes after all have been scheduled (tasks might not have finished, resuming on origin thread)
+
+    bool schedule_task(ice::Task<> task, ice::TaskScheduler& scheduler) noexcept;
+
+    bool schedule_tasks(ice::Span<ice::Task<>> tasks, ice::TaskScheduler& scheduler) noexcept;
+
+    // Schedules (2) queue (1) and resumes after all have been scheduled (tasks might not have finished, resuming on origin thread)
+
+    bool schedule_queue(ice::TaskQueue& queue, ice::TaskScheduler& scheduler) noexcept;
+
+    bool schedule_queue(ice::TaskQueue& queue, void* result_ptr, ice::TaskScheduler& scheduler) noexcept;
+
+
+    // Waiters
+
+    void wait_for(ice::Task<> task) noexcept;
+    void wait_for(ice::Span<ice::Task<>> tasks) noexcept;
+    void wait_for_scheduled(ice::Task<> task, ice::TaskScheduler& scheduler) noexcept;
+    void wait_for_scheduled(ice::Span<ice::Task<>> tasks, ice::TaskScheduler& scheduler) noexcept;
+
+    template<typename T>
+    inline auto wait_for_result(ice::Task<T> task) noexcept -> T;
+    template<typename T>
+    inline void wait_for_result(ice::Task<T> task, T& out_result) noexcept;
+    template<typename T>
+    inline void wait_for_result(ice::Span<ice::Task<T>> tasks, ice::Span<T> out_results) noexcept;
+    template<typename T>
+    inline void wait_for_result_scheduled(ice::Task<T> task, ice::TaskScheduler& scheduler, T& out_result) noexcept;
+    template<typename T>
+    inline void wait_for_result_scheduled(ice::Span<ice::Task<T>> tasks, ice::TaskScheduler& scheduler, ice::Span<T> out_results) noexcept;
+
+    void manual_wait_for(ice::ManualResetEvent& evnt, ice::Task<> task) noexcept;
+    void manual_wait_for(ice::ManualResetBarrier& evnt, ice::Task<> task) noexcept;
+    void manual_wait_for(ice::ManualResetBarrier& evnt, ice::Span<ice::Task<>> tasks) noexcept;
+    void manual_wait_for_scheduled(ice::ManualResetEvent& evnt, ice::Task<> task, ice::TaskScheduler& scheduler) noexcept;
+    void manual_wait_for_scheduled(ice::ManualResetBarrier& evnt, ice::Task<> task, ice::TaskScheduler& scheduler) noexcept;
+    void manual_wait_for_scheduled(ice::ManualResetBarrier& evnt, ice::Span<ice::Task<>> tasks, ice::TaskScheduler& scheduler) noexcept;
+
+
+    ////////////////////////////////////////////////////////////////
+
+
+    [[deprecated("To be replaced at a later time")]]
     auto await_filtered_queue_on(ice::TaskQueue& queue, ice::TaskScheduler& resumer, FnTaskQueueFilter filter, void* userdata = nullptr) noexcept -> ice::Task<bool>;
 
-    bool schedule_queue_on(ice::TaskQueue& queue, ice::TaskScheduler& resumer) noexcept;
-
-    bool schedule_queue_on(ice::TaskQueue& queue, void* result, ice::TaskScheduler& resumer) noexcept;
-
-
-    [[deprecated("Currently it's unsure if this function will remain in the current form.")]]
-    void schedule_task_on(ice::Task<void> task, ice::TaskScheduler& scheduler) noexcept;
-
-    [[deprecated("Currently it's unsure if this function will remain in the current form.")]]
-    void schedule_tasks_on(ice::Span<ice::Task<void>> tasks, ice::TaskScheduler& scheduler) noexcept;
-
-    template<typename Value>
-    [[deprecated("Currently it's unsure if this function will remain in the current form.")]]
-    inline auto resume_on(ice::Task<Value> task, ice::TaskScheduler& scheduler) noexcept -> ice::Task<Value>;
-
-    [[deprecated("Currently it's unsure if this function will remain in the current form.")]]
-    inline auto resume_on(ice::Task<void> task, ice::TaskScheduler& scheduler) noexcept -> ice::Task<void>;
-
-    [[deprecated("Currently it's unsure if this function will remain in the current form.")]]
-    void resume_task_on(ice::Task<void> task, ice::TaskScheduler& scheduler) noexcept;
-
-    [[deprecated("Currently it's unsure if this function will remain in the current form.")]]
-    void resume_tasks_on(ice::Span<ice::Task<void>> tasks, ice::TaskScheduler& scheduler) noexcept;
-
-    template<typename T>
-    inline auto wait_for(ice::Task<T> task) noexcept -> T
-    {
-        T result;
-        auto const task_wrapper = [](ice::Task<T> awaited_task, T& value) noexcept -> ice::Task<void>
-        {
-            value = ice::move(co_await awaited_task);
-        };
-        ice::v2::wait_for(task_wrapper(ice::move(task), result));
-        return result;
-    }
-
-    template<typename T>
-    inline void manual_wait_for(ice::Task<T> task, ice::ManualResetEvent& manual_event, T& out_result) noexcept
-    {
-        auto const task_wrapper = [](ice::Task<T> awaited_task, T& value) noexcept -> ice::Task<void>
-        {
-            value = co_await awaited_task;
-        };
-        ice::v2::manual_wait_for(task_wrapper(ice::move(task), out_result), manual_event);
-    }
-
-    inline auto resume_on(ice::Task<void> task, ice::TaskScheduler& scheduler) noexcept -> ice::Task<void>
-    {
-        co_await task;
-        co_await scheduler;
-    }
-
-    inline auto schedule_on(ice::Task<void> task, ice::TaskScheduler& scheduler) noexcept -> ice::Task<void>
-    {
-        co_await scheduler;
-        co_await task;
-    }
-
-    template<typename Value>
-    inline auto schedule_on(ice::Task<Value> task, ice::TaskScheduler& scheduler) noexcept -> ice::Task<Value>
-    {
-        co_await scheduler;
-        co_return co_await std::move(task);
-    }
-
-    template<typename Value>
-    inline auto resume_on(ice::Task<Value>&& task, ice::TaskScheduler& scheduler) noexcept -> ice::Task<Value>
-    {
-        Value value = co_await std::move(task);
-        co_await scheduler;
-        co_return std::move(value);
-    }
-
 } // namespace ice
+
+#include "impl/task_utils.inl"

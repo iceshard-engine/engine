@@ -42,7 +42,7 @@ namespace ice
         if (result > 0)
         {
             _barrier.reset(static_cast<ice::u8>(result));
-            ice::v2::manual_wait_for(_barrier, _tasks);
+            ice::manual_wait_for(_barrier, _tasks);
             ice::array::clear(_tasks);
         }
         return result;
@@ -50,7 +50,7 @@ namespace ice
 
     void ScopedTaskContainer::execute_tasks_detached(ice::TaskScheduler& scheduler) noexcept
     {
-        ice::resume_tasks_on(_tasks, scheduler);
+        ice::execute_tasks(_tasks);
         ice::array::clear(_tasks);
     }
 

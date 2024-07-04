@@ -50,7 +50,7 @@ namespace ice
         ICE_ASSERT(_sync_sem.is_set(), "Invalid semaphore state!");
 
         _sync_sem.reset(ice::u8(_task_count));
-        ice::v2::manual_wait_for(_sync_sem, _tasks);
+        ice::manual_wait_for(_sync_sem, _tasks);
     }
 
     void IceshardTaskExecutor::wait_ready() noexcept

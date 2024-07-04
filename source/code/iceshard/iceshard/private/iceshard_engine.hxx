@@ -3,6 +3,7 @@
 
 #pragma once
 #include <ice/engine.hxx>
+#include <ice/engine_state_tracker.hxx>
 #include <ice/engine_state_definition.hxx>
 #include <ice/asset_storage.hxx>
 #include <ice/world/world_updater.hxx>

@@ -201,7 +201,6 @@ struct ice::app::Runtime
     ice::CustomClock game_clock;
     ice::u32 close_attempts = 0;
 
-    ice::ManualResetEvent logic_wait;
     ice::ManualResetEvent gfx_wait;
     ice::Task<void> next_frame_task;
 
@@ -475,7 +474,7 @@ auto ice_resume(
 
         runtime.clock = ice::clock::create_clock();
         runtime.runner = ice::create_engine_runner(state.engine_alloc, *state.modules, runner_create_info);
-        runtime.frame = ice::wait_for(runtime.runner->aquire_frame());
+        runtime.frame = ice::wait_for_result(runtime.runner->aquire_frame());
         runtime.game_clock = ice::clock::create_clock(runtime.game_clock, 1.0f);
 
         using ice::operator|;
@@ -633,7 +632,7 @@ auto ice_update(
         runtime.render_stage.process_one(&render_enabled_frame);
 
         // Awaiting both frames to finish.
-        if (runtime.previous->wait.is_set() == false || runtime.previous->next->wait.is_set() == false)
+        if (runtime.frames[0].wait.is_set() == false || runtime.frames[1].wait.is_set() == false)
         {
             return ice::app::S_ApplicationUpdate;
         }
@@ -677,7 +676,7 @@ auto ice_update(
         {
             // system_events will have changed after a frame was awaited!
             runtime.previous->wait.reset();
-            ice::v2::manual_wait_for(runtime.previous->wait, ice::move(runtime.next_frame_task));
+            ice::manual_wait_for(runtime.previous->wait, ice::move(runtime.next_frame_task));
 
             // Move to the next frame
             runtime.previous = runtime.previous->next;
@@ -685,7 +684,7 @@ auto ice_update(
             // Apply changes to entities after devui widget updates and drawing started, so we can inspect the data before the changes,
             //  and pre-produce the outcome in a devui widget if needed.
             // We also should no longer access anything in entity storages when drawing starts
-            ice::v2::wait_for(runtime.runner->apply_entity_operations(runtime.frame->shards()));
+            ice::wait_for(runtime.runner->apply_entity_operations(runtime.frame->shards()));
         }
     }
 
