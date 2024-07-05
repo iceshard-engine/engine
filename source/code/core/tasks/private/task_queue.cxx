@@ -61,7 +61,7 @@ namespace ice
         return ice::linked_queue::pop(_awaitables);
     }
 
-    bool TaskQueue::process_one(void *result_value) noexcept
+    bool TaskQueue::process_one(void* result_value) noexcept
     {
         ice::TaskAwaitableBase* const awaitable = ice::linked_queue::pop(_awaitables);
         if (awaitable != nullptr)
@@ -71,6 +71,22 @@ namespace ice
                 ICE_ASSERT_CORE(awaitable->result.ptr == nullptr);
                 awaitable->result.ptr = result_value;
             }
+
+            // Support custom resumer logic
+            if (awaitable->_params.modifier == ice::TaskAwaitableModifier::CustomResumer)
+            {
+                void* resumer_ptr = awaitable->result.ptr;
+                ICE_ASSERT_CORE(resumer_ptr != nullptr && result_value == nullptr);
+
+                ice::TaskAwaitableCustomResumer const* custom_resumer = reinterpret_cast<ice::TaskAwaitableCustomResumer*>(resumer_ptr);
+                if (custom_resumer->fn_resumer(custom_resumer->ud_resumer, *awaitable) == false)
+                {
+                    // Push back at the end of the queue
+                    ice::linked_queue::push(_awaitables, awaitable);
+                    return false;
+                }
+            }
+
             awaitable->_coro.resume();
         }
         return awaitable != nullptr;
@@ -86,6 +102,21 @@ namespace ice
                 ICE_ASSERT_CORE(awaitable->result.ptr == nullptr);
                 awaitable->result.ptr = result_value;
             }
+
+            // Support custom resumer logic
+            if (awaitable->_params.modifier == ice::TaskAwaitableModifier::CustomResumer)
+            {
+                void* resumer_ptr = awaitable->result.ptr;
+                ICE_ASSERT_CORE(resumer_ptr != nullptr && result_value == nullptr);
+                ice::TaskAwaitableCustomResumer const* custom_resumer = reinterpret_cast<ice::TaskAwaitableCustomResumer*>(resumer_ptr);
+                if (custom_resumer->fn_resumer(custom_resumer->ud_resumer, *awaitable) == false)
+                {
+                    // Push back at the end of the queue
+                    ice::linked_queue::push(_awaitables, awaitable);
+                    continue;
+                }
+            }
+
             awaitable->_coro.resume();
             processed += 1;
         }

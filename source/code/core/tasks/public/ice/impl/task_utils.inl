@@ -43,6 +43,14 @@ namespace ice
     }
 
     template<typename T>
+    inline auto await_scheduled_on(ice::Task<> task, ice::TaskScheduler& scheduler, ice::TaskScheduler& resumer) noexcept -> ice::Task<>
+    {
+        T result;
+        co_await ice::await_scheduled_on(ice::detail::output_result_task(ice::move(task), result), scheduler, resumer);
+        co_return result;
+    }
+
+    template<typename T>
     inline auto wait_for_result(ice::Task<T> task) noexcept -> T
     {
         T result{};

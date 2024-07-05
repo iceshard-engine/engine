@@ -14,6 +14,7 @@ namespace ice
         PriorityFlags = 0x8000'0000,
         DelayedExecution = 0x4000'0000,
         CustomValue = 0x2000'0000,
+        CustomResumer = 0x1000'0000,
     };
 
     struct TaskAwaitableParams
@@ -37,6 +38,14 @@ namespace ice
         ice::coroutine_handle<> _coro;
         ice::TaskAwaitableBase* next;
         ice::TaskAwaitableResult result;
+    };
+
+    using FnCustomResumerFunc = bool(*)(void* userdata, ice::TaskAwaitableBase const& awaitable) noexcept;
+
+    struct TaskAwaitableCustomResumer
+    {
+        FnCustomResumerFunc fn_resumer;
+        void* ud_resumer;
     };
 
     // Callback aliases
