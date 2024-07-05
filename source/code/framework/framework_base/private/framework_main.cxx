@@ -539,6 +539,9 @@ auto ice_game_frame(
 {
     IPT_FRAME_MARK;
 
+    // Apply changes to entities on frame start this allows us to always start the frame with changes applied freshly.
+    co_await runtime.runner->apply_entity_operations(runtime.frame->shards());
+
     state.platform.core->refresh_events();
     ice::ShardContainer const& system_events = state.platform.core->system_events();
 
@@ -680,11 +683,6 @@ auto ice_update(
 
             // Move to the next frame
             runtime.previous = runtime.previous->next;
-
-            // Apply changes to entities after devui widget updates and drawing started, so we can inspect the data before the changes,
-            //  and pre-produce the outcome in a devui widget if needed.
-            // We also should no longer access anything in entity storages when drawing starts
-            ice::wait_for(runtime.runner->apply_entity_operations(runtime.frame->shards()));
         }
     }
 
