@@ -392,6 +392,26 @@ namespace ice::ecs
 
     }
 
+    void ArchetypeIndex::fetch_archetype_instance_info_by_index(
+        ice::u32 index,
+        ice::ecs::ArchetypeInstanceInfo const*& out_instance_info
+    ) const noexcept
+    {
+        ice::u32 const instance_count = ice::array::count(_archetype_data);
+        ice::u32 const instance_idx = index;
+
+        if (instance_idx < instance_count)
+        {
+            ArchetypeDataHeader const* const header = _archetype_data[instance_idx];
+
+            out_instance_info = ice::addressof(header->archetype_info);
+        }
+        else
+        {
+            out_instance_info = nullptr;
+        }
+    }
+
     void ArchetypeIndex::fetch_archetype_instance_info_with_pool(
         ice::ecs::Archetype archetype,
         ice::ecs::ArchetypeInstanceInfo const*& out_instance_info,

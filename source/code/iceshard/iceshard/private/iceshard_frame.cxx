@@ -49,6 +49,32 @@ namespace ice
         return result;
     }
 
+    auto IceshardEngineFrame::await_tasks_scheduled_on(ice::TaskScheduler& scheduler, ice::TaskScheduler& resumer) noexcept -> ice::Task<>
+    {
+        ice::u32 task_count = 0;
+        for (TaskGroup& group : _task_groups)
+        {
+            task_count += ice::count(group.tasks);
+        }
+
+        if (task_count > 0)
+        {
+            ice::Array<ice::Task<>> final_task_list{ _data._fwd_allocator };
+            ice::array::reserve(final_task_list, task_count);
+
+            for (TaskGroup& group : _task_groups)
+            {
+                for (ice::Task<>& task : group.tasks)
+                {
+                    ice::array::push_back(final_task_list, ice::move(task));
+                }
+                ice::array::clear(group.tasks);
+            }
+
+            co_await ice::await_scheduled_on(final_task_list, scheduler, resumer);
+        }
+    }
+
     auto IceshardEngineFrame::execute_tasks() noexcept -> ice::ucount
     {
         ice::ucount total_count = 0;

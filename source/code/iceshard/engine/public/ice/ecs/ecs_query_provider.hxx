@@ -3,27 +3,20 @@
 
 #pragma once
 #include <ice/container/array.hxx>
-#include <ice/ecs/ecs_query.hxx>
+#include <ice/ecs/ecs_query_definition.hxx>
 
 namespace ice::ecs
 {
 
-    // template<ice::ecs::QueryType First, ice::ecs::QueryType... Args>
-    // struct QueryWork;
-
-    // template<ice::ecs::QueryType First, ice::ecs::QueryType... Args>
-    // struct QueryWork<First, Args...>;
-
-    class QueryProvider
+    struct QueryAccessTracker
     {
-    public:
-        virtual ~QueryProvider() noexcept = default;
+        std::atomic<ice::u32> access_stage_executed;
+        std::atomic<ice::u32> access_stage_next;
+    };
 
-        // template<ice::ecs::QueryType... Args>
-        // constexpr auto create_query_work(
-        //     ice::Allocator& alloc,
-        //     void (*function_ptr)(Args...)
-        // ) const noexcept -> ice::ecs::QueryWork<Args...>;
+    struct QueryProvider
+    {
+        virtual ~QueryProvider() noexcept = default;
 
         template<ice::ecs::QueryType... Types>
         void initialize_query(
@@ -39,17 +32,11 @@ namespace ice::ecs
     protected:
         virtual void query_internal(
             ice::Span<ice::ecs::detail::QueryTypeInfo const> query_info,
+            ice::Span<ice::ecs::QueryAccessTracker*> out_access_trackers,
             ice::Array<ice::ecs::ArchetypeInstanceInfo const*>& out_instance_infos,
             ice::Array<ice::ecs::DataBlock const*>& out_data_blocks
         ) const noexcept = 0;
     };
-
-
-    // template<ice::ecs::QueryType... Args>
-    // constexpr auto QueryProvider::create_query_work(ice::Allocator& alloc, void (*function_ptr)(Args...)) const noexcept -> ice::ecs::QueryWork<Args...>
-    // {
-    //     return { .query = create_query(alloc, ice::ecs::QueryDefinition<Args...>{}), .work_function = function_ptr };
-    // }
 
     template<ice::ecs::QueryType... Types>
     void QueryProvider::initialize_query(
@@ -62,6 +49,7 @@ namespace ice::ecs
         // Run the internal query to access all data that is not available here.
         this->query_internal(
             ice::span::from_std_const(definition.requirements),
+            out_query.access_trackers,
             out_query.archetype_instances,
             out_query.archetype_data_blocks
         );

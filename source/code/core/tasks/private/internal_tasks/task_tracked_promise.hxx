@@ -62,11 +62,11 @@ namespace ice
                 // Can't access promise after it's destroyed
                 std::coroutine_handle<> continuation = awaiting_task->awaiting_continuation;
 
+                continuation.resume();
+
                 // We delete the detached coroutine here, since this would be normaly done when 'await_ready == true' after resuming
                 //  from the final suspension point. Since we are suspending, but we never resume again we just delete it here.
                 coro.destroy();
-
-                continuation.resume();
 
                 // Return the continuation
                 return std::noop_coroutine();

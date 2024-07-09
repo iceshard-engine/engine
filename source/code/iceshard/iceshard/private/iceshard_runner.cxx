@@ -142,9 +142,7 @@ namespace ice
             world_updater.update(current_tasks, previous_frame.shards());
         }
 
-        // Execute all frame tasks
-        current_tasks.execute_tasks();
-        co_return;
+        co_await current_tasks.await_tasks_scheduled_on(_schedulers.main, _schedulers.main);
     }
 
     void IceshardEngineRunner::release_frame(ice::UniquePtr<ice::EngineFrame> frame) noexcept

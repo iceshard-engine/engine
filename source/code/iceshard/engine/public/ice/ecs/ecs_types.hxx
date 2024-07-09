@@ -17,9 +17,12 @@ namespace ice::ecs
     class EntityStorage;
     class EntityOperations;
 
-    class QueryProvider;
+    struct QueryProvider;
+    struct QueryAccessTracker;
 
     template<typename Definition>
     struct Query;
+
+    struct QueryView;
 
 } // namespace ice::ecs

@@ -449,6 +449,7 @@ namespace ice::ecs
     ) noexcept
         : _allocator{ alloc }
         , _archetype_index{ archetype_index }
+        , _access_trackers{ _allocator }
         , _head_blocks{ _allocator }
         , _data_blocks{ _allocator }
     {
@@ -471,11 +472,36 @@ namespace ice::ecs
             head_block->next = nullptr;
 
             _data_blocks[idx] = head_block;
+
+            if (idx == 0)
+            {
+                continue;
+            }
+
+            // Go over each archetype component and create non-existent trackers
+            ice::ecs::ArchetypeInstanceInfo const* info = nullptr;
+            _archetype_index.fetch_archetype_instance_info_by_index(idx, info);
+            ICE_ASSERT_CORE(info != nullptr);
+
+            for (ice::StringID component_id : info->component_identifiers)
+            {
+                ice::ecs::QueryAccessTracker* tracker = ice::hashmap::get(_access_trackers, ice::hash(component_id), nullptr);
+                if (tracker == nullptr)
+                {
+                    tracker = _allocator.create<ice::ecs::QueryAccessTracker>();
+                    ice::hashmap::set(_access_trackers, ice::hash(component_id), tracker);
+                }
+            }
         }
     }
 
     EntityStorage::~EntityStorage() noexcept
     {
+        for (ice::ecs::QueryAccessTracker* tracker : ice::hashmap::values(_access_trackers))
+        {
+            _allocator.destroy(tracker);
+        }
+
         ice::u32 block_idx = 0;
         for (DataBlock* const data_block : _data_blocks)
         {
@@ -511,6 +537,14 @@ namespace ice::ecs
         // [Done] Rep Archetype: {EntityHandle[1], DstArchetype, <implicit: SrcArchetype>, ComponentData[*]} // change
         // [Done] Set Component: {EntityHandle[1], None, ComponentData[*]} // update data
         // [Done] Set Component: {EntityHandle[1], None} // remove
+
+        // Ensure all queries are finished
+        for (ice::ecs::QueryAccessTracker* tracker : ice::hashmap::values(_access_trackers))
+        {
+            ice::u32 const final_counter_exec = tracker->access_stage_executed.exchange(0, std::memory_order_relaxed);
+            ice::u32 const final_counter_next = tracker->access_stage_next.exchange(0, std::memory_order_relaxed);
+            ICE_ASSERT_CORE(final_counter_exec == final_counter_next);
+        }
 
         for (EntityOperation const& operation : operations)
         {
@@ -966,6 +1000,7 @@ namespace ice::ecs
 
     void EntityStorage::query_internal(
         ice::Span<ice::ecs::detail::QueryTypeInfo const> query_info,
+        ice::Span<ice::ecs::QueryAccessTracker*> out_access_trackers,
         ice::Array<ice::ecs::ArchetypeInstanceInfo const*>& out_instance_infos,
         ice::Array<ice::ecs::DataBlock const*>& out_data_blocks
     ) const noexcept
@@ -984,6 +1019,17 @@ namespace ice::ecs
         {
             ice::u32 const instance_idx = static_cast<ice::u32>(instance->archetype_instance);
             ice::array::push_back(out_data_blocks, _data_blocks[instance_idx]);
+        }
+
+        // Find or create work trackers for queried components
+        ice::u32 idx = 0;
+        for (ice::ecs::detail::QueryTypeInfo const& type_info : query_info)
+        {
+            ice::ecs::QueryAccessTracker* tracker = ice::hashmap::get(_access_trackers, ice::hash(type_info.identifier), nullptr);
+            ICE_ASSERT_CORE(tracker != nullptr);
+
+            out_access_trackers[idx] = tracker;
+            idx += 1;
         }
     }
 
