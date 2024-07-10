@@ -8,6 +8,46 @@
 namespace ice
 {
 
+    struct TaskCheckpointGate
+    {
+        std::atomic_int32_t& _reached;
+        ice::TaskQueue& _queue;
+        ice::TaskAwaitableBase _awaitable{ ._params = { .modifier = TaskAwaitableModifier::Unused } };
+
+        inline bool await_ready() const noexcept
+        {
+            return _reached.load(std::memory_order_relaxed) < 0;
+        }
+
+        inline auto await_suspend(std::coroutine_handle<> coro) noexcept -> std::coroutine_handle<>
+        {
+            if (_reached.fetch_add(1, std::memory_order_release) >= 0)
+            {
+                _awaitable._coro = std::exchange(coro, std::noop_coroutine());
+                _queue.push_back(&_awaitable);
+            }
+            return coro;
+        }
+
+        inline void await_resume() const noexcept
+        {
+            std::atomic_thread_fence(std::memory_order_acquire);
+        }
+    };
+
+    struct TaskCheckpoint
+    {
+        TaskCheckpoint(bool initially_open = false) noexcept;
+
+        bool open(ice::TaskScheduler* scheduler = nullptr, void* result_ptr = nullptr) noexcept;
+        auto opened() noexcept -> ice::TaskCheckpointGate;
+        void close() noexcept;
+
+        std::atomic_int32_t _checkpoint_state;
+        ice::TaskQueue _checkpoint_queue;
+    };
+
+#if 0
     struct TaskCheckpoint
     {
         ice::TaskScheduler& _scheduler;
@@ -49,7 +89,7 @@ namespace ice
                 inline bool await_suspend(std::coroutine_handle<> coro) noexcept
                 {
                     _awaitable._coro = coro;
-                    ice::linked_queue::push(_queue._awaitables, &_awaitable);
+                    // ice::linked_queue::push(_queue._awaitables, &_awaitable);
 
                     // Check one more time just to make sure.
                     //  if it was set, we might have already missed the queue consume on the 'reached' call.
@@ -67,5 +107,6 @@ namespace ice
             return CheckpointAwaitable{_reached, _queue};
         }
     };
+#endif
 
 } // namespace ice

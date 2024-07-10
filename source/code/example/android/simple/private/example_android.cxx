@@ -50,8 +50,8 @@ struct TestTrait : public ice::Trait
 
     void gather_tasks(ice::TraitTaskRegistry& task_launcher) noexcept override
     {
-        task_launcher.bind<&TestTrait::logic>();
-        task_launcher.bind<&TestTrait::gfx>(ice::gfx::ShardID_GfxFrameUpdate);
+        context.bind<&TestTrait::logic>();
+        context.bind<&TestTrait::gfx>(ice::gfx::ShardID_GfxFrameUpdate);
     }
 
     auto logic(ice::EngineFrameUpdate const& update) noexcept -> ice::Task<>

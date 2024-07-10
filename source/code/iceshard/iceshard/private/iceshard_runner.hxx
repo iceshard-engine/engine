@@ -197,7 +197,7 @@ namespace ice
         auto update_frame(ice::EngineFrame& current_frame, ice::EngineFrame const& previous_frame) noexcept -> ice::Task<> override;
         void release_frame(ice::UniquePtr<ice::EngineFrame> frame) noexcept override;
 
-        auto apply_entity_operations(ice::ShardContainer& out_shards) noexcept -> ice::Task<> override;
+        auto pre_update(ice::ShardContainer& out_shards) noexcept -> ice::Task<> override;
 
         void destroy() noexcept;
 

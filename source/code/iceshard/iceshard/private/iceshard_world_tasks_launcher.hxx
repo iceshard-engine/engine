@@ -2,18 +2,11 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#include "iceshard_trait_context.hxx"
 #include <ice/world/world_trait.hxx>
 
 namespace ice
 {
-
-    struct IceshardEventHandler
-    {
-        ice::ShardID event_id;
-        ice::Trait* trait;
-        ice::TraitIndirectTaskFn event_handler;
-        void* userdata;
-    };
 
     static_assert(sizeof(IceshardEventHandler) <= 32);
 
@@ -37,7 +30,10 @@ namespace ice
     class IceshardTasksLauncher
     {
     public:
-        IceshardTasksLauncher(ice::Allocator& alloc) noexcept;
+        IceshardTasksLauncher(
+            ice::HashMap<IceshardEventHandler>& frame_handlers,
+            ice::HashMap<IceshardEventHandler>& runner_handlers
+        ) noexcept;
 
         void gather(ice::TaskContainer& out_tasks, ice::Shard shard) noexcept;
         void gather(ice::TaskContainer& out_tasks, ice::Span<ice::Shard const> shards) noexcept;
@@ -48,8 +44,8 @@ namespace ice
         auto trait_launcher(ice::Trait* trait) noexcept -> ice::IceshardTraitTaskLauncher;
 
     private:
-        ice::HashMap<IceshardEventHandler> _frame_handlers;
-        ice::HashMap<IceshardEventHandler> _runner_handlers;
+        ice::HashMap<IceshardEventHandler>& _frame_handlers;
+        ice::HashMap<IceshardEventHandler>& _runner_handlers;
     };
 
 } // namespace ice

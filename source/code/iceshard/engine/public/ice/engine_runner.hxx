@@ -59,7 +59,7 @@ namespace ice
         virtual auto update_frame(ice::EngineFrame& current_frame, ice::EngineFrame const& last_frame) noexcept -> ice::Task<> = 0;
         virtual void release_frame(ice::UniquePtr<ice::EngineFrame> frame) noexcept = 0;
 
-        virtual auto apply_entity_operations(ice::ShardContainer& out_shards) noexcept -> ice::Task<> = 0;
+        virtual auto pre_update(ice::ShardContainer& out_shards) noexcept -> ice::Task<> = 0;
     };
 
     static constexpr ice::ShardID ShardID_FrameUpdate = "event/engine/frame-update`ice::EngineFrameUpdate const*"_shardid;

@@ -29,6 +29,10 @@ namespace ice
     {
         virtual ~WorldUpdater() noexcept = default;
 
+        virtual void pre_update(
+            ice::ShardContainer& out_shards
+        ) noexcept = 0;
+
         virtual void update(
             ice::TaskContainer& out_tasks,
             ice::Span<ice::Shard const> event_shards
@@ -38,10 +42,6 @@ namespace ice
             ice::StringID_Arg world_name,
             ice::TaskContainer& out_tasks,
             ice::Span<ice::Shard const> event_shards
-        ) noexcept = 0;
-
-        virtual void apply_entity_operations(
-            ice::ShardContainer& out_shards
         ) noexcept = 0;
     };
 

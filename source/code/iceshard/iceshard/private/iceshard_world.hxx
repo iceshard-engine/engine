@@ -5,6 +5,7 @@
 #include <ice/world/world.hxx>
 #include <ice/ecs/ecs_entity_operations.hxx>
 #include "iceshard_world_tasks_launcher.hxx"
+#include "iceshard_trait_context.hxx"
 
 namespace ice
 {
@@ -19,8 +20,10 @@ namespace ice
             ice::Allocator& alloc,
             ice::StringID_Arg worldid,
             ice::ecs::EntityStorage& entity_storage,
+            ice::UniquePtr<ice::IceshardTraitContext> context,
             ice::Array<ice::UniquePtr<ice::Trait>, ice::ContainerLogic::Complex> traits
         ) noexcept;
+        ~IceshardWorld() noexcept = default;
 
         auto trait(ice::StringID_Arg trait_identifier) noexcept -> ice::Trait* override { return nullptr; }
         auto trait(ice::StringID_Arg trait_identifier) const noexcept -> ice::Trait const* override { return nullptr; }
@@ -30,7 +33,7 @@ namespace ice
         auto entity_queries() noexcept -> ice::ecs::QueryProvider& override { return _entity_storage; }
         auto entity_operations() noexcept -> ice::ecs::EntityOperations& override { return _entity_operations; }
 
-        void apply_entity_operations(ice::ShardContainer& out_shards) noexcept;
+        void pre_update(ice::ShardContainer& out_shards) noexcept;
 
         auto task_launcher() noexcept -> ice::IceshardTasksLauncher& { return _tasks_launcher; }
 
@@ -41,6 +44,7 @@ namespace ice
         ice::IceshardTasksLauncher _tasks_launcher;
         ice::ecs::EntityStorage& _entity_storage;
         ice::ecs::EntityOperations _entity_operations;
+        ice::UniquePtr<ice::IceshardTraitContext> _context;
         ice::Array<ice::UniquePtr<ice::Trait>, ice::ContainerLogic::Complex> _traits;
     };
 

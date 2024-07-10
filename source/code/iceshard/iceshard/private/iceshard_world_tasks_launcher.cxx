@@ -43,9 +43,12 @@ namespace ice
         );
     }
 
-    IceshardTasksLauncher::IceshardTasksLauncher(ice::Allocator& alloc) noexcept
-        : _frame_handlers{ alloc }
-        , _runner_handlers{ alloc }
+    IceshardTasksLauncher::IceshardTasksLauncher(
+            ice::HashMap<IceshardEventHandler>& frame_handlers,
+            ice::HashMap<IceshardEventHandler>& runner_handlers
+    ) noexcept
+        : _frame_handlers{ frame_handlers }
+        , _runner_handlers{ runner_handlers }
     {
     }
 

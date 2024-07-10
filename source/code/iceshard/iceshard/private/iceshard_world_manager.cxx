@@ -2,6 +2,8 @@
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_world_manager.hxx"
+#include "iceshard_trait_context.hxx"
+
 #include <ice/engine_shards.hxx>
 #include <ice/engine_state_tracker.hxx>
 
@@ -90,6 +92,7 @@ namespace ice
             world_template.name
         );
 
+        ice::UniquePtr<ice::IceshardTraitContext> world_trait_context = ice::make_unique<ice::IceshardTraitContext>(_allocator, _allocator);
         ice::Array<ice::UniquePtr<ice::Trait>, ice::ContainerLogic::Complex> world_traits{ _allocator };
         for (ice::StringID_Arg traitid : world_template.traits)
         {
@@ -104,6 +107,7 @@ namespace ice
                 ice::UniquePtr<ice::Trait> trait = desc->fn_factory(_allocator, desc->fn_factory_userdata);
                 if (trait != nullptr)
                 {
+                    trait->context = ice::TraitContext{ trait.get(), world_trait_context.get() };
                     ice::array::push_back(world_traits, ice::move(trait));
                 }
             }
@@ -118,6 +122,7 @@ namespace ice
                 _allocator,
                 world_template.name,
                 world_template.entity_storage,
+                ice::move(world_trait_context),
                 ice::move(world_traits)
             ),
         };
@@ -180,6 +185,16 @@ namespace ice
         ice::shards::clear(_pending_events);
     }
 
+    void IceshardWorldManager::pre_update(
+        ice::ShardContainer& out_shards
+    ) noexcept
+    {
+        for (Entry& world_entry : ice::hashmap::values(_worlds))
+        {
+            world_entry.world->pre_update(out_shards);
+        }
+    }
+
     void IceshardWorldManager::update(
         ice::TaskContainer& out_tasks,
         ice::Span<ice::Shard const> event_shards
@@ -204,16 +219,6 @@ namespace ice
         if (entry != nullptr && entry->is_active)
         {
             entry->world->task_launcher().gather(out_tasks, event_shards);
-        }
-    }
-
-    void IceshardWorldManager::apply_entity_operations(
-        ice::ShardContainer& out_shards
-    ) noexcept
-    {
-        for (Entry& world_entry : ice::hashmap::values(_worlds))
-        {
-            world_entry.world->apply_entity_operations(out_shards);
         }
     }
 

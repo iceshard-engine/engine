@@ -168,11 +168,11 @@ namespace ice
         // frame.reset();
     }
 
-    auto IceshardEngineRunner::apply_entity_operations(
+    auto IceshardEngineRunner::pre_update(
         ice::ShardContainer& out_shards
     ) noexcept -> ice::Task<>
     {
-        _engine.worlds_updater().apply_entity_operations(out_shards);
+        _engine.worlds_updater().pre_update(out_shards);
         co_return;
     }
 

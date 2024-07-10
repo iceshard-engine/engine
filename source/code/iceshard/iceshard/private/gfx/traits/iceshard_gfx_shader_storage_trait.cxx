@@ -29,10 +29,10 @@ namespace ice::gfx
     {
     }
 
-    void Trait_GfxShaderStorage::gather_tasks(TraitTaskRegistry& task_registry) noexcept
+    void Trait_GfxShaderStorage::gather_tasks(TraitTaskRegistry&) noexcept
     {
-        task_registry.bind<&Trait_GfxShaderStorage::gfx_update>(ice::gfx::ShardID_GfxFrameUpdate);
-        task_registry.bind<&Trait_GfxShaderStorage::gfx_shutdown>(ice::gfx::ShardID_GfxShutdown);
+        context.bind<&Trait_GfxShaderStorage::gfx_update>(ice::gfx::ShardID_GfxFrameUpdate);
+        context.bind<&Trait_GfxShaderStorage::gfx_shutdown>(ice::gfx::ShardID_GfxShutdown);
     }
 
     auto Trait_GfxShaderStorage::on_asset_released(ice::Asset const& asset) noexcept -> ice::Task<>

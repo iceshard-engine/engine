@@ -28,7 +28,9 @@ namespace ice
 
     struct Trait;
     struct TraitArchive;
+    struct TraitContext;
     struct TraitDescriptor;
+    struct TraitTaskBinding;
     struct TraitTaskRegistry;
 
     struct World;

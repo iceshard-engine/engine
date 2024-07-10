@@ -35,6 +35,10 @@ namespace ice
             ice::ShardContainer& out_events
         ) noexcept override;
 
+        void pre_update(
+            ice::ShardContainer& out_shards
+        ) noexcept override;
+
         void update(
             ice::TaskContainer& out_tasks,
             ice::Span<ice::Shard const> event_shards
@@ -44,10 +48,6 @@ namespace ice
             ice::StringID_Arg world_name,
             ice::TaskContainer& out_tasks,
             ice::Span<ice::Shard const> event_shards
-        ) noexcept override;
-
-        void apply_entity_operations(
-            ice::ShardContainer& out_shards
         ) noexcept override;
 
         auto begin() noexcept { return ice::hashmap::begin(_worlds); }

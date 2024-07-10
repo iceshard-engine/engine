@@ -4,9 +4,8 @@
 #pragma once
 #include <ice/span.hxx>
 #include <ice/stringid.hxx>
-#include <ice/mem_allocator.hxx>
 #include <ice/mem_unique_ptr.hxx>
-#include <ice/engine_types.hxx>
+#include <ice/world/world_types.hxx>
 
 namespace ice
 {

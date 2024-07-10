@@ -540,7 +540,7 @@ auto ice_game_frame(
     IPT_FRAME_MARK;
 
     // Apply changes to entities on frame start this allows us to always start the frame with changes applied freshly.
-    co_await runtime.runner->apply_entity_operations(runtime.frame->shards());
+    co_await runtime.runner->pre_update(runtime.frame->shards());
 
     state.platform.core->refresh_events();
     ice::ShardContainer const& system_events = state.platform.core->system_events();

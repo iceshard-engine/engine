@@ -41,11 +41,11 @@ namespace ice::devui
 
     void ImGuiTrait::gather_tasks(ice::TraitTaskRegistry& task_registry) noexcept
     {
-        task_registry.bind<&ImGuiTrait::update>();
-        task_registry.bind<&ImGuiTrait::gfx_start>(ice::gfx::ShardID_GfxStartup);
-        task_registry.bind<&ImGuiTrait::gfx_shutdown>(ice::gfx::ShardID_GfxShutdown);
-        task_registry.bind<&ImGuiTrait::gfx_update>(ice::gfx::ShardID_GfxFrameUpdate);
-        task_registry.bind<&ImGuiTrait::on_window_resized>(ice::platform::ShardID_WindowResized);
+        context.bind<&ImGuiTrait::update>();
+        context.bind<&ImGuiTrait::gfx_start>(ice::gfx::ShardID_GfxStartup);
+        context.bind<&ImGuiTrait::gfx_shutdown>(ice::gfx::ShardID_GfxShutdown);
+        context.bind<&ImGuiTrait::gfx_update>(ice::gfx::ShardID_GfxFrameUpdate);
+        context.bind<&ImGuiTrait::on_window_resized>(ice::platform::ShardID_WindowResized);
     }
 
     auto ImGuiTrait::activate(ice::WorldStateParams const& update) noexcept -> ice::Task<>
