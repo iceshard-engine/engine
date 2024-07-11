@@ -15,37 +15,15 @@ namespace ice
 
     struct Trait
     {
-        ice::TraitContext context;
-
+        Trait(ice::TraitContext& context) noexcept;
         virtual ~Trait() noexcept = default;
-
-        virtual void gather_tasks(ice::TraitTaskRegistry& task_launcher) noexcept { }
 
         virtual auto activate(ice::WorldStateParams const& world_update) noexcept -> ice::Task<> { co_return; }
         virtual auto deactivate(ice::WorldStateParams const& world_update) noexcept -> ice::Task<> { co_return; }
+
+    protected:
+        ice::TraitContext& _context;
     };
-
-    struct TraitTaskRegistry
-    {
-        virtual ~TraitTaskRegistry() noexcept = default;
-
-        virtual void bind(ice::TraitTaskBinding const& binding) noexcept = 0;
-
-        template<auto MemberPtr> requires (ice::is_method_member_v<decltype(MemberPtr)>)
-        void bind(ice::ShardID event = ice::Shard_Invalid.id) noexcept;
-    };
-
-    template<auto MemberPtr> requires (ice::is_method_member_v<decltype(MemberPtr)>)
-    void TraitTaskRegistry::bind(ice::ShardID event) noexcept
-    {
-        this->bind(TraitTaskBinding{
-            .trigger_event = event,
-            .procedure = detail::trait_method_task_wrapper<MemberPtr>,
-            .task_type = ice::TraitTaskType::Frame,
-            .procedure_userdata = nullptr,
-        });
-    }
-
 
     static constexpr ice::Shard Shard_TraitSetup = "event/trait/setup`void"_shard;
     static constexpr ice::Shard Shard_TraitActivate = "event/trait/activate`void"_shard;

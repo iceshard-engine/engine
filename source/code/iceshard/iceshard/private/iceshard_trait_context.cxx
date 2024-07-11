@@ -5,11 +5,27 @@
 namespace ice
 {
 
-    IceshardTraitContext::IceshardTraitContext(ice::Allocator& alloc) noexcept
-        : _always_reached_checkpoint{ }
+    IceshardWorldContext::IceshardWorldContext(ice::Allocator& alloc) noexcept
+        : _always_reached_checkpoint{ true }
         , _checkpoints{ alloc }
         , _frame_handlers{ alloc }
         , _runner_handlers{ alloc }
+    { }
+
+    void IceshardWorldContext::close_checkpoints() noexcept
+    {
+        for (ice::TaskCheckpoint* checkpoint : _checkpoints)
+        {
+            checkpoint->close();
+        }
+    }
+
+    IceshardTraitContext::IceshardTraitContext(
+        ice::IceshardWorldContext& world_context,
+        ice::u32 trait_idx
+    ) noexcept
+        : _trait_index{ trait_idx }
+        , _world_context{ world_context }
     {
     }
 
@@ -19,44 +35,46 @@ namespace ice
 
     auto IceshardTraitContext::checkpoint(ice::StringID id) noexcept -> ice::TaskCheckpointGate
     {
-        if (ice::TaskCheckpoint* const checkpoint = ice::hashmap::get(_checkpoints, ice::hash(id), nullptr); checkpoint != nullptr)
+        ice::TaskCheckpoint* const checkpoint = ice::hashmap::get(_world_context._checkpoints, ice::hash(id), nullptr);
+        if (checkpoint != nullptr)
         {
-            return checkpoint->opened();
+            return checkpoint->checkpoint_gate();
         }
-        return _always_reached_checkpoint.opened();
+        return _world_context._always_reached_checkpoint.checkpoint_gate();
     }
 
     bool IceshardTraitContext::register_checkpoint(ice::StringID id, ice::TaskCheckpoint& checkpoint) noexcept
     {
-        if (ice::hashmap::has(_checkpoints, ice::hash(id)))
+        if (ice::hashmap::has(_world_context._checkpoints, ice::hash(id)))
         {
             return false;
         }
 
-        ice::hashmap::set(_checkpoints, ice::hash(id), ice::addressof(checkpoint));
+        ice::hashmap::set(_world_context._checkpoints, ice::hash(id), ice::addressof(checkpoint));
         return true;
     }
 
-    void IceshardTraitContext::close_checkpoints() noexcept
+    void IceshardTraitContext::unregister_checkpoint(ice::StringID id, ice::TaskCheckpoint& checkpoint) noexcept
     {
-        for (ice::TaskCheckpoint* checkpoint : _checkpoints)
+        ice::TaskCheckpoint* const checkpoint_ptr = ice::hashmap::get(_world_context._checkpoints, ice::hash(id), nullptr);
+        if (checkpoint_ptr == ice::addressof(checkpoint))
         {
-            checkpoint->close();
+            ice::hashmap::remove(_world_context._checkpoints, ice::hash(id));
         }
     }
 
-    auto IceshardTraitContext::bind(ice::Trait* trait, ice::TraitTaskBinding const& binding) noexcept -> ice::Result
+    auto IceshardTraitContext::bind(ice::TraitTaskBinding const& binding) noexcept -> ice::Result
     {
         ice::ShardID const trigger_event = ice::value_or_default(
             binding.trigger_event, ice::ShardID_FrameUpdate
         );
 
         ice::multi_hashmap::insert(
-            binding.task_type == TraitTaskType::Frame ? _frame_handlers : _runner_handlers,
+            binding.task_type == TraitTaskType::Frame ? _world_context._frame_handlers : _world_context._runner_handlers,
             ice::hash(trigger_event),
             ice::IceshardEventHandler{
                 .event_id = trigger_event,
-                .trait = trait,
+                .trait_idx = _trait_index,
                 .event_handler = binding.procedure,
                 .userdata = binding.procedure_userdata
             }

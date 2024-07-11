@@ -8,28 +8,41 @@ namespace ice
     struct IceshardEventHandler
     {
         ice::ShardID event_id;
-        ice::Trait* trait;
+        ice::u32 trait_idx;
         ice::TraitIndirectTaskFn event_handler;
         void* userdata;
     };
 
-    class IceshardTraitContext : public ice::detail::TraitContextImpl
+    struct IceshardWorldContext
+    {
+        IceshardWorldContext(ice::Allocator& alloc) noexcept;
+
+        void close_checkpoints() noexcept;
+
+        ice::TaskCheckpoint _always_reached_checkpoint;
+        ice::HashMap<ice::TaskCheckpoint*> _checkpoints;
+        ice::HashMap<ice::IceshardEventHandler> _frame_handlers;
+        ice::HashMap<ice::IceshardEventHandler> _runner_handlers;
+    };
+
+    class IceshardTraitContext : public ice::TraitContext
     {
     public:
-        IceshardTraitContext(ice::Allocator& alloc) noexcept;
+        ice::UniquePtr<ice::Trait> trait;
+
+    public:
+        IceshardTraitContext(ice::IceshardWorldContext& world_context, ice::u32 index) noexcept;
         ~IceshardTraitContext() noexcept;
 
         auto checkpoint(ice::StringID id) noexcept -> ice::TaskCheckpointGate override;
         bool register_checkpoint(ice::StringID id, ice::TaskCheckpoint& checkpoint) noexcept override;
-        void close_checkpoints() noexcept;
+        void unregister_checkpoint(ice::StringID id, ice::TaskCheckpoint& checkpoint) noexcept override;
 
-        auto bind(ice::Trait* trait, ice::TraitTaskBinding const& binding) noexcept -> ice::Result override;
+        auto bind(ice::TraitTaskBinding const& binding) noexcept -> ice::Result override;
 
-        ice::TaskCheckpoint _always_reached_checkpoint;
-        ice::HashMap<ice::TaskCheckpoint*> _checkpoints;
-
-        ice::HashMap<ice::IceshardEventHandler> _frame_handlers;
-        ice::HashMap<ice::IceshardEventHandler> _runner_handlers;
+    private:
+        ice::u32 const _trait_index;
+        ice::IceshardWorldContext& _world_context;
     };
 
 } // namespace ice

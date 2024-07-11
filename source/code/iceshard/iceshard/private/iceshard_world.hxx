@@ -20,8 +20,8 @@ namespace ice
             ice::Allocator& alloc,
             ice::StringID_Arg worldid,
             ice::ecs::EntityStorage& entity_storage,
-            ice::UniquePtr<ice::IceshardTraitContext> context,
-            ice::Array<ice::UniquePtr<ice::Trait>, ice::ContainerLogic::Complex> traits
+            ice::UniquePtr<ice::IceshardWorldContext> context,
+            ice::Array<ice::UniquePtr<ice::IceshardTraitContext>> traits
         ) noexcept;
         ~IceshardWorld() noexcept = default;
 
@@ -41,11 +41,11 @@ namespace ice
         auto deactivate(ice::WorldStateParams const& update) noexcept -> ice::Task<> override;
 
     private:
-        ice::IceshardTasksLauncher _tasks_launcher;
         ice::ecs::EntityStorage& _entity_storage;
         ice::ecs::EntityOperations _entity_operations;
-        ice::UniquePtr<ice::IceshardTraitContext> _context;
-        ice::Array<ice::UniquePtr<ice::Trait>, ice::ContainerLogic::Complex> _traits;
+        ice::UniquePtr<ice::IceshardWorldContext> _context;
+        ice::Array<ice::UniquePtr<ice::IceshardTraitContext>> _traits;
+        ice::IceshardTasksLauncher _tasks_launcher;
     };
 
 } // namespace ice

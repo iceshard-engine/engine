@@ -92,8 +92,8 @@ namespace ice
             world_template.name
         );
 
-        ice::UniquePtr<ice::IceshardTraitContext> world_trait_context = ice::make_unique<ice::IceshardTraitContext>(_allocator, _allocator);
-        ice::Array<ice::UniquePtr<ice::Trait>, ice::ContainerLogic::Complex> world_traits{ _allocator };
+        ice::UniquePtr<ice::IceshardWorldContext> world_context = ice::make_unique<ice::IceshardWorldContext>(_allocator, _allocator);
+        ice::Array<ice::UniquePtr<ice::IceshardTraitContext>, ice::ContainerLogic::Complex> world_traits{ _allocator };
         for (ice::StringID_Arg traitid : world_template.traits)
         {
             ice::TraitDescriptor const* desc = _trait_archive->trait(traitid);
@@ -104,11 +104,14 @@ namespace ice
             );
             if (desc != nullptr)
             {
-                ice::UniquePtr<ice::Trait> trait = desc->fn_factory(_allocator, desc->fn_factory_userdata);
+                ice::UniquePtr<ice::IceshardTraitContext> trait_context = ice::make_unique<ice::IceshardTraitContext>(
+                    _allocator, *world_context.get(), ice::array::count(world_traits)
+                );
+                ice::UniquePtr<ice::Trait> trait = desc->fn_factory(_allocator, *trait_context.get(), desc->fn_factory_userdata);
                 if (trait != nullptr)
                 {
-                    trait->context = ice::TraitContext{ trait.get(), world_trait_context.get() };
-                    ice::array::push_back(world_traits, ice::move(trait));
+                    trait_context->trait = ice::move(trait);
+                    ice::array::push_back(world_traits, ice::move(trait_context));
                 }
             }
         }
@@ -122,7 +125,7 @@ namespace ice
                 _allocator,
                 world_template.name,
                 world_template.entity_storage,
-                ice::move(world_trait_context),
+                ice::move(world_context),
                 ice::move(world_traits)
             ),
         };

@@ -9,20 +9,16 @@ namespace ice
 
     struct TraitContext
     {
-        explicit TraitContext(ice::Trait* trait = nullptr, ice::detail::TraitContextImpl* impl = nullptr) noexcept;
-        ~TraitContext() noexcept = default;
+        virtual ~TraitContext() noexcept = default;
 
-        auto checkpoint(ice::StringID id) noexcept -> ice::TaskCheckpointGate;
-        bool register_checkpoint(ice::StringID id, ice::TaskCheckpoint& checkpoint) noexcept;
+        virtual auto checkpoint(ice::StringID id) noexcept -> ice::TaskCheckpointGate = 0;
+        virtual bool register_checkpoint(ice::StringID id, ice::TaskCheckpoint& checkpoint) noexcept = 0;
+        virtual void unregister_checkpoint(ice::StringID id, ice::TaskCheckpoint& checkpoint) noexcept = 0;
 
-        auto bind(ice::TraitTaskBinding const& binding) noexcept -> ice::Result;
+        virtual auto bind(ice::TraitTaskBinding const& binding) noexcept -> ice::Result = 0;
 
         template<auto MemberPtr> requires (ice::is_method_member_v<decltype(MemberPtr)>)
         auto bind(ice::ShardID event = ice::Shard_Invalid.id) noexcept -> ice::Result;
-
-    private:
-        ice::Trait* _trait;
-        ice::detail::TraitContextImpl* _implementation = nullptr;
     };
 
     using TraitTaskFn = auto (ice::Trait::*)(ice::Shard) noexcept -> ice::Task<>;
@@ -38,16 +34,6 @@ namespace ice
 
     namespace detail
     {
-
-        struct TraitContextImpl
-        {
-            virtual ~TraitContextImpl() noexcept = default;
-
-            virtual auto checkpoint(ice::StringID id) noexcept -> ice::TaskCheckpointGate = 0;
-            virtual bool register_checkpoint(ice::StringID id, ice::TaskCheckpoint& checkpoint) noexcept = 0;
-
-            virtual auto bind(ice::Trait* trait, ice::TraitTaskBinding const& binding) noexcept -> ice::Result = 0;
-        };
 
         template<auto MethodPtr>
         static auto trait_method_task_wrapper(ice::Trait* self, ice::Shard sh, void*) noexcept -> ice::Task<>
@@ -108,12 +94,14 @@ namespace ice
     template<auto MemberPtr> requires (ice::is_method_member_v<decltype(MemberPtr)>)
     auto TraitContext::bind(ice::ShardID event) noexcept -> ice::Result
     {
-        return this->bind(TraitTaskBinding{
-            .trigger_event = event,
-            .procedure = detail::trait_method_task_wrapper<MemberPtr>,
-            .task_type = ice::TraitTaskType::Frame,
-            .procedure_userdata = nullptr,
-        });
+        return this->bind(
+            TraitTaskBinding{
+                .trigger_event = event,
+                .procedure = detail::trait_method_task_wrapper<MemberPtr>,
+                .task_type = ice::TraitTaskType::Frame,
+                .procedure_userdata = nullptr,
+            }
+        );
     }
 
 } // namespace ice
