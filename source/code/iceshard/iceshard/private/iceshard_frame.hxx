@@ -18,11 +18,13 @@ namespace ice
         ) noexcept;
         ~IceshardEngineFrame() noexcept override;
 
-        auto allocator() const noexcept -> ice::Allocator& override { return _data._allocator; }
-        auto index() const noexcept -> ice::u32 override { return _data._index; }
+        auto allocator() const noexcept -> ice::Allocator& override { return _frame_data._allocator; }
+        auto index() const noexcept -> ice::u32 override { return _frame_data._index; }
 
-        auto data() noexcept -> ice::EngineFrameData& override { return _data; }
-        auto data() const noexcept -> ice::EngineFrameData const& override { return _data; }
+        auto data() noexcept -> ice::DataStorage& override { return _data; }
+        auto data() const noexcept -> ice::DataStorage const& override { return _data; }
+        auto frame_data() noexcept -> ice::EngineFrameData& { return _frame_data; }
+        auto frame_data() const noexcept -> ice::EngineFrameData const& { return _frame_data; }
 
         auto shards() noexcept -> ice::ShardContainer& override { return _shards; }
         auto shards() const noexcept -> ice::ShardContainer const& override { return _shards; }
@@ -42,7 +44,8 @@ namespace ice
         auto extract_tasks() noexcept -> ice::Array<ice::Task<>> override;
 
     private:
-        ice::IceshardFrameData& _data;
+        ice::IceshardFrameData& _frame_data;
+        ice::IceshardDataStorage _data;
         ice::ShardContainer _shards;
         ice::ecs::EntityOperations _operations;
 

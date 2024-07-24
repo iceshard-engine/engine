@@ -46,7 +46,6 @@ namespace ice
         , _frame_factory{ create_info.frame_factory }
         , _frame_factory_userdata{ create_info.frame_factory_userdata }
         , _frame_count{ create_info.concurrent_frame_count }
-        , _frame_storage{ { _allocator }, { _allocator } }
         , _runtime_storage{ _allocator }
         , _frame_data_freelist{ nullptr }
         , _next_frame_index{ 0 }
@@ -63,7 +62,6 @@ namespace ice
             ice::IceshardFrameData* new_data = _allocator.create<ice::IceshardFrameData>(
                 _allocator,
                 _engine,
-                _frame_storage[frame_idx],
                 _runtime_storage,
                 _runtime_storage
             );
@@ -111,7 +109,6 @@ namespace ice
             {
                 frame_data->_index = _next_frame_index.fetch_add(1, std::memory_order_relaxed);
                 frame_data->_internal_next = frame_data; // Assing self (easy pointer access later and overflow check)
-                ice::hashmap::clear(frame_data->_storage_frame._values);
                 result = _frame_factory(frame_data->_fwd_allocator, *frame_data, _frame_factory_userdata);
             }
         }
@@ -155,7 +152,9 @@ namespace ice
         }
 
         ice::IceshardFrameData* expected_head = _frame_data_freelist.load(std::memory_order_relaxed);
-        ice::IceshardFrameData* const free_data = static_cast<ice::IceshardFrameData&>(frame->data())._internal_next;
+        ice::IceshardFrameData* const free_data = static_cast<ice::IceshardFrameData&>(
+            static_cast<ice::IceshardEngineFrame*>(frame.get())->frame_data()
+        )._internal_next;
 
         bool exchange_success;
         do

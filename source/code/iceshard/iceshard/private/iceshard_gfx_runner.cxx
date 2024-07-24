@@ -110,7 +110,6 @@ namespace ice::gfx
 
     IceshardGfxRunner::~IceshardGfxRunner() noexcept
     {
-
         _context->device().destroy_fence(_present_fence);
     }
 

@@ -9,10 +9,11 @@ namespace ice
 {
 
     IceshardEngineFrame::IceshardEngineFrame(ice::IceshardFrameData& frame_data) noexcept
-        : _data{ frame_data }
-        , _shards{ _data._fwd_allocator }
-        , _operations{ frame_data._fwd_allocator, 16 }
-        , _task_groups{ _data._fwd_allocator }
+        : _frame_data{ frame_data }
+        , _data{ _frame_data._fwd_allocator }
+        , _shards{ _frame_data._fwd_allocator }
+        , _operations{ _frame_data._fwd_allocator, 16 }
+        , _task_groups{ _frame_data._fwd_allocator }
     {
         ice::array::reserve(_task_groups, 32);
     }
@@ -22,16 +23,17 @@ namespace ice
         for (TaskGroup& group : _task_groups)
         {
             ICE_ASSERT_CORE(group.barrier->is_set() == true);
-            _data._fwd_allocator.deallocate(group.barrier);
+            _frame_data._fwd_allocator.deallocate(group.barrier);
         }
         ice::array::clear(_task_groups);
+        ice::hashmap::clear(_data._values);
 
-        _data._fwd_allocator.reset();
+        _frame_data._fwd_allocator.reset();
     }
 
     auto IceshardEngineFrame::entity_index() noexcept -> ice::ecs::EntityIndex&
     {
-        return _data._engine.entities();
+        return _frame_data._engine.entities();
     }
 
     auto IceshardEngineFrame::create_tasks(ice::u32 count, ice::ShardID id) noexcept -> ice::Span<ice::Task<>>
@@ -40,8 +42,8 @@ namespace ice
 
         ice::array::push_back(_task_groups,
             TaskGroup{
-                .tasks = ice::Array<ice::Task<>>{ _data._fwd_allocator },
-                .barrier = _data._fwd_allocator.create<ice::ManualResetBarrier>()
+                .tasks = ice::Array<ice::Task<>>{ _frame_data._fwd_allocator },
+                .barrier = _frame_data._fwd_allocator.create<ice::ManualResetBarrier>()
             }
         );
         ice::Array<ice::Task<>>& result = ice::array::back(_task_groups).tasks;
@@ -59,7 +61,7 @@ namespace ice
 
         if (task_count > 0)
         {
-            ice::Array<ice::Task<>> final_task_list{ _data._fwd_allocator };
+            ice::Array<ice::Task<>> final_task_list{ _frame_data._fwd_allocator };
             ice::array::reserve(final_task_list, task_count);
 
             for (TaskGroup& group : _task_groups)

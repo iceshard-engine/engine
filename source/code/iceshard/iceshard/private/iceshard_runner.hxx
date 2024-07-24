@@ -12,6 +12,8 @@
 #include <ice/task_utils.hxx>
 #include <ice/container/hashmap.hxx>
 
+#include "iceshard_data_storage.hxx"
+
 namespace ice
 {
 
@@ -23,40 +25,6 @@ namespace ice
 
     class IceshardEngine;
 
-    struct IceshardDataStorage : ice::DataStorage
-    {
-        ice::HashMap<void*> _values;
-
-        IceshardDataStorage(ice::Allocator& alloc) noexcept
-            : _values{ alloc }
-        {
-        }
-
-        bool set(ice::StringID name, void* value) noexcept override
-        {
-            ice::u64 const hash = ice::hash(name);
-            bool const missing = ice::hashmap::has(_values, hash) == false;
-            ICE_ASSERT_CORE(missing);
-            //if (missing)
-            {
-                ice::hashmap::set(_values, ice::hash(name), value);
-            }
-            return missing;
-        }
-
-        bool get(ice::StringID name, void*& value) noexcept override
-        {
-            value = ice::hashmap::get(_values, ice::hash(name), nullptr);
-            return value != nullptr;
-        }
-
-        bool get(ice::StringID name, void const*& value) const noexcept override
-        {
-            value = ice::hashmap::get(_values, ice::hash(name), nullptr);
-            return value != nullptr;
-        }
-    };
-
     struct IceshardFrameData : ice::EngineFrameData
     {
         ice::ProxyAllocator _allocator;
@@ -64,7 +32,6 @@ namespace ice
 
         ice::Engine& _engine;
 
-        ice::IceshardDataStorage& _storage_frame;
         ice::IceshardDataStorage& _storage_runtime;
         ice::IceshardDataStorage const& _storage_persistent;
 
@@ -76,14 +43,12 @@ namespace ice
         IceshardFrameData(
             ice::Allocator& alloc,
             ice::Engine& engine,
-            ice::IceshardDataStorage& frame_storage,
             ice::IceshardDataStorage& runtime_storage,
             ice::IceshardDataStorage& persistent_storage
         ) noexcept
             : _allocator{ alloc, "frame" }
             , _fwd_allocator{ _allocator, "frame-forward", ForwardAllocatorParams{.bucket_size = 16_KiB, .min_bucket_count = 2} }
             , _engine{ engine }
-            , _storage_frame{ frame_storage }
             , _storage_runtime{ runtime_storage }
             , _storage_persistent{ persistent_storage }
             , _index{ }
@@ -92,19 +57,9 @@ namespace ice
 
         virtual ~IceshardFrameData() noexcept override = default;
 
-        auto frame() noexcept -> ice::DataStorage& override
-        {
-            return _storage_frame;
-        }
-
         auto runtime() noexcept -> ice::DataStorage& override
         {
             return _storage_runtime;
-        }
-
-        auto frame() const noexcept -> ice::DataStorage const& override
-        {
-            return _storage_frame;
         }
 
         auto runtime() const noexcept -> ice::DataStorage const& override
@@ -217,7 +172,6 @@ namespace ice
         ice::EngineFrameFactoryUserdata const _frame_factory_userdata;
         ice::u32 const _frame_count;
 
-        ice::IceshardDataStorage _frame_storage[2];
         ice::IceshardDataStorage _runtime_storage;
 
         std::atomic<ice::IceshardFrameData*> _frame_data_freelist;
