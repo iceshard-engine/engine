@@ -431,7 +431,7 @@ namespace ice::gfx
                 for (ice::StringID_Arg stage : ice::array::slice(_stages._stage_names, stage_idx, _stages._counts[pass_idx]))
                 {
                     // TODO: Separate update and draw?
-                    _stages.apply_stages(stage, &GfxStage::update, _context);
+                    _stages.apply_stages(stage, &GfxStage::update, frame, _context);
                     _stages.apply_stages(stage, &GfxStage::draw, frame, cmds, api);
                 }
 
@@ -446,7 +446,7 @@ namespace ice::gfx
                     for (ice::StringID_Arg stage : ice::array::slice(_stages._stage_names, stage_idx, _stages._counts[pass_idx]))
                     {
                         // TODO: Separate update and draw?
-                        _stages.apply_stages(stage, &GfxStage::update, _context);
+                        _stages.apply_stages(stage, &GfxStage::update, frame, _context);
                         _stages.apply_stages(stage, &GfxStage::draw, frame, cmds, api);
                     }
                 }

@@ -637,13 +637,31 @@ namespace ice::render::vk
             shader_stage.pName = ice::string::begin(info.shaders[stage_idx].entry_point);
         }
 
-        VkDynamicState dynamic_states[2]; // max: VK_DYNAMIC_STATE_RANGE_SIZE
-        dynamic_states[0] = VkDynamicState::VK_DYNAMIC_STATE_VIEWPORT;
-        dynamic_states[1] = VkDynamicState::VK_DYNAMIC_STATE_SCISSOR;
+        struct StateEntry
+        {
+            DynamicState state;
+            VkDynamicState vk_state;
+        };
+
+        static constexpr StateEntry Constant_DynamicStateMap[]{
+            { DynamicState::Viewport, VkDynamicState::VK_DYNAMIC_STATE_VIEWPORT },
+            { DynamicState::Scissor, VkDynamicState::VK_DYNAMIC_STATE_SCISSOR },
+        };
+
+        VkDynamicState dynamic_states[ice::count(Constant_DynamicStateMap)];
+        ice::u32 count_dynamic_states = 0;
+        for (ice::u32 idx = 0; idx < ice::count(Constant_DynamicStateMap); ++idx)
+        {
+            if (ice::has_all(info.dynamic_states, Constant_DynamicStateMap[idx].state))
+            {
+                dynamic_states[count_dynamic_states] = Constant_DynamicStateMap[idx].vk_state;
+                count_dynamic_states += 1;
+            }
+        }
 
         VkPipelineDynamicStateCreateInfo dynamic_state{ VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO };
         dynamic_state.pDynamicStates = dynamic_states;
-        dynamic_state.dynamicStateCount = ice::count(dynamic_states);
+        dynamic_state.dynamicStateCount = count_dynamic_states;
 
         ice::Array<VkVertexInputBindingDescription> vertex_input_bindings{ _allocator };
         ice::Array<VkVertexInputAttributeDescription> vertex_input_attributes{ _allocator };

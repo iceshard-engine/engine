@@ -111,9 +111,13 @@ namespace ice
             {
                 void* resumer_ptr = awaitable->result.ptr;
                 ICE_ASSERT_CORE(resumer_ptr != nullptr && result_value == nullptr);
+
                 ice::TaskAwaitableCustomResumer const* custom_resumer = reinterpret_cast<ice::TaskAwaitableCustomResumer*>(resumer_ptr);
                 if (custom_resumer->fn_resumer(custom_resumer->ud_resumer, *awaitable) == false)
                 {
+                    // Reset next pointer before puttng back onto the queue
+                    awaitable->next = nullptr;
+
                     // Push back at the end of the queue
                     ice::linked_queue::push(_awaitables, awaitable);
                     continue;

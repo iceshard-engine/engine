@@ -33,7 +33,7 @@ int main(int argc, char const** argv)
             result = ice_setup(host_alloc, *config, *state);
         }
 
-        ICE_LOG_IF(result == false, ice::LogSeverity::Error, ice::LogTag::Core, "{}\n", result.error().description());
+        ICE_LOG_IF(result == false, ice::LogSeverity::Critical, ice::LogTag::Core, "{}\n", result.error().description());
         ICE_ASSERT_CORE(result == true);
 
         // Before updating we need to resume first.

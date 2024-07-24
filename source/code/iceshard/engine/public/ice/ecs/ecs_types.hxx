@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/base.hxx>
+#include <ice/engine_types.hxx>
 
 namespace ice::ecs
 {

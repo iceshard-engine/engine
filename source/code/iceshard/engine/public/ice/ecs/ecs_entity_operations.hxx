@@ -109,7 +109,7 @@ namespace ice::ecs
         ice::ecs::EntityOperations& entity_operations,
         ice::Span<ice::ecs::Entity const> entities,
         ice::ecs::Archetype archetype,
-        ice::Span<Components>&... components
+        ice::Span<Components const>... components
     ) noexcept;
 
     void queue_remove_entity(
@@ -169,7 +169,7 @@ namespace ice::ecs
         ice::ecs::EntityOperations& entity_operations,
         ice::Span<ice::ecs::Entity const> entities,
         ice::ecs::Archetype archetype,
-        ice::Span<Components>& ...component_spans
+        ice::Span<Components const> ...component_spans
     ) noexcept
     {
         static ice::ecs::ArchetypeDefinition<Components...> constexpr HelperArchetype;
@@ -261,7 +261,7 @@ namespace ice::ecs
 
             // Update the span object...
             SpanType* span_ptr = reinterpret_cast<SpanType*>(span_raw_ptr);
-            *span_ptr = SpanType{ reinterpret_cast<ComponentType*>(data_ptr), entity_count };
+            ice::memcpy(data_ptr, span_ptr->_data, ice::span::size_bytes(*span_ptr));
 
             // Move to the next data location...
             data_ptr = ice::ptr_add(data_ptr, ice::span::size_bytes(*span_ptr));
@@ -273,6 +273,7 @@ namespace ice::ecs
         {
             void* operation_data_copy = operation_data;
 
+            [[maybe_unused]]
             bool temp[]{
                 // [dpenkala: 04/07/2022] We are casting here a nullptr to a type,
                 //  so we can use the type in the first helper lambda.

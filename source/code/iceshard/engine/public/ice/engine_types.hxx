@@ -2,6 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#include <ice/stringid.hxx>
 #include <ice/task_types.hxx>
 
 namespace ice
@@ -37,5 +38,33 @@ namespace ice
     struct WorldAssembly;
     struct WorldStateParams;
     struct WorldUpdater;
+
+    namespace concepts
+    {
+
+        template<typename T>
+        concept NamedDataType = requires(T t) {
+            { ice::clear_type_t<T>::Identifier } -> std::convertible_to<ice::StringID const>;
+        } && std::is_trivially_destructible_v<T>;
+
+    } // namespace concepts
+
+    namespace detail
+    {
+
+        template<typename R, typename T = R>
+        auto map_task_arg(T value) noexcept -> R
+        {
+            return static_cast<R>(value);
+        }
+
+        template<typename Target>
+        struct ArgMapper
+        {
+            template<typename Source>
+            static auto select(Source&& source) noexcept -> Target { return ice::detail::map_task_arg<Target, decltype(source)>(source); }
+        };
+
+    } // namespace details
 
 } // namespace ice
