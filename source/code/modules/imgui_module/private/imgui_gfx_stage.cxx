@@ -95,7 +95,7 @@ namespace ice::devui
         ice::Result r_frag = co_await detail::load_imgui_shader(_assets, "shaders/debug/imgui-frag", _shaders[1]);
         ICE_ASSERT_CORE(r_vert && r_frag);
 
-        co_await stages.scheduler;
+        co_await scheduler;
 
         SamplerInfo sampler_info
         {
