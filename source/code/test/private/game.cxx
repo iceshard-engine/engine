@@ -30,6 +30,7 @@
 
 #include <ice/mem_allocator_snake.hxx>
 #include <ice/task_debug_allocator.hxx>
+#include <ice/task_utils.hxx>
 #include <ice/resource_tracker.hxx>
 #include <ice/module_register.hxx>
 #include <ice/asset_types.hxx>
@@ -78,10 +79,12 @@ struct WorldActivationTrait : ice::Trait, ice::DevUIWidget
     bool is_active = false;
     bool do_active = false;
 
-    WorldActivationTrait() noexcept
-        : ice::DevUIWidget{ { .category = "Test", .name = "Test" } }
+    WorldActivationTrait(ice::TraitContext& context) noexcept
+        : ice::Trait{ context }
+        , ice::DevUIWidget{ { .category = "Test", .name = "Test" } }
     {
         ice::devui_register_widget(this);
+        _context.bind<&WorldActivationTrait::logic>();
     }
 
     void build_content() noexcept override
@@ -105,11 +108,6 @@ struct WorldActivationTrait : ice::Trait, ice::DevUIWidget
         }
         co_return;
     }
-
-    void gather_tasks(ice::TraitTaskRegistry& task_launcher) noexcept
-    {
-        task_launcher.bind<&WorldActivationTrait::logic>();
-    }
 };
 
 struct C1
@@ -126,11 +124,15 @@ struct C2
 
 struct TestTrait : public ice::Trait
 {
-    TestTrait(ice::Allocator& alloc) noexcept
-        : _alloc{ alloc }
+    TestTrait(ice::Allocator& alloc, ice::TraitContext& context) noexcept
+        : ice::Trait{ context }
+        , _alloc{ alloc }
         , _query{ _alloc }
         , _querye{ _alloc }
-    { }
+    {
+        _context.bind<&TestTrait::logic>();
+        _context.bind<&TestTrait::gfx>(ice::gfx::ShardID_GfxFrameUpdate);
+    }
 
     ice::Allocator& _alloc;
     ice::Timer timer;
@@ -174,12 +176,6 @@ struct TestTrait : public ice::Trait
         co_return;
     }
 
-    void gather_tasks(ice::TraitTaskRegistry& task_launcher) noexcept
-    {
-        task_launcher.bind<&TestTrait::logic>();
-        task_launcher.bind<&TestTrait::gfx>(ice::gfx::ShardID_GfxFrameUpdate);
-    }
-
     auto logic(ice::EngineFrameUpdate const& update) noexcept -> ice::Task<>
     {
         ice::Array<ice::Task<>> tasks{ update.frame.allocator() };
@@ -213,7 +209,7 @@ struct TestTrait : public ice::Trait
         }
 
         ICE_LOG(LogSeverity::Debug, LogTag::Game, "{}", std::hash<std::thread::id>{}(std::this_thread::get_id()));
-        co_await ice::await_all_on_scheduled(tasks, update.thread.main, update.thread.tasks);
+        co_await ice::await_scheduled_on(tasks, update.thread.tasks, update.thread.main);
         ICE_LOG(LogSeverity::Debug, LogTag::Game, "{}", std::hash<std::thread::id>{}(std::this_thread::get_id()));
         co_return;
     }
@@ -227,13 +223,13 @@ struct TestTrait : public ice::Trait
 
 namespace icetm = ice::detail::world_traits;
 
-auto act_factory(ice::Allocator& alloc, void*) noexcept -> UniquePtr<ice::Trait>
+auto act_factory(ice::Allocator& alloc, ice::TraitContext& context, void*) noexcept -> UniquePtr<ice::Trait>
 {
-    return ice::make_unique<WorldActivationTrait>(alloc);
+    return ice::make_unique<WorldActivationTrait>(alloc, context);
 }
-auto test_factory(ice::Allocator& alloc, void*) noexcept -> UniquePtr<ice::Trait>
+auto test_factory(ice::Allocator& alloc, ice::TraitContext& context, void*) noexcept -> UniquePtr<ice::Trait>
 {
-    return ice::make_unique<TestTrait>(alloc, alloc);
+    return ice::make_unique<TestTrait>(alloc, alloc, context);
 }
 
 bool test_reg_traits(ice::TraitArchive& arch) noexcept
