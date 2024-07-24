@@ -18,9 +18,10 @@ namespace ice
             ice::ShardID shardid
         ) noexcept -> ice::Span<ice::Task<>> override;
 
+        auto await_tasks_scheduled_on(ice::TaskScheduler& scheduler, ice::TaskScheduler& resumer) noexcept -> ice::Task<> override;
+
         //! \brief Execute all tasks that have been created.
         auto execute_tasks() noexcept -> ice::ucount override;
-        void execute_tasks_detached(ice::TaskScheduler& scheduler) noexcept override;
 
         //! \brief Returns the number of tasks that are currently running.
         auto running_tasks() const noexcept -> ice::ucount override;

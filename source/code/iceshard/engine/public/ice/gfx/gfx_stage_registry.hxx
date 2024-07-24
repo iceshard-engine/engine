@@ -19,6 +19,10 @@ namespace ice::gfx
             ice::gfx::GfxStage* stage
         ) noexcept = 0;
 
+        virtual void remove_stage(
+            ice::StringID_Arg key
+        ) noexcept = 0;
+
         virtual bool query_stages(
             ice::Span<ice::StringID> stage_keys,
             ice::Array<ice::gfx::GfxStage*>& out_stages

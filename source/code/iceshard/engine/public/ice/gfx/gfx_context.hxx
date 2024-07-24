@@ -28,6 +28,9 @@ namespace ice::gfx
         //! \see Accesses values from `ice::platform::RenderSurface`
         virtual void recreate_swapchain() noexcept = 0;
 
+        virtual auto data() noexcept -> ice::DataStorage& = 0;
+        virtual auto data() const noexcept -> ice::DataStorage const& = 0;
+
     public:
         //! \brief Advances the GPU state the next swapchain image.
         //! \warning This should not be called from a game, the engine is responsible for handling this.

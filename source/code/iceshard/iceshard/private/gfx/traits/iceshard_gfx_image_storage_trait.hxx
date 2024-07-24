@@ -23,10 +23,8 @@ namespace ice::gfx
         , public ice::AssetRequestResolver
     {
     public: // Implementation of: ice::Trait
-        Trait_GfxImageStorage(ice::Allocator& alloc) noexcept;
+        Trait_GfxImageStorage(ice::Allocator& alloc, ice::TraitContext& ctx) noexcept;
         ~Trait_GfxImageStorage() noexcept override = default;
-
-        void gather_tasks(ice::TraitTaskRegistry& task_registry) noexcept override;
 
     public: // Implementation of: ice::AssetRequestResolver
         auto on_asset_released(ice::Asset const& asset) noexcept -> ice::Task<> override;

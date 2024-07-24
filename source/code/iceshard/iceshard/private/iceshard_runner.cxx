@@ -46,7 +46,6 @@ namespace ice
         , _frame_factory{ create_info.frame_factory }
         , _frame_factory_userdata{ create_info.frame_factory_userdata }
         , _frame_count{ create_info.concurrent_frame_count }
-        , _frame_storage{ { _allocator }, { _allocator } }
         , _runtime_storage{ _allocator }
         , _frame_data_freelist{ nullptr }
         , _next_frame_index{ 0 }
@@ -62,7 +61,7 @@ namespace ice
         {
             ice::IceshardFrameData* new_data = _allocator.create<ice::IceshardFrameData>(
                 _allocator,
-                _frame_storage[frame_idx],
+                _engine,
                 _runtime_storage,
                 _runtime_storage
             );
@@ -110,7 +109,6 @@ namespace ice
             {
                 frame_data->_index = _next_frame_index.fetch_add(1, std::memory_order_relaxed);
                 frame_data->_internal_next = frame_data; // Assing self (easy pointer access later and overflow check)
-                ice::hashmap::clear(frame_data->_storage_frame._values);
                 result = _frame_factory(frame_data->_fwd_allocator, *frame_data, _frame_factory_userdata);
             }
         }
@@ -141,9 +139,7 @@ namespace ice
             world_updater.update(current_tasks, previous_frame.shards());
         }
 
-        // Execute all frame tasks
-        current_tasks.execute_tasks();
-        co_return;
+        co_await current_tasks.await_tasks_scheduled_on(_schedulers.main, _schedulers.main);
     }
 
     void IceshardEngineRunner::release_frame(ice::UniquePtr<ice::EngineFrame> frame) noexcept
@@ -156,7 +152,9 @@ namespace ice
         }
 
         ice::IceshardFrameData* expected_head = _frame_data_freelist.load(std::memory_order_relaxed);
-        ice::IceshardFrameData* const free_data = static_cast<ice::IceshardFrameData&>(frame->data())._internal_next;
+        ice::IceshardFrameData* const free_data = static_cast<ice::IceshardFrameData&>(
+            static_cast<ice::IceshardEngineFrame*>(frame.get())->frame_data()
+        )._internal_next;
 
         bool exchange_success;
         do
@@ -164,6 +162,17 @@ namespace ice
             free_data->_internal_next = expected_head;
             exchange_success = _frame_data_freelist.compare_exchange_weak(expected_head, free_data, std::memory_order_relaxed);
         } while (exchange_success == false);
+
+        // Delete the frame explicitly
+        // frame.reset();
+    }
+
+    auto IceshardEngineRunner::pre_update(
+        ice::ShardContainer& out_shards
+    ) noexcept -> ice::Task<>
+    {
+        _engine.worlds_updater().pre_update(out_shards);
+        co_return;
     }
 
     void IceshardEngineRunner::destroy() noexcept
@@ -177,27 +186,31 @@ namespace ice
         ice::ShardContainer& out_shards
     ) noexcept
     {
-        ice::WorldStateParams const params{
-            .clock = _clock,
-            .assets = _engine.assets(),
-            .engine = _engine,
-            .thread = _schedulers
-        };
-
         ice::StringID world_name;
         if (ice::shard_inspect(trigger_shard, world_name.value) == false)
         {
             return false;
         }
 
+        ice::World* world = _engine.worlds().find_world(world_name);
+        ICE_ASSERT_CORE(world != nullptr);
+
+        ice::WorldStateParams const params{
+            .clock = _clock,
+            .assets = _engine.assets(),
+            .engine = _engine,
+            .thread = _schedulers,
+            .world = *world
+        };
+
         if (trigger.to == State_WorldRuntimeActive)
         {
-            ice::wait_for(_engine.worlds().find_world(world_name)->activate(params));
+            ice::wait_for(world->activate(params));
             ice::shards::push_back(out_shards, trigger.results | world_name.value);
         }
         else if (trigger.to == State_WorldRuntimeInactive)
         {
-            ice::wait_for(_engine.worlds().find_world(world_name)->deactivate(params));
+            ice::wait_for(world->deactivate(params));
         }
         return true;
     }

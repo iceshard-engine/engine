@@ -141,6 +141,17 @@ namespace ice
                 continue;
             }
 
+            // Don't generate structs for known uniform variables.
+            bool found = false;
+            for (SyntaxNode<syntax::ContextVariable> variable : shader._uniforms)
+            {
+                found |= variable.child<syntax::Type>().data().name.value == strct.data().name.value;
+            }
+            if (found)
+            {
+                continue;
+            }
+
             ice::string::push_format(result, "struct {} {{\n", strct.data().name.value);
             SyntaxNode<syntax::StructMember> member = strct.child<syntax::StructMember>();
             while(member)
@@ -207,9 +218,28 @@ namespace ice
             bool const valid_binding = detail::arc_annotation(variable, "binding", binding);
             ICE_ASSERT_CORE(valid_set && valid_binding);
 
-            arctic::String const type = variable.child<syntax::Type>().data().name.value;
-            arctic::String const name = variable.data().name.value;
-            ice::string::push_format(result, "layout(set={}, binding={}) uniform {} {};\n", set, binding, type, name);
+            SyntaxNode<syntax::Struct> strct = shader.find_struct(variable.child<syntax::Type>());
+            if (member = strct.child<syntax::StructMember>(); member)
+            {
+                ice::string::push_format(result, "layout (std140, set={}, binding={}) uniform {} {{\n",
+                    set, binding, variable.child<syntax::Type>().data().name.value
+                );
+
+                while(member)
+                {
+                    syntax::Type const& type = member.child<syntax::Type>().data();
+                    ice::string::push_format(result, "    {} {};\n", type.name.value, member.data().name.value);
+                    member = member.sibling<syntax::StructMember>();
+                }
+
+                ice::string::push_format(result, "}} {};\n\n", variable.data().name.value);
+            }
+            else
+            {
+                arctic::String const type = variable.child<syntax::Type>().data().name.value;
+                arctic::String const name = variable.data().name.value;
+                ice::string::push_format(result, "layout(set={}, binding={}) uniform {} {};\n", set, binding, type, name);
+            }
         }
 
         if (shader._pushcontants)

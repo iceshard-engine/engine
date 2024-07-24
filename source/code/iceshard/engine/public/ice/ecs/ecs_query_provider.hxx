@@ -3,27 +3,25 @@
 
 #pragma once
 #include <ice/container/array.hxx>
-#include <ice/ecs/ecs_query.hxx>
+#include <ice/ecs/ecs_query_definition.hxx>
 
 namespace ice::ecs
 {
 
-    // template<ice::ecs::QueryType First, ice::ecs::QueryType... Args>
-    // struct QueryWork;
-
-    // template<ice::ecs::QueryType First, ice::ecs::QueryType... Args>
-    // struct QueryWork<First, Args...>;
-
-    class QueryProvider
+    struct QueryAccessTracker
     {
-    public:
+        std::atomic<ice::u32> access_stage_executed;
+        std::atomic<ice::u32> access_stage_next;
+    };
+
+    struct QueryProvider
+    {
         virtual ~QueryProvider() noexcept = default;
 
-        // template<ice::ecs::QueryType... Args>
-        // constexpr auto create_query_work(
-        //     ice::Allocator& alloc,
-        //     void (*function_ptr)(Args...)
-        // ) const noexcept -> ice::ecs::QueryWork<Args...>;
+        template<ice::ecs::QueryType... Types>
+        void initialize_query(
+            ice::ecs::Query<ice::ecs::QueryDefinition<Types...>>& out_query
+        ) const noexcept;
 
         template<ice::ecs::QueryType... Types>
         auto create_query(
@@ -34,17 +32,39 @@ namespace ice::ecs
     protected:
         virtual void query_internal(
             ice::Span<ice::ecs::detail::QueryTypeInfo const> query_info,
+            ice::Span<ice::ecs::QueryAccessTracker*> out_access_trackers,
             ice::Array<ice::ecs::ArchetypeInstanceInfo const*>& out_instance_infos,
             ice::Array<ice::ecs::DataBlock const*>& out_data_blocks
         ) const noexcept = 0;
     };
 
+    template<ice::ecs::QueryType... Types>
+    void QueryProvider::initialize_query(
+        ice::ecs::Query<ice::ecs::QueryDefinition<Types...>>& out_query
+    ) const noexcept
+    {
+        using Definition = ice::ecs::QueryDefinition<Types...>;
+        static constexpr Definition definition{ };
 
-    // template<ice::ecs::QueryType... Args>
-    // constexpr auto QueryProvider::create_query_work(ice::Allocator& alloc, void (*function_ptr)(Args...)) const noexcept -> ice::ecs::QueryWork<Args...>
-    // {
-    //     return { .query = create_query(alloc, ice::ecs::QueryDefinition<Args...>{}), .work_function = function_ptr };
-    // }
+        // Run the internal query to access all data that is not available here.
+        this->query_internal(
+            ice::span::from_std_const(definition.requirements),
+            out_query.access_trackers,
+            out_query.archetype_instances,
+            out_query.archetype_data_blocks
+        );
+
+        ice::array::resize(out_query.archetype_argument_idx_map, ice::count(out_query.archetype_instances) * definition.component_count);
+
+        // Copy values to the array
+        ice::u32* it = ice::array::begin(out_query.archetype_argument_idx_map);
+        for (ice::ecs::ArchetypeInstanceInfo const* instance : out_query.archetype_instances)
+        {
+            auto const archetype_argument_idx_map = ice::ecs::detail::argument_idx_map<Types...>(*instance);
+            ice::memcpy(it, archetype_argument_idx_map.data(), archetype_argument_idx_map.size() * sizeof(ice::u32));
+            it += definition.component_count;
+        }
+    }
 
     template<ice::ecs::QueryType... Types>
     auto QueryProvider::create_query(
@@ -55,33 +75,9 @@ namespace ice::ecs
         using Definition = ice::ecs::QueryDefinition<Types...>;
         using Query = typename Definition::Query;
 
-        static constexpr Definition definition{ };
-
-        ice::Array<ice::ecs::ArchetypeInstanceInfo const*> instance_infos{ alloc };
-        ice::Array<ice::ecs::DataBlock const*> data_blocks{ alloc };
-
-        // Run the internal query to access all data that is not available here.
-        this->query_internal(
-            ice::span::from_std_const(definition.requirements),
-            instance_infos,
-            data_blocks
-        );
-
-        ice::Array<ice::StaticArray<ice::u32, definition.component_count>> argument_idx_map{ alloc };
-
-        ice::u32 const archetype_count = ice::count(instance_infos);
-        ice::array::reserve(argument_idx_map, archetype_count);
-
-        for (ice::ecs::ArchetypeInstanceInfo const* instance : instance_infos)
-        {
-            ice::array::push_back(argument_idx_map, ice::ecs::detail::argument_idx_map<Types...>(*instance));
-        }
-
-        return Query{
-            .archetype_instances = ice::move(instance_infos),
-            .archetype_data_blocks = ice::move(data_blocks),
-            .archetype_argument_idx_map = ice::move(argument_idx_map),
-        };
+        Query result{ alloc };
+        this->initialize_query(result);
+        return result;
     }
 
 

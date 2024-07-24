@@ -28,23 +28,21 @@
 namespace ice::devui
 {
 
-    ImGuiTrait::ImGuiTrait(ice::Allocator& alloc, ImGuiSystem& system) noexcept
-        : _allocator{ alloc }
+    ImGuiTrait::ImGuiTrait(ice::Allocator& alloc, ice::TraitContext& ctx, ImGuiSystem& system) noexcept
+        : ice::Trait{ ctx }
+        , _allocator{ alloc }
         , _imgui_gfx_stage{ }
         , _resized{ false }
     {
+        _context.bind<&ImGuiTrait::update>();
+        _context.bind<&ImGuiTrait::gfx_start>(ice::gfx::ShardID_GfxStartup);
+        _context.bind<&ImGuiTrait::gfx_shutdown>(ice::gfx::ShardID_GfxShutdown);
+        _context.bind<&ImGuiTrait::gfx_update>(ice::gfx::ShardID_GfxFrameUpdate);
+        _context.bind<&ImGuiTrait::on_window_resized>(ice::platform::ShardID_WindowResized);
     }
 
     ImGuiTrait::~ImGuiTrait() noexcept
     {
-    }
-
-    void ImGuiTrait::gather_tasks(ice::TraitTaskRegistry& task_registry) noexcept
-    {
-        task_registry.bind<&ImGuiTrait::update>();
-        task_registry.bind<&ImGuiTrait::gfx_start>(ice::gfx::ShardID_GfxStartup);
-        task_registry.bind<&ImGuiTrait::gfx_update>(ice::gfx::ShardID_GfxFrameUpdate);
-        task_registry.bind<&ImGuiTrait::on_window_resized>(ice::platform::ShardID_WindowResized);
     }
 
     auto ImGuiTrait::activate(ice::WorldStateParams const& update) noexcept -> ice::Task<>
@@ -168,6 +166,12 @@ namespace ice::devui
 
         ice::vec2u const size = params.context.swapchain().extent();
         co_await on_window_resized(ice::vec2i{ size });
+        co_return;
+    }
+
+    auto ImGuiTrait::gfx_shutdown(ice::gfx::GfxStateChange const& params) noexcept -> ice::Task<>
+    {
+        params.stages.remove_stage("iceshard.devui"_sid);
         co_return;
     }
 

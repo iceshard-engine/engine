@@ -4,58 +4,12 @@
 #pragma once
 #include <ice/ecs/ecs_entity.hxx>
 #include <ice/ecs/ecs_component.hxx>
+#include <ice/ecs/ecs_query_type.hxx>
 #include <ice/container_types.hxx>
+#include <ice/task_generator.hxx>
 
 namespace ice::ecs::detail
 {
-
-    struct QueryTypeInfo
-    {
-        ice::StringID identifier;
-
-        bool is_writable = false;
-        bool is_optional = false;
-    };
-
-
-    template<typename T>
-    concept QueryType = ice::ecs::IsEntityHandle<T>
-        || (ice::ecs::Component<T> && !ice::ecs::ComponentTag<T> && (std::is_reference_v<T> || std::is_pointer_v<T>));
-
-    template<QueryType T>
-    constexpr bool Constant_QueryTypeIsWritable = ice::ecs::IsEntityHandle<T> == false
-        && std::is_const_v<ice::clear_type_t<T>> == false;
-
-    template<QueryType T>
-    constexpr bool Constant_QueryTypeIsOptional = ice::ecs::IsEntityHandle<T> == false
-        && std::is_pointer_v<T>;
-
-
-    template<QueryType T>
-    struct QueryComponentTypeInfo
-    {
-        ice::StringID const identifier = ice::ecs::Constant_ComponentIdentifier<ice::clear_type_t<T>>;
-
-        bool const is_writable = ice::ecs::detail::Constant_QueryTypeIsWritable<T>;
-        bool const is_optional = ice::ecs::detail::Constant_QueryTypeIsOptional<T>;
-
-        constexpr operator QueryTypeInfo() const noexcept;
-    };
-
-    template<QueryType T>
-    constexpr QueryComponentTypeInfo<T>::operator QueryTypeInfo() const noexcept
-    {
-        return QueryTypeInfo{ .identifier = identifier, .is_writable = is_writable, .is_optional = is_optional };
-    }
-
-
-    constexpr bool operator<(
-        ice::ecs::detail::QueryTypeInfo const& left,
-        ice::ecs::detail::QueryTypeInfo const& right
-    ) noexcept
-    {
-        return ice::hash(left.identifier) < ice::hash(right.identifier);
-    }
 
     template<QueryType... Components>
     struct UnsortedQueryRequirements
@@ -69,7 +23,10 @@ namespace ice::ecs::detail
     struct QueryRequirements
     {
         static constexpr ice::StaticArray<ice::ecs::detail::QueryTypeInfo, 1 + sizeof...(Components)> const Constant_Requirements =
-            constexpr_sort_array(UnsortedQueryRequirements<First, Components...>::Constant_Requirements, static_cast<ice::u32>(std::is_same_v<First, ice::ecs::EntityHandle>));
+            constexpr_sort_array(
+                UnsortedQueryRequirements<First, Components...>::Constant_Requirements,
+                static_cast<ice::u32>(std::is_same_v<First, ice::ecs::EntityHandle>)
+            );
     };
 
 
@@ -91,6 +48,11 @@ namespace ice::ecs::detail
         {
             return block_ptr + idx;
         }
+
+        static auto select_entity_ptr(BlockIteratorArg block_ptr, ice::u32 idx) noexcept -> Arg*
+        {
+            return block_ptr + idx;
+        }
     };
 
     template<typename Arg> requires QueryType<Arg&>
@@ -107,6 +69,11 @@ namespace ice::ecs::detail
         static auto select_entity(BlockIteratorArg block_ptr, ice::u32 idx) noexcept -> Arg&
         {
             return *(block_ptr + idx);
+        }
+
+        static auto select_entity_ptr(BlockIteratorArg block_ptr, ice::u32 idx) noexcept -> Arg*
+        {
+            return block_ptr + idx;
         }
     };
 
@@ -125,6 +92,11 @@ namespace ice::ecs::detail
         {
             return *(block_ptr + idx);
         }
+
+        static auto select_entity_ptr(BlockIteratorArg block_ptr, ice::u32 idx) noexcept -> ice::ecs::EntityHandle const*
+        {
+            return block_ptr + idx;
+        }
     };
 
     template<QueryType... Args>
@@ -132,6 +104,12 @@ namespace ice::ecs::detail
 
     template<QueryType... Args>
     using QueryEntityIteratorSignature = void (typename QueryIteratorArgument<Args>::EntityIteratorArg...);
+
+    template<QueryType... Args>
+    using QueryBlockTupleResult = std::tuple<ice::ucount, typename QueryIteratorArgument<Args>::BlockIteratorArg...>;
+
+    template<QueryType... Args>
+    using QueryEntityTupleResult = std::tuple<typename QueryIteratorArgument<Args>::BlockIteratorArg...>;
 
 
     template<QueryType... Components>
@@ -178,7 +156,7 @@ namespace ice::ecs::detail
     }
 
     template<typename Fn, QueryType... T>
-    auto invoke_for_each_entity(Fn&& fn, ice::u32 count, void** component_pointer_array) noexcept
+    inline auto invoke_for_each_entity(Fn&& fn, ice::u32 count, void** component_pointer_array) noexcept
     {
         using QueryTypeTuple = std::tuple<T...>;
 
@@ -187,7 +165,7 @@ namespace ice::ecs::detail
             for (ice::u32 idx = 0; idx < count; ++idx)
             {
                 ice::forward<Fn>(fn)(
-                    ice::ecs::detail::QueryIteratorArgument<T>::select_entity(args, idx * static_cast<ice::u64>(args != nullptr))...
+                    ice::ecs::detail::QueryIteratorArgument<T>::select_entity(args, idx * static_cast<ice::u32>(args != nullptr))...
                 );
             }
         };
@@ -201,6 +179,39 @@ namespace ice::ecs::detail
         };
 
         enumerate_types(std::make_index_sequence<sizeof...(T)>{});
+    }
+
+    template<QueryType... T>
+    inline auto create_block_tuple(ice::u32 count, void** component_pointer_array) noexcept -> ice::ecs::detail::QueryBlockTupleResult<T...>
+    {
+        using QueryTypeTuple = std::tuple<T...>;
+        using QueryTypeTupeResult = ice::ecs::detail::QueryBlockTupleResult<T...>;
+
+        auto const enumerate_types = [&]<std::size_t... Idx>(std::index_sequence<Idx...> seq) noexcept -> QueryTypeTupeResult
+        {
+            return QueryTypeTupeResult{ count, ice::ecs::detail::QueryIteratorArgument<std::tuple_element_t<Idx, QueryTypeTuple>>::block_array(component_pointer_array[Idx])... };
+        };
+
+        return enumerate_types(std::make_index_sequence<sizeof...(T)>{});
+    }
+
+    template<QueryType... T>
+    inline auto create_entity_tuple(ice::u32 index, void** component_pointer_array) noexcept -> ice::ecs::detail::QueryEntityTupleResult<T...>
+    {
+        using QueryTypeTuple = std::tuple<T...>;
+        using QueryTypeTupeResult = ice::ecs::detail::QueryEntityTupleResult<T...>;
+
+        auto const select_entity = [&]<std::size_t... Idx>(std::index_sequence<Idx...>) noexcept
+        {
+            return QueryTypeTupeResult{
+                ice::ecs::detail::QueryIteratorArgument<std::tuple_element_t<Idx, QueryTypeTuple>>::select_entity_ptr(
+                    ice::ecs::detail::QueryIteratorArgument<std::tuple_element_t<Idx, QueryTypeTuple>>::block_array(component_pointer_array[Idx]),
+                    index * static_cast<ice::u32>(component_pointer_array[Idx] != nullptr)
+                )...
+            };
+        };
+
+        return select_entity(std::make_index_sequence<sizeof...(T)>{});
     }
 
 } // namespace ice::ecs::detail

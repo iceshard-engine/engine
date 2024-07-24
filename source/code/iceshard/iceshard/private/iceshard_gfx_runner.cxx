@@ -105,11 +105,11 @@ namespace ice::gfx
             { .initial = detail::State_GfxInactive, .committer = this, .enable_subname_states = true },
             triggers
         );
+        _gfx_frame_finished.set();
     }
 
     IceshardGfxRunner::~IceshardGfxRunner() noexcept
     {
-
         _context->device().destroy_fence(_present_fence);
     }
 
@@ -163,7 +163,7 @@ namespace ice::gfx
         //TODO: Currently the container should be "dead" after it's await scheduled on
         {
             ice::Array<ice::Task<>> tasks = _gfx_tasks.extract_tasks();
-            co_await ice::await_all_on(tasks, _scheduler);
+            co_await ice::await_scheduled(tasks, _scheduler);
         }
 
         ice::gfx::GfxFrameStages gpu_stages{
@@ -177,7 +177,7 @@ namespace ice::gfx
             IPT_ZONE_SCOPED_NAMED("gfx_resume_prepare_tasks");
             // The tasks here might take more than a frame to finish. We should track them somewhere else.
             ice::Array<ice::Task<>> tasks = _gfx_tasks.extract_tasks();
-            ice::resume_tasks_on(tasks, _scheduler);
+            ice::execute_tasks(tasks);
         }
 
         if (_queue_transfer.any() || _gfx_tasks.running_tasks() > 0)
@@ -191,11 +191,14 @@ namespace ice::gfx
             queue->reset();
 
             ice::render::CommandBuffer transfer_buffer;
-            queue->request_command_buffers(render::CommandBufferType::Primary, { &transfer_buffer , 1 });
-            _context->device().get_commands().begin(transfer_buffer);
+            {
+                IPT_ZONE_SCOPED_NAMED("gfx_request_transfer_command_buffers");
+                queue->request_command_buffers(render::CommandBufferType::Primary, { &transfer_buffer , 1 });
+                _context->device().get_commands().begin(transfer_buffer);
+            }
 
             // Resumes all queued awaitables on the scheduler with this thread as the final awaitable.
-            bool const has_work = co_await ice::await_queue_on(_queue_transfer, &transfer_buffer, _scheduler);
+            bool const has_work = co_await ice::await_scheduled_queue(_queue_transfer, &transfer_buffer, _scheduler);
 
             // TODO: Log how many tasks are still around
             _context->device().get_commands().end(transfer_buffer);
@@ -219,7 +222,7 @@ namespace ice::gfx
             _present_fence->wait(10'000'000);
         }
 
-        co_await ice::await_queue_on(_queue_end, _scheduler);
+        co_await ice::await_scheduled_queue(_queue_end, _scheduler);
         co_return;
     }
 
@@ -256,10 +259,18 @@ namespace ice::gfx
         if (trigger.to == detail::State_GfxActive)
         {
             shards[0] = ice::shard(ice::gfx::ShardID_GfxStartup, &params);
+
+            ice::ScopedTaskContainer tasks{ _alloc };
+            _engine.worlds_updater().update(world_name, tasks, shards);
         }
         else if (trigger.to == detail::State_GfxInactive)
         {
-            _present_fence->wait(1'000'000'000);
+            {
+                shards[0] = ice::shard(ice::gfx::ShardID_GfxShutdown, &params);
+
+                ice::ScopedTaskContainer tasks{ _alloc };
+                _engine.worlds_updater().update(world_name, tasks, shards);
+            }
 
             ice::gfx::GfxFrameStages gpu_stages{
                 .scheduler = _scheduler,
@@ -267,19 +278,25 @@ namespace ice::gfx
                 .frame_end = { _queue_end }
             };
 
-            auto s = ice::gfx::create_stage_registry(_alloc);
+            auto const gpu_graph_task = [](
+                ice::gfx::IceshardGfxRunner& self,
+                ice::gfx::GfxStateChange const& params,
+                ice::gfx::GfxFrameStages& frame_stages,
+                ice::gfx::GfxStageRegistry& stages
+            ) noexcept -> ice::Task<>
             {
-                if (_rendergraph->prepare(gpu_stages, *s, _gfx_tasks))
-                {
-                    _gfx_tasks.execute_tasks();
-                }
-            }
+                co_await frame_stages.scheduler;
 
-            shards[0] = ice::shard(ice::gfx::ShardID_GfxShutdown, &params);
+                if (self._rendergraph->prepare(frame_stages, stages, self._gfx_tasks))
+                {
+                    ice::Array<ice::Task<>> tasks = self._gfx_tasks.extract_tasks();
+                    co_await ice::await_tasks(tasks);
+                }
+            };
+
+            ice::wait_for(gpu_graph_task(*this, params, gpu_stages, *_stages));
         }
 
-        ice::ScopedTaskContainer tasks{ _alloc };
-        _engine.worlds_updater().update(world_name, tasks, shards);
         return true;
     }
 

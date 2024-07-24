@@ -13,6 +13,9 @@ namespace ice
     class TaskQueue;
     class TaskScheduler;
 
+    class TaskCheckpoint;
+    class TaskCheckpointGate;
+
     class TaskThread;
     class TaskThreadPool;
 

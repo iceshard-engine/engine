@@ -45,6 +45,11 @@ namespace ice::ecs
             ice::Span<ice::ecs::ArchetypeInstanceInfo const*> out_instance_infos
         ) const noexcept;
 
+        void fetch_archetype_instance_info_by_index(
+            ice::u32 index,
+            ice::ecs::ArchetypeInstanceInfo const*& out_instance_info
+        ) const noexcept;
+
         void fetch_archetype_instance_info_with_pool(
             ice::ecs::Archetype archetype,
             ice::ecs::ArchetypeInstanceInfo const*& out_instance_info,

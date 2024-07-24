@@ -33,6 +33,7 @@ namespace ice::ecs
     protected:
         void query_internal(
             ice::Span<ice::ecs::detail::QueryTypeInfo const> query_info,
+            ice::Span<ice::ecs::QueryAccessTracker*> out_access_trackers,
             ice::Array<ice::ecs::ArchetypeInstanceInfo const*>& out_instance_infos,
             ice::Array<ice::ecs::DataBlock const*>& out_data_blocks
         ) const noexcept override;
@@ -41,6 +42,7 @@ namespace ice::ecs
         ice::Allocator& _allocator;
         ice::ecs::ArchetypeIndex const& _archetype_index;
 
+        ice::HashMap<ice::ecs::QueryAccessTracker*> _access_trackers;
         ice::Array<ice::ecs::DataBlock> _head_blocks;
         ice::Array<ice::ecs::DataBlock*> _data_blocks;
     };

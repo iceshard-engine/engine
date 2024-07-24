@@ -198,9 +198,9 @@ struct ice::app::Runtime
     ice::render::RenderDriver* render_driver;
 
     ice::SystemClock clock;
+    ice::CustomClock game_clock;
     ice::u32 close_attempts = 0;
 
-    ice::ManualResetEvent logic_wait;
     ice::ManualResetEvent gfx_wait;
     ice::Task<void> next_frame_task;
 
@@ -471,10 +471,11 @@ auto ice_resume(
                 .tasks = state.platform.threads->threadpool(),
             }
         };
-        runtime.runner = ice::create_engine_runner(state.engine_alloc, *state.modules, runner_create_info);
-        runtime.frame = ice::wait_for(runtime.runner->aquire_frame());
-        runtime.clock = ice::clock::create_clock();
 
+        runtime.clock = ice::clock::create_clock();
+        runtime.runner = ice::create_engine_runner(state.engine_alloc, *state.modules, runner_create_info);
+        runtime.frame = ice::wait_for_result(runtime.runner->aquire_frame());
+        runtime.game_clock = ice::clock::create_clock(runtime.game_clock, 1.0f);
 
         using ice::operator|;
         using ice::operator""_sid;
@@ -538,11 +539,13 @@ auto ice_game_frame(
 {
     IPT_FRAME_MARK;
 
+    // Apply changes to entities on frame start this allows us to always start the frame with changes applied freshly.
+    co_await runtime.runner->pre_update(runtime.frame->shards());
+
     state.platform.core->refresh_events();
     ice::ShardContainer const& system_events = state.platform.core->system_events();
 
-    // Update the system clock
-    ice::clock::update(runtime.clock);
+    ice::clock::update(runtime.game_clock);
 
     ice::UniquePtr<ice::EngineFrame> new_frame = co_await logic.aquire_frame();
     ICE_ASSERT(new_frame != nullptr, "Failed to aquire next frame!");
@@ -597,6 +600,9 @@ auto ice_update(
     ice::app::Runtime& runtime
 ) noexcept -> ice::Result
 {
+    // Update the system clock
+    ice::clock::update(runtime.clock);
+
     // Process any awaiting main thread tasks.
     runtime.main_queue.process_all();
 
@@ -629,7 +635,7 @@ auto ice_update(
         runtime.render_stage.process_one(&render_enabled_frame);
 
         // Awaiting both frames to finish.
-        if (runtime.previous->wait.is_set() == false || runtime.previous->next->wait.is_set() == false)
+        if (runtime.frames[0].wait.is_set() == false || runtime.frames[1].wait.is_set() == false)
         {
             return ice::app::S_ApplicationUpdate;
         }
@@ -673,7 +679,7 @@ auto ice_update(
         {
             // system_events will have changed after a frame was awaited!
             runtime.previous->wait.reset();
-            ice::manual_wait_for(ice::move(runtime.next_frame_task), runtime.previous->wait);
+            ice::manual_wait_for(runtime.previous->wait, ice::move(runtime.next_frame_task));
 
             // Move to the next frame
             runtime.previous = runtime.previous->next;

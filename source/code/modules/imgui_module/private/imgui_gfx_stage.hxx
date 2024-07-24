@@ -29,6 +29,7 @@ namespace ice::devui
         ) noexcept -> ice::Task<> override;
 
         void update(
+            ice::EngineFrame const& frame,
             ice::gfx::GfxContext& device
         ) noexcept override;
 

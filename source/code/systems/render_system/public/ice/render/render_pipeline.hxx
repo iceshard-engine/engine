@@ -49,6 +49,13 @@ namespace ice::render
         PatchList,
     };
 
+    enum class DynamicState : ice::u32
+    {
+        None = 0x0,
+        Viewport = 0x0000'0001,
+        Scissor = 0x0000'0002,
+    };
+
     struct PipelinePushConstant
     {
         ice::render::ShaderStageFlags shader_stage_flags;
@@ -79,6 +86,7 @@ namespace ice::render
         ice::render::PrimitiveTopology primitive_topology = PrimitiveTopology::TriangleList;
         ice::render::CullMode cull_mode = CullMode::Disabled;
         ice::render::FrontFace front_face = FrontFace::ClockWise;
+        ice::render::DynamicState dynamic_states = DynamicState::Viewport | DynamicState::Scissor;
 
         ice::u32 subpass_index;
         bool depth_test = true;

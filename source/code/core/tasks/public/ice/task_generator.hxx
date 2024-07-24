@@ -20,8 +20,15 @@ namespace ice
             requires std::is_nothrow_move_assignable_v<Value> && std::is_nothrow_convertible_v<Other&&, Value>
         inline auto yield_value(Other&& value) noexcept -> ice::suspend_always
         {
-            static_assert(std::is_nothrow_move_assignable_v<Value>, "We enforce noexcept everywhere.");
             _value = std::forward<Other>(value);
+            return {};
+        }
+
+        template<typename Other = Value>
+            requires std::is_nothrow_copy_assignable_v<Value> && std::is_nothrow_convertible_v<Other&&, Value>
+        inline auto yield_value(Other const& value) noexcept -> ice::suspend_always
+        {
+            _value = value;
             return {};
         }
 

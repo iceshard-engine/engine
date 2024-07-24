@@ -30,6 +30,10 @@
             '--preload-file $WorkspaceRoot$/source/data@/'
         }
 
+        .Modules = {
+            'imgui'
+        }
+
         .Uses = {
             'platform_webasm'
             'framework_base'

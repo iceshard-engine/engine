@@ -164,7 +164,7 @@ auto stream_write_resource(
     return writer->write_resource(idx, offset);
 }
 
-inline bool hscp_write_hailstorm_file(
+bool hscp_write_hailstorm_file(
     ice::Allocator& alloc,
     HSCPWriteParams const& params,
     hailstorm::v1::HailstormWriteData const& data,
@@ -240,19 +240,19 @@ inline bool HailstormAIOWriter::write_header(
     ice::usize write_offset
 ) noexcept
 {
-    ice::schedule_task_on(async_write_header(header_data, write_offset), _scheduler);
+    ice::schedule_task(async_write_header(header_data, write_offset), _scheduler);
     return true;
 }
 
 inline bool HailstormAIOWriter::write_metadata(hailstorm::Data meta, ice::usize offset) noexcept
 {
-    ice::schedule_task_on(async_write_metadata(meta, offset), _scheduler);
+    ice::schedule_task(async_write_metadata(meta, offset), _scheduler);
     return true;
 }
 
 inline bool HailstormAIOWriter::write_resource(ice::u32 idx, ice::usize offset) noexcept
 {
-    ice::schedule_task_on(async_write_resource(idx, offset), _scheduler);
+    ice::schedule_task(async_write_resource(idx, offset), _scheduler);
     return true;
 }
 

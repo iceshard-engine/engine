@@ -2,6 +2,8 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#include <ice/task_types.hxx>
+#include <ice/resource_types.hxx>
 #include <ice/native_file.hxx>
 #include <hailstorm/hailstorm.hxx>
 #include <hailstorm/hailstorm_operations.hxx>

@@ -28,14 +28,11 @@ namespace ice::gfx
         co_await final_thread;
     }
 
-    Trait_GfxImageStorage::Trait_GfxImageStorage(ice::Allocator& alloc) noexcept
-        : _loaded_images{ alloc }
+    Trait_GfxImageStorage::Trait_GfxImageStorage(ice::Allocator& alloc, ice::TraitContext& ctx) noexcept
+        : ice::Trait{ ctx }
+        , _loaded_images{ alloc }
     {
-    }
-
-    void Trait_GfxImageStorage::gather_tasks(ice::TraitTaskRegistry& task_registry) noexcept
-    {
-        task_registry.bind<&Trait_GfxImageStorage::gfx_update>(ice::gfx::ShardID_GfxFrameUpdate);
+        _context.bind<&Trait_GfxImageStorage::gfx_update>(ice::gfx::ShardID_GfxFrameUpdate);
     }
 
     auto Trait_GfxImageStorage::on_asset_released(ice::Asset const& asset) noexcept -> ice::Task<>

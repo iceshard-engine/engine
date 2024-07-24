@@ -3,6 +3,8 @@
 
 #pragma once
 #include "gfx/iceshard_gfx_device.hxx"
+#include "iceshard_data_storage.hxx"
+
 #include <ice/shard_container.hxx>
 #include <ice/engine_state_definition.hxx>
 #include <ice/engine_state_tracker.hxx>
@@ -80,12 +82,13 @@ namespace ice::gfx
 
         ice::UniquePtr<ice::gfx::GfxStageRegistry> _stages;
 
-        // ice::HashMap<ice::gfx::GfxStage const*> _stages;
         ice::gfx::IceshardGfxRunnerState _state;
         ice::HashMap<ice::gfx::IceshardGfxWorldState> _world_states;
         ice::UniquePtr<ice::gfx::GfxGraphRuntime> _rendergraph;
 
         ice::ScopedTaskContainer _gfx_tasks;
+
+        ice::ManualResetEvent _gfx_frame_finished;
     };
 
 } // namespace ice

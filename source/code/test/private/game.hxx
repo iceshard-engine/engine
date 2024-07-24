@@ -8,6 +8,9 @@
 #include <ice/gfx/gfx_graph_runtime.hxx>
 #include <ice/mem_allocator_snake.hxx>
 
+#include <ice/ecs/ecs_archetype_index.hxx>
+#include <ice/ecs/ecs_entity_storage.hxx>
+
 using namespace ice;
 using namespace ice::framework;
 
@@ -31,6 +34,9 @@ private:
 
     ice::UniquePtr<ice::gfx::GfxGraph> _graph;
     ice::UniquePtr<ice::gfx::GfxGraphRuntime> _graph_runtime;
+
+    ice::UniquePtr<ice::ecs::ArchetypeIndex> _archetype_index;
+    ice::UniquePtr<ice::ecs::EntityStorage> _entity_storage;
 
     bool _first_time;
 };

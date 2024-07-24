@@ -38,7 +38,7 @@ namespace ice
             }
 
             // Try to load the mentioned import script
-            ice::ResourceResult res = ice::wait_for(_tracker.load_resource(import_resource));
+            ice::ResourceResult res = ice::wait_for_result(_tracker.load_resource(import_resource));
             if (res.resource_status != ResourceStatus::Loaded)
             {
                 return {};

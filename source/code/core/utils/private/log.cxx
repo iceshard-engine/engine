@@ -4,6 +4,7 @@
 #include <ice/log.hxx>
 #include <ice/os/windows.hxx>
 #include <ice/string/string.hxx>
+#include <ice/profiler.hxx>
 
 #include "log_internal.hxx"
 #include "log_buffer.hxx"
@@ -26,6 +27,8 @@ namespace ice::detail
         ice::detail::LogLocation location
     ) noexcept
     {
+        IPT_ZONE_SCOPED;
+
         log_fn(
             severity,
             tag,

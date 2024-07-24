@@ -1,6 +1,16 @@
 #pragma once
 #include <ice/string/string.hxx>
+#include <ice/assert_core.hxx>
+
+#ifdef IM_ASSERT
+#undef IM_ASSERT
+#endif
+
+#define IM_ASSERT(cond) ICE_ASSERT_CORE(cond)
+#include <imgui/imgui.h>
 #include <fmt/core.h>
+#undef assert
+
 
 namespace ImGui
 {

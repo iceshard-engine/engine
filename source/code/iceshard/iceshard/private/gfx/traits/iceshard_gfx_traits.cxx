@@ -10,9 +10,9 @@ namespace ice::gfx
 {
 
     template<typename TraitType>
-    static auto gfx_trait_factory(ice::Allocator& alloc, void*) noexcept -> UniquePtr<ice::Trait>
+    static auto gfx_trait_factory(ice::Allocator& alloc, ice::TraitContext& ctx, void*) noexcept -> UniquePtr<ice::Trait>
     {
-        return ice::make_unique<TraitType>(alloc, alloc);
+        return ice::make_unique<TraitType>(alloc, alloc, ctx);
     }
 
     struct IceshardModule_GfxTraits : ice::Module<IceshardModule_GfxTraits>

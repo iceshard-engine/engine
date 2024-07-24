@@ -36,22 +36,21 @@ namespace ice
         return ice::array::slice(_tasks, ice::array::count(_tasks) - count, count);
     }
 
+    auto ScopedTaskContainer::await_tasks_scheduled_on(ice::TaskScheduler& scheduler, ice::TaskScheduler& resumer) noexcept -> ice::Task<>
+    {
+        co_await ice::await_scheduled_on(_tasks, scheduler, resumer);
+    }
+
     auto ScopedTaskContainer::execute_tasks() noexcept -> ice::ucount
     {
         ice::ucount const result = ice::array::count(_tasks);
         if (result > 0)
         {
             _barrier.reset(static_cast<ice::u8>(result));
-            ice::manual_wait_for_all(_tasks, _barrier);
+            ice::manual_wait_for(_barrier, _tasks);
             ice::array::clear(_tasks);
         }
         return result;
-    }
-
-    void ScopedTaskContainer::execute_tasks_detached(ice::TaskScheduler& scheduler) noexcept
-    {
-        ice::resume_tasks_on(_tasks, scheduler);
-        ice::array::clear(_tasks);
     }
 
     auto ScopedTaskContainer::running_tasks() const noexcept -> ice::ucount
