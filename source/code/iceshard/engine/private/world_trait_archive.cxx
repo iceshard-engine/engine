@@ -22,7 +22,7 @@ namespace ice
         {
         }
 
-        void register_trait(ice::TraitDescriptor descriptor) noexcept override
+        void register_trait(ice::TraitDescriptor const& descriptor) noexcept override
         {
             bool const can_register = descriptor.fn_register == nullptr
                 || descriptor.fn_register(_allocator, _states);

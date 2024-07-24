@@ -2,7 +2,8 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/types.hxx>
+#include <ice/config.hxx>
+#include <ice/constants.hxx>
 #include <ice/hash/murmur2.hxx>
 #include <ice/hash/murmur3.hxx>
 

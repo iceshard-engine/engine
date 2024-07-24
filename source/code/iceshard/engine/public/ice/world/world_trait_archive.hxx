@@ -15,7 +15,8 @@ namespace ice
     {
         virtual ~TraitArchive() noexcept = default;
 
-        virtual void register_trait(ice::TraitDescriptor trait_descriptor) noexcept = 0;
+        virtual void register_trait(ice::TraitDescriptor const& trait_descriptor) noexcept = 0;
+
         virtual auto trait(ice::StringID_Arg traitid) const noexcept -> ice::TraitDescriptor const* = 0;
     };
 

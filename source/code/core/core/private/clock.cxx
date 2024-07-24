@@ -219,6 +219,12 @@ namespace ice
             return ice::Stopwatch{ &clock, 0, 0 };
         }
 
+        auto elapsed(ice::Stopwatch const& stopwatch) noexcept -> ice::f32
+        {
+            return static_cast<ice::f32>(stopwatch.final_timestamp - stopwatch.initial_timestamp)
+                / ice::clock::clock_frequency();
+        }
+
         void start(ice::Stopwatch& stopwatch) noexcept
         {
             stopwatch.initial_timestamp = stopwatch.clock->latest_timestamp;

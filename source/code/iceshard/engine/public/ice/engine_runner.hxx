@@ -9,7 +9,7 @@
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/platform_event.hxx>
 #include <ice/render/render_declarations.hxx>
-#include <ice/shard.hxx>
+#include <ice/shard_container.hxx>
 #include <ice/stringid.hxx>
 #include <ice/task_scheduler.hxx>
 #include <ice/task_types.hxx>
@@ -58,6 +58,8 @@ namespace ice
         virtual auto aquire_frame() noexcept -> ice::Task<ice::UniquePtr<ice::EngineFrame>> = 0;
         virtual auto update_frame(ice::EngineFrame& current_frame, ice::EngineFrame const& last_frame) noexcept -> ice::Task<> = 0;
         virtual void release_frame(ice::UniquePtr<ice::EngineFrame> frame) noexcept = 0;
+
+        virtual auto pre_update(ice::ShardContainer& out_shards) noexcept -> ice::Task<> = 0;
     };
 
     static constexpr ice::ShardID ShardID_FrameUpdate = "event/engine/frame-update`ice::EngineFrameUpdate const*"_shardid;

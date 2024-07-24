@@ -18,10 +18,8 @@ namespace ice::devui
     class ImGuiTrait final : public ice::Trait
     {
     public:
-        ImGuiTrait(ice::Allocator& alloc, ImGuiSystem& system) noexcept;
+        ImGuiTrait(ice::Allocator& alloc, ice::TraitContext& ctx, ImGuiSystem& system) noexcept;
         ~ImGuiTrait() noexcept override;
-
-        void gather_tasks(ice::TraitTaskRegistry& task_launcher) noexcept override;
 
         auto activate(ice::WorldStateParams const& params) noexcept -> ice::Task<> override;
         auto deactivate(ice::WorldStateParams const& params) noexcept -> ice::Task<> override;

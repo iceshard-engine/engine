@@ -4,14 +4,13 @@
 #pragma once
 #include <ice/span.hxx>
 #include <ice/stringid.hxx>
-#include <ice/mem_allocator.hxx>
 #include <ice/mem_unique_ptr.hxx>
-#include <ice/engine_types.hxx>
+#include <ice/world/world_types.hxx>
 
 namespace ice
 {
 
-    using TraitFactoryFn = auto(ice::Allocator& alloc, void* userdata) noexcept -> ice::UniquePtr<ice::Trait>;
+    using TraitFactoryFn = auto(ice::Allocator& alloc, ice::TraitContext& ctx, void* userdata) noexcept -> ice::UniquePtr<ice::Trait>;
     using TraitTypeRegisterFn = bool(ice::Allocator& alloc, ice::EngineStateTracker& engine) noexcept;
     using TraitTypeUnregisterFn = void(ice::Allocator& alloc) noexcept;
 

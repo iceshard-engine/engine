@@ -18,6 +18,10 @@ namespace ice::gfx
             ice::gfx::GfxStage* stage
         ) noexcept override;
 
+        void remove_stage(
+            ice::StringID_Arg key
+        ) noexcept override;
+
         bool query_stages(
             ice::Span<ice::StringID> stage_keys,
             ice::Array<ice::gfx::GfxStage*>& out_stages
@@ -40,6 +44,13 @@ namespace ice::gfx
     ) noexcept
     {
         ice::hashmap::set(_stages, ice::hash(key), stage);
+    }
+
+    void IceGfxStageRegistry::remove_stage(
+        ice::StringID_Arg key
+    ) noexcept
+    {
+        ice::hashmap::remove(_stages, ice::hash(key));
     }
 
     bool IceGfxStageRegistry::query_stages(

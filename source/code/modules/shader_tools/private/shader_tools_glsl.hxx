@@ -26,7 +26,7 @@ namespace ice
         ice::HeapString<>& out_entry_point
     ) noexcept -> ice::HeapString<>;
 
-    auto compiler_supported_shader_resources() noexcept -> ice::Span<ice::String>
+    inline auto compiler_supported_shader_resources() noexcept -> ice::Span<ice::String>
     {
         static ice::String supported_extensions[]{ ".asl", ".glsl" };
         return supported_extensions;

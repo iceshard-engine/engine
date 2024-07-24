@@ -14,38 +14,12 @@
 namespace ice
 {
 
-    IceshardTraitTaskLauncher::IceshardTraitTaskLauncher(
-        ice::Trait* trait,
-        ice::HashMap<ice::IceshardEventHandler>& frame_handlers,
-        ice::HashMap<ice::IceshardEventHandler>& runner_handlers
+    IceshardTasksLauncher::IceshardTasksLauncher(
+        ice::IceshardWorldContext& world_context,
+        ice::Span<ice::UniquePtr<IceshardTraitContext>> traits
     ) noexcept
-        : _trait{ trait }
-        , _frame_handlers{ frame_handlers }
-        , _runner_handlers{ runner_handlers }
-    {
-    }
-
-    void IceshardTraitTaskLauncher::bind(ice::TraitTaskBinding const& binding) noexcept
-    {
-        ice::ShardID const trigger_event = ice::value_or_default(
-            binding.trigger_event, ice::ShardID_FrameUpdate
-        );
-
-        ice::multi_hashmap::insert(
-            binding.task_type == TraitTaskType::Frame ? _frame_handlers : _runner_handlers,
-            ice::hash(trigger_event),
-            ice::IceshardEventHandler{
-                .event_id = trigger_event,
-                .trait = _trait,
-                .event_handler = binding.procedure,
-                .userdata = binding.procedure_userdata
-            }
-        );
-    }
-
-    IceshardTasksLauncher::IceshardTasksLauncher(ice::Allocator& alloc) noexcept
-        : _frame_handlers{ alloc }
-        , _runner_handlers{ alloc }
+        : _world_context{ world_context }
+        , _traits{ traits }
     {
     }
 
@@ -55,20 +29,20 @@ namespace ice
     ) noexcept
     {
         ice::Span<ice::Task<>> tasks = task_container.create_tasks(
-            ice::multi_hashmap::count(_frame_handlers, ice::hash(shard.id)),
+            ice::multi_hashmap::count(_world_context._frame_handlers, ice::hash(shard.id)),
             shard.id
         );
 
         auto out_it = ice::begin(tasks);
-        auto it = ice::multi_hashmap::find_first(_frame_handlers, ice::hash(shard.id));
+        auto it = ice::multi_hashmap::find_first(_world_context._frame_handlers, ice::hash(shard.id));
         while (it != nullptr)
         {
             ice::IceshardEventHandler const& handler = it.value();
 
-            *out_it = handler.event_handler(handler.trait, shard, handler.userdata);
+            *out_it = handler.event_handler(_traits[handler.trait_idx]->trait.get(), shard, handler.userdata);
 
             out_it += 1;
-            it = ice::multi_hashmap::find_next(_frame_handlers, it);
+            it = ice::multi_hashmap::find_next(_world_context._frame_handlers, it);
         }
     }
 
@@ -92,7 +66,7 @@ namespace ice
     {
         IPT_ZONE_SCOPED;
 
-        auto it = ice::multi_hashmap::find_first(_frame_handlers, ice::hash(shard.id));
+        auto it = ice::multi_hashmap::find_first(_world_context._frame_handlers, ice::hash(shard.id));
         while (it != nullptr)
         {
             ice::IceshardEventHandler const& handler = it.value();
@@ -100,10 +74,10 @@ namespace ice
             //ICE_ASSERT(ice::array::count(out_tasks) < ice::array::capacity(out_tasks), "Maximum number of tasks suppored by default launcher reached!");
             ice::array::push_back(
                 out_tasks,
-                handler.event_handler(handler.trait, shard, handler.userdata)
+                handler.event_handler(_traits[handler.trait_idx]->trait.get(), shard, handler.userdata)
             );
 
-            it = ice::multi_hashmap::find_next(_frame_handlers, it);
+            it = ice::multi_hashmap::find_next(_world_context._frame_handlers, it);
         }
 
     }
@@ -119,11 +93,6 @@ namespace ice
         {
             execute(out_tasks, shard);
         }
-    }
-
-    auto IceshardTasksLauncher::trait_launcher(ice::Trait* trait) noexcept -> ice::IceshardTraitTaskLauncher
-    {
-        return { trait, _frame_handlers, _runner_handlers };
     }
 
 } // namespace ice

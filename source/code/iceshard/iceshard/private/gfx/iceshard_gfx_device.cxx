@@ -47,6 +47,7 @@ namespace ice::gfx
         , _render_device{ render_device }
         , _render_swapchain{ nullptr }
         , _graphics_queues{ ice::move(graphics_queues) }
+        , _data{ _allocator }
     {
         _render_swapchain = _render_device->create_swapchain(&_render_surface);
     }

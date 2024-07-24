@@ -2,9 +2,9 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/base.hxx>
 #include <ice/shard.hxx>
 #include <ice/log_formatters.hxx>
+#include <ice/ecs/ecs_types.hxx>
 
 namespace ice::ecs
 {

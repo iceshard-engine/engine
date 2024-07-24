@@ -55,4 +55,10 @@ namespace ice::render
     enum class CommandBufferType : ice::u32;
     enum class BarrierDependency : ice::u32;
 
+    using ice::operator|;
+    using ice::operator|=;
+    using ice::operator&;
+    using ice::operator&=;
+    using ice::operator~;
+
 } // namespace ice::render

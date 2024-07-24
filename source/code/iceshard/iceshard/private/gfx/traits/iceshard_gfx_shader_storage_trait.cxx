@@ -24,15 +24,12 @@ namespace ice::gfx
         co_await final_thread;
     }
 
-    Trait_GfxShaderStorage::Trait_GfxShaderStorage(ice::Allocator& alloc) noexcept
-        : _loaded_shaders{ alloc }
+    Trait_GfxShaderStorage::Trait_GfxShaderStorage(ice::Allocator& alloc, ice::TraitContext& ctx) noexcept
+        : ice::Trait{ ctx }
+        , _loaded_shaders{ alloc }
     {
-    }
-
-    void Trait_GfxShaderStorage::gather_tasks(TraitTaskRegistry& task_registry) noexcept
-    {
-        task_registry.bind<&Trait_GfxShaderStorage::gfx_update>(ice::gfx::ShardID_GfxFrameUpdate);
-        task_registry.bind<&Trait_GfxShaderStorage::gfx_shutdown>(ice::gfx::ShardID_GfxShutdown);
+        _context.bind<&Trait_GfxShaderStorage::gfx_update>(ice::gfx::ShardID_GfxFrameUpdate);
+        _context.bind<&Trait_GfxShaderStorage::gfx_shutdown>(ice::gfx::ShardID_GfxShutdown);
     }
 
     auto Trait_GfxShaderStorage::on_asset_released(ice::Asset const& asset) noexcept -> ice::Task<>

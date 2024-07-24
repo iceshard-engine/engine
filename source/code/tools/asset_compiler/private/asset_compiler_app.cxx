@@ -219,7 +219,7 @@ public:
                 return 1;
             }
 
-            if (ice::wait_for(resource_compiler->fn_validate_source(ctx, res, *resource_tracker)) == false)
+            if (ice::wait_for_result(resource_compiler->fn_validate_source(ctx, res, *resource_tracker)) == false)
             {
                 ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Falied validation of sources for {}.", _asset_resource);
                 return 1;
@@ -236,13 +236,13 @@ public:
                 ice::ManualResetEvent waitev{};
                 ice::ResourceCompilerResult result;
                 ice::manual_wait_for(
+                    waitev,
                     fn(
                         result,
                         resource_compiler->fn_compile_source(
                             ctx, source, *resource_tracker, sources, dependencies, _allocator
                         )
-                    ),
-                    waitev
+                    )
                 );
 
                 while(waitev.is_set() == false)
@@ -253,7 +253,7 @@ public:
                 ice::array::push_back(results, result);
             }
 
-            if (ice::wait_for(resource_compiler->fn_build_metadata(ctx, res, *resource_tracker, results, dependencies, meta)) == false)
+            if (ice::wait_for_result(resource_compiler->fn_build_metadata(ctx, res, *resource_tracker, results, dependencies, meta)) == false)
             {
                 ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Falied building metadata for {}.", _asset_resource);
                 return 1;

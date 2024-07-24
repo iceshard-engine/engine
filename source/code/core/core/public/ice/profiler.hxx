@@ -4,7 +4,7 @@
 #pragma once
 #include <ice/types.hxx>
 
-#if ICE_PROFILE && !ISP_WEBAPP
+#if (ICE_PROFILE || ICE_DEVELOP) && !ISP_WEBAPP
 
 #   define IPT_ENABLED 1
 

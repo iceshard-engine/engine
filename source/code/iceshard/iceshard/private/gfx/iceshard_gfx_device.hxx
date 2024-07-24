@@ -10,6 +10,7 @@
 #include <ice/render/render_driver.hxx>
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/container/array.hxx>
+#include "../iceshard_data_storage.hxx"
 
 namespace ice::gfx
 {
@@ -40,6 +41,9 @@ namespace ice::gfx
 
         void present(ice::u32 image_index) noexcept override;
 
+        auto data() noexcept -> ice::DataStorage& override { return _data; }
+        auto data() const noexcept -> ice::DataStorage const& override { return _data; }
+
     private:
         ice::Allocator& _allocator;
         ice::render::RenderDriver& _render_driver;
@@ -49,6 +53,7 @@ namespace ice::gfx
         ice::render::RenderSwapchain* _render_swapchain;
 
         ice::Array<ice::gfx::IceGfxQueueGroup*> _graphics_queues;
+        ice::IceshardDataStorage _data;
     };
 
     auto create_graphics_device(

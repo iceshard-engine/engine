@@ -230,7 +230,7 @@ public:
                 resource_metamap[res_idx] = 0;
                 resource_handles[res_idx] = tracker.find_resource(resource->uri());
 
-                ice::schedule_task_on(
+                ice::schedule_task(
                     read_resource_size(resource_handles[res_idx], resource_data[res_idx], res_count),
                     _tsched
                 );

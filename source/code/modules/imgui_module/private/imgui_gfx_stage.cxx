@@ -68,6 +68,7 @@ namespace ice::devui
         using namespace ice::gfx;
         using namespace ice::render;
 
+        auto scheduler = stages.scheduler;
         auto stage_transfer = stages.frame_transfer;
         auto stage_end = stages.frame_end;
 
@@ -350,7 +351,10 @@ namespace ice::devui
         co_return;
     }
 
-    void ImGuiGfxStage::update(ice::gfx::GfxContext& gfx) noexcept
+    void ImGuiGfxStage::update(
+        ice::EngineFrame const& frame,
+        ice::gfx::GfxContext& gfx
+    ) noexcept
     {
         using namespace ice::render;
 

@@ -25,6 +25,7 @@ namespace ice::gfx
         ) noexcept -> ice::Task<> { co_return; }
 
         virtual void update(
+            ice::EngineFrame const& frame,
             ice::gfx::GfxContext& gfx
         ) noexcept { }
 

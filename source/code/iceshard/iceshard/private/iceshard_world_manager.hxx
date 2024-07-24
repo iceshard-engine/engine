@@ -35,6 +35,10 @@ namespace ice
             ice::ShardContainer& out_events
         ) noexcept override;
 
+        void pre_update(
+            ice::ShardContainer& out_shards
+        ) noexcept override;
+
         void update(
             ice::TaskContainer& out_tasks,
             ice::Span<ice::Shard const> event_shards
