@@ -15,6 +15,9 @@
 #include <ice/world/world_trait.hxx>
 #include <ice/world/world_updater.hxx>
 #include <ice/world/world_trait_module.hxx>
+#include <ice/ecs/ecs_archetype_index.hxx>
+#include <ice/ecs/ecs_entity_storage.hxx>
+#include <ice/ecs/ecs_entity_operations.hxx>
 
 #include <ice/gfx/gfx_stage.hxx>
 #include <ice/gfx/gfx_runner.hxx>
@@ -42,16 +45,17 @@ struct TestTrait : public ice::Trait
 {
     ice::Timer timer;
 
+    TestTrait(ice::TraitContext& context) noexcept
+        : ice::Trait{ context }
+    {
+        _context.bind<&TestTrait::logic>();
+        _context.bind<&TestTrait::gfx>(ice::gfx::ShardID_GfxFrameUpdate);
+    }
+
     auto activate(ice::WorldStateParams const& update) noexcept -> ice::Task<> override
     {
         timer = ice::timer::create_timer(update.clock, 1.0f);
         co_return;
-    }
-
-    void gather_tasks(ice::TraitTaskRegistry& task_launcher) noexcept override
-    {
-        context.bind<&TestTrait::logic>();
-        context.bind<&TestTrait::gfx>(ice::gfx::ShardID_GfxFrameUpdate);
     }
 
     auto logic(ice::EngineFrameUpdate const& update) noexcept -> ice::Task<>
@@ -75,9 +79,9 @@ struct TestTrait : public ice::Trait
 
 namespace icetm = ice::detail::world_traits;
 
-auto test_factory(ice::Allocator& alloc, void*) noexcept -> UniquePtr<ice::Trait>
+auto test_factory(ice::Allocator& alloc, ice::TraitContext& context, void*) noexcept -> UniquePtr<ice::Trait>
 {
-    return ice::make_unique<TestTrait>(alloc);
+    return ice::make_unique<TestTrait>(alloc, context);
 }
 
 bool test_reg_traits(ice::TraitArchive& arch) noexcept
@@ -124,6 +128,9 @@ private:
     ice::UniquePtr<ice::gfx::GfxGraph> _graph;
     ice::UniquePtr<ice::gfx::GfxGraphRuntime> _graph_runtime;
 
+    ice::UniquePtr<ice::ecs::ArchetypeIndex> _archetype_index;
+    ice::UniquePtr<ice::ecs::EntityStorage> _entity_storage;
+
     bool _first_time;
 };
 
@@ -143,6 +150,9 @@ void TestGame::on_setup(ice::framework::State const& state) noexcept
 
     mod.load_module(_allocator, pipelines_module);
     mod.load_module(_allocator, vulkan_module);
+
+    _archetype_index = ice::make_unique<ice::ecs::ArchetypeIndex>(_allocator, _allocator);
+    _entity_storage = ice::make_unique<ice::ecs::EntityStorage>(_allocator, _allocator, *_archetype_index);
 }
 
 void TestGame::on_shutdown(ice::framework::State const& state) noexcept
@@ -166,7 +176,7 @@ void TestGame::on_resume(ice::Engine& engine) noexcept
         };
 
         engine.worlds().create_world(
-            { .name = "world"_sid, .traits = traits }
+            { .name = "world"_sid, .traits = traits, .entity_storage = *_entity_storage }
         );
     }
 }

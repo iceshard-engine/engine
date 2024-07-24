@@ -1,5 +1,5 @@
 #pragma once
-#include <ice/mem_allocator.hxx>
+#include <ice/mem_unique_ptr.hxx>
 #include <ice/world/world_trait_context.hxx>
 
 namespace ice
