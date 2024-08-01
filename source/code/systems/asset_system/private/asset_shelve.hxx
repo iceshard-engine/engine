@@ -3,7 +3,7 @@
 
 #pragma once
 #include <ice/mem_allocator.hxx>
-#include <ice/asset_type_archive.hxx>
+#include <ice/asset_category_archive.hxx>
 #include <ice/devui_widget.hxx>
 #include <atomic>
 
@@ -19,7 +19,8 @@ namespace ice
     public:
         AssetShelve(
             ice::Allocator& alloc,
-            ice::AssetTypeDefinition const& definition,
+            ice::AssetStorage& storage,
+            ice::AssetCategoryDefinition const& definition,
             ice::ResourceCompiler const* compiler
         ) noexcept;
 
@@ -49,7 +50,8 @@ namespace ice
             ice::AssetState state
         ) noexcept -> ice::AssetRequestAwaitable*;
 
-        ice::AssetTypeDefinition const& definition;
+        ice::AssetStorage& storage;
+        ice::AssetCategoryDefinition const& definition;
         ice::ResourceCompiler const* compiler;
         ice::ResourceCompilerCtx compiler_context;
 

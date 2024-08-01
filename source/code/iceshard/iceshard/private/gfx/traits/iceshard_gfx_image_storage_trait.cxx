@@ -46,7 +46,7 @@ namespace ice::gfx
     auto Trait_GfxImageStorage::gfx_update(ice::gfx::GfxFrameUpdate const& params) noexcept -> ice::Task<>
     {
         // Handle up to 4 requests at the same time each frame.
-        ice::AssetRequest* request = params.assets.aquire_request(ice::render::AssetType_Texture2D, AssetState::Runtime);
+        ice::AssetRequest* request = params.assets.aquire_request(ice::render::AssetCategory_Texture2D, AssetState::Runtime);
         while(request != nullptr)
         {
             ice::AssetState const state = request->state();
@@ -65,7 +65,7 @@ namespace ice::gfx
                 device.destroy_image(entry->image);
             }
 
-            ice::Data const metadata_data = co_await request->resource().load_metadata();
+            ice::Data const metadata_data = request->metadata();
             if (metadata_data.location == nullptr)
             {
                 request->resolve({ .result = ice::AssetRequestResult::Error });
@@ -138,7 +138,7 @@ namespace ice::gfx
             // request->resolve({ .resolver = this, .result = AssetRequestResult::Success, .memory = result });
 
             // // Get the next queued request
-            // request = update.assets.aquire_request(ice::render::AssetType_Texture2D, AssetState::Runtime);
+            // request = update.assets.aquire_request(ice::render::AssetCategory_Texture2D, AssetState::Runtime);
         }
 
         co_return;

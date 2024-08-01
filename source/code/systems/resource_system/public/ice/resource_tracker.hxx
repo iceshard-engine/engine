@@ -19,8 +19,6 @@
 namespace ice
 {
 
-    struct ResourceHandle;
-
     struct ResourceResult
     {
         ice::ResourceStatus resource_status;

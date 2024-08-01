@@ -87,7 +87,7 @@ namespace ice
         ice::EngineRunner& runner
     ) noexcept -> ice::Task<>
     {
-        ice::Asset result = runner.asset_storage().bind(ice::AssetType_TileMap, tilemap_name);
+        ice::Asset result = runner.asset_storage().bind(ice::AssetCategory_TileMap, tilemap_name);
         ice::Data map_data = co_await result[AssetState::Loaded];
         if (map_data.location == nullptr)
         {

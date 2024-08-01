@@ -4,14 +4,10 @@
 #pragma once
 #include <ice/mem.hxx>
 #include <ice/asset.hxx>
-#include <ice/asset_type.hxx>
+#include <ice/asset_category.hxx>
 
 namespace ice
 {
-
-    class Resource;
-
-    struct AssetTypeDefinition;
 
     enum class AssetRequestResult : ice::u8
     {
@@ -41,10 +37,11 @@ namespace ice
 
         virtual auto state() const noexcept -> ice::AssetState = 0;
         virtual auto data() const noexcept -> ice::Data = 0;
+        virtual auto metadata() const noexcept -> ice::Data = 0;
 
         virtual auto asset_name() const noexcept -> ice::StringID_Arg = 0;
-        virtual auto asset_definition() const noexcept -> ice::AssetTypeDefinition const& = 0;
-        virtual auto resource() const noexcept -> ice::Resource const& = 0;
+        virtual auto asset_definition() const noexcept -> ice::AssetCategoryDefinition const& = 0;
+        // virtual auto resource() const noexcept -> ice::Resource const& = 0;
 
         virtual auto allocate(ice::usize size) const noexcept -> ice::Memory = 0;
 

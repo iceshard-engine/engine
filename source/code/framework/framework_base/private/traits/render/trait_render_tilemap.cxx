@@ -62,7 +62,7 @@ namespace ice
 
         auto load_tilemap_shader(ice::AssetStorage& assets, ice::String name) noexcept -> ice::Task<ice::Data>
         {
-            ice::Asset asset = assets.bind(ice::render::AssetType_Shader, name);
+            ice::Asset asset = assets.bind(ice::render::AssetCategory_Shader, name);
             co_return co_await asset[AssetState::Baked];
         }
 
@@ -82,7 +82,7 @@ namespace ice
             {
                 ice::String const asset_name = tilemap.tilesets[idx].asset;
 
-                Asset image_asset = runner.asset_storage().bind(ice::render::AssetType_Texture2D, asset_name);
+                Asset image_asset = runner.asset_storage().bind(ice::render::AssetCategory_Texture2D, asset_name);
                 Data image_data = co_await image_asset[AssetState::Loaded];
                 //ICE_ASSERT(asset_check(image_data, AssetState::Loaded), "Shader not available!");
                 ice::render::ImageInfo const* image_info = reinterpret_cast<ice::render::ImageInfo const*>(image_data.location);

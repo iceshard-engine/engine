@@ -2,8 +2,9 @@
 /// SPDX-License-Identifier: MIT
 
 #include "asset_shelve.hxx"
+#include "asset_entry.hxx"
 #include "asset_request_awaitable.hxx"
-
+#include <ice/task_utils.hxx>
 #include <ice/string/heap_string.hxx>
 #include <ice/container/hashmap.hxx>
 #include <ice/profiler.hxx>
@@ -14,10 +15,12 @@ namespace ice
 
     AssetShelve::AssetShelve(
         ice::Allocator& alloc,
-        ice::AssetTypeDefinition const& definition,
+        ice::AssetStorage& storage,
+        ice::AssetCategoryDefinition const& definition,
         ice::ResourceCompiler const* compiler
     ) noexcept
-        : definition{ definition }
+        : storage{ storage }
+        , definition{ definition }
         , compiler{ compiler }
         , compiler_context{ .userdata = nullptr }
         , _allocator{ alloc }
@@ -42,10 +45,6 @@ namespace ice
 
         for (ice::AssetEntry* entry : _asset_resources)
         {
-            _allocator.deallocate(entry->data_baked);
-            _allocator.deallocate(entry->data_loaded);
-            _allocator.deallocate(entry->data_runtime);
-            _allocator.deallocate(entry->metadata_baked);
             _allocator.destroy(entry);
         }
     }

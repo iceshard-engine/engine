@@ -3,8 +3,7 @@
 
 #pragma once
 #include <ice/asset.hxx>
-#include <ice/asset_type.hxx>
-#include <ice/asset_types.hxx>
+#include <ice/asset_category.hxx>
 #include <ice/mem_unique_ptr.hxx>
 
 namespace ice
@@ -28,7 +27,7 @@ namespace ice
         virtual ~AssetStorage() = default;
 
         virtual auto bind(
-            ice::AssetType type,
+            ice::AssetCategory_Arg category,
             ice::String name
         ) noexcept -> ice::Asset = 0;
 
@@ -38,7 +37,7 @@ namespace ice
         ) noexcept -> ice::Task<ice::Data> = 0;
 
         virtual auto aquire_request(
-            ice::AssetType type,
+            ice::AssetCategory_Arg category,
             ice::AssetState requested_state
         ) noexcept -> ice::AssetRequest* = 0;
 
@@ -49,7 +48,7 @@ namespace ice
 
     auto create_asset_storage(
         ice::Allocator& alloc,
-        ice::UniquePtr<ice::AssetTypeArchive> asset_type_archive,
+        ice::UniquePtr<ice::AssetCategoryArchive> asset_category_archive,
         ice::AssetStorageCreateInfo const& create_info
     ) noexcept -> ice::UniquePtr<ice::AssetStorage>;
 

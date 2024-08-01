@@ -18,18 +18,18 @@ namespace ice
         AssetRequestAwaitable(
             ice::StringID_Arg asset_name,
             ice::AssetShelve& shelve,
-            ice::AssetEntry* entry,
-            ice::AssetState requested_state
+            ice::AssetStateTransaction& transation
         ) noexcept;
 
         ~AssetRequestAwaitable() noexcept override = default;
 
         auto state() const noexcept -> ice::AssetState override;
         auto data() const noexcept -> ice::Data override;
+        auto metadata() const noexcept -> ice::Data override;
 
         auto asset_name() const noexcept -> ice::StringID_Arg override;
-        auto asset_definition() const noexcept -> ice::AssetTypeDefinition const& override;
-        auto resource() const noexcept -> ice::Resource const& override;
+        auto asset_definition() const noexcept -> ice::AssetCategoryDefinition const& override;
+        // auto resource() const noexcept -> ice::Resource const& override;
 
         auto allocate(ice::usize size) const noexcept -> ice::Memory override;
 
@@ -49,8 +49,7 @@ namespace ice
     private:
         ice::StringID const _asset_name;
         ice::AssetShelve& _asset_shelve;
-        ice::AssetEntry* _asset_entry;
-        ice::AssetState _requested_state;
+        ice::AssetStateTransaction& _transaction;
         ice::Memory _result_data;
 
         std::coroutine_handle<> _coroutine;

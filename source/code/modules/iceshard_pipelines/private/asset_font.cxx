@@ -232,17 +232,17 @@ namespace ice
         co_return true;
     }
 
-    void asset_type_font_definition(ice::AssetTypeArchive& asset_type_archive) noexcept
+    void asset_category_font_definition(ice::AssetCategoryArchive& asset_category_archive) noexcept
     {
         static ice::String extensions[]{ ".ttf" };
 
-        static ice::AssetTypeDefinition type_definition{
+        static ice::AssetCategoryDefinition definition{
             .resource_extensions = extensions,
             // .fn_asset_oven = asset_font_oven,
             .fn_asset_loader = asset_font_loader
         };
 
-        asset_type_archive.register_type(ice::AssetType_Font, type_definition);
+        asset_category_archive.register_category(ice::AssetCategory_Font, definition);
     }
 
 } // namespace ice

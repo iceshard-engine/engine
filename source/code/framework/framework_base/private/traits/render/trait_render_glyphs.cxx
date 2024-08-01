@@ -38,7 +38,7 @@ namespace ice
 
         auto load_font_shader(ice::AssetStorage& assets, ice::Data& data, ice::String name) noexcept -> ice::Task<>
         {
-            ice::Asset asset = assets.bind(ice::render::AssetType_Shader, name);
+            ice::Asset asset = assets.bind(ice::render::AssetCategory_Shader, name);
             data = co_await assets.request(asset, AssetState::Baked);
         }
 
@@ -529,7 +529,7 @@ namespace ice
 
         co_await runner.task_scheduler();
 
-        ice::Asset asset = runner.asset_storage().bind(ice::AssetType_Font, font_name);
+        ice::Asset asset = runner.asset_storage().bind(ice::AssetCategory_Font, font_name);
         ice::Data asset_data = co_await asset[AssetState::Loaded];
 
         // Early return if we failed.

@@ -55,13 +55,14 @@ namespace ice
                     };
 
                     ImGui::TextUnformatted(
-                        ice::string::begin(Constant_StateNames[static_cast<ice::u32>(entry->current_state)]),
-                        ice::string::end(Constant_StateNames[static_cast<ice::u32>(entry->current_state)])
+                        ice::string::begin(Constant_StateNames[static_cast<ice::u32>(entry->state())]),
+                        ice::string::end(Constant_StateNames[static_cast<ice::u32>(entry->state())])
                     );
                 }
                 if (ImGui::TableNextColumn()) // Resource
                 {
-                    ImGui::TextUnformatted(ice::string::begin(entry->resource->origin()), ice::string::end(entry->resource->origin()));
+                    ice::String const origin = ice::resource_origin(entry->resource_handle);
+                    ImGui::TextUnformatted(ice::string::begin(origin), ice::string::end(origin));
                 }
             }
 

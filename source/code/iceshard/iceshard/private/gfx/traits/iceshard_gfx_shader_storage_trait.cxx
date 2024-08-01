@@ -43,7 +43,7 @@ namespace ice::gfx
     auto Trait_GfxShaderStorage::gfx_update(ice::gfx::GfxFrameUpdate const& update) noexcept -> ice::Task<>
     {
         // Handle up to 4 requests at the same time each frame.
-        ice::AssetRequest* request = update.assets.aquire_request(ice::render::AssetType_Shader, AssetState::Runtime);
+        ice::AssetRequest* request = update.assets.aquire_request(ice::render::AssetCategory_Shader, AssetState::Runtime);
         while(request != nullptr)
         {
             ice::AssetState const state = request->state();
@@ -85,7 +85,7 @@ namespace ice::gfx
             request->resolve({ .resolver = this, .result = AssetRequestResult::Success, .memory = result });
 
             // Get the next queued request
-            request = update.assets.aquire_request(ice::render::AssetType_Shader, AssetState::Runtime);
+            request = update.assets.aquire_request(ice::render::AssetCategory_Shader, AssetState::Runtime);
         }
 
         co_return;

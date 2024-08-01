@@ -23,9 +23,9 @@
 
 #include <unordered_map>
 
-static constexpr auto AssetType_Config = ice::make_asset_type("ice/core/config");
+static constexpr auto AssetCategory_Config = ice::make_asset_type("ice/core/config");
 
-auto assettype_config_state(
+auto assetcat_config_state(
     void*,
     ice::AssetTypeDefinition const&,
     ice::Metadata const&,
@@ -117,10 +117,10 @@ int main(int argc, char** argv)
     );
     ice::String const exts[]{ ".json" };
     asset_types->register_type(
-        AssetType_Config,
+        AssetCategory_Config,
         AssetTypeDefinition{
             .resource_extensions = exts,
-            .fn_asset_state = assettype_config_state,
+            .fn_asset_state = assetcat_config_state,
         }
     );
     return 0;

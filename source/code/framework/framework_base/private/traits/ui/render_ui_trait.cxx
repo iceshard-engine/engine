@@ -35,7 +35,7 @@ namespace ice
 
         auto load_ui_shader(ice::AssetStorage& assets, ice::Data& data, ice::String name) noexcept -> ice::Task<>
         {
-            ice::Asset const asset = assets.bind(ice::render::AssetType_Shader, name);
+            ice::Asset const asset = assets.bind(ice::render::AssetCategory_Shader, name);
             data = co_await assets.request(asset, AssetState::Baked);
         }
 

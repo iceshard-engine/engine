@@ -12,27 +12,27 @@ namespace ice
     //class IceshardMeshPipeline final : public ice::AssetPipeline
     //{
     //public:
-    //    auto supported_types() const noexcept -> ice::Span<AssetType const> override;
+    //    auto supported_types() const noexcept -> ice::Span<AssetCategory const> override;
 
     //    bool supports_baking(
-    //        ice::AssetType type
+    //        ice::AssetCategory type
     //    ) const noexcept override;
 
     //    bool resolve(
     //        ice::String resource_extension,
     //        ice::Metadata const& resource_metadata,
-    //        ice::AssetType& out_type,
+    //        ice::AssetCategory& out_type,
     //        ice::AssetStatus& out_status
     //    ) const noexcept override;
 
     //    auto request_oven(
-    //        ice::AssetType type,
+    //        ice::AssetCategory type,
     //        ice::String extension,
     //        ice::Metadata const& metadata
     //    ) noexcept -> ice::AssetOven const* override;
 
     //    auto request_loader(
-    //        ice::AssetType type
+    //        ice::AssetCategory type
     //    ) noexcept -> ice::AssetLoader const* override;
 
     //private:

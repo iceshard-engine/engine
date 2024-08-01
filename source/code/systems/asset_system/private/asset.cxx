@@ -8,6 +8,7 @@
 #include <ice/task_utils.hxx>
 
 #include "asset_entry.hxx"
+#include "asset_shelve.hxx"
 
 namespace ice
 {
@@ -22,7 +23,7 @@ namespace ice
 
         auto storage(ice::AssetHandle* handle) noexcept -> ice::AssetStorage&
         {
-            return *static_cast<ice::AssetEntry*>(handle)->storage;
+            return static_cast<ice::AssetEntry*>(handle)->_shelve->storage;
         }
 
     } // namespace detail
@@ -44,7 +45,7 @@ namespace ice
         if (_handle != nullptr)
         {
             ice::AssetEntry const& entry = detail::entry(_handle);
-            return entry.current_state != AssetState::Invalid && entry.resource_state != AssetState::Unknown;
+            return entry.state() >= AssetState::Exists;
         }
         return false;
     }
@@ -52,9 +53,9 @@ namespace ice
     auto Asset::metadata(ice::Data& out_metadata) const noexcept -> ice::Task<ice::Result>
     {
         ice::AssetEntry& entry = detail::entry(_handle);
-        if (entry.metadata_baked.location != nullptr)
+        if (entry._metadata != nullptr)
         {
-            out_metadata = ice::data_view(entry.metadata_baked);
+            out_metadata = ice::asset_data_find(entry._metadata, AssetState::Exists);
             co_return ice::S_Ok;
         }
         else

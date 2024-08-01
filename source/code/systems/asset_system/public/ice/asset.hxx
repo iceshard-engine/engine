@@ -2,18 +2,12 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/mem_data.hxx>
-#include <ice/stringid.hxx>
-#include <ice/resource_meta.hxx>
 #include <ice/asset_types.hxx>
 
 namespace ice
 {
 
-    struct Metadata;
-    struct AssetHandle;
-
-    enum class AssetState : ice::u32
+    enum class AssetState : ice::u8
     {
         //! \brief The asset could not be accessed.
         //! \detail Either an error occured or the asset does not exist.
@@ -22,7 +16,7 @@ namespace ice
         //! \brief The asset data state is not known and needs another pass to the Asset Type Resolver.
         Unknown,
 
-        //! \bried The resource handle associated exists, but the data was not requested not validated.
+        //! \bried The resource handle associated exists, but the data was not requested nor validated.
         Exists,
 
         //! \brief The asset data is represented in raw format of the source file.

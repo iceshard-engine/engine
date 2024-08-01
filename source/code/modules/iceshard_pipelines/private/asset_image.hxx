@@ -2,11 +2,11 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/asset_type_archive.hxx>
+#include <ice/asset_category_archive.hxx>
 
 namespace ice
 {
 
-    void asset_type_image_definition(ice::AssetTypeArchive& asset_type_archive) noexcept;
+    void asset_category_image_definition(ice::AssetCategoryArchive& asset_category_archive) noexcept;
 
 } // namespace iceshard

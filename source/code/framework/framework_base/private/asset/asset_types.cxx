@@ -7,38 +7,38 @@
 #include <ice/game_tilemap.hxx>
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/asset_module.hxx>
-#include <ice/asset_type_archive.hxx>
+#include <ice/asset_category_archive.hxx>
 #include <ice/module_register.hxx>
 
 namespace ice
 {
 
-    void iceshard_register_tmx_tilemap_asset_type(
-        ice::AssetTypeArchive& type_archive
+    void iceshard_register_tmx_tilemap_asset_category(
+        ice::AssetCategoryArchive& type_archive
     ) noexcept
     {
         static ice::String extensions[]{ ".tmx" };
 
-        static ice::AssetTypeDefinition type_definition{
+        static ice::AssetCategoryDefinition definition{
             .resource_extensions = extensions,
             // .fn_asset_oven = ice::build::is_windows ? asset_tilemap_oven_tmx : nullptr,
             .fn_asset_loader = asset_tilemap_loader
         };
 
-        type_archive.register_type(ice::AssetType_TileMap, type_definition);
+        type_archive.register_category(ice::AssetCategory_TileMap, definition);
     }
 
-    void iceshard_base_framework_register_asset_types(
-        ice::AssetTypeArchive& type_archive,
+    void iceshard_base_framework_register_asset_categories(
+        ice::AssetCategoryArchive& type_archive,
         ice::ModuleQuery const& module_query
     ) noexcept
     {
-        iceshard_register_tmx_tilemap_asset_type(type_archive);
+        iceshard_register_tmx_tilemap_asset_category(type_archive);
     }
 
-    void iceshard_base_framework_pipeline_api(ice::detail::asset_system::v1::AssetTypeArchiveAPI& api) noexcept
+    void iceshard_base_framework_pipeline_api(ice::detail::asset_system::v1::AssetArchiveAPI& api) noexcept
     {
-        api.register_types_fn = iceshard_base_framework_register_asset_types;
+        api.fn_register_categories = iceshard_base_framework_register_asset_categories;
     }
 
     struct FrameworkAssetsModule

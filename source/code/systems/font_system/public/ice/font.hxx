@@ -4,13 +4,13 @@
 #pragma once
 #include <ice/span.hxx>
 #include <ice/math.hxx>
-#include <ice/asset_type.hxx>
+#include <ice/asset_category.hxx>
 
 namespace ice
 {
 
-    static constexpr ice::AssetType AssetType_Font = ice::make_asset_type("ice/font");
-    static constexpr ice::AssetType AssetType_FontAtlas = ice::make_asset_type("ice/font_atlas");
+    static constexpr ice::AssetCategory AssetCategory_Font = ice::make_asset_category("ice/font");
+    static constexpr ice::AssetCategory AssetCategory_FontAtlas = ice::make_asset_category("ice/font_atlas");
 
     struct Glyph
     {

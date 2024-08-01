@@ -9,19 +9,19 @@
 namespace ice
 {
 
-    void load_asset_type_definitions(
+    void load_asset_category_definitions(
         ice::Allocator& alloc,
         ice::ModuleRegister const& registry,
-        ice::AssetTypeArchive& asset_type_archive
+        ice::AssetCategoryArchive& asset_category_archive
     ) noexcept
     {
-        ice::StackAllocator<ice::size_of<ice::detail::asset_system::v1::AssetTypeArchiveAPI> * 10> static_alloc{};
-        ice::Array<ice::detail::asset_system::v1::AssetTypeArchiveAPI> api_ptrs{ static_alloc };
+        ice::StackAllocator<ice::size_of<ice::detail::asset_system::v1::AssetArchiveAPI> * 10> static_alloc{};
+        ice::Array<ice::detail::asset_system::v1::AssetArchiveAPI> api_ptrs{ static_alloc };
         registry.query_apis(api_ptrs);
 
-        for (ice::detail::asset_system::v1::AssetTypeArchiveAPI const& api : api_ptrs)
+        for (ice::detail::asset_system::v1::AssetArchiveAPI const& api : api_ptrs)
         {
-            api.register_types_fn(asset_type_archive, registry);
+            api.fn_register_categories(asset_category_archive, registry);
         }
     }
 
