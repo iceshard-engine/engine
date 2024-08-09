@@ -12,14 +12,12 @@
 namespace ice
 {
 
-    class AssetRequestAwaitable;
-
     class AssetShelve final
     {
     public:
         AssetShelve(
             ice::Allocator& alloc,
-            ice::AssetStorage& storage,
+            ice::DefaultAssetStorage& storage,
             ice::AssetCategoryDefinition const& definition,
             ice::ResourceCompiler const* compiler
         ) noexcept;
@@ -50,7 +48,7 @@ namespace ice
             ice::AssetState state
         ) noexcept -> ice::AssetRequestAwaitable*;
 
-        ice::AssetStorage& storage;
+        ice::DefaultAssetStorage& storage;
         ice::AssetCategoryDefinition const& definition;
         ice::ResourceCompiler const* compiler;
         ice::ResourceCompilerCtx compiler_context;

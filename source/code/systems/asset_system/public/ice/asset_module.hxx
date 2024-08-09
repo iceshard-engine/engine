@@ -25,7 +25,6 @@ namespace ice
             static constexpr ice::u32 Constant_APIVersion = 1;
 
             RegisterTypesFn* fn_register_categories;
-            // TODO: Unregister or Reload function?
         };
 
     } // detail::engine::v1

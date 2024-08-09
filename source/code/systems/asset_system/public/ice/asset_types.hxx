@@ -20,6 +20,8 @@ namespace ice
 
     struct AssetHandle;
     struct AssetCategoryDefinition;
+    struct AssetStateTrackers;
+    struct AssetStateTransaction;
 
     enum class AssetRequestResult : ice::u8;
     enum class AssetState : ice::u8;

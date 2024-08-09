@@ -13,14 +13,13 @@ namespace ice
 
     AssetRequestAwaitable::AssetRequestAwaitable(
         ice::StringID_Arg asset_name,
-        ice::AssetShelve& shelve,
         ice::AssetStateTransaction& transaction
     ) noexcept
         : _next{ nullptr }
         , _prev{ nullptr }
         , _chained{ nullptr }
         , _asset_name{ asset_name }
-        , _asset_shelve{ shelve }
+        , _asset_shelve{ transaction.shelve }
         , _transaction{ transaction }
         , _result_data{ }
         , _coroutine{ nullptr }
@@ -51,33 +50,19 @@ namespace ice
     auto AssetRequestAwaitable::data() const noexcept -> ice::Data
     {
         return _transaction.asset.data_for_state(this->state());
-#if 0
-        switch (_transaction.target_state)
-        {
-        case AssetState::Baked:
-            return _asset_entry->data;
-        case AssetState::Loaded:
-            return _asset_entry->data_baked.location != nullptr ? ice::data_view(_asset_entry->data_baked) : _asset_entry->data;
-        case AssetState::Runtime:
-            return ice::data_view(_asset_entry->data_loaded);
-        default:
-            ICE_ASSERT(false, "Required request data not available!");
-        }
-        return { };
-#endif
     }
 
     auto AssetRequestAwaitable::metadata() const noexcept -> ice::Data
     {
         ice::Data data{};
-        ice::Result result = ice::wait_for_result(ice::resource_meta(_transaction.asset.resource_handle, data));
+        ice::Result result = ice::wait_for_result(ice::asset_metadata_find(_transaction.asset._data, data));
         ICE_LOG_IF(result == E_Fail, LogSeverity::Error, LogTag::Asset, "Failed to access asset metadata: {}", result.error());
         return data;
     }
 
     auto AssetRequestAwaitable::asset_name() const noexcept -> ice::StringID_Arg
     {
-        return _transaction.asset.assetid;
+        return _transaction.asset._identifier;
     }
 
     auto AssetRequestAwaitable::asset_definition() const noexcept -> ice::AssetCategoryDefinition const&
@@ -112,7 +97,8 @@ namespace ice
             _transaction.set_result_data(_asset_shelve.asset_allocator(), _transaction.target_state, resolve_data);
             _result_data = resolve_data.memory;
 
-            asset_handle._handle = ice::addressof(_transaction.asset);
+            _transaction.asset._refcount.fetch_add(1, std::memory_order_release);
+            asset_handle = Asset{ ice::addressof(_transaction.asset) };
         }
 
         // After the coroutine finishes the request awaitable might be already dead.

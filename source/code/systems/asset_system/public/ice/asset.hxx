@@ -38,24 +38,38 @@ namespace ice
 
     struct Asset
     {
-        ice::AssetHandle* _handle = nullptr;
-
         Asset() noexcept = default;
+        explicit Asset(ice::AssetHandle* handle) noexcept;
         ~Asset() noexcept;
-        Asset(Asset&& other) noexcept = default;
-        auto operator=(Asset&& other) noexcept -> ice::Asset& = default;
 
+        Asset(Asset&& other) noexcept;
+        auto operator=(Asset&& other) noexcept -> ice::Asset&;
         Asset(Asset const&) noexcept = delete;
         auto operator=(Asset const&) noexcept -> ice::Asset& = delete;
 
-        auto name() const noexcept -> ice::StringID_Arg;
         bool valid() const noexcept;
+        bool empty() const noexcept;
+
+        void release() const noexcept;
+
+        auto name() const noexcept -> ice::StringID_Arg;
         auto metadata(ice::Data& out_metadata) const noexcept -> ice::Task<ice::Result>;
         bool available(ice::AssetState state) const noexcept;
         auto preload(ice::AssetState state) noexcept -> ice::Task<bool>;
         auto data(ice::AssetState state) noexcept -> ice::Task<ice::Data>;
 
         auto operator[](ice::AssetState state) noexcept -> ice::Task<ice::Data>;
+
+    public:
+        auto start_transaction(
+            ice::AssetState state,
+            ice::AssetStateTrackers& trackers
+        ) const noexcept -> ice::AssetStateTransaction;
+
+        void finish_transaction(ice::AssetStateTransaction& transaction) const noexcept;
+
+    private:
+        ice::AssetHandle* _handle = nullptr;
     };
 
 } // namespace ice

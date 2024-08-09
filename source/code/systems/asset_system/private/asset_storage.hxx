@@ -43,23 +43,19 @@ namespace ice
         ) noexcept -> ice::Task<ice::Data> override;
 
         auto request_asset_runtime(
-            ice::AssetStateTransaction& transaction,
-            ice::AssetShelve& shelve
+            ice::AssetStateTransaction& transaction
         ) noexcept -> ice::TaskExpected<ice::Data, ice::ErrorCode>;
 
         auto request_asset_loaded(
-            ice::AssetStateTransaction& transaction,
-            ice::AssetShelve& shelve
+            ice::AssetStateTransaction& transaction
         ) noexcept -> ice::TaskExpected<ice::Data, ice::ErrorCode>;
 
         auto request_asset_baked(
-            ice::AssetStateTransaction& transaction,
-            ice::AssetShelve& shelve
+            ice::AssetStateTransaction& transaction
         ) noexcept -> ice::TaskExpected<ice::Data, ice::ErrorCode>;
 
         auto request_asset_raw(
-            ice::AssetStateTransaction& transaction,
-            ice::AssetShelve const& shelve
+            ice::AssetStateTransaction& transaction
         ) noexcept -> ice::TaskExpected<ice::Data, ice::ErrorCode>;
 
         auto aquire_request(

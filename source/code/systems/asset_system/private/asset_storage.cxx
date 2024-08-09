@@ -67,7 +67,7 @@ namespace ice
             ice::Array<ice::ResourceHandle*> sources{ alloc };
             ice::Array<ice::URI> dependencies{ alloc }; // Not used currently
 
-            ice::ResourceHandle* const resource = transaction.asset.resource_handle;
+            ice::ResourceHandle* const resource = ice::asset_data_resource(transaction.asset._data);
             ice::ResourceCompilerCtx& ctx = transaction.asset._shelve->compiler_context;
 
             // Early return if sources or dependencies couldn't be collected
@@ -264,10 +264,10 @@ namespace ice
         ice::AssetEntry* entry = nullptr;
         if (find_shelve_and_entry(category, name, shelve, entry))
         {
-            result._handle = entry;
+            result = Asset{ entry };
 
             // We need to ensure the previous count was higher else the asset might be released already
-            ice::u32 const prev_count = entry->refcount.fetch_add(1, std::memory_order_relaxed);
+            ice::u32 const prev_count = entry->_refcount.fetch_add(1, std::memory_order_relaxed);
             if (prev_count == 0)
             {
                 // Only keep metadata data
@@ -294,10 +294,10 @@ namespace ice
                     resource_handle
                 );
 
-                ice::u32 const prev_count = entry->refcount.fetch_add(1, std::memory_order_relaxed);
+                ice::u32 const prev_count = entry->_refcount.fetch_add(1, std::memory_order_relaxed);
                 ICE_ASSERT(prev_count == 0, "Unexpected value!");
 
-                result._handle = entry;
+                result = Asset{ entry };
             }
         }
         return result;
@@ -308,41 +308,30 @@ namespace ice
         ice::AssetState requested_state
     ) noexcept -> ice::Task<ice::Data>
     {
-        ICE_ASSERT(asset._handle != nullptr, "Invalid asset object");
-        ice::AssetEntry& entry = *static_cast<ice::AssetEntry*>(asset._handle);
+        ICE_ASSERT(asset.valid(), "Invalid asset object");
 
         // This object might be unused (it's only alive for the request duration)
         ice::AssetStateTrackers trackers{};
-        ice::AssetStateTrackers* trackersptrs = nullptr;
-        if (entry._request_trackers.compare_exchange_strong(trackersptrs, ice::addressof(trackers), std::memory_order_relaxed))
-        {
-            trackersptrs = ice::addressof(trackers);
-        }
+        ice::AssetStateTransaction transaction = asset.start_transaction(requested_state, trackers);
 
         ice::Expected<ice::Data, ice::ErrorCode> result{ };
-        ice::AssetShelve& shelve = *entry._shelve;
-        ice::AssetStateTransaction transaction{ requested_state, _allocator, entry, *trackersptrs };
         switch (transaction.target_state)
         {
         case AssetState::Raw:
-            result = co_await this->request_asset_raw(transaction, shelve);
+            result = co_await this->request_asset_raw(transaction);
             break;
         case AssetState::Baked:
-            result = co_await this->request_asset_baked(transaction, shelve);
+            result = co_await this->request_asset_baked(transaction);
             break;
         case AssetState::Loaded:
-            result = co_await this->request_asset_loaded(transaction, shelve);
+            result = co_await this->request_asset_loaded(transaction);
             break;
         case AssetState::Runtime:
-            result = co_await this->request_asset_runtime(transaction, shelve);
+            result = co_await this->request_asset_runtime(transaction);
             break;
         }
 
-        // Release the trackers pointers
-        if (entry._request_trackers.load(std::memory_order_relaxed) == trackersptrs)
-        {
-            entry._request_trackers.exchange(nullptr, std::memory_order_relaxed);
-        }
+        asset.finish_transaction(transaction);
 
         if (result.valid() == false)
         {
@@ -353,23 +342,18 @@ namespace ice
     }
 
     auto DefaultAssetStorage::request_asset_runtime(
-        ice::AssetStateTransaction& transaction,
-        ice::AssetShelve& shelve
+        ice::AssetStateTransaction& transaction
     ) noexcept -> ice::TaskExpected<ice::Data, ice::ErrorCode>
     {
         ice::Expected<ice::Data, ice::ErrorCode> result =
             co_await ice::AssetStateRequest{ transaction, AssetState::Runtime };
 
-        // If the awaiting index was '0' we are responsible for loading and calling all awaiting tasks
-        // - This also already passed the refcount check, meaning the data is not there or outdated.
         if (result == E_RequestEvaluationNeeded)
         {
             // We request a baked resource first
-            co_await request_asset_loaded(transaction, shelve);
+            co_await request_asset_loaded(transaction);
 
-            ice::Memory runtime_data = co_await AssetRequestAwaitable{
-                StringID_Invalid, shelve, transaction
-            };
+            ice::Memory runtime_data = co_await AssetRequestAwaitable{ StringID_Invalid, transaction };
 
             // ICE_ASSERT_CORE(runtime_data.location == transaction.result_data->readwrite);
 
@@ -383,19 +367,16 @@ namespace ice
     }
 
     auto DefaultAssetStorage::request_asset_loaded(
-        ice::AssetStateTransaction& transaction,
-        ice::AssetShelve& shelve
+        ice::AssetStateTransaction& transaction
     ) noexcept -> ice::TaskExpected<ice::Data, ice::ErrorCode>
     {
         ice::Expected<ice::Data, ice::ErrorCode> result =
             co_await ice::AssetStateRequest{ transaction, AssetState::Loaded };
 
-        // If the awaiting index was '0' we are responsible for loading and calling all awaiting tasks
-        // - This also already passed the refcount check, meaning the data is not there or outdated.
         if (result == E_RequestEvaluationNeeded)
         {
             // We request a baked resource first
-            ice::Data baked_result = co_await request_asset_baked(transaction, shelve);
+            ice::Data baked_result = co_await request_asset_baked(transaction);
 
             ice::AssetState const current_state = transaction.asset.state();
             if (current_state == AssetState::Baked)
@@ -405,8 +386,8 @@ namespace ice
                     ice::asset_data_find(transaction.asset._metadata, AssetState::Baked)
                 );
                 bool const load_success = co_await ice::detail::load_asset(
-                    shelve.asset_allocator(),
-                    shelve.definition,
+                    transaction.shelve.asset_allocator(),
+                    transaction.shelve.definition,
                     *this,
                     metadata,
                     baked_result,
@@ -419,7 +400,7 @@ namespace ice
                 }
 
                 result = ice::data_view(load_result);
-                transaction.set_result_data(shelve.asset_allocator(), AssetState::Loaded, load_result);
+                transaction.set_result_data(transaction.shelve.asset_allocator(), AssetState::Loaded, load_result);
             }
 
             co_await ice::await_filtered_queue_on(transaction.trackers.tasks_queue, _info.task_scheduler, detail::filter_states<AssetState::Loaded>);
@@ -429,31 +410,27 @@ namespace ice
     }
 
     auto DefaultAssetStorage::request_asset_baked(
-        ice::AssetStateTransaction& transaction,
-        ice::AssetShelve& shelve
+        ice::AssetStateTransaction& transaction
     ) noexcept -> ice::TaskExpected<ice::Data, ice::ErrorCode>
     {
         ice::Expected<ice::Data, ice::ErrorCode> result =
             co_await ice::AssetStateRequest{ transaction, AssetState::Baked };
 
-        // If the awaiting index was '0' we are responsible for loading and calling all awaiting tasks
-        // - This also already passed the refcount check, meaning the data is not there or outdated.
-
         if (result == E_RequestEvaluationNeeded)
         {
             // We request a raw resource first
-            ice::Data raw_data = co_await request_asset_raw(transaction, shelve);
+            ice::Data raw_data = co_await request_asset_raw(transaction);
 
             ice::AssetState const current_state = transaction.asset.state();
             if (current_state == AssetState::Raw)
             {
                 ICE_ASSERT(raw_data.location != nullptr, "We failed to load any data from resource handle!");
 
-                if (shelve.compiler != nullptr)
+                if (transaction.shelve.compiler != nullptr)
                 {
                     bool const task_success = co_await ice::detail::bake_asset(
-                        shelve.asset_allocator(),
-                        *shelve.compiler,
+                        transaction.shelve.asset_allocator(),
+                        *transaction.shelve.compiler,
                         _info.resource_tracker,
                         transaction
                     );
@@ -473,40 +450,35 @@ namespace ice
     }
 
     auto DefaultAssetStorage::request_asset_raw(
-        ice::AssetStateTransaction& transaction,
-        ice::AssetShelve const& shelve
+        ice::AssetStateTransaction& transaction
     ) noexcept -> ice::TaskExpected<ice::Data, ice::ErrorCode>
     {
         ice::Expected<ice::Data, ice::ErrorCode> result =
             co_await ice::AssetStateRequest{ transaction, AssetState::Raw };
 
-        // If the awaiting index was '0' we are responsible for loading and calling all awaiting tasks
-        // - This also already passed the refcount check, meaning the data is not there or outdated.
         if (result == E_RequestEvaluationNeeded)
         {
-            //IPT_MESSAGE("Loading 'Raw' state");
-            //ICE_ASSERT(entry.resource_state == AssetState::Unknown, "Unexpected asset state!");
+            bool const has_resource_object = ice::has_all(transaction.asset._data->_flags, AssetDataFlags::Resource);
+            ICE_ASSERT_CORE(has_resource_object);
 
-            ice::ResourceResult const resource = co_await _info.resource_tracker.load_resource(transaction.asset.resource_handle);
+            ice::ResourceResult const resource = co_await ice::asset_data_load(transaction.asset._data, _info.resource_tracker);
             ICE_ASSERT(
                 resource.resource_status == ResourceStatus::Loaded,
                 "Failed to load resource!"
             );
 
             ice::AssetState const current_state = transaction.asset.state();
-            if (current_state == AssetState::Exists)
-            {
-                ice::Data metadata{};
-                ice::MutableMetadata res_metadata{ _allocator };
-                if (co_await ice::resource_meta(transaction.asset.resource_handle, metadata); metadata.location != nullptr)
-                {
-                    ice::Result const res = ice::meta_deserialize_from(res_metadata, metadata);
-                    ICE_ASSERT_CORE(res == true);
-                }
+            ICE_ASSERT_CORE(current_state == AssetState::Exists);
 
-                result = resource.data;
-                transaction.set_result_data(res_metadata, resource.data);
-            }
+            ice::Metadata metadata;
+            co_await ice::asset_metadata_load(transaction.asset._data, metadata);
+
+            // Update the initial data object
+            transaction.asset._data->_state = transaction.calculate_state(metadata);
+            transaction.asset._data->_readonly = resource.data.location;
+            transaction.asset._data->_size = resource.data.size;
+            transaction.asset._data->_alignment = resource.data.alignment;
+            result = resource.data;
 
             // TODO: Resource could be in 'Baked' so processing for 'Raw' should be avoided here.
             co_await ice::await_filtered_queue_on(transaction.trackers.tasks_queue, _info.task_scheduler, detail::filter_states<AssetState::Raw>);
@@ -534,21 +506,7 @@ namespace ice
         ice::Asset const& asset
     ) noexcept -> ice::Task<>
     {
-        ICE_ASSERT(asset._handle != nullptr, "Invalid asset object! No valid handle found!");
-        ice::AssetEntry* entry = static_cast<ice::AssetEntry*>(asset._handle);
-
-        // We where the last ones to keep a reference.
-        if (entry->refcount.fetch_sub(1, std::memory_order_relaxed) == 1)
-        {
-            entry->_data.reset();
-
-            [[maybe_unused]]
-            ice::ResourceResult const result = co_await _info.resource_tracker.unload_resource(entry->resource_handle);
-            //if (ice::has_all(result.resource_status, ice::ResourceStatus::Available))
-            //{
-            //    entry->data = result.data;
-            //}
-        }
+        ICE_ASSERT(false, "Deprecated do not use");
     }
 
     bool DefaultAssetStorage::find_shelve_and_entry(

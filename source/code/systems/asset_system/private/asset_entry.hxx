@@ -18,15 +18,6 @@
 namespace ice
 {
 
-    class Resource;
-    class AssetRequestAwaitable;
-    struct AssetRequestResolver;
-    struct AssetStateTransaction;
-
-    struct ResourceHandle;
-
-    struct AssetHandle { };
-
     struct AssetStateTrackers
     {
         ice::TaskQueue tasks_queue;
@@ -36,11 +27,15 @@ namespace ice
         std::atomic<ice::u8> runtime_awaiting;
     };
 
-    struct AssetEntryBase : AssetHandle
+    struct AssetHandle
     {
-        inline AssetEntryBase() noexcept;
-        inline AssetEntryBase(ice::StringID_Hash id, ice::ResourceHandle* resource, ice::AssetShelve* shelve) noexcept;
-        inline AssetEntryBase(ice::AssetEntryBase&& other) noexcept;
+        inline AssetHandle() noexcept;
+        inline AssetHandle(
+            ice::StringID_Hash id,
+            ice::AssetShelve* shelve,
+            ice::UniquePtr<ice::ResourceAssetData> resource
+        ) noexcept;
+        inline AssetHandle(ice::AssetHandle&& other) noexcept;
 
         inline auto data_for_state(ice::AssetState state) noexcept -> ice::Data;
 
@@ -49,50 +44,47 @@ namespace ice
             return _data == nullptr ? AssetState::Exists : _data->_state;
         }
 
-        ice::StringID assetid;
-        ice::ResourceHandle* resource_handle;
-        std::atomic<ice::u32> refcount;
+        // State
+        ice::StringID _identifier;
         ice::AssetShelve* _shelve;
+        std::atomic<ice::u32> _refcount;
 
-        // Data pointers
+        // Data
         ice::UniquePtr<ice::AssetData> _metadata;
         ice::UniquePtr<ice::AssetData> _data;
 
-        // Load only object
+        // Loading
         std::atomic<ice::AssetStateTrackers*> _request_trackers;
     };
 
-    inline AssetEntryBase::AssetEntryBase() noexcept
-        : assetid{ }
-        , resource_handle{ nullptr }
-        , refcount{ 0 }
+    inline AssetHandle::AssetHandle() noexcept
+        : _identifier{ }
         , _shelve{ nullptr }
+        , _refcount{ 0 }
         , _metadata{ }
         , _data{ }
         , _request_trackers{ }
     {
     }
 
-    inline AssetEntryBase::AssetEntryBase(
+    inline AssetHandle::AssetHandle(
         ice::StringID_Hash id,
-        ice::ResourceHandle* resource,
-        ice::AssetShelve* shelve
+        ice::AssetShelve* shelve,
+        ice::UniquePtr<ice::ResourceAssetData> resource
     ) noexcept
-        : assetid{ id }
-        , resource_handle{ resource }
-        , refcount{ 0 }
+        : _identifier{ id }
         , _shelve{ shelve }
+        , _refcount{ 0 }
         , _metadata{ }
-        , _data{ }
+        , _data{ ice::move(resource) }
         , _request_trackers{ }
     {
     }
 
-    inline AssetEntryBase::AssetEntryBase(AssetEntryBase&& other) noexcept
-        : assetid{ other.assetid }
-        , resource_handle{ other.resource_handle }
-        , refcount{ other.refcount.load(std::memory_order_relaxed) }
+    inline AssetHandle::AssetHandle(AssetHandle&& other) noexcept
+        : _identifier{ other._identifier }
         , _shelve{ other._shelve }
+        , _refcount{ other._refcount.load(std::memory_order_relaxed) }
         , _metadata{ ice::move(other._metadata) }
         , _data{ ice::move(other._data) }
         , _request_trackers{ other._request_trackers.load(std::memory_order_relaxed) }
@@ -100,18 +92,22 @@ namespace ice
 
     }
 
-    inline auto AssetEntryBase::data_for_state(ice::AssetState state) noexcept -> ice::Data
+    inline auto AssetHandle::data_for_state(ice::AssetState state) noexcept -> ice::Data
     {
         return ice::asset_data_find(_data, state);
     }
 
     template<bool IsDebug = true>
-    struct AssetEntryFinal : AssetEntryBase
+    struct AssetEntryFinal : AssetHandle
     {
         static constexpr bool HoldsDebugData = IsDebug;
 
         inline AssetEntryFinal() noexcept;
-        inline AssetEntryFinal(ice::HeapString<> name, ice::ResourceHandle* resource, ice::AssetShelve* shelve) noexcept;
+        inline AssetEntryFinal(
+            ice::HeapString<> name,
+            ice::AssetShelve* shelve,
+            ice::UniquePtr<ice::ResourceAssetData> resource
+        ) noexcept;
         inline AssetEntryFinal(AssetEntryFinal const& other) noexcept;
 
         inline static ice::StackAllocator<8_B> _empty_alloc;
@@ -119,37 +115,40 @@ namespace ice
     };
 
     template<>
-    struct AssetEntryFinal<false> : AssetEntryBase
+    struct AssetEntryFinal<false> : AssetHandle
     {
         static constexpr bool HoldsDebugData = false;
 
-        using AssetEntryBase::AssetEntryBase;
+        using AssetHandle::AssetHandle;
     };
 
     template<bool IsDebug>
     inline AssetEntryFinal<IsDebug>::AssetEntryFinal() noexcept
-        : AssetEntryBase{ }
+        : AssetHandle{ }
         , debug_name{ _empty_alloc }
     {
     }
 
     template<bool IsDebug>
-    inline AssetEntryFinal<IsDebug>::AssetEntryFinal(ice::HeapString<> name, ice::ResourceHandle* resource, ice::AssetShelve* shelve) noexcept
-        : AssetEntryBase{ ice::stringid(name), resource, shelve }
+    inline AssetEntryFinal<IsDebug>::AssetEntryFinal(
+        ice::HeapString<> name,
+        ice::AssetShelve* shelve,
+        ice::UniquePtr<ice::ResourceAssetData> resource
+    ) noexcept
+        : AssetHandle{ ice::stringid(name), shelve, ice::move(resource) }
         , debug_name{ ice::move(name) }
     {
     }
 
     template<bool IsDebug>
     inline AssetEntryFinal<IsDebug>::AssetEntryFinal(ice::AssetEntryFinal<IsDebug> const& other) noexcept
-        : AssetEntryBase{ other }
+        : AssetHandle{ other }
         , debug_name{ other.debug_name } // copy? Might want to remove it
     {
-        assetid = ice::stringid(debug_name);
+        _identifier = ice::stringid(debug_name);
     }
 
 
     using AssetEntry = AssetEntryFinal<ice::build::is_debug || ice::build::is_develop>;
-
 
 } // namespace ice

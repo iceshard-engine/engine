@@ -14,6 +14,7 @@ namespace ice::gfx
 
     struct GfxShaderEntry
     {
+        ice::Asset asset;
         ice::render::Shader shader;
         bool released = false;
     };

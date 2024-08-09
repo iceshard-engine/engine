@@ -16,13 +16,16 @@ namespace ice
             : target_state{ target_state }
             , alloc{ alloc }
             , asset{ asset_entry }
+            , shelve{ *asset_entry._shelve }
             , trackers{ asset_trackers }
         {
         }
 
+        auto calculate_state(ice::Metadata const& meta) const noexcept -> ice::AssetState;
+
         // void set_result_metadata(ice::Allocator& alloc, ice::Metadata const& meta) noexcept;
         void set_result_data(ice::Allocator& alloc, ice::Metadata const& meta, ice::Memory data) noexcept;
-        void set_result_data(ice::Metadata const& meta, ice::Data data) noexcept;
+        // void set_result_data(ice::Metadata const& meta, ice::Data data) noexcept;
 
         void set_result_data(ice::Allocator& alloc, ice::AssetState state, ice::AssetResolveData const& resolved_data) noexcept;
         void set_result_data(ice::Allocator& alloc, ice::AssetState state, ice::Memory data) noexcept;
@@ -32,6 +35,7 @@ namespace ice
         ice::AssetState const target_state;
         ice::Allocator& alloc;
         ice::AssetEntry& asset;
+        ice::AssetShelve& shelve;
         ice::AssetStateTrackers& trackers;
 
         ice::AssetRequestAwaitable* request_awaitable = nullptr;
@@ -115,34 +119,27 @@ namespace ice
             return _transaction.asset.data_for_state(requested_state);
         }
 
-        // auto data() const noexcept
-        // {
-        //     ice::AssetState const requested_state = static_cast<ice::AssetState>(_params.u32_value);
-        //     ICE_ASSERT_CORE(_transaction.result_data != nullptr);
-
-        //     ice::Data dataresult;
-        //     if (_transaction.result_data->select(requested_state, dataresult) == false)
-        //     {
-        //         ICE_ASSERT_CORE(false);
-        //     }
-        //     return dataresult;
-        // }
-
         ice::AssetStateTransaction& _transaction;
         ice::u32 awaiting_index;
     };
 
-    inline void AssetStateTransaction::set_result_data(ice::Allocator& dataalloc, ice::Metadata const& meta, ice::Memory data) noexcept
+    inline auto AssetStateTransaction::calculate_state(ice::Metadata const& meta) const noexcept -> ice::AssetState
     {
-        ice::AssetState const state = asset._shelve->definition.fn_asset_state(
+        return asset._shelve->definition.fn_asset_state(
             asset._shelve->definition.ud_asset_state,
             asset._shelve->definition,
             meta,
-            ice::resource_uri(asset.resource_handle)
+            ice::resource_uri(ice::asset_data_resource(asset._data))
         );
+    }
+
+    inline void AssetStateTransaction::set_result_data(ice::Allocator& dataalloc, ice::Metadata const& meta, ice::Memory data) noexcept
+    {
+        ice::AssetState const state = calculate_state(meta);
 
         // Assign new metadata
-        asset._metadata = ice::create_asset_data_entry(alloc, AssetState::Exists, alloc, ice::meta_save(meta, alloc));
+        asset._metadata = ice::create_asset_data_entry(alloc, AssetState::Baked, alloc, ice::meta_save(meta, alloc));
+        asset._metadata->_flags |= AssetDataFlags::Metadata;
 
         // Append the next asset data block
         ice::UniquePtr<ice::AssetData> entry_data = ice::create_asset_data_entry(alloc, state, dataalloc, data);
@@ -150,23 +147,24 @@ namespace ice
         asset._data = ice::move(entry_data);
     }
 
-    inline void AssetStateTransaction::set_result_data(ice::Metadata const& meta, ice::Data data) noexcept
-    {
-        ice::AssetState const state = asset._shelve->definition.fn_asset_state(
-            asset._shelve->definition.ud_asset_state,
-            asset._shelve->definition,
-            meta,
-            ice::resource_uri(asset.resource_handle)
-        );
+    // inline void AssetStateTransaction::set_result_data(ice::Metadata const& meta, ice::Data data) noexcept
+    // {
+    //     ice::AssetState const state = asset._shelve->definition.fn_asset_state(
+    //         asset._shelve->definition.ud_asset_state,
+    //         asset._shelve->definition,
+    //         meta,
+    //         ice::resource_uri(asset._resource)
+    //     );
 
-        // Assign new metadata
-        asset._metadata = ice::create_asset_data_entry(alloc, AssetState::Exists, alloc, ice::meta_save(meta, alloc));
+    //     // Assign new metadata
+    //     asset._metadata = ice::create_asset_data_entry(alloc, AssetState::Baked, alloc, ice::meta_save(meta, alloc));
+    //     asset._metadata->_flags |= AssetDataFlags::Metadata;
 
-        // Append the next asset data block
-        ice::UniquePtr<ice::AssetData> entry_data = ice::create_asset_data_entry(alloc, state, data);
-        entry_data->_next = ice::move(asset._data);
-        asset._data = ice::move(entry_data);
-    }
+    //     // Append the next asset data block
+    //     ice::UniquePtr<ice::AssetData> entry_data = ice::create_asset_data_entry(alloc, state, data);
+    //     entry_data->_next = ice::move(asset._data);
+    //     asset._data = ice::move(entry_data);
+    // }
 
     inline void AssetStateTransaction::set_result_data(
         ice::Allocator& dataalloc,

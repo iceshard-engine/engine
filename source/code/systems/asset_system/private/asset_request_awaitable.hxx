@@ -17,7 +17,6 @@ namespace ice
     public:
         AssetRequestAwaitable(
             ice::StringID_Arg asset_name,
-            ice::AssetShelve& shelve,
             ice::AssetStateTransaction& transation
         ) noexcept;
 
