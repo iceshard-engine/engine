@@ -20,6 +20,7 @@ namespace ice
 
     private:
         ice::HashMap<ice::FileSystemResource*> const& _resources;
+        char _filter[128];
     };
 
 } // namespace ice
