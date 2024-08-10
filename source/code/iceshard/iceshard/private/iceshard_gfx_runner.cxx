@@ -150,11 +150,18 @@ namespace ice::gfx
         //IPT_ZONE_SCOPED;
         IPT_FRAME_MARK_NAMED("Graphics");
 
+        GfxFrameStages gpu_stages{
+            .scheduler = _scheduler,
+            .frame_transfer = { _queue_transfer },
+            .frame_end = { _queue_end }
+        };
+
         GfxFrameUpdate const gfx_update{
             .clock = clock,
             .assets = _engine.assets(),
             .frame = frame,
             .context = *_context,
+            .stages = gpu_stages,
         };
 
         ice::Shard shards[]{ ice::gfx::ShardID_GfxFrameUpdate | &gfx_update };
@@ -163,14 +170,9 @@ namespace ice::gfx
         //TODO: Currently the container should be "dead" after it's await scheduled on
         {
             ice::Array<ice::Task<>> tasks = _gfx_tasks.extract_tasks();
-            co_await ice::await_scheduled(tasks, _scheduler);
+            //co_await ice::await_scheduled(tasks, _scheduler);
+            ice::execute_tasks(tasks);
         }
-
-        ice::gfx::GfxFrameStages gpu_stages{
-            .scheduler = _scheduler,
-            .frame_transfer = { _queue_transfer },
-            .frame_end = { _queue_end }
-        };
 
         if (_rendergraph->prepare(gpu_stages, *_stages, _gfx_tasks))
         {
@@ -243,10 +245,18 @@ namespace ice::gfx
     ) noexcept
     {
         IPT_ZONE_SCOPED;
+        ice::gfx::GfxFrameStages gpu_stages{
+            .scheduler = _scheduler,
+            .frame_transfer = { _queue_transfer },
+            .frame_end = { _queue_end }
+        };
+
         ice::gfx::GfxStateChange const params{
             .assets = _engine.assets(),
             .context = *_context,
-            .stages = *_stages
+            .stages = gpu_stages,
+            .registry = *_stages
+
         };
 
         ice::StringID world_name;
@@ -256,45 +266,45 @@ namespace ice::gfx
         }
 
         ice::Shard shards[1];
+        ice::Task<> statetask;
         if (trigger.to == detail::State_GfxActive)
         {
             shards[0] = ice::shard(ice::gfx::ShardID_GfxStartup, &params);
 
             ice::ScopedTaskContainer tasks{ _alloc };
             _engine.worlds_updater().update(world_name, tasks, shards);
+
+            ice::wait_for(tasks.await_tasks_scheduled_on(_scheduler, _scheduler));
         }
         else if (trigger.to == detail::State_GfxInactive)
         {
+            ice::ScopedTaskContainer tasks{ _alloc };
             {
                 shards[0] = ice::shard(ice::gfx::ShardID_GfxShutdown, &params);
 
-                ice::ScopedTaskContainer tasks{ _alloc };
                 _engine.worlds_updater().update(world_name, tasks, shards);
             }
 
-            ice::gfx::GfxFrameStages gpu_stages{
-                .scheduler = _scheduler,
-                .frame_transfer = { _queue_transfer },
-                .frame_end = { _queue_end }
-            };
-
             auto const gpu_graph_task = [](
+                ice::ScopedTaskContainer& pretasks,
                 ice::gfx::IceshardGfxRunner& self,
                 ice::gfx::GfxStateChange const& params,
-                ice::gfx::GfxFrameStages& frame_stages,
+                ice::gfx::GfxFrameStages& gpu_stages,
                 ice::gfx::GfxStageRegistry& stages
             ) noexcept -> ice::Task<>
             {
-                co_await frame_stages.scheduler;
+                co_await pretasks.await_tasks_scheduled_on(gpu_stages.scheduler, gpu_stages.scheduler);
 
-                if (self._rendergraph->prepare(frame_stages, stages, self._gfx_tasks))
+                co_await gpu_stages.scheduler;
+
+                if (self._rendergraph->prepare(gpu_stages, stages, self._gfx_tasks))
                 {
                     ice::Array<ice::Task<>> tasks = self._gfx_tasks.extract_tasks();
                     co_await ice::await_tasks(tasks);
                 }
             };
 
-            ice::wait_for(gpu_graph_task(*this, params, gpu_stages, *_stages));
+            ice::wait_for(gpu_graph_task(tasks, *this, params, gpu_stages, *_stages));
         }
 
         return true;

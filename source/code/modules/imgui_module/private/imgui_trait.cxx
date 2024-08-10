@@ -162,7 +162,7 @@ namespace ice::devui
     auto ImGuiTrait::gfx_start(ice::gfx::GfxStateChange const& params) noexcept -> ice::Task<>
     {
         _imgui_gfx_stage = ice::make_unique<ImGuiGfxStage>(_allocator, _allocator, params.assets);
-        params.stages.register_stage("iceshard.devui"_sid, _imgui_gfx_stage.get());
+        params.registry.register_stage("iceshard.devui"_sid, _imgui_gfx_stage.get());
 
         ice::vec2u const size = params.context.swapchain().extent();
         co_await on_window_resized(ice::vec2i{ size });
@@ -171,7 +171,7 @@ namespace ice::devui
 
     auto ImGuiTrait::gfx_shutdown(ice::gfx::GfxStateChange const& params) noexcept -> ice::Task<>
     {
-        params.stages.remove_stage("iceshard.devui"_sid);
+        params.registry.remove_stage("iceshard.devui"_sid);
         co_return;
     }
 

@@ -11,7 +11,7 @@ namespace ice
     {
         using AllocatorBase<false>::AllocatorBase;
 
-        virtual bool has(ice::StringID_Arg name) noexcept = 0;
+        virtual bool has(ice::StringID_Arg name) const noexcept = 0;
         virtual bool set(ice::StringID_Arg name, void* value) noexcept = 0;
         virtual bool get(ice::StringID_Arg name, void*& value) noexcept = 0;
         virtual bool get(ice::StringID_Arg name, void const*& value) const noexcept = 0;
