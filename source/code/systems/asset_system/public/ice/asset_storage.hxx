@@ -32,6 +32,12 @@ namespace ice
             ice::String name
         ) noexcept -> ice::Asset = 0;
 
+        virtual auto preload(
+            ice::AssetType type,
+            ice::String name,
+            ice::AssetState state
+        ) noexcept -> ice::Task<> = 0;
+
         virtual auto request(
             ice::Asset const& entry,
             ice::AssetState requested_state

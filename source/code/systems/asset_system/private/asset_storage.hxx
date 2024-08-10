@@ -35,6 +35,12 @@ namespace ice
             ice::String name
         ) noexcept -> ice::Asset override;
 
+        auto preload(
+            ice::AssetType type,
+            ice::String name,
+            ice::AssetState state
+        ) noexcept -> ice::Task<> override;
+
         auto request(
             ice::Asset const& asset,
             ice::AssetState requested_state

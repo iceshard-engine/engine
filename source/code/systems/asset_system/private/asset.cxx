@@ -68,10 +68,9 @@ namespace ice
         return detail::entry(_handle).data_for_state(state).location != nullptr;
     }
 
-    auto Asset::preload(ice::AssetState state) noexcept -> ice::Task<bool>
+    auto Asset::preload(ice::AssetState state) noexcept -> ice::Task<>
     {
-        ice::Data const result = co_await data(state);
-        co_return result.location != nullptr;
+        co_await data(state);
     }
 
     auto Asset::data(ice::AssetState state) noexcept -> ice::Task<ice::Data>

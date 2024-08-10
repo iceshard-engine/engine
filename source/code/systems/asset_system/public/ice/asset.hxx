@@ -58,7 +58,7 @@ namespace ice
         bool valid() const noexcept;
         auto metadata(ice::Data& out_metadata) const noexcept -> ice::Task<ice::Result>;
         bool available(ice::AssetState state) const noexcept;
-        auto preload(ice::AssetState state) noexcept -> ice::Task<bool>;
+        auto preload(ice::AssetState state) noexcept -> ice::Task<>;
         auto data(ice::AssetState state) noexcept -> ice::Task<ice::Data>;
 
         auto operator[](ice::AssetState state) noexcept -> ice::Task<ice::Data>;

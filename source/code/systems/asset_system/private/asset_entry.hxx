@@ -67,6 +67,7 @@ namespace ice
         ice::AssetShelve* shelve
     ) noexcept
         : assetid{ id }
+        , resource{ nullptr }
         , resource_handle{ resource }
         , refcount{ 0 }
         , shelve{ shelve }
