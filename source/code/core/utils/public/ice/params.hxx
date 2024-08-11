@@ -56,6 +56,10 @@ namespace ice
         //! \note Only usable by Array and Custom parameter definitions.
         ice::i32 max = ice::i32_max;
 
+        //! \brief The number of arguments expected fot this type size.
+        //! \note Only usable by Array and Custom parameter definitions.
+        ice::arr2i typesize = { 0, ice::i32_max };
+
         //! \brief Flags additionally altering parsing behavior of the parameter.
         ice::ParamFlags flags = ice::ParamFlags::None;
     };
