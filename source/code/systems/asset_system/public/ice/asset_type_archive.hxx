@@ -19,6 +19,7 @@ namespace ice
 
     struct AssetTypeDefinition
     {
+        ice::Span<ice::Shard const> asset_params;
         ice::Span<ice::String const> resource_extensions;
 
         auto(*fn_asset_state)(
