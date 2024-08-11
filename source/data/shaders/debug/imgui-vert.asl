@@ -1,15 +1,14 @@
 import shaders/debug/imgui
 
-struct PushConstant
+struct Camera
 {
-    scale : Vec2f
-    translate : Vec2f
+    vp : Mat4x4f
 }
 
 ctx
 {
-    #[push_constant]
-    let pc : PushConstant native
+    #[uniform, group = 0, binding = 3]
+    let cam : Camera native
 }
 
 #[shader_main]
@@ -18,5 +17,5 @@ fn main(in : VertexIn) : VertexResult
 {
     main.uv = in.uv
     main.color = in.color
-    main.pos = Vec4f(in.pos * pc.scale + pc.translate, 0.0, 1.0)
+    main.pos = cam.vp * Vec4f(in.pos, 0.0, 1.0)
 }

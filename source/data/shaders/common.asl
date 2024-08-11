@@ -15,7 +15,8 @@ def Vec3f native
 def Vec4f native
 
 #[glsl:type="mat4"]
-def Mtx4x4f native
+#[wgsl:type="mat4x4<f32>"]
+def Mat4x4f native
 
 #[glsl:type="sampler"]
 #[wgsl:type="sampler"]
