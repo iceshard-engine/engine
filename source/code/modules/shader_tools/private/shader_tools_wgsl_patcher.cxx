@@ -1,10 +1,10 @@
-#include "shader_tools_glsl_patcher.hxx"
+#include "shader_tools_wgsl_patcher.hxx"
 
 namespace ice
 {
 
     //! \details Transform "sampleTexture(sampl, text, coord)" to "texture(sampler2D(text, sampl), coord)"
-    void glsl_native_sampleTexture(
+    void wgsl_native_sampleTexture(
         arctic::SyntaxNode<arctic::syntax::Call> node,
         arctic::SyntaxNodeAllocator& alloc
     ) noexcept
@@ -12,38 +12,29 @@ namespace ice
         IPT_ZONE_SCOPED;
         arctic::Token fn = node.data().name;
 
-        arctic::SyntaxNode<> sampler_arg = node.replace_child(arctic::SyntaxNode<arctic::syntax::CallArg>{ alloc });
+        arctic::SyntaxNode<> sampler_arg = node.replace_child(arctic::SyntaxNode<>{});
         arctic::SyntaxNode<> texture_arg = sampler_arg.replace_sibling(arctic::SyntaxNode<>{});
         arctic::SyntaxNode<> uv_arg = texture_arg.replace_sibling(arctic::SyntaxNode<>{});
 
-        arctic::SyntaxNode<> call_sampler2D = arctic::SyntaxNode<arctic::syntax::Call>{ alloc }
-            .set(&arctic::syntax::Call::name, arctic::Token{
-                .value = "sampler2D",
-                .type = arctic::TokenType::CT_Symbol,
-                .location = fn.location
-                });
-
-        call_sampler2D.append_child(texture_arg);
-        call_sampler2D.append_child(sampler_arg);
-
         node.set(&arctic::syntax::Call::name, arctic::Token{
-            .value = "texture",
+            .value = "textureSample",
             .type = arctic::TokenType::CT_Symbol,
             .location = fn.location
             });
 
-        node.child().append_child(ice::move(call_sampler2D));
+        node.append_child(texture_arg);
+        node.append_child(sampler_arg);
         node.append_child(uv_arg);
     }
 
-    auto glsl_find_alias(arctic::SyntaxNode<> node_annotation) noexcept -> arctic::String
+    auto wgsl_find_alias(arctic::SyntaxNode<> node_annotation) noexcept -> arctic::String
     {
         IPT_ZONE_SCOPED;
 
         arctic::String type_alias;
         for (auto annotation : detail::arc_foreach<arctic::syntax::AnnotationAttrib>(node_annotation))
         {
-            if (annotation.data().name == "glsl:type")
+            if (annotation.data().name == "wgsl:type")
             {
                 arctic::String value = annotation.data().value;
                 if (value.starts_with('"'))
@@ -60,7 +51,7 @@ namespace ice
         return type_alias;
     }
 
-    void GLSLPatcher::visit(arctic::SyntaxNode<arctic::syntax::Define> node) noexcept
+    void WGSLPatcher::visit(arctic::SyntaxNode<arctic::syntax::Define> node) noexcept
     {
         if (node.data().is_native == false)
         {
@@ -68,7 +59,7 @@ namespace ice
         }
 
         // If compatible annotations where found replace them.
-        if (arctic::String type_alias = glsl_find_alias(node.annotation()); type_alias.empty() == false)
+        if (arctic::String type_alias = wgsl_find_alias(node.annotation()); type_alias.empty() == false)
         {
             // Set the name token
             arctic::Token const alias{
@@ -79,7 +70,6 @@ namespace ice
             };
 
             node.set(&arctic::syntax::Define::alias, alias);
-            // node.append_child(arctic::SyntaxNode<arctic::syntax::Type>{ _allocator })
         }
         else
         {
@@ -87,7 +77,7 @@ namespace ice
         }
     }
 
-    void GLSLPatcher::visit(arctic::SyntaxNode<arctic::syntax::Call> node) noexcept
+    void WGSLPatcher::visit(arctic::SyntaxNode<arctic::syntax::Call> node) noexcept
     {
         arctic::String const name = node.data().name.value;
         arctic::SyntaxNode<arctic::syntax::Function> func = _imports.find(node.data().name.value).to<arctic::syntax::Function>();
@@ -95,7 +85,7 @@ namespace ice
         {
             if (name == "sampleTexture")
             {
-                glsl_native_sampleTexture(node, _allocator);
+                wgsl_native_sampleTexture(node, _allocator);
             }
         }
         else
@@ -103,7 +93,5 @@ namespace ice
             return ASLPatcher::visit(node);
         }
     }
-
-
 
 } // namespace ice

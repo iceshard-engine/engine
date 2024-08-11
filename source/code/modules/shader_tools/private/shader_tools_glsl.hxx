@@ -6,32 +6,32 @@
 #if ISP_WINDOWS
 #include <arctic/arctic_syntax_node.hxx>
 
+#include "shader_tools_asl.hxx"
 #include "shader_tools_asl_importer.hxx"
 
-namespace ice
+namespace ice::glsl
 {
 
     static constexpr ice::ErrorCode E_FailedToTranspileASLShaderToGLSL{ "E.1101:ResourceCompiler:Shader compiler failed to create GLSL shader from ASL." };
 
-    struct ShaderConfig
-    {
-        ice::render::ShaderStageFlags stage;
-    };
+    auto compiler_compile_shader_source(
+        ice::ResourceCompilerCtx& ctx,
+        ice::ResourceHandle* source,
+        ice::ResourceTracker& tracker,
+        ice::Span<ice::ResourceHandle* const>,
+        ice::Span<ice::URI const>,
+        ice::Allocator& alloc
+    ) noexcept -> ice::Task<ice::ResourceCompilerResult>;
 
-    auto transpile_shader_asl_to_glsl(
-        ice::Allocator& allocator,
-        ice::ASLScriptLoader& imports,
-        ice::Data asl_source,
-        ice::ShaderConfig config,
-        ice::HeapString<>& out_entry_point
-    ) noexcept -> ice::HeapString<>;
+    auto compiler_build_shader_meta(
+        ice::ResourceCompilerCtx& ctx,
+        ice::ResourceHandle* source,
+        ice::ResourceTracker& tracker,
+        ice::Span<ice::ResourceCompilerResult const>,
+        ice::Span<ice::URI const>,
+        ice::MutableMetadata& out_meta
+    ) noexcept -> ice::Task<bool>;
 
-    inline auto compiler_supported_shader_resources() noexcept -> ice::Span<ice::String>
-    {
-        static ice::String supported_extensions[]{ ".asl", ".glsl" };
-        return supported_extensions;
-    }
-
-} // namespace ice
+} // namespace ice::glsl
 
 #endif // #if ISP_WINDOWS
