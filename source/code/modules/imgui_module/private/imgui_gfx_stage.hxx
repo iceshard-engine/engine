@@ -53,7 +53,7 @@ namespace ice::devui
     private:
         ice::AssetStorage& _assets;
 
-        ice::render::ResourceSetLayout _resource_layout;
+        ice::render::ResourceSetLayout _resource_layout[2];
         ice::render::ResourceSet _resources[20];
         ice::render::PipelineLayout _pipeline_layout;
         ice::render::Pipeline _pipeline;

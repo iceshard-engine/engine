@@ -1275,9 +1275,9 @@ namespace ice::render::vk
     {
         VkViewport viewport{ };
         viewport.x = static_cast<ice::f32>(viewport_rect.x);
-        viewport.y = static_cast<ice::f32>(viewport_rect.y);
+        viewport.y = static_cast<ice::f32>(viewport_rect.w) + static_cast<ice::f32>(viewport_rect.y);
         viewport.width = static_cast<ice::f32>(viewport_rect.z);
-        viewport.height = static_cast<ice::f32>(viewport_rect.w);
+        viewport.height = -static_cast<ice::f32>(viewport_rect.w);
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
 

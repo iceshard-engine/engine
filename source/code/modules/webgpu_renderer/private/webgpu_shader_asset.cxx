@@ -19,7 +19,7 @@ namespace ice::render::vk
         ice::URI const& uri
     ) noexcept -> ice::AssetState
     {
-        if (ice::path::extension(uri.path) == ".wgsl")
+        if (ice::path::extension(uri.path) == ".asl")
         {
             return AssetState::Raw;
         }
@@ -49,7 +49,7 @@ namespace ice::render::vk
         ice::ModuleQuery const& module_query
     ) noexcept
     {
-        static ice::String extensions[]{ ".wgsl" };
+        static ice::String constexpr extensions[]{ ".asl", ".wgsl" };
 
         static ice::AssetTypeDefinition type_definition{
             .resource_extensions = extensions,

@@ -1,6 +1,7 @@
 /// Copyright 2024 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
+#pragma once
 #include "webgpu_utils.hxx"
 #include <ice/render/render_pipeline.hxx>
 #include <ice/assert.hxx>
