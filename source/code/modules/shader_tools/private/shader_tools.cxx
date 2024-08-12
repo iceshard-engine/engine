@@ -177,6 +177,7 @@ namespace ice
     ) noexcept -> ice::Task<bool>
     {
         ShaderCompilerContext sctx = *shader_context(ctx);
+        ice::meta_set_bool(out_meta, "ice.shader.baked"_sid, true);
         ice::meta_set_int32(out_meta, "ice.shader.stage"_sid, sctx.shader_type);
         ice::meta_set_string(out_meta, "ice.shader.entry_point"_sid, sctx.shader_main);
         co_return true;

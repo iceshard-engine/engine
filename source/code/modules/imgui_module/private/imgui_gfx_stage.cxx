@@ -23,7 +23,7 @@ namespace ice::devui
             ice::render::PipelineProgramInfo& out_shader
         ) noexcept -> ice::Task<ice::Result>
         {
-            ice::Asset asset = assets.bind(ice::render::AssetType_Shader, name);
+            ice::Asset asset = assets.bind(ice::render::AssetCategory_Shader, name);
             ice::Data shader_data = co_await asset[AssetState::Runtime];
 
             ice::Data metadata;

@@ -279,7 +279,7 @@ namespace ice
             co_return;
         }
 
-        ice::Asset page_asset = runner.asset_storage().bind(ice::ui::AssetType_UIPage, name);
+        ice::Asset page_asset = runner.asset_storage().bind(ice::ui::AssetCategory_UIPage, name);
         ice::Data page_data = co_await page_asset[AssetState::Loaded];
 
         ice::GameUI_Page* page = nullptr;
@@ -295,7 +295,7 @@ namespace ice
             };
 
             co_await runner.task_scheduler();
-            auto font_asset = runner.asset_storage().bind(ice::AssetType_Font, font_name);
+            auto font_asset = runner.asset_storage().bind(ice::AssetCategory_Font, font_name);
             co_await runner.asset_storage().request(font_asset, AssetState::Loaded);
         }
 
@@ -381,7 +381,7 @@ namespace ice
                 font_info.font_name_size
             };
 
-            ice::Asset font_asset = runner.asset_storage().bind(ice::AssetType_Font, font_name);
+            ice::Asset font_asset = runner.asset_storage().bind(ice::AssetCategory_Font, font_name);
             ice::Data font_data = co_await font_asset[AssetState::Loaded];
             page->set_resource(font_info.resource_i, reinterpret_cast<ice::Font const*>(font_data.location));
         }

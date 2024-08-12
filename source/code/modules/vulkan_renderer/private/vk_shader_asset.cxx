@@ -4,7 +4,7 @@
 #include "vk_shader_asset.hxx"
 
 #include <ice/render/render_shader.hxx>
-#include <ice/asset_type_archive.hxx>
+#include <ice/asset_category_archive.hxx>
 #include <ice/asset.hxx>
 #include <ice/path_utils.hxx>
 
@@ -13,11 +13,17 @@ namespace ice::render::vk
 
     auto asset_shader_state(
         void*,
-        ice::AssetTypeDefinition const&,
+        ice::AssetCategoryDefinition const&,
         ice::Metadata const& metadata,
         ice::URI const& uri
     ) noexcept -> ice::AssetState
     {
+        bool baked = false;
+        if (ice::meta_read_bool(metadata, "ice.shader.baked"_sid, baked) && baked)
+        {
+            return AssetState::Baked;
+        }
+
         ice::String const ext = ice::path::extension(uri.path);
         if (ext == ".glsl" || ext == ".asl")
         {
@@ -44,14 +50,14 @@ namespace ice::render::vk
         co_return true;
     }
 
-    void asset_type_shader_definition(
-        ice::AssetTypeArchive& asset_type_archive,
+    void asset_category_shader_definition(
+        ice::AssetCategoryArchive& asset_category_archive,
         ice::ModuleQuery const& module_query
     ) noexcept
     {
         static ice::String extensions[]{ ".asl", ".glsl", ".spv" };
 
-        static ice::AssetTypeDefinition type_definition{
+        static ice::AssetCategoryDefinition definition{
             .resource_extensions = extensions,
             .fn_asset_state = asset_shader_state,
             .fn_asset_loader = asset_shader_loader
@@ -60,15 +66,15 @@ namespace ice::render::vk
 #if ISP_WINDOWS
         ice::ResourceCompiler compiler{ };
         module_query.query_api(compiler);
-        asset_type_archive.register_type(ice::render::AssetType_Shader, type_definition, &compiler);
+        asset_category_archive.register_category(ice::render::AssetCategory_Shader, definition, &compiler);
 #else
-        asset_type_archive.register_type(ice::render::AssetType_Shader, type_definition, nullptr);
+        asset_category_archive.register_category(ice::render::AssetCategory_Shader, definition, nullptr);
 #endif
     }
 
-    void VkShaderAssetModule::v1_archive_api(ice::detail::asset_system::v1::AssetTypeArchiveAPI& api) noexcept
+    void VkShaderAssetModule::v1_archive_api(ice::detail::asset_system::v1::AssetArchiveAPI& api) noexcept
     {
-        api.register_types_fn = asset_type_shader_definition;
+        api.fn_register_categories = asset_category_shader_definition;
     }
 
 } // namespace ice::render::vk

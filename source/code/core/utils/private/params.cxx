@@ -104,7 +104,7 @@ namespace ice
         {
             (params->_app).parse(argc, argv);
         }
-        catch(const CLI::ParseError &e)
+        catch(const CLI::ParseError& e)
         {
             return (params->_app).exit(e);
         };

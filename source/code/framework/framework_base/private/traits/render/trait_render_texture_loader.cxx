@@ -102,7 +102,7 @@ namespace ice
 
 
         ice::AssetStorage& storage = runner.asset_storage();
-        ice::AssetRequest* const request = storage.aquire_request(ice::render::AssetType_Texture2D, AssetState::Runtime);
+        ice::AssetRequest* const request = storage.aquire_request(ice::render::AssetCategory_Texture2D, AssetState::Runtime);
 
         if (request != nullptr)
         {

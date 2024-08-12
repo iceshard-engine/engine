@@ -2,9 +2,10 @@
 /// SPDX-License-Identifier: MIT
 
 #include "asset_request_awaitable.hxx"
-#include "asset_shelve.hxx"
+#include "asset_transaction.hxx"
 #include "asset_entry.hxx"
 
+#include <ice/task_utils.hxx>
 #include <ice/assert.hxx>
 
 namespace ice
@@ -12,29 +13,26 @@ namespace ice
 
     AssetRequestAwaitable::AssetRequestAwaitable(
         ice::StringID_Arg asset_name,
-        ice::AssetShelve& shelve,
-        ice::AssetEntry* entry,
-        ice::AssetState requested_state
+        ice::AssetStateTransaction& transaction
     ) noexcept
         : _next{ nullptr }
         , _prev{ nullptr }
         , _chained{ nullptr }
         , _asset_name{ asset_name }
-        , _asset_shelve{ shelve }
-        , _asset_entry{ entry }
-        , _requested_state{ requested_state }
+        , _asset_shelve{ transaction.shelve }
+        , _transaction{ transaction }
         , _result_data{ }
         , _coroutine{ nullptr }
     {
         // TODO: Might require atomic exchange to always work properly
-        if (entry->request_awaitable == nullptr)
+        if (transaction.request_awaitable == nullptr)
         {
-            entry->request_awaitable = this;
+            transaction.request_awaitable = this;
         }
         else
         {
             // TODO: Might require atomic exchange to always work properly
-            ice::AssetRequestAwaitable* last_request = entry->request_awaitable;
+            ice::AssetRequestAwaitable* last_request = transaction.request_awaitable;
             while (last_request->_chained != nullptr)
             {
                 last_request = last_request->_chained;
@@ -46,39 +44,36 @@ namespace ice
 
     auto AssetRequestAwaitable::state() const noexcept -> ice::AssetState
     {
-        return _asset_entry->current_state;
+        return _transaction.asset.state();
     }
 
     auto AssetRequestAwaitable::data() const noexcept -> ice::Data
     {
-        switch (_requested_state)
-        {
-        case AssetState::Baked:
-            return _asset_entry->data;
-        case AssetState::Loaded:
-            return _asset_entry->data_baked.location != nullptr ? ice::data_view(_asset_entry->data_baked) : _asset_entry->data;
-        case AssetState::Runtime:
-            return ice::data_view(_asset_entry->data_loaded);
-        default:
-            ICE_ASSERT(false, "Required request data not available!");
-        }
-        return { };
+        return _transaction.asset.data_for_state(this->state());
+    }
+
+    auto AssetRequestAwaitable::metadata() const noexcept -> ice::Data
+    {
+        ice::Data data{};
+        ice::Result result = ice::wait_for_result(ice::asset_metadata_find(_transaction.asset._data, data));
+        ICE_LOG_IF(result == E_Fail, LogSeverity::Error, LogTag::Asset, "Failed to access asset metadata: {}", result.error());
+        return data;
     }
 
     auto AssetRequestAwaitable::asset_name() const noexcept -> ice::StringID_Arg
     {
-        return _asset_entry->assetid;
+        return _transaction.asset._identifier;
     }
 
-    auto AssetRequestAwaitable::asset_definition() const noexcept -> ice::AssetTypeDefinition const&
+    auto AssetRequestAwaitable::asset_definition() const noexcept -> ice::AssetCategoryDefinition const&
     {
         return _asset_shelve.definition;
     }
 
-    auto AssetRequestAwaitable::resource() const noexcept -> ice::Resource const&
-    {
-        return *_asset_entry->resource;
-    }
+    // auto AssetRequestAwaitable::resource() const noexcept -> ice::Resource const&
+    // {
+    //     return *_transaction.asset.resource;
+    // }
 
     auto AssetRequestAwaitable::allocate(ice::usize size) const noexcept -> ice::Memory
     {
@@ -99,9 +94,11 @@ namespace ice
         else
         {
             ICE_ASSERT_CORE(resolve_data.resolver != nullptr);
-            _asset_entry->request_resolver = resolve_data.resolver;
+            _transaction.set_result_data(_asset_shelve.asset_allocator(), _transaction.target_state, resolve_data);
             _result_data = resolve_data.memory;
-            asset_handle._handle = _asset_entry;
+
+            _transaction.asset._refcount.fetch_add(1, std::memory_order_release);
+            asset_handle = Asset{ ice::addressof(_transaction.asset) };
         }
 
         // After the coroutine finishes the request awaitable might be already dead.
@@ -109,9 +106,9 @@ namespace ice
         ice::Memory result_data = _result_data;
         ice::AssetRequestAwaitable* chained = _chained;
 
-        if (_asset_entry->request_awaitable == this)
+        if (_transaction.request_awaitable == this)
         {
-            _asset_entry->request_awaitable = nullptr;
+            _transaction.request_awaitable = nullptr;
         }
 
         _coroutine.resume(); // Introducing, dead 'this' pointer!
@@ -131,10 +128,10 @@ namespace ice
     {
         _coroutine = coro;
 
-        if (_asset_entry->request_awaitable == this)
+        if (_transaction.request_awaitable == this)
         {
             // Only append the top most request to the shelve.
-            _asset_shelve.append_request(this, _requested_state);
+            _asset_shelve.append_request(this, _transaction.target_state);
         }
     }
 

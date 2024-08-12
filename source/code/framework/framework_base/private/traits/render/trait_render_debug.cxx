@@ -36,7 +36,7 @@ namespace ice
 
         auto load_debug_shader(ice::AssetStorage& assets, ice::String name) noexcept -> ice::Task<ice::Data>
         {
-            ice::Asset asset = assets.bind(ice::render::AssetType_Shader, name);
+            ice::Asset asset = assets.bind(ice::render::AssetCategory_Shader, name);
             co_return co_await asset[AssetState::Baked];
         }
 

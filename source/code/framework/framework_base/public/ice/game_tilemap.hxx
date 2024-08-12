@@ -8,14 +8,14 @@
 #include <ice/stringid.hxx>
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/world/world_trait.hxx>
-#include <ice/asset_type.hxx>
+#include <ice/asset_category.hxx>
 
 namespace ice
 {
 
     static constexpr ice::Shard Shard_LoadTileMap = "action/tilemap/load`ice::String const*"_shard;
 
-    static constexpr ice::AssetType AssetType_TileMap = ice::make_asset_type("ice/framework/tile-map");
+    static constexpr ice::AssetCategory AssetCategory_TileMap = ice::make_asset_category("ice/framework/tile-map");
 
     static constexpr ice::StringID Constant_TraitName_Tilemap
         = "ice.base-framework.trait-tilemap"_sid;

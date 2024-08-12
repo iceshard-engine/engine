@@ -7,7 +7,7 @@ namespace ice
 {
 
     //auto IceshardMeshLoader::load(
-    //    ice::AssetType type,
+    //    ice::AssetCategory type,
     //    ice::Data data,
     //    ice::Allocator& alloc,
     //    ice::Memory& out_data
