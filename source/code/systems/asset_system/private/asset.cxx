@@ -82,10 +82,8 @@ namespace ice
                 co_return co_await ice::asset_metadata_find(_handle->_metadata, out_metadata);
             }
         }
-        else
-        {
-            co_return co_await ice::asset_metadata_find(_handle->_data, out_metadata);
-        }
+
+        co_return co_await ice::asset_metadata_find(_handle->_data, out_metadata);
     }
 
     bool Asset::available(ice::AssetState state) const noexcept
@@ -93,10 +91,9 @@ namespace ice
         return _handle->data_for_state(state).location != nullptr;
     }
 
-    auto Asset::preload(ice::AssetState state) noexcept -> ice::Task<bool>
+    auto Asset::preload(ice::AssetState state) noexcept -> ice::Task<>
     {
-        ice::Data const result = co_await data(state);
-        co_return result.location != nullptr;
+        co_await data(state);
     }
 
     auto Asset::data(ice::AssetState state) noexcept -> ice::Task<ice::Data>

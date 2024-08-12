@@ -162,7 +162,7 @@ namespace ice::devui
     auto ImGuiTrait::gfx_start(ice::gfx::GfxStateChange const& params) noexcept -> ice::Task<>
     {
         _imgui_gfx_stage = ice::make_unique<ImGuiGfxStage>(_allocator, _allocator, params.assets);
-        params.stages.register_stage("iceshard.devui"_sid, _imgui_gfx_stage.get());
+        params.registry.register_stage("iceshard.devui"_sid, _imgui_gfx_stage.get());
 
         ice::vec2u const size = params.context.swapchain().extent();
         co_await on_window_resized(ice::vec2i{ size });
@@ -171,7 +171,7 @@ namespace ice::devui
 
     auto ImGuiTrait::gfx_shutdown(ice::gfx::GfxStateChange const& params) noexcept -> ice::Task<>
     {
-        params.stages.remove_stage("iceshard.devui"_sid);
+        params.registry.remove_stage("iceshard.devui"_sid);
         co_return;
     }
 
@@ -228,7 +228,7 @@ namespace ice::devui
         ImVec2 clip_scale = draw_data->FramebufferScale; // (1,1) unless using retina display which are often (2,2)
 
         ImTextureID last_texid = nullptr;
-        ice::u32 next_resource_idx = 1;
+        ice::u32 curr_resource_idx = 1;
 
         // Upload vertex/index data into a single contiguous GPU buffer
         ice::u32 vtx_buffer_offset = 0;
@@ -243,14 +243,14 @@ namespace ice::devui
             {
                 ImDrawCmd const* pcmd = &cmd_list->CmdBuffer[cmd_i];
                 ImGuiGfxStage::DrawCommand& cmd = draw_cmds[command_idx];
-                cmd.resource_set_idx = 0;
 
                 if (pcmd->TextureId != nullptr && pcmd->TextureId != last_texid)
                 {
                     last_texid = pcmd->TextureId;
-                    cmd.resource_set_idx = next_resource_idx;
-                    next_resource_idx += 1;
+                    curr_resource_idx += 1;
                 }
+
+                cmd.resource_set_idx = curr_resource_idx;
 
                 ImVec4 clip_rect;
                 clip_rect.x = (pcmd->ClipRect.x - clip_off.x) * clip_scale.x;

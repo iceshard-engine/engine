@@ -104,6 +104,7 @@ namespace ice
             ICE_ASSERT_CORE(resdata->_state == AssetState::Exists);
             co_return co_await ice::resource_meta(resdata->_resource_handle, out_data);
         }
+        co_return E_Fail;
     }
 
     inline auto asset_data_load(ice::UniquePtr<ice::AssetData> const& data, ice::ResourceTracker& tracker) noexcept -> ice::Task<ice::ResourceResult>

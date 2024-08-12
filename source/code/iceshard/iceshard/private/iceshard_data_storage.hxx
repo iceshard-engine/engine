@@ -28,7 +28,7 @@ namespace ice
             }
         }
 
-        bool has(ice::StringID_Arg name) noexcept override
+        bool has(ice::StringID_Arg name) const noexcept override
         {
             return ice::hashmap::has(_values, ice::hash(name));
         }

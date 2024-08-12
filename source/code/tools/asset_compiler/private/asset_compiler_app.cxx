@@ -28,12 +28,34 @@ public:
         , _output{ }
         , _asset_resource{ }
         , _includes{ _allocator }
+        , _params{ _allocator }
         , _inputs_meta{ _allocator }
         , _inputs{ _allocator }
+        , _output_raw{ false }
+        , _output_std{ false }
         , _queue{ }
         , _scheduler{ _queue }
     {
         _thread = ice::create_thread(_allocator, _queue, { .exclusive_queue = 1, .wait_on_queue = 1, .debug_name = "compiler-thread",  });
+    }
+
+    bool parse_parameter(this AssetCompilerApp& self, ice::Span<ice::String const> results) noexcept
+    {
+        if (ice::count(results) == 2)
+        {
+            ice::array::push_back(
+                self._params,
+                ice::shard(results[0], ice::string::begin(results[1]))
+            );
+        }
+        if (ice::count(results) == 1)
+        {
+            ice::array::push_back(
+                self._params,
+                ice::shard(results[0], true)
+            );
+        }
+        return true;
     }
 
     bool setup(ice::Params& params) noexcept override
@@ -42,7 +64,7 @@ public:
                 .name = "-o,--output",
                 .description = "The asset file to be created.",
                 // .type_name = "PATH",
-                .flags = ice::ParamFlags::IsRequired
+                .flags = ice::ParamFlags::None
             },
             _output
         );
@@ -57,7 +79,7 @@ public:
                 .name = "-c,--compiler",
                 .description = "A module that implements the asset type and a compiler for the resource that should be compiled.",
                 .type_name = "VALUE",
-                .flags = ice::ParamFlags::ValidateFile,
+                .flags = ice::ParamFlags::None,
             },
             _compiler
         );
@@ -65,17 +87,38 @@ public:
                 .name = "-i,--include",
                 .description = "Additional include directories to search for dependent resources",
                 // .type_name = "PATH",
-                .flags = ice::ParamFlags::ValidateDirectory,
+                .flags = ice::ParamFlags::ValidateDirectory | ice::ParamFlags::TakeAll,
             },
             _includes
+        );
+        ice::params_define_custom(params, {
+                .name = "-p,--param",
+                .description = "Additional parameters passed to the selected resource compiler. (-p name value)",
+                .typesize = { 1, 2 },
+                .flags = ice::ParamFlags::TakeAll,
+            }, this, (ice::ParamsCustomCallback) &AssetCompilerApp::parse_parameter
         );
         ice::params_define(params, {
                 .name = "-m,--metadata",
                 .description = "Metadata descriptions for the asset. Can provide multiple files that will be combined in order.",
                 // .type_name = "PATH",
-                .flags = ice::ParamFlags::ValidateFile,
+                .flags = ice::ParamFlags::ValidateFile | ice::ParamFlags::TakeAll,
             },
             _inputs_meta
+        );
+        ice::params_define(params, {
+                .name = "--raw",
+                .description = "Writes only the final resource content without header and metadata.",
+                .flags = ice::ParamFlags::TakeLast
+            },
+            _output_raw
+        );
+        ice::params_define(params, {
+                .name = "--stdout",
+                .description = "Writes the compiled data to 'stdout'.",
+                .flags = ice::ParamFlags::TakeLast
+            },
+            _output_std
         );
         ice::params_define(params, {
                 .name = "input",
@@ -92,15 +135,22 @@ public:
 
     auto run() noexcept -> ice::i32 override
     {
-        if (_modules->load_module(_allocator, _compiler))
+        if (_modules->load_module(_allocator, _compiler) == false)
         {
             ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Failed to load compiler module '{}'", _compiler);
             return 1;
         }
 
+        ICE_LOG_IF(
+            Param_Verbose && (_output_std == false && ice::string::empty(_output)),
+            ice::LogSeverity::Retail, ice::LogTag::Tool,
+            "No output was selected, please use '-o,--output' or '--stdout'!"
+        );
+
         if (ice::string::empty(_asset_resource))
         {
-            _asset_resource = ice::path::basename(_output);
+            // First input is the resource name to be compiled
+            _asset_resource = ice::path::basename(_inputs[0]);
         }
 
         ICE_LOG_IF(
@@ -129,6 +179,16 @@ public:
         resource_tracker->sync_resources();
 
         ice::ResourceHandle* res = resource_tracker->find_resource(ice::URI{ ice::Scheme_URN, _asset_resource });
+        if (res == nullptr)
+        {
+            ICE_LOG(
+                ice::LogSeverity::Critical, ice::LogTag::Tool,
+                "The selected resource '{}' was not found.",
+                _asset_resource
+            );
+            return 1;
+        }
+
         ice::String const res_ext = ice::path::extension(ice::resource_origin(res));
 
         ice::ResourceCompiler const* resource_compiler = nullptr;
@@ -144,7 +204,7 @@ public:
                 }
 
                 ice::ucount out_idx = 0;
-                if (ice::search(compiler.fn_supported_resources(), res_ext, out_idx))
+                if (ice::search(compiler.fn_supported_resources(_params), res_ext, out_idx))
                 {
                     resource_compiler = &compiler;
                     break;
@@ -185,7 +245,7 @@ public:
             }
 
             ice::ucount out_idx = 0;
-            if (ice::search(resource_compiler->fn_supported_resources(), res_ext, out_idx) == false)
+            if (ice::search(resource_compiler->fn_supported_resources(_params), res_ext, out_idx) == false)
             {
                 ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Resource compiler for resource {} is not available.", _asset_resource);
                 return 1;
@@ -193,7 +253,7 @@ public:
 
             ice::ResourceCompilerCtx ctx{ .userdata = nullptr };
             ice::api::resource_compiler::v1::ResourceCompilerCtxCleanup ctx_cleanup{ _allocator, ctx, resource_compiler->fn_cleanup_context };
-            if (resource_compiler->fn_prepare_context && resource_compiler->fn_prepare_context(_allocator, ctx) == false)
+            if (resource_compiler->fn_prepare_context && resource_compiler->fn_prepare_context(_allocator, ctx, _params) == false)
             {
                 ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Falied preparing compiler context for {}.", _asset_resource);
                 return 1;
@@ -261,7 +321,13 @@ public:
 
             // Build the final asset object
             ice::Memory const final_asset_data = resource_compiler->fn_finalize(ctx, res, results, dependencies, _allocator);
-            if (final_asset_data.location != nullptr)
+            if (final_asset_data.location == nullptr)
+            {
+                ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Falied finalizing asset data for {}.", _asset_resource);
+                return 1;
+            }
+
+            if (ice::string::any(_output))
             {
                 ice::Memory const final_meta_data = ice::meta_save(meta, _allocator);
 
@@ -298,7 +364,7 @@ public:
                 };
 
                 // Write all parts
-                for (ice::Data file_part : file_parts)
+                for (ice::Data file_part : ice::span::subspan(ice::Span{ file_parts }, _output_raw ? 4 : 0))
                 {
                     if (ice::native_file::append_file(output_file, file_part) != file_part.size)
                     {
@@ -307,8 +373,14 @@ public:
                 }
 
                 _allocator.deallocate(final_meta_data);
-                _allocator.deallocate(final_asset_data);
             }
+
+            if (_output_std)
+            {
+                fmt::println("{}", ice::String{(char const*)final_asset_data.location, (ice::ucount) final_asset_data.size.value});
+            }
+
+            _allocator.deallocate(final_asset_data);
 
             // Release partial results.
             for (ice::ResourceCompilerResult& result : results)
@@ -336,6 +408,9 @@ private:
     ice::Array<ice::String> _includes;
     ice::Array<ice::String> _inputs_meta;
     ice::Array<ice::String> _inputs;
+    ice::Array<ice::Shard> _params;
+    bool _output_raw;
+    bool _output_std;
 
     ice::TaskQueue _queue;
     ice::TaskScheduler _scheduler;

@@ -30,7 +30,7 @@ namespace ice
 
         if (compiler != nullptr && compiler->fn_prepare_context)
         {
-            bool const valid_context = compiler->fn_prepare_context(_allocator, compiler_context);
+            bool const valid_context = compiler->fn_prepare_context(_allocator, compiler_context, definition.asset_params);
             ICE_ASSERT(valid_context, "Failed to prepare resource compiler context");
         }
     }

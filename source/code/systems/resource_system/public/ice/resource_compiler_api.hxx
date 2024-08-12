@@ -24,11 +24,14 @@ namespace ice
     namespace api::resource_compiler::v1
     {
 
-        using FnSupportedResources = auto(*)() noexcept -> ice::Span<ice::String>;
+        using FnSupportedResources = auto(*)(
+            ice::Span<ice::Shard const> params
+        ) noexcept -> ice::Span<ice::String>;
 
         using FnPrepareContext = auto(*)(
             ice::Allocator& alloc,
-            ice::ResourceCompilerCtx& ctx
+            ice::ResourceCompilerCtx& ctx,
+            ice::Span<ice::Shard const> params
         ) noexcept -> bool;
 
         using FnCleanupContext = auto(*)(

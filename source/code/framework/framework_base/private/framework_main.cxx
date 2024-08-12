@@ -388,17 +388,21 @@ auto ice_setup(
 
     if constexpr (ice::build::is_android || ice::build::is_windows)
     {
-        auto shaders_pak = state.resources->find_resource("urn://shaders.hsc"_uri);
-        if (shaders_pak)
+        ice::URI constexpr packs[]{ "urn://data.hsc"_uri, "urn://shaders.hsc"_uri };
+        for (ice::URI const& packuri : packs)
         {
-            ICE_ASSERT(shaders_pak != nullptr, "Failed to locate shader pack!");
+            auto shaders_pak = state.resources->find_resource(packuri);
+            if (shaders_pak)
+            {
+                ICE_ASSERT(shaders_pak != nullptr, "Failed to locate shader pack!");
 
-            auto hailstorm = ice::create_resource_provider_hailstorm(
-                state.resources_alloc, ice::resource_origin(shaders_pak)
-            );
+                auto hailstorm = ice::create_resource_provider_hailstorm(
+                    state.resources_alloc, ice::resource_origin(shaders_pak)
+                );
 
-            state.resources->attach_provider(ice::move(hailstorm));
-            state.resources->sync_resources();
+                state.resources->attach_provider(ice::move(hailstorm));
+                state.resources->sync_resources();
+            }
         }
     }
 

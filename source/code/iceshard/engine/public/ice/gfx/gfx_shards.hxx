@@ -14,7 +14,8 @@ namespace ice::gfx
     {
         ice::AssetStorage& assets;
         ice::gfx::GfxContext& context;
-        ice::gfx::GfxStageRegistry& stages;
+        ice::gfx::GfxFrameStages& stages;
+        ice::gfx::GfxStageRegistry& registry;
     };
 
     struct GfxFrameUpdate
@@ -23,6 +24,7 @@ namespace ice::gfx
         ice::AssetStorage& assets;
         ice::EngineFrame const& frame;
         ice::gfx::GfxContext& context;
+        ice::gfx::GfxFrameStages& stages;
     };
 
     static constexpr ice::ShardID ShardID_GfxStartup = "event/gfx/startup`ice::gfx::GfxStateChange const*"_shardid;

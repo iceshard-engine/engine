@@ -4,6 +4,7 @@
 #pragma once
 #include <ice/base.hxx>
 #include <ice/mem_data.hxx>
+#include <ice/mem_memory.hxx>
 #include <ice/container_logic.hxx>
 #include <array> // TODO: Introduce our own static array object.
 
@@ -39,6 +40,9 @@ namespace ice
         constexpr operator ice::Span<Type const>() noexcept { return { _data, _count }; }
         constexpr operator ice::Span<Type const>() const noexcept { return { _data, _count }; }
     };
+
+    template<typename T> Span(ice::Span<T>&&) noexcept -> Span<T>;
+    template<typename T> Span(ice::Span<T> const&) noexcept -> Span<T>;
 
     namespace span
     {
@@ -307,6 +311,16 @@ namespace ice
         constexpr auto from_std_const(std::array<Type, Size> const& std_array) noexcept -> ice::Span<Type const>
         {
             return ice::Span<Type const>{ std_array.data(), ice::ucount(std_array.size()) };
+        }
+
+        // TODO: Move to another location or rename? Not sure this is properly named
+        template<typename Type>
+        constexpr auto from_memory(ice::Memory const& mem, ice::meminfo meminfo, ice::usize offset) noexcept
+        {
+            void* const ptr = ice::ptr_add(mem.location, offset);
+            ICE_ASSERT_CORE(ice::is_aligned(ptr, meminfo.alignment));
+            ICE_ASSERT_CORE(ice::ptr_add(mem.location, mem.size) >= ice::ptr_add(ptr, meminfo.size));
+            return ice::Span<Type>{ reinterpret_cast<Type*>(ptr), ice::ucount((meminfo.size / ice::size_of<Type>).value) };
         }
 
     } // namespace span

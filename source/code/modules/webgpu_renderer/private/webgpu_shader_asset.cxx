@@ -19,7 +19,13 @@ namespace ice::render::vk
         ice::URI const& uri
     ) noexcept -> ice::AssetState
     {
-        if (ice::path::extension(uri.path) == ".wgsl")
+        bool baked = false;
+        if (ice::meta_read_bool(metadata, "ice.shader.baked"_sid, baked) && baked)
+        {
+            return AssetState::Baked;
+        }
+
+        if (ice::path::extension(uri.path) == ".asl")
         {
             return AssetState::Raw;
         }
@@ -49,7 +55,7 @@ namespace ice::render::vk
         ice::ModuleQuery const& module_query
     ) noexcept
     {
-        static ice::String extensions[]{ ".wgsl" };
+        static ice::String constexpr extensions[]{ ".asl", ".wgsl" };
 
         static ice::AssetCategoryDefinition type_definition{
             .resource_extensions = extensions,

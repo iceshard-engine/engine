@@ -303,6 +303,19 @@ namespace ice
         return result;
     }
 
+    auto DefaultAssetStorage::preload(
+        ice::AssetCategory_Arg category,
+        ice::String name,
+        ice::AssetState state
+    ) noexcept -> ice::Task<>
+    {
+        ice::Asset asset = this->bind(category, name);
+        if (asset.valid() && asset.available(state) == false)
+        {
+            co_await asset.preload(state);
+        }
+    }
+
     auto DefaultAssetStorage::request(
         ice::Asset const& asset,
         ice::AssetState requested_state
@@ -507,6 +520,7 @@ namespace ice
     ) noexcept -> ice::Task<>
     {
         ICE_ASSERT(false, "Deprecated do not use");
+        co_return;
     }
 
     bool DefaultAssetStorage::find_shelve_and_entry(

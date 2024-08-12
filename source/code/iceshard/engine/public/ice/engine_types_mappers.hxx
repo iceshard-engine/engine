@@ -45,6 +45,14 @@ namespace ice
     }
 
     template<>
+    inline auto detail::map_task_arg<ice::AssetStorage&>(
+        ice::EngineFrameUpdate const& params
+    ) noexcept -> ice::AssetStorage&
+    {
+        return params.assets;
+    }
+
+    template<>
     inline auto detail::map_task_arg<ice::DataStorage&>(
         ice::EngineFrameUpdate const& params
     ) noexcept -> ice::DataStorage&
@@ -69,6 +77,14 @@ namespace ice
     ) noexcept -> ice::gfx::GfxContext&
     {
         return params.context;
+    }
+
+    template<>
+    inline auto detail::map_task_arg<ice::gfx::GfxFrameStages&>(
+        ice::gfx::GfxFrameUpdate const& params
+    ) noexcept -> ice::gfx::GfxFrameStages&
+    {
+        return params.stages;
     }
 
     template<>
@@ -121,6 +137,14 @@ namespace ice
     ) noexcept -> ice::render::RenderDevice&
     {
         return params.context.device();
+    }
+
+    template<>
+    inline auto detail::map_task_arg<ice::AssetStorage&>(
+        ice::gfx::GfxStateChange const& params
+    ) noexcept -> ice::AssetStorage&
+    {
+        return params.assets;
     }
 
     template<>

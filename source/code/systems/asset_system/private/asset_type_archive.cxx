@@ -88,7 +88,7 @@ namespace ice
             ice::ResourceCompiler asset_compiler{};
             if (compiler != nullptr && compiler->fn_supported_resources)
             {
-                for (ice::String ext : compiler->fn_supported_resources())
+                for (ice::String ext : compiler->fn_supported_resources(type_definition.asset_params))
                 {
                     for (ice::String asset_ext : type_definition.resource_extensions)
                     {

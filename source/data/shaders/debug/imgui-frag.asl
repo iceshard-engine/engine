@@ -2,10 +2,10 @@ import shaders/debug/imgui
 
 ctx
 {
-    #[uniform, group=0, binding=1]
+    #[uniform, group=1, binding=1]
     let smp : Sampler native
 
-    #[uniform, group=0, binding=2]
+    #[uniform, group=1, binding=2]
     let tex2d : Texture2D native
 }
 

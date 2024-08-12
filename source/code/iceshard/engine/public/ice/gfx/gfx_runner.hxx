@@ -3,6 +3,7 @@
 
 #pragma once
 #include <ice/gfx/gfx_shards.hxx>
+#include <ice/gfx/gfx_types.hxx>
 #include <ice/task_types.hxx>
 
 namespace ice::gfx
@@ -15,13 +16,6 @@ namespace ice::gfx
         ice::render::RenderSurface& surface;
         ice::Span<ice::gfx::GfxQueueDefinition const> render_queues;
         ice::TaskScheduler& gfx_thread;
-    };
-
-    struct GfxFrameStages
-    {
-        ice::TaskScheduler& scheduler;
-        ice::TaskStage<ice::render::CommandBuffer> frame_transfer;
-        ice::TaskStage<> frame_end;
     };
 
     //! \brief Graphics runner (runtime) object. Handles graphics work between frames and handles swapchain states.

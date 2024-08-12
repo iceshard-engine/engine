@@ -55,7 +55,7 @@ namespace ice::render::vk
         ice::ModuleQuery const& module_query
     ) noexcept
     {
-        static ice::String extensions[]{ ".asl", ".glsl", ".spv" };
+        static ice::String constexpr extensions[]{ ".asl", ".glsl", ".spv" };
 
         static ice::AssetCategoryDefinition definition{
             .resource_extensions = extensions,

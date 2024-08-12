@@ -14,6 +14,7 @@ namespace ice
     FileSystemResourceProvider::DevUI::DevUI(ice::HashMap<ice::FileSystemResource*> const& resources) noexcept
         : DevUIWidget{ DevUIWidgetInfo{ .category = "Tools", .name = "Files" } }
         , _resources{ resources }
+        , _filter{ }
     {
         ice::devui_register_widget(this);
     }
@@ -56,6 +57,8 @@ namespace ice
         ice::u32 const entry_size = static_cast<ice::u32>(ImGui::GetTextLineHeightWithSpacing());
         ice::u32 const table_size = entry_size * entry_count;
 
+        ImGui::InputTextWithHint("Filter", "Filter...", _filter, ice::count(_filter) - 1);
+
         if (ImGui::BeginTable("FileSystemResourceProvider:Resources", 3, flags, { 0, (ice::f32) table_size }))
         {
             ice::u32 const scroll_value = (ice::u32) ImGui::GetScrollY();
@@ -82,6 +85,11 @@ namespace ice
         ice::u32 idx = 1; // We start with '1' since the first entry are the headers.
         for (ice::FileSystemResource* const res : ice::hashmap::values(_resources))
         {
+            if (strstr(ice::string::begin(res->name()), _filter) == nullptr)
+            {
+                continue;
+            }
+
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
 
@@ -92,7 +100,6 @@ namespace ice
                 idx += 1;
                 continue;
             }
-
 
             ImGui::TextUnformatted(ice::string::begin(res->name()), ice::string::end(res->name()));
 
