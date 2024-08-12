@@ -93,7 +93,7 @@ namespace ice
             sprite_query,
             [&](ice::Animation const& anim, ice::Sprite const& sprite) noexcept
             {
-                ice::Asset sprite_asset = _assets->bind(ice::render::AssetType_Texture2D, sprite.material);
+                ice::Asset sprite_asset = _assets->bind(ice::render::AssetCategory_Texture2D, sprite.material);
                 ice::wait_for(sprite_asset[AssetState::Baked]);
                 if (!sprite_asset.available(AssetState::Baked))
                 {

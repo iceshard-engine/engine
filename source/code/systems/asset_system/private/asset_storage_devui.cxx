@@ -60,22 +60,22 @@ namespace ice
             | ImGuiTableFlags_BordersV
             | ImGuiTableFlags_RowBg;
 
-        if (ImGui::CollapsingHeader("Asset Types"))
+        if (ImGui::CollapsingHeader("Asset Categories"))
         {
-            if (ImGui::BeginTable("DefaultAssetStorage:AssetTypes", 3, flags))
+            if (ImGui::BeginTable("DefaultAssetStorage:AssetCategories", 3, flags))
             {
                 ImGui::TableSetupColumn("ID", ImGuiTableColumnFlags_NoHide);
                 ImGui::TableSetupColumn("Extensions");
                 ImGui::TableSetupColumn("Compiler");
                 ImGui::TableHeadersRow();
 
-                for (ice::AssetType_Arg asset_type : _storage._asset_archive->asset_types())
+                for (ice::AssetCategory_Arg category : _storage._asset_archive->categories())
                 {
                     ImGui::TableNextRow();
                     ImGui::TableNextColumn();
-                    ImGui::TextUnformatted(ice::string::begin(asset_type.name), ice::string::end(asset_type.name));
+                    ImGui::TextUnformatted(ice::string::begin(category.name), ice::string::end(category.name));
 
-                    ice::AssetTypeDefinition const& def = _storage._asset_archive->find_definition(asset_type);
+                    ice::AssetCategoryDefinition const& def = _storage._asset_archive->find_definition(category);
                     if (ImGui::TableNextColumn())
                     {
                         for (ice::String ext : def.resource_extensions)
@@ -87,7 +87,7 @@ namespace ice
                     if (ImGui::TableNextColumn())
                     {
                         ImGui::TextUnformatted(
-                            _storage._asset_archive->find_compiler(asset_type)
+                            _storage._asset_archive->find_compiler(category)
                             ? "Available"
                             : "-"
                         );

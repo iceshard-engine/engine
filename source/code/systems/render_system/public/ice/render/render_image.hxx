@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/asset_type.hxx>
+#include <ice/asset_category.hxx>
 #include <ice/render/render_declarations.hxx>
 
 namespace ice::render
@@ -118,6 +118,6 @@ namespace ice::render
         bool normalized_coordinates = true;
     };
 
-    static constexpr ice::AssetType AssetType_Texture2D = ice::make_asset_type("ice/render_system/texture-2d");
+    static constexpr ice::AssetCategory AssetCategory_Texture2D = ice::make_asset_category("ice/render_system/texture-2d");
 
 } // namespace ice::render

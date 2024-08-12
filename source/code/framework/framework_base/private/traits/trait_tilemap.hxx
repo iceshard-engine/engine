@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/asset_type.hxx>
+#include <ice/asset_category.hxx>
 #include <ice/game_physics.hxx>
 #include <ice/game_tilemap.hxx>
 

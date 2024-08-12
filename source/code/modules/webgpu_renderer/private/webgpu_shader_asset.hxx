@@ -14,7 +14,7 @@ namespace ice::render::vk
     {
         static ice::ResourceCompiler API_ShaderCompiler;
 
-        static void v1_archive_api(ice::detail::asset_system::v1::AssetTypeArchiveAPI& api) noexcept;
+        static void v1_archive_api(ice::detail::asset_system::v1::AssetArchiveAPI& api) noexcept;
 
         static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator auto const& negotiator) noexcept
         {

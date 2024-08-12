@@ -2,18 +2,12 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/mem_data.hxx>
-#include <ice/stringid.hxx>
-#include <ice/resource_meta.hxx>
 #include <ice/asset_types.hxx>
 
 namespace ice
 {
 
-    struct Metadata;
-    struct AssetHandle;
-
-    enum class AssetState : ice::u32
+    enum class AssetState : ice::u8
     {
         //! \brief The asset could not be accessed.
         //! \detail Either an error occured or the asset does not exist.
@@ -22,7 +16,7 @@ namespace ice
         //! \brief The asset data state is not known and needs another pass to the Asset Type Resolver.
         Unknown,
 
-        //! \bried The resource handle associated exists, but the data was not requested not validated.
+        //! \bried The resource handle associated exists, but the data was not requested nor validated.
         Exists,
 
         //! \brief The asset data is represented in raw format of the source file.
@@ -44,24 +38,38 @@ namespace ice
 
     struct Asset
     {
-        ice::AssetHandle* _handle = nullptr;
-
         Asset() noexcept = default;
+        explicit Asset(ice::AssetHandle* handle) noexcept;
         ~Asset() noexcept;
-        Asset(Asset&& other) noexcept = default;
-        auto operator=(Asset&& other) noexcept -> ice::Asset& = default;
 
+        Asset(Asset&& other) noexcept;
+        auto operator=(Asset&& other) noexcept -> ice::Asset&;
         Asset(Asset const&) noexcept = delete;
         auto operator=(Asset const&) noexcept -> ice::Asset& = delete;
 
-        auto name() const noexcept -> ice::StringID_Arg;
         bool valid() const noexcept;
+        bool empty() const noexcept;
+
+        void release() const noexcept;
+
+        auto name() const noexcept -> ice::StringID_Arg;
         auto metadata(ice::Data& out_metadata) const noexcept -> ice::Task<ice::Result>;
         bool available(ice::AssetState state) const noexcept;
         auto preload(ice::AssetState state) noexcept -> ice::Task<>;
         auto data(ice::AssetState state) noexcept -> ice::Task<ice::Data>;
 
         auto operator[](ice::AssetState state) noexcept -> ice::Task<ice::Data>;
+
+    public:
+        auto start_transaction(
+            ice::AssetState state,
+            ice::AssetStateTrackers& trackers
+        ) const noexcept -> ice::AssetStateTransaction;
+
+        void finish_transaction(ice::AssetStateTransaction& transaction) const noexcept;
+
+    private:
+        ice::AssetHandle* _handle = nullptr;
     };
 
 } // namespace ice

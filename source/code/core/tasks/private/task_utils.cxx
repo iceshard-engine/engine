@@ -19,7 +19,7 @@ namespace ice
         co_await resumer;
     }
 
-    auto await_scheduled(ice::Task<> task, ice::TaskScheduler &scheduler) noexcept -> ice::Task<>
+    auto await_scheduled(ice::Task<> task, ice::TaskScheduler& scheduler) noexcept -> ice::Task<>
     {
         co_await scheduler;
         co_await task;

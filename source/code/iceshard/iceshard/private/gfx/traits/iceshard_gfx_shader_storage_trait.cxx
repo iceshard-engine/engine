@@ -43,7 +43,7 @@ namespace ice::gfx
     auto Trait_GfxShaderStorage::gfx_update(ice::gfx::GfxFrameUpdate const& update) noexcept -> ice::Task<>
     {
         // Handle up to 4 requests at the same time each frame.
-        ice::AssetRequest* request = update.assets.aquire_request(ice::render::AssetType_Shader, AssetState::Runtime);
+        ice::AssetRequest* request = update.assets.aquire_request(ice::render::AssetCategory_Shader, AssetState::Runtime);
         while(request != nullptr)
         {
             ice::AssetState const state = request->state();
@@ -78,14 +78,14 @@ namespace ice::gfx
             ice::Memory const result = request->allocate(ice::size_of<ice::render::Shader>);
             *reinterpret_cast<Shader*>(result.location) = shader;
 
-            // Save the shader handle
-            ice::hashmap::set(_loaded_shaders, shader_hash, { .shader = shader });
-
             // Reslove the request (will resume all awaiting tasks)
-            request->resolve({ .resolver = this, .result = AssetRequestResult::Success, .memory = result });
+            ice::Asset asset = request->resolve({ .resolver = this, .result = AssetRequestResult::Success, .memory = result });
+
+            // Save the shader handle
+            ice::hashmap::set(_loaded_shaders, shader_hash, { .asset = ice::move(asset), .shader = shader, });
 
             // Get the next queued request
-            request = update.assets.aquire_request(ice::render::AssetType_Shader, AssetState::Runtime);
+            request = update.assets.aquire_request(ice::render::AssetCategory_Shader, AssetState::Runtime);
         }
 
         co_return;

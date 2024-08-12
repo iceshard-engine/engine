@@ -68,6 +68,23 @@ namespace ice
             return ExpectedFinalAwaiter{ };
         }
 
+        template<typename TypeExpected> requires (std::is_same_v<ice::clean_type<TypeExpected>, ice::Expected<Result, ErrorType>>)
+        inline void return_value(TypeExpected&& expected) noexcept(std::is_nothrow_move_constructible_v<Result>)
+        {
+            ICE_ASSERT_CORE(expected.valid());
+            if (expected)
+            {
+                new (&_value) Result{ ice::forward<TypeExpected>(expected).value() };
+            }
+            else
+            {
+                this->_info->state.store(TaskState::Failed);
+
+                ICE_ASSERT_CORE(_error_pointer != nullptr);
+                *_error_pointer = ice::forward<TypeExpected>(expected).error();
+            }
+        }
+
         inline void return_value(ErrorType error) noexcept
         {
             this->_info->state.store(TaskState::Failed);

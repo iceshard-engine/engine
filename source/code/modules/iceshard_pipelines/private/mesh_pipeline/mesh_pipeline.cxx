@@ -6,25 +6,25 @@
 //namespace ice
 //{
 //
-//    auto IceshardMeshPipeline::supported_types() const noexcept -> ice::Span<AssetType const>
+//    auto IceshardMeshPipeline::supported_types() const noexcept -> ice::Span<AssetCategory const>
 //    {
-//        static ice::AssetType supported_types[]{
-//            AssetType::Mesh
+//        static ice::AssetCategory supported_types[]{
+//            AssetCategory::Mesh
 //        };
 //        return supported_types;
 //    }
 //
 //    bool IceshardMeshPipeline::supports_baking(
-//        ice::AssetType type
+//        ice::AssetCategory type
 //    ) const noexcept
 //    {
-//        return type == AssetType::Mesh;
+//        return type == AssetCategory::Mesh;
 //    }
 //
 //    bool IceshardMeshPipeline::resolve(
 //        ice::String resource_extension,
 //        ice::Metadata const& resource_metadata,
-//        ice::AssetType& out_type,
+//        ice::AssetCategory& out_type,
 //        ice::AssetStatus& out_status
 //    ) const noexcept
 //    {
@@ -33,7 +33,7 @@
 //            || resource_extension == ".obj"
 //            || resource_extension == ".dae")
 //        {
-//            out_type = AssetType::Mesh;
+//            out_type = AssetCategory::Mesh;
 //            out_status = AssetStatus::Available_Raw;
 //            return true;
 //        }
@@ -41,7 +41,7 @@
 //    }
 //
 //    auto IceshardMeshPipeline::request_oven(
-//        ice::AssetType type,
+//        ice::AssetCategory type,
 //        ice::String extension,
 //        ice::Metadata const& metadata
 //    ) noexcept -> ice::AssetOven const*
@@ -50,7 +50,7 @@
 //    }
 //
 //    auto IceshardMeshPipeline::request_loader(
-//        ice::AssetType type
+//        ice::AssetCategory type
 //    ) noexcept -> ice::AssetLoader const*
 //    {
 //        return &_mesh_loader;

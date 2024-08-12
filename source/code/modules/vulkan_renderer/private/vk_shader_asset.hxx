@@ -13,7 +13,7 @@ namespace ice::render::vk
 
     struct VkShaderAssetModule : ice::Module<VkShaderAssetModule>
     {
-        static void v1_archive_api(ice::detail::asset_system::v1::AssetTypeArchiveAPI& api) noexcept;
+        static void v1_archive_api(ice::detail::asset_system::v1::AssetArchiveAPI& api) noexcept;
 
         static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator auto const& negotiator) noexcept
         {

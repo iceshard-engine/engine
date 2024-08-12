@@ -1,8 +1,8 @@
 /// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
-#include <ice/asset_type_archive.hxx>
 #include <ice/asset.hxx>
+#include <ice/asset_category_archive.hxx>
 #include <ice/container/hashmap.hxx>
 #include <ice/mem_allocator_stack.hxx>
 #include <ice/assert.hxx>
@@ -10,72 +10,72 @@
 namespace ice
 {
 
-    auto default_asset_state(void*, ice::AssetTypeDefinition const&, ice::Metadata const& metadata, ice::URI const&) noexcept -> ice::AssetState
+    auto default_asset_state(void*, ice::AssetCategoryDefinition const&, ice::Metadata const& metadata, ice::URI const&) noexcept -> ice::AssetState
     {
         bool is_pre_baked = false;
         ice::meta_read_bool(metadata, "asset.state.pre-baked"_sid, is_pre_baked);
         return is_pre_baked ? AssetState::Baked : AssetState::Raw;
     }
 
-    struct InternalAssetType
+    struct InternalAssetCategory
     {
-        ice::AssetType type = ice::make_asset_type("<unknown>");
-        ice::AssetTypeDefinition definition{ };
+        ice::AssetCategory category = ice::make_asset_category("<unknown>");
+        ice::AssetCategoryDefinition definition{ };
         ice::ResourceCompiler compiler;
         bool has_compiler;
     };
 
-    class SimpleAssetTypeArchive final : public ice::AssetTypeArchive
+    class SimpleAssetCategoryArchive final : public ice::AssetCategoryArchive
     {
     public:
-        SimpleAssetTypeArchive(ice::Allocator& alloc) noexcept;
+        SimpleAssetCategoryArchive(ice::Allocator& alloc) noexcept;
 
-        auto asset_types() const noexcept -> ice::Span<ice::AssetType const> override;
+        auto categories() const noexcept -> ice::Span<ice::AssetCategory const> override;
 
         auto find_definition(
-            ice::AssetType_Arg type
-        ) const noexcept -> ice::AssetTypeDefinition const& override;
+            ice::AssetCategory_Arg category
+        ) const noexcept -> ice::AssetCategoryDefinition const& override;
 
         auto find_compiler(
-            ice::AssetType_Arg type
+            ice::AssetCategory_Arg category
         ) const noexcept -> ice::ResourceCompiler const* override;
 
-        bool register_type(
-            ice::AssetType_Arg type,
-            ice::AssetTypeDefinition type_definition,
+        bool register_category(
+            ice::AssetCategory_Arg category,
+            ice::AssetCategoryDefinition category_definition,
             ice::ResourceCompiler const* compiler
         ) noexcept override;
 
     private:
-        ice::Array<ice::AssetType> _types;
-        ice::HashMap<ice::InternalAssetType> _definitions;
+        ice::Array<ice::AssetCategory> _types;
+        ice::HashMap<ice::InternalAssetCategory> _definitions;
     };
 
-    SimpleAssetTypeArchive::SimpleAssetTypeArchive(ice::Allocator& alloc) noexcept
+    SimpleAssetCategoryArchive::SimpleAssetCategoryArchive(ice::Allocator& alloc) noexcept
         : _types{ alloc }
         , _definitions{ alloc }
     {
     }
 
-    auto SimpleAssetTypeArchive::asset_types() const noexcept -> ice::Span<ice::AssetType const>
+    auto SimpleAssetCategoryArchive::categories() const noexcept -> ice::Span<ice::AssetCategory const>
     {
         return _types;
     }
 
-    bool SimpleAssetTypeArchive::register_type(
-        ice::AssetType_Arg type,
-        ice::AssetTypeDefinition type_definition,
+    bool SimpleAssetCategoryArchive::register_category(
+        ice::AssetCategory_Arg category,
+        ice::AssetCategoryDefinition type_definition,
         ice::ResourceCompiler const* compiler
     ) noexcept
     {
-        ice::u64 const type_hash = type.identifier;
+        ice::u64 const type_hash = category.identifier;
         bool const type_not_defined = ice::hashmap::has(_definitions, type_hash) == false;
 
         ICE_ASSERT(
             type_not_defined == true,
-            "Identifier [{}] of asset type '{}' already has an associated definition!",
-            type.identifier,
-            ice::asset_type_hint(type)
+            "Identifier [{}] of asset category '{}' already has an associated definition!",
+            category.identifier,
+            ice::asset_category_hint(category)
         );
 
         if (type_not_defined)
@@ -102,12 +102,12 @@ namespace ice
                 }
             }
 
-            ice::array::push_back(_types, type);
+            ice::array::push_back(_types, category);
             ice::hashmap::set(
                 _definitions,
                 type_hash,
-                InternalAssetType{
-                    .type = type,
+                InternalAssetCategory{
+                    .category = category,
                     .definition = ice::move(type_definition),
                     .compiler = asset_compiler,
                     .has_compiler = asset_compiler.fn_supported_resources != nullptr
@@ -117,31 +117,31 @@ namespace ice
         return type_not_defined;
     }
 
-    auto SimpleAssetTypeArchive::find_definition(
-        ice::AssetType_Arg type
-    ) const noexcept -> ice::AssetTypeDefinition const&
+    auto SimpleAssetCategoryArchive::find_definition(
+        ice::AssetCategory_Arg category
+    ) const noexcept -> ice::AssetCategoryDefinition const&
     {
-        static ice::InternalAssetType empty_type{};
+        static ice::InternalAssetCategory empty_type{};
 
-        ice::InternalAssetType const& internal_type = ice::hashmap::get(_definitions, type.identifier, empty_type);
+        ice::InternalAssetCategory const& internal_type = ice::hashmap::get(_definitions, category.identifier, empty_type);
         return internal_type.definition;
     }
 
-    auto SimpleAssetTypeArchive::find_compiler(
-        ice::AssetType_Arg type
+    auto SimpleAssetCategoryArchive::find_compiler(
+        ice::AssetCategory_Arg category
     ) const noexcept -> ice::ResourceCompiler const*
     {
-        static ice::InternalAssetType empty_type{};
+        static ice::InternalAssetCategory empty_type{};
 
-        ice::InternalAssetType const& internal_type = ice::hashmap::get(_definitions, type.identifier, empty_type);
+        ice::InternalAssetCategory const& internal_type = ice::hashmap::get(_definitions, category.identifier, empty_type);
         return internal_type.has_compiler ? &internal_type.compiler : nullptr;
     }
 
-    auto create_asset_type_archive(
+    auto create_asset_category_archive(
         ice::Allocator& alloc
-    ) noexcept -> ice::UniquePtr<ice::AssetTypeArchive>
+    ) noexcept -> ice::UniquePtr<ice::AssetCategoryArchive>
     {
-        return ice::make_unique<ice::SimpleAssetTypeArchive>(alloc, alloc);
+        return ice::make_unique<ice::SimpleAssetCategoryArchive>(alloc, alloc);
     }
 
 } // namespace ice

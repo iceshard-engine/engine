@@ -2,8 +2,9 @@
 /// SPDX-License-Identifier: MIT
 
 #include "asset_shelve.hxx"
+#include "asset_entry.hxx"
 #include "asset_request_awaitable.hxx"
-
+#include <ice/task_utils.hxx>
 #include <ice/string/heap_string.hxx>
 #include <ice/container/hashmap.hxx>
 #include <ice/profiler.hxx>
@@ -14,10 +15,12 @@ namespace ice
 
     AssetShelve::AssetShelve(
         ice::Allocator& alloc,
-        ice::AssetTypeDefinition const& definition,
+        ice::DefaultAssetStorage& storage,
+        ice::AssetCategoryDefinition const& definition,
         ice::ResourceCompiler const* compiler
     ) noexcept
-        : definition{ definition }
+        : storage{ storage }
+        , definition{ definition }
         , compiler{ compiler }
         , compiler_context{ .userdata = nullptr }
         , _allocator{ alloc }
@@ -42,10 +45,6 @@ namespace ice
 
         for (ice::AssetEntry* entry : _asset_resources)
         {
-            _allocator.deallocate(entry->data_baked);
-            _allocator.deallocate(entry->data_loaded);
-            _allocator.deallocate(entry->data_runtime);
-            _allocator.deallocate(entry->metadata_baked);
             _allocator.destroy(entry);
         }
     }
@@ -74,9 +73,13 @@ namespace ice
 
     auto AssetShelve::store(
         ice::StringID_Arg name,
-        ice::ResourceHandle* resource_handle
+        ice::ResourceHandle* resource
     ) noexcept -> ice::AssetEntry*
     {
+        ice::UniquePtr<ice::ResourceAssetData> resource_data = ice::create_asset_data_entry(
+            _allocator, AssetState::Exists, resource
+        );
+
         if constexpr (ice::AssetEntry::HoldsDebugData)
         {
             ice::HeapString<> asset_name{ _allocator, ice::stringid_hint(name) };
@@ -85,7 +88,7 @@ namespace ice
             ice::hashmap::set(
                 _asset_resources,
                 name_hash,
-                _allocator.create<ice::AssetEntry>(ice::move(asset_name), resource_handle, this)
+                _allocator.create<ice::AssetEntry>(ice::move(asset_name), this, ice::move(resource_data))
             );
         }
         else
@@ -94,7 +97,7 @@ namespace ice
             ice::hashmap::set(
                 _asset_resources,
                 name_hash,
-                _allocator.create<ice::AssetEntry>(name, resource_handle, this)
+                _allocator.create<ice::AssetEntry>(name, this, ice::move(resource_data))
             );
         }
 

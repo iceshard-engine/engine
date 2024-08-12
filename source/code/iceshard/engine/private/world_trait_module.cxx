@@ -13,7 +13,7 @@ namespace ice
     void load_trait_descriptions(
         ice::Allocator&,
         ice::ModuleRegister const& registry,
-        ice::TraitArchive& asset_type_archive
+        ice::TraitArchive& asset_category_archive
     ) noexcept
     {
         using ice::detail::world_traits::TraitsModuleAPI;
@@ -24,7 +24,7 @@ namespace ice
         {
             for (TraitsModuleAPI const& api : api_ptrs)
             {
-                api.register_traits_fn(asset_type_archive);
+                api.register_traits_fn(asset_category_archive);
             }
         }
     }

@@ -107,17 +107,17 @@ namespace ice
         co_return true;
     }
 
-    void asset_type_image_definition(ice::AssetTypeArchive& asset_type_archive) noexcept
+    void asset_category_image_definition(ice::AssetCategoryArchive& asset_category_archive) noexcept
     {
         static ice::String extensions[]{ ".jpg", ".png", ".jpeg", ".bmp" };
 
-        static ice::AssetTypeDefinition type_definition{
+        static ice::AssetCategoryDefinition definition{
             .resource_extensions = extensions,
             // .fn_asset_oven = asset_image_oven,
             .fn_asset_loader = asset_image_loader
         };
 
-        asset_type_archive.register_type(ice::render::AssetType_Texture2D, type_definition);
+        asset_category_archive.register_category(ice::render::AssetCategory_Texture2D, definition);
     }
 
 } // namespace ice

@@ -2,14 +2,14 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/asset_type_archive.hxx>
+#include <ice/asset_category_archive.hxx>
 #include "ip_ui_oven.hxx"
 
 namespace ice
 {
 
-    void asset_type_ui_definition(
-        ice::AssetTypeArchive& type_archive
+    void asset_category_ui_definition(
+        ice::AssetCategoryArchive& type_archive
     ) noexcept;
 
 } // namespace ice::ui

@@ -39,7 +39,7 @@
 
 #include <ice/resource_tracker.hxx>
 #include <ice/resource_provider.hxx>
-#include <ice/asset_type_archive.hxx>
+#include <ice/asset_category_archive.hxx>
 #include <ice/asset_storage.hxx>
 #include <ice/asset_module.hxx>
 
@@ -419,14 +419,14 @@ auto ice_setup(
 
     ice::EngineCreateInfo engine_create_info{ .states = ice::create_state_tracker(state.alloc) };
     {
-        ice::UniquePtr<ice::AssetTypeArchive> asset_types = ice::create_asset_type_archive(state.engine_alloc);
-        ice::load_asset_type_definitions(state.engine_alloc, *state.modules, *asset_types);
+        ice::UniquePtr<ice::AssetCategoryArchive> asset_categories = ice::create_asset_category_archive(state.engine_alloc);
+        ice::load_asset_category_definitions(state.engine_alloc, *state.modules, *asset_categories);
         ice::AssetStorageCreateInfo const asset_storage_info{
             .resource_tracker = *state.resources,
             .task_scheduler = state.platform.threads->threadpool(),
             .task_flags = ice::TaskFlags{}
         };
-        engine_create_info.assets = ice::create_asset_storage(state.resources_alloc, ice::move(asset_types), asset_storage_info);
+        engine_create_info.assets = ice::create_asset_storage(state.resources_alloc, ice::move(asset_categories), asset_storage_info);
     }
 
     {

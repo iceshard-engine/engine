@@ -44,7 +44,7 @@ namespace ice
 
         auto load_sprites_shader(ice::AssetStorage& assets, ice::String name) noexcept -> ice::Task<ice::Data>
         {
-            ice::Asset asset = assets.bind(ice::render::AssetType_Shader, name);
+            ice::Asset asset = assets.bind(ice::render::AssetCategory_Shader, name);
             co_return co_await asset[AssetState::Baked];
         }
 
@@ -568,7 +568,7 @@ namespace ice
         // Set a dummy value so we can check for it and skip loading the same asset more than once.
         ice::hashmap::set(_sprite_materials, ice::hash(ice::stringid(material_name)), { });
 
-        Asset image_asset = runner.asset_storage().bind(ice::render::AssetType_Texture2D, material_name);
+        Asset image_asset = runner.asset_storage().bind(ice::render::AssetCategory_Texture2D, material_name);
         Data image_data = co_await image_asset[AssetState::Loaded];
         //ICE_ASSERT(asset_check(image_data, AssetState::Loaded), "Image not available!");
 
