@@ -35,6 +35,9 @@ Settings
     .PipelineToolchain = 'msvc-x64-v143'
     .PipelineAllowUnityBuilds = true
 
+    // Projects from this pipeline may be exposed as compilers for other pipelines
+    .PipelineDefinesCompilers = true
+
     .PipelineVSInfo =
     [
         .VSEnabled = true
@@ -128,6 +131,13 @@ Settings
     .PipelineToolchain = 'vk-glslc-1-3'
 ]
 
+.ISAC_ShaderPipeline =
+[
+    Using( .Pipeline_AssetCompiler_2407 )
+
+    .PipelineName = 'ASLShaders'
+]
+
 .Unity_Pipeline_WebAsm_x86 =
 [
     Using( .Piepline_WebAsm )
@@ -158,4 +168,5 @@ Settings
     .Unity_Pipeline_Android_x64
     .Unity_Pipeline_WebAsm_x86
     .Vk_ShaderPipeline
+    // .ISAC_ShaderPipeline
 }

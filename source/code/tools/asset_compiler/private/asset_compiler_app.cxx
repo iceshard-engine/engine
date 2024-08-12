@@ -79,7 +79,7 @@ public:
                 .name = "-c,--compiler",
                 .description = "A module that implements the asset type and a compiler for the resource that should be compiled.",
                 .type_name = "VALUE",
-                .flags = ice::ParamFlags::ValidateFile,
+                .flags = ice::ParamFlags::None,
             },
             _compiler
         );
@@ -135,7 +135,7 @@ public:
 
     auto run() noexcept -> ice::i32 override
     {
-        if (_modules->load_module(_allocator, _compiler))
+        if (_modules->load_module(_allocator, _compiler) == false)
         {
             ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Failed to load compiler module '{}'", _compiler);
             return 1;

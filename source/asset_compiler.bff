@@ -1,0 +1,179 @@
+
+.PlatformRule_GameAssets_ShadersTools =
+[
+    .Name = 'GameAssets-ShadersTools'
+    .Requires = { 'Step-Shaders' }
+    .BuildOptions = { '-c shader_tools.dll' }
+]
+
+.Platform_GameAssets =
+[
+    .PlatformSystem = 'GameAssets'
+    .PlatformSupportedFlavours = { }
+    .PlatformSupportedArchitectures = { 'pc-asset', 'web-asset' }
+    .PlatformSupportedToolchainFamilies = { 'isac', 'hscp' }
+
+    .PlatformRequiredSDKs = { }
+    .PlatformRules = {
+        .PlatformRule_GameAssets_ShadersTools
+    }
+
+    .PlatformExtensions =
+    [
+        .OutputPrefix_SharedLib = ''
+        .OutputPrefix_StaticLib = ''
+
+        .OutputExtension_StaticLib = '.hsc'
+        .OutputExtension_SharedLib = ''
+        .OutputExtension_ConsoleApp = ''
+        .OutputExtension_WindowedApp = ''
+        .OutputExtension_HeaderOnly = ''
+        .OutputExtension_ObjectList = '.isr'
+    ]
+]
+
+.CompilerFrontend_ISAC =
+[
+    .FrontendFlag_Defines =
+    [
+        .FlagVariable = 'IgnoredOptions'
+        .FlagPrefix = ''
+        .FlagSuffix = ''
+    ]
+    .FrontendFlag_IncludeDirs =
+    [
+        .FlagVariable = 'CompilerOptions'
+        .FlagPrefix = '-i"'
+        .FlagSuffix = '"'
+    ]
+    .FrontendFlag_IncludeResDirs =
+    [
+        .FlagVariable = 'IgnoredOptions'
+        .FlagPrefix = ''
+        .FlagSuffix = ''
+    ]
+    .FrontendFlag_BuildOptions =
+    [
+        .FlagVariable = 'CompilerOptions'
+        .FlagPrefix = ''
+        .FlagSuffix = ''
+    ]
+    .FrontendFlag_Libs =
+    [
+        .FlagVariable = 'IgnoredOptions'
+        .FlagPrefix = ''
+        .FlagSuffix = ''
+    ]
+    .FrontendFlag_LibDirs =
+    [
+        .FlagVariable = 'IgnoredOptions'
+        .FlagPrefix = ''
+        .FlagSuffix = ''
+    ]
+    .FrontendFlag_LinkOptions =
+    [
+        .FlagVariable = 'IgnoredOptions'
+        .FlagPrefix = ''
+        .FlagSuffix = ''
+    ]
+
+    .FrontendProperties =
+    [
+        .CompilerOptions + ' %1 -o %2'
+        .LinkerOptions + ' '
+        .LibrarianOptions + ' %1 -o %2 -v'
+    ]
+]
+
+
+.PlatformList + {
+    .Platform_GameAssets
+}
+.PlatformNames + {
+    'GameAssets'
+}
+
+.Toolchain_IS_AssetCompiler =
+[
+
+    .ToolchainCompilerFamily = 'isac'
+    .ToolchainSupportedArchitectures = {
+        'pc-asset'
+        'web-asset'
+    }
+    .ToolchainToolset = 'local'
+    .ToolchainFrontend = 'ISAC'
+    .ToolchainCompiler = 'isac-compiler'
+    .ToolchainLibrarian = 'hscp-compiler'
+    .ToolchainLinker = ''
+    .ToolchainIncludeDirs = {
+    }
+    .ToolchainLibDirs = {
+    }
+    .ToolchainLibs = {
+    }
+
+]
+
+.ToolchainList + {
+    .Toolchain_IS_AssetCompiler
+}
+.ToolchainNames + {
+    'isac-local'
+}
+
+
+.Task_BuildAsset_ASLShaderSources =
+[
+    .Step = 'Shaders'
+    .Type = 'Compile'
+
+    .AllowUnityBuilds = false
+    .TaskInputPattern = { '*-vert.asl', '*-frag.asl' }
+
+    .CompilerOutputExtension = '.isr'
+]
+
+.Task_BuildAsset_ASLAssetPack =
+[
+    .Step = 'Packs'
+    .Type = 'Link'
+]
+
+.AssetConfig_Develop =
+[
+    .ConfigurationName = 'Develop'
+]
+.AssetConfig_Release =
+[
+    .ConfigurationName = 'Release'
+]
+
+.Pipeline_AssetCompiler_2407 =
+[
+    .PipelineName = 'isac'
+    .PipelinePlatform = 'GameAssets'
+    .PipelineArchitecture = 'pc-asset'
+    .PipelineToolchain = 'isac-local'
+
+    .PipelineAllowUnityBuilds = false
+    .PipelineRequirements = { }
+    .PipelineProjectRequirements = { 'AssetPipeline' }
+    .PipelineSteps = { 'Shaders', 'Packs' }
+
+    .PipelineTasks = {
+        .Task_BuildAsset_ASLShaderSources
+        // .Task_BuildAsset_ASLAssetPack
+    }
+
+    ; Will override the default configurations assigned to Vulkan Shaders
+    .ConfigurationList = {
+        .AssetConfig_Develop
+        .AssetConfig_Release
+    }
+
+    .PipelineVSInfo =
+    [
+        .VSEnabled = false
+    ]
+]

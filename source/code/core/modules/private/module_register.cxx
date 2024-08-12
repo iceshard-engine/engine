@@ -121,9 +121,10 @@ namespace ice
                 );
 
                 ice::array::push_back(_module_handles, ice::move(module_handle));
+                return true;
             }
         }
-        return module_handle;
+        return false;
     }
 
     bool DefaultModuleRegister::load_module(

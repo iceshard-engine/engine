@@ -234,5 +234,5 @@ namespace ice
 } // namespace ice
 
 #if ISP_WEBAPP
-#undef strcmpi strcasecmp
+#undef strcmpi
 #endif
