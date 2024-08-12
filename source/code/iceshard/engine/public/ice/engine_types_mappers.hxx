@@ -1,5 +1,6 @@
 #pragma once
 #include <ice/engine_runner.hxx>
+#include <ice/engine_frame.hxx>
 #include <ice/gfx/gfx_runner.hxx>
 #include <ice/gfx/gfx_context.hxx>
 #include <ice/gfx/gfx_shards.hxx>
