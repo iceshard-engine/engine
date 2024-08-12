@@ -168,6 +168,7 @@ namespace ice
                 // Finalize the asset
                 transaction.set_result_data(
                     alloc,
+                    AssetState::Baked,
                     meta,
                     compiler.fn_finalize(ctx, resource, compiled_sources, dependencies, alloc)
                 );
@@ -276,6 +277,17 @@ namespace ice
                     // TODO: Add an sleep statement?
                     //IPT_MESSAGE_C("Asset waiting for 'Release' operation to finish.", 0xEE8866);
                 }
+
+                // Assing a new data entry.
+                ice::ResourceHandle* const resource_handle = ice::detail::find_resource(
+                    shelve->definition,
+                    _info.resource_tracker,
+                    name
+                );
+
+                entry->_data = ice::create_asset_data_entry(
+                    _allocator, AssetState::Exists, resource_handle
+                );
             }
         }
         else if (shelve != nullptr)
@@ -455,6 +467,10 @@ namespace ice
                     result = ice::asset_data_find(transaction.asset._data, AssetState::Baked);
                 }
             }
+            else
+            {
+                result = raw_data;
+            }
 
             co_await ice::await_filtered_queue_on(transaction.trackers.tasks_queue, _info.task_scheduler, detail::filter_states<AssetState::Baked>);
         }
@@ -487,7 +503,7 @@ namespace ice
             co_await ice::asset_metadata_load(transaction.asset._data, metadata);
 
             // Update the initial data object
-            transaction.asset._data->_state = transaction.calculate_state(metadata);
+            transaction.asset._data->_state = transaction.calculate_state(AssetState::Raw, metadata);
             transaction.asset._data->_readonly = resource.data.location;
             transaction.asset._data->_size = resource.data.size;
             transaction.asset._data->_alignment = resource.data.alignment;
