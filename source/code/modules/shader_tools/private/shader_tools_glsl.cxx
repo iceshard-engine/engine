@@ -506,7 +506,12 @@ namespace ice
             }
             else
             {
+                // Keep the string size so we can adjust the memory block result
+                ice::ucount const string_size = ice::size(transpiled_result);
                 result_mem = ice::string::extract_memory(transpiled_result);
+
+                // Ensure memory size is equal to string size not its capacity.
+                result_mem.size.value = string_size;
             }
 
             // Unload resource before continuing
@@ -521,6 +526,8 @@ namespace ice
             // TODO:
             sctx.shader_main = entry_point;
             sctx.shader_type = static_cast<ice::i32>(shader_stage);
+
+            // Move the memory from the heapstring to Memory
             co_return ResourceCompilerResult{ .result = result_mem };
         }
 

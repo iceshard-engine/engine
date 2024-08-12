@@ -397,8 +397,16 @@ namespace ice
             sctx.shader_main = entry_point;
             sctx.shader_type = static_cast<ice::i32>(shader_stage);
 
+            ice::ucount const string_size = ice::size(transpiled_result);
+            ice::Memory memory = ice::string::extract_memory(transpiled_result);
+
+            // Set the memory size to the final string size. Add '1' if the results has to be "compiled".
+            //  The added '1' is there because WebGPU shader loading functions to accept a size, so we need to ensure the loaded
+            //  data is '0' terminated. Returning memory with that '0' character ensure it's valid when loaded into memory.
+            memory.size.value = string_size + ice::u32(sctx.stage == ice::ShaderStage::Compiled);
+
             // Move the memory from the heapstring to Memory
-            co_return ResourceCompilerResult{ .result = ice::string::extract_memory(transpiled_result) };
+            co_return ResourceCompilerResult{ .result = memory };
         }
 
         auto compiler_build_shader_meta(

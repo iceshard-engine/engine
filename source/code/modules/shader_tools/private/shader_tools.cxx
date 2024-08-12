@@ -151,7 +151,7 @@ namespace ice
                     ICE_LOG(
                         LogSeverity::Error, LogTag::Tool,
                         "Invalid value type provided for param 'shader:target'. 'ice::ShaderPlatformTarget' enum or 'char const*' expected.",
-                        );
+                    );
                 }
                 else
                 {
@@ -232,3 +232,7 @@ namespace ice
     }
 
 } // namespace ice
+
+#if ISP_WEBAPP
+#undef strcmpi strcasecmp
+#endif

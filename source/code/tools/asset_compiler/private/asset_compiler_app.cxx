@@ -31,6 +31,8 @@ public:
         , _params{ _allocator }
         , _inputs_meta{ _allocator }
         , _inputs{ _allocator }
+        , _output_raw{ false }
+        , _output_std{ false }
         , _queue{ }
         , _scheduler{ _queue }
     {
@@ -62,7 +64,7 @@ public:
                 .name = "-o,--output",
                 .description = "The asset file to be created.",
                 // .type_name = "PATH",
-                .flags = ice::ParamFlags::IsRequired
+                .flags = ice::ParamFlags::None
             },
             _output
         );
@@ -100,9 +102,23 @@ public:
                 .name = "-m,--metadata",
                 .description = "Metadata descriptions for the asset. Can provide multiple files that will be combined in order.",
                 // .type_name = "PATH",
-                .flags = ice::ParamFlags::ValidateFile,
+                .flags = ice::ParamFlags::ValidateFile | ice::ParamFlags::TakeAll,
             },
             _inputs_meta
+        );
+        ice::params_define(params, {
+                .name = "--raw",
+                .description = "Writes only the final resource content without header and metadata.",
+                .flags = ice::ParamFlags::TakeLast
+            },
+            _output_raw
+        );
+        ice::params_define(params, {
+                .name = "--stdout",
+                .description = "Writes the compiled data to 'stdout'.",
+                .flags = ice::ParamFlags::TakeLast
+            },
+            _output_std
         );
         ice::params_define(params, {
                 .name = "input",
@@ -125,9 +141,16 @@ public:
             return 1;
         }
 
+        ICE_LOG_IF(
+            Param_Verbose && (_output_std == false && ice::string::empty(_output)),
+            ice::LogSeverity::Retail, ice::LogTag::Tool,
+            "No output was selected, please use '-o,--output' or '--stdout'!"
+        );
+
         if (ice::string::empty(_asset_resource))
         {
-            _asset_resource = ice::path::basename(_output);
+            // First input is the resource name to be compiled
+            _asset_resource = ice::path::basename(_inputs[0]);
         }
 
         ICE_LOG_IF(
@@ -298,7 +321,13 @@ public:
 
             // Build the final asset object
             ice::Memory const final_asset_data = resource_compiler->fn_finalize(ctx, res, results, dependencies, _allocator);
-            if (final_asset_data.location != nullptr)
+            if (final_asset_data.location == nullptr)
+            {
+                ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Falied finalizing asset data for {}.", _asset_resource);
+                return 1;
+            }
+
+            if (ice::string::any(_output))
             {
                 ice::Memory const final_meta_data = ice::meta_save(meta, _allocator);
 
@@ -335,7 +364,7 @@ public:
                 };
 
                 // Write all parts
-                for (ice::Data file_part : file_parts)
+                for (ice::Data file_part : ice::span::subspan(ice::Span{ file_parts }, _output_raw ? 4 : 0))
                 {
                     if (ice::native_file::append_file(output_file, file_part) != file_part.size)
                     {
@@ -344,8 +373,14 @@ public:
                 }
 
                 _allocator.deallocate(final_meta_data);
-                _allocator.deallocate(final_asset_data);
             }
+
+            if (_output_std)
+            {
+                fmt::println("{}", ice::String{(char const*)final_asset_data.location, (ice::ucount) final_asset_data.size.value});
+            }
+
+            _allocator.deallocate(final_asset_data);
 
             // Release partial results.
             for (ice::ResourceCompilerResult& result : results)
@@ -374,6 +409,8 @@ private:
     ice::Array<ice::String> _inputs_meta;
     ice::Array<ice::String> _inputs;
     ice::Array<ice::Shard> _params;
+    bool _output_raw;
+    bool _output_std;
 
     ice::TaskQueue _queue;
     ice::TaskScheduler _scheduler;

@@ -453,11 +453,11 @@ namespace ice
         template<typename CharType>
         inline auto extract_memory(ice::HeapString<CharType>& str) noexcept -> ice::Memory
         {
-            ice::exchange(str._capacity, 0);
+            ice::exchange(str._size, 0);
 
             return ice::Memory{
                 .location = ice::exchange(str._data, nullptr),
-                .size = ice::size_of<CharType> * (ice::exchange(str._size, 0) + 1),
+                .size = ice::size_of<CharType> * ice::exchange(str._capacity, 0),
                 .alignment = ice::align_of<CharType>
             };
         }
