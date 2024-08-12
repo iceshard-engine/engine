@@ -2,6 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#include <ice/math.hxx>
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/string/string.hxx>
 #include <ice/span.hxx>

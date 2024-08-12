@@ -310,10 +310,22 @@ namespace ice::render::webgpu
     {
         WebGPUCommandBuffer* webgpu_cmds = WebGPUCommandBuffer::native(cmds);
 
+        [[maybe_unused]]
+        ice::AlignResult result = ice::align_to(extents.x * 4, ice::ualign::b_256);
+        ice::u32 bytes_per_row = extents.x * 4;
+
+        ICE_LOG_IF(
+            is_aligned(bytes_per_row, ice::ualign::b_256) == false,
+            LogSeverity::Warning, LogTag::Engine,
+            "Copy buffer to texture alignment issue! Row '{}' is not aligned to '256'",
+            bytes_per_row
+        );
+
         WGPUImageCopyBuffer source{};
         source.buffer = WebGPUBuffer::native(image_contents)->wgpu_buffer;
+
         source.layout.offset = 0;
-        source.layout.bytesPerRow = extents.x * 4;
+        source.layout.bytesPerRow = bytes_per_row;
         source.layout.rowsPerImage = extents.y;
 
         WGPUImageCopyTexture destination{};

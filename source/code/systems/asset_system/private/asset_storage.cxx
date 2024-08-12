@@ -301,6 +301,19 @@ namespace ice
         return result;
     }
 
+    auto DefaultAssetStorage::preload(
+        ice::AssetType type,
+        ice::String name,
+        ice::AssetState state
+    ) noexcept -> ice::Task<>
+    {
+        ice::Asset asset = this->bind(type, name);
+        if (asset.valid() && asset.available(state) == false)
+        {
+            co_await asset.preload(state);
+        }
+    }
+
     auto DefaultAssetStorage::request(
         ice::Asset const& asset,
         ice::AssetState requested_state

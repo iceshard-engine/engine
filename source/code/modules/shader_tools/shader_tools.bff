@@ -9,6 +9,12 @@
 
     .BaseDir = '$WorkspaceCodeDir$/modules/shader_tools'
 
+    .LocalCompiler =
+    [
+        .LocalCompilerConfig = 'Release'
+        .LocalCompilerModule = true
+    ]
+
     .Private =
     [
         .Modules = {
@@ -27,6 +33,13 @@
 
         .Public =
         [
+            .DependsOn =
+            [
+                .Runtime = {
+                    'shaderc_shared'
+                }
+            ]
+
             .Libs = {
                 'shaderc_shared'
             }
@@ -37,6 +50,13 @@
         .Name = 'Monolythic'
         .Requires = { 'Monolythic' }
         .Kind = .Kind_ObjectList
+
+        .Public = // Allow to link against dependency in Monolythic builds
+        [
+            .Modules = {
+                'arctic'
+            }
+        ]
     ]
     .Rules = { .SDK_VulkanShaderC, .Rule_Monolythic }
 ]

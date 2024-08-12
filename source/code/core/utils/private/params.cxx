@@ -10,6 +10,7 @@
 
 #include <CLI/CLI.hpp>
 #include <variant>
+#include <complex>
 
 namespace ice
 {
@@ -148,7 +149,13 @@ namespace ice
         {
             opt->allow_extra_args(ice::has_none(definition.flags, PF::NoExtraArgs));
 
-            if (definition.min != 0 || definition.max != ice::u32_max)
+            if (definition.typesize.x != 0 || definition.typesize.y != ice::i32_max)
+            {
+                opt->inject_separator();
+                opt->type_size(definition.typesize.x, definition.typesize.y);
+            }
+
+            if (definition.min != 0 || definition.max != ice::i32_max)
             {
                 opt->expected(definition.min, definition.max);
             }
@@ -283,18 +290,45 @@ namespace ice
         ice::ParamsCustomCallback ice_callback
     ) noexcept
     {
-        auto fn_callback = [ice_userdata, ice_callback, &alloc = params->_allocator](CLI::results_t const& results) noexcept
+        auto fn_callback = [
+            ice_userdata,
+            ice_callback,
+            typesize = definition.typesize,
+            &alloc = params->_allocator
+        ](CLI::results_t const& results) noexcept
         {
-            ice::ucount const result_count = static_cast<ice::u32>(results.size());
+            ice::ucount const result_count = (ice::ucount) std::min<ice::usize::base_type>(
+                    results.size(), std::max(typesize.y, 0)
+            );
             ice::StackAllocator<ice::size_of<ice::String> * 8> stack_alloc;
             ice::Array<ice::String> ice_results{ result_count <= 8 ? stack_alloc : alloc };
             ice::array::reserve(ice_results, result_count);
 
-            for (std::string const& result : results)
+            auto it = results.begin();
+            auto const end = results.end();
+
+            bool valid = true;
+            while (it != end && valid)
             {
-                ice::array::push_back(ice_results, std::string_view{ result });
+                std::string_view const result{ *it };
+                if (ice::count(ice_results) == result_count || result.empty())
+                {
+                    valid &= ice_callback(ice_userdata, ice_results);
+                    ice::array::clear(ice_results);
+                }
+                else if (result.empty() == false)
+                {
+                    ice::array::push_back(ice_results, result);
+                }
+                it += 1;
             }
-            return ice_callback(ice_userdata, ice_results);
+
+            if (valid)
+            {
+                valid &= ice_callback(ice_userdata, ice_results);
+            }
+
+            return valid;
         };
         params_setup(params->_app.add_option(to_std(definition.name), ice::move(fn_callback)), definition, true);
         return true;

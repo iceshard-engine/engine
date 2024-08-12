@@ -444,17 +444,8 @@ namespace ice::render::vk
 
         for (ResourceSetUpdateInfo const& update_info : update_infos)
         {
-            VkWriteDescriptorSet descriptor_set_write{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
-            descriptor_set_write.dstBinding = update_info.binding_index;
-            descriptor_set_write.dstArrayElement = update_info.array_element;
-            descriptor_set_write.dstSet = native_handle(update_info.resource_set);
-            descriptor_set_write.descriptorCount = ice::count(update_info.resources);
-            descriptor_set_write.descriptorType = native_enum_value(update_info.resource_type);
-
             if (update_info.resource_type == ResourceType::SampledImage || update_info.resource_type == ResourceType::InputAttachment)
             {
-                ice::u32 const image_info_index = ice::array::count(write_image_info);
-
                 for (ResourceUpdateInfo const& resource_info : update_info.resources)
                 {
                     VulkanImage* const image_ptr = reinterpret_cast<VulkanImage*>(
@@ -468,14 +459,10 @@ namespace ice::render::vk
 
                     ice::array::push_back(write_image_info, image_info);
                 }
-
-                descriptor_set_write.pImageInfo = ice::addressof(write_image_info[image_info_index]);
             }
 
             if (update_info.resource_type == ResourceType::Sampler)
             {
-                ice::u32 const image_info_index = ice::array::count(write_image_info);
-
                 for (ResourceUpdateInfo const& resource_info : update_info.resources)
                 {
                     VkSampler vk_sampler = native_handle(resource_info.sampler);
@@ -485,14 +472,10 @@ namespace ice::render::vk
 
                     ice::array::push_back(write_image_info, sampler_info);
                 }
-
-                descriptor_set_write.pImageInfo = ice::addressof(write_image_info[image_info_index]);
             }
 
             if (update_info.resource_type == ResourceType::UniformBuffer)
             {
-                ice::u32 const buffer_info_index = ice::array::count(write_buffer_info);
-
                 for (ResourceUpdateInfo const& resource_info : update_info.resources)
                 {
                     VulkanBuffer* const buffer_ptr = reinterpret_cast<VulkanBuffer*>(
@@ -506,8 +489,34 @@ namespace ice::render::vk
 
                     ice::array::push_back(write_buffer_info, buffer_info);
                 }
+            }
+        }
 
-                descriptor_set_write.pBufferInfo = ice::addressof(write_buffer_info[buffer_info_index]);
+        ice::u32 offset = 0;
+        for (ResourceSetUpdateInfo const& update_info : update_infos)
+        {
+            VkWriteDescriptorSet descriptor_set_write{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+            descriptor_set_write.dstBinding = update_info.binding_index;
+            descriptor_set_write.dstArrayElement = update_info.array_element;
+            descriptor_set_write.dstSet = native_handle(update_info.resource_set);
+            descriptor_set_write.descriptorCount = ice::count(update_info.resources);
+            descriptor_set_write.descriptorType = native_enum_value(update_info.resource_type);
+
+            if (update_info.resource_type == ResourceType::SampledImage || update_info.resource_type == ResourceType::InputAttachment)
+            {
+                descriptor_set_write.pImageInfo = ice::array::begin(write_image_info) + offset;
+                offset += ice::count(update_info.resources);
+            }
+
+            if (update_info.resource_type == ResourceType::Sampler)
+            {
+                descriptor_set_write.pImageInfo = ice::array::begin(write_image_info) + offset;
+                offset += ice::count(update_info.resources);
+            }
+
+            if (update_info.resource_type == ResourceType::UniformBuffer)
+            {
+                descriptor_set_write.pBufferInfo = ice::array::begin(write_buffer_info);
             }
 
             ice::array::push_back(vk_writes, descriptor_set_write);
@@ -1266,9 +1275,9 @@ namespace ice::render::vk
     {
         VkViewport viewport{ };
         viewport.x = static_cast<ice::f32>(viewport_rect.x);
-        viewport.y = static_cast<ice::f32>(viewport_rect.y);
+        viewport.y = static_cast<ice::f32>(viewport_rect.w) + static_cast<ice::f32>(viewport_rect.y);
         viewport.width = static_cast<ice::f32>(viewport_rect.z);
-        viewport.height = static_cast<ice::f32>(viewport_rect.w);
+        viewport.height = -static_cast<ice::f32>(viewport_rect.w);
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
 

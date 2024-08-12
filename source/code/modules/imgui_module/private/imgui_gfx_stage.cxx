@@ -10,6 +10,7 @@
 #include <ice/render/render_buffer.hxx>
 #include <ice/render/render_device.hxx>
 #include <ice/render/render_profiler.hxx>
+#include <ice/math/projection.hxx>
 
 namespace ice::devui
 {
@@ -146,16 +147,19 @@ namespace ice::devui
         };
 
         _uniform_buffer = device.create_buffer(BufferType::Uniform, 64);
-        _resource_layout = device.create_resourceset_layout(resource_bindings);
+        _resource_layout[0] = device.create_resourceset_layout({ resource_bindings + 2, 1 });
+        _resource_layout[1] = device.create_resourceset_layout({ resource_bindings + 0, 2 });
+
 
         ResourceSetLayout resource_layouts[20]{ };
         for (auto& layout : resource_layouts)
         {
-            layout = _resource_layout;
+            layout = _resource_layout[1];
         }
+        resource_layouts[0] = _resource_layout[0];
 
-        //_resource_layout[1] = device.create_resourceset_layout({ resource_bindings + 2, 2 });
-        device.create_resourcesets(resource_layouts, _resources);
+        device.create_resourcesets({ resource_layouts + 0, 1 }, { _resources + 0, 1 });
+        device.create_resourcesets({ resource_layouts + 1, 19 }, { _resources + 1, 19 });
 
         ResourceUpdateInfo resource_update[]
         {
@@ -177,7 +181,7 @@ namespace ice::devui
         {
             ResourceSetUpdateInfo
             {
-                .resource_set = _resources[0],
+                .resource_set = _resources[1],
                 .resource_type = ResourceType::Sampler,
                 .binding_index = 1,
                 .array_element = 0,
@@ -185,7 +189,7 @@ namespace ice::devui
             },
             ResourceSetUpdateInfo
             {
-                .resource_set = _resources[0],
+                .resource_set = _resources[1],
                 .resource_type = ResourceType::SampledImage,
                 .binding_index = 2,
                 .array_element = 0,
@@ -203,19 +207,9 @@ namespace ice::devui
 
         device.update_resourceset(update_infos);
 
-        PipelinePushConstant const push_constants[]
-        {
-            PipelinePushConstant
-            {
-                .shader_stage_flags = ShaderStageFlags::VertexStage,
-                .offset = 0,
-                .size = sizeof(ice::vec2f) * 2,
-            }
-        };
         PipelineLayoutInfo const layout_info
         {
-            .push_constants = push_constants,
-            .resource_layouts = { &_resource_layout, 1 },
+            .resource_layouts = _resource_layout,
         };
 
         _pipeline_layout = device.create_pipeline_layout(layout_info);
@@ -347,7 +341,8 @@ namespace ice::devui
         device.destroy_pipeline_layout(_pipeline_layout);
         device.destroy_sampler(_sampler);
         device.destroy_resourcesets(_resources);
-        device.destroy_resourceset_layout(_resource_layout);
+        device.destroy_resourceset_layout(_resource_layout[0]);
+        device.destroy_resourceset_layout(_resource_layout[1]);
         co_return;
     }
 
@@ -377,32 +372,15 @@ namespace ice::devui
                 return;
             }
 
-            float L = draw_data->DisplayPos.x;
-            float R = draw_data->DisplayPos.x + draw_data->DisplaySize.x;
-            float T = draw_data->DisplayPos.y;
-            float B = draw_data->DisplayPos.y + draw_data->DisplaySize.y;
-            float mvp[4][4] =
-            {
-                { 2.0f/(R-L),   0.0f,           0.0f,       0.0f },
-                { 0.0f,         2.0f/(T-B),     0.0f,       0.0f },
-                { 0.0f,         0.0f,           0.5f,       0.0f },
-                { (R+L)/(L-R),  (T+B)/(B-T),    0.5f,       1.0f },
-            };
+            ice::mat4 const mvp = ice::math::orthographic(
+                vec2f{ draw_data->DisplayPos.x, draw_data->DisplayPos.x + draw_data->DisplaySize.x },
+                vec2f{ draw_data->DisplayPos.y, draw_data->DisplaySize.y },
+                vec2f{ 0, 1 }
+            );
 
-            ice::render::BufferUpdateInfo updates[]
-            {
-                ice::render::BufferUpdateInfo
-                {
-                    .buffer = _uniform_buffer,
-                    .data =
-                    {
-                        .location = mvp,
-                        .size = {sizeof(mvp)},
-                        .alignment = ice::ualign::b_4
-                    }
-                },
+            ice::render::BufferUpdateInfo const updates[] {
+                ice::render::BufferUpdateInfo { .buffer = _uniform_buffer, .data = ice::data_view(mvp) },
             };
-
             device.update_buffers(updates);
         }
 
@@ -413,7 +391,7 @@ namespace ice::devui
         ImVec2 clip_scale = draw_data->FramebufferScale; // (1,1) unless using retina display which are often (2,2)
 
         ImTextureID last_texid = nullptr; // ImGui::GetIO().tex
-        ice::u32 next_resource_idx = 1;
+        ice::u32 next_resource_idx = 2;
         ResourceUpdateInfo resource_update[]
         {
             ResourceUpdateInfo
@@ -550,12 +528,11 @@ namespace ice::devui
         translate[0] = -1.0f; // -1.0f - width * scale[0];
         translate[1] = -1.0f; //-1.0f - height * scale[1];
 
-        ResourceSet last_resource = _resources[0];
+        ResourceSet last_resource = _resources[1];
 
-        api.push_constant(cmds, _pipeline_layout, ShaderStageFlags::VertexStage, { scale, { sizeof(scale) } }, 0);
-        api.push_constant(cmds, _pipeline_layout, ShaderStageFlags::VertexStage, { translate, { sizeof(translate) } }, sizeof(scale));
         api.bind_pipeline(cmds, _pipeline);
         api.bind_resource_set(cmds, _pipeline_layout, _resources[0], 0);
+        api.bind_resource_set(cmds, _pipeline_layout, _resources[1], 1);
         api.bind_vertex_buffer(cmds, _vertex_buffers[0], 0);
         api.bind_index_buffer(cmds, _index_buffers[0]);
 
@@ -585,7 +562,7 @@ namespace ice::devui
                 if (new_set != last_resource)
                 {
                     last_resource = new_set;
-                    api.bind_resource_set(cmds, _pipeline_layout, new_set, 0);
+                    api.bind_resource_set(cmds, _pipeline_layout, new_set, 1);
                 }
 
                 // Draw

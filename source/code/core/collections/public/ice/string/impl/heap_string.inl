@@ -445,7 +445,19 @@ namespace ice
         {
             return ice::Memory{
                 .location = str._data,
-                .size = ice::size_of<CharType> * str._capacity ,
+                .size = ice::size_of<CharType> * str._capacity,
+                .alignment = ice::align_of<CharType>
+            };
+        }
+
+        template<typename CharType>
+        inline auto extract_memory(ice::HeapString<CharType>& str) noexcept -> ice::Memory
+        {
+            ice::exchange(str._size, 0);
+
+            return ice::Memory{
+                .location = ice::exchange(str._data, nullptr),
+                .size = ice::size_of<CharType> * ice::exchange(str._capacity, 0),
                 .alignment = ice::align_of<CharType>
             };
         }

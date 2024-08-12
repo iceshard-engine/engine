@@ -106,6 +106,11 @@ namespace ice::string
     template<typename CharType>
     inline auto memory(ice::HeapString<CharType>& str) noexcept -> ice::Memory;
 
+    //! \return Extracts the memory allocated by the heap string.
+    //! \note The 'size' member contains the 'capacity' of the heap string.
+    template<typename CharType>
+    inline auto extract_memory(ice::HeapString<CharType>& str) noexcept -> ice::Memory;
+
 } // namespace ice::string
 
 namespace ice

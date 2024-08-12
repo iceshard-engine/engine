@@ -528,6 +528,22 @@ namespace ice::render::webgpu
 
         WGPUTexture texture = wgpuDeviceCreateTexture(_wgpu_device, &descriptor);
 
+        if (data.location != nullptr && data.size > 0_B)
+        {
+            WGPUImageCopyTexture copy_info{};
+            copy_info.mipLevel = 0;
+            copy_info.texture = texture;
+            copy_info.origin = { 0, 0, 0 };
+            copy_info.aspect = WGPUTextureAspect_All;
+
+            WGPUTextureDataLayout layout{};
+            layout.offset = 0;
+            layout.bytesPerRow = image_info.width * 4;
+            layout.rowsPerImage = image_info.height;
+
+            wgpuQueueWriteTexture(_wgpu_queue, &copy_info, data.location, data.size.value, &layout, &descriptor.size);
+        }
+
         WGPUTextureViewDescriptor view_descriptor{};
         view_descriptor.label = "";
         view_descriptor.dimension = WGPUTextureViewDimension_2D;

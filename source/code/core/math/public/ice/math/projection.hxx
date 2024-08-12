@@ -30,7 +30,7 @@ namespace ice::math
     namespace math_detail
     {
 
-        constexpr auto perspective_rhs_lrtb(
+        constexpr auto perspective_rhs_lrbt(
             f32 left,
             f32 right,
             f32 bottom,
@@ -42,9 +42,9 @@ namespace ice::math
             mat<4, 4, f32> result{ };
 
             result.v[0][0] = 2.f * near_plane / (right - left);
-            result.v[1][1] = 2.f * near_plane / (top - bottom);
+            result.v[1][1] = 2.f * near_plane / (bottom - top);
             result.v[2][0] = (right + left) / (right - left);
-            result.v[2][1] = (top + bottom) / (top - bottom);
+            result.v[2][1] = (bottom + top) / (bottom - top);
             result.v[2][2] = far_plane / (near_plane - far_plane);
             result.v[2][3] = -1.f;
             result.v[3][2] = (near_plane * far_plane) / (near_plane - far_plane);
@@ -72,7 +72,7 @@ namespace ice::math
         f32 top = right / aspect_ratio;
         f32 bottom = -top;
 
-        return math_detail::perspective_rhs_lrtb(left, right, bottom, top, near_plane, far_plane);
+        return math_detail::perspective_rhs_lrbt(left, right, bottom, top, near_plane, far_plane);
     }
 
     inline auto perspective_fovy(
@@ -89,7 +89,7 @@ namespace ice::math
         f32 right = top * aspect_ratio;
         f32 left = -right;
 
-        return math_detail::perspective_rhs_lrtb(left, right, bottom, top, near_plane, far_plane);
+        return math_detail::perspective_rhs_lrbt(left, right, bottom, top, near_plane, far_plane);
     }
 
     constexpr auto orthographic(
@@ -117,10 +117,10 @@ namespace ice::math
         mat<4, 4, f32> result{ };
 
         result.v[0][0] = 2.f / (right - left);
-        result.v[1][1] = 2.f / (top - bottom);
+        result.v[1][1] = 2.f / (bottom - top);
         result.v[2][2] = 1.f / (near_plane - far_plane);
         result.v[3][0] = -(right + left) / (right - left);
-        result.v[3][1] = -(top + bottom) / (top - bottom);
+        result.v[3][1] = -(bottom + top) / (bottom - top);
         result.v[3][2] = near_plane / (near_plane - far_plane);
         result.v[3][3] = 1.f;
         return result;
