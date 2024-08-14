@@ -127,7 +127,7 @@ namespace ice
         namespace mm3 = ice::detail::murmur3_hash;
 
         mm3::mm3_x86_h32 const hash = mm3::cexpr_murmur3_x86_32(
-            sv, ice::config::ShardPayloadID_DefaultSeed
+            sv, ice::build::Constant_ShardPayloadID_DefaultSeed
         );
         return ice::ShardPayloadID{ hash.h[0] };
     }
@@ -139,7 +139,7 @@ namespace ice
         size_t const payload_id_pos = sv.find_first_of('`');
         if (payload_id_pos == std::string_view::npos)
         {
-            mm3::mm3_x86_h32 const hash = mm3::cexpr_murmur3_x86_32(sv, ice::config::ShardName_DefaultSeed);
+            mm3::mm3_x86_h32 const hash = mm3::cexpr_murmur3_x86_32(sv, ice::build::Constant_ShardName_DefaultSeed);
 
             return ice::ShardID{
                 .name = { hash.h[0] },
@@ -150,7 +150,7 @@ namespace ice
         {
             mm3::mm3_x86_h32 const name_hash = mm3::cexpr_murmur3_x86_32(
                 sv.substr(0, payload_id_pos),
-                ice::config::ShardName_DefaultSeed
+                ice::build::Constant_ShardName_DefaultSeed
             );
 
             return ice::ShardID{

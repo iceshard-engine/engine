@@ -194,7 +194,7 @@ namespace ice
 
                     ice::Data const in_data{
                         .location = in_data_ptr,
-                        .size = bytes + in_str_size + 1, // Include the '\0' when copying
+                        .size = { bytes + in_str_size + 1 }, // Include the '\0' when copying
                         .alignment = ice::ualign::b_1
                     };
 

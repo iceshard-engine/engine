@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/mem_types.hxx>
+#include <ice/mem_info.hxx>
 #include <ice/mem_data.hxx>
 #include <ice/mem_arithmetic.hxx>
 

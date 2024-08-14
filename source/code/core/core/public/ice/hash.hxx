@@ -2,7 +2,6 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/config.hxx>
 #include <ice/constants.hxx>
 #include <ice/hash/murmur2.hxx>
 #include <ice/hash/murmur3.hxx>
@@ -61,7 +60,7 @@ namespace ice
     {
         using namespace ice::detail::murmur2_hash;
 
-        mm2_x64_64 const result = cexpr_murmur2_x64_64(value, ice::config::Hash64_DefaultSeed);
+        mm2_x64_64 const result = cexpr_murmur2_x64_64(value, ice::build::Constant_Hash64_DefaultSeed);
         return result.h[0];
     }
 
@@ -76,7 +75,7 @@ namespace ice
     {
         using namespace ice::detail::murmur2_hash;
 
-        mm2_x64_64 const result = cexpr_murmur2_x64_64(value, ice::config::Hash64_DefaultSeed);
+        mm2_x64_64 const result = cexpr_murmur2_x64_64(value, ice::build::Constant_Hash64_DefaultSeed);
         return result.h[0];
     }
 
@@ -98,7 +97,7 @@ namespace ice
     {
         using namespace ice::detail::murmur3_hash;
 
-        mm3_x86_h32 const result = cexpr_murmur3_x86_32(value, ice::config::Hash32_DefaultSeed);
+        mm3_x86_h32 const result = cexpr_murmur3_x86_32(value, ice::build::Constant_Hash32_DefaultSeed);
         return result.h[0];
     }
 
@@ -113,7 +112,7 @@ namespace ice
     {
         using namespace ice::detail::murmur3_hash;
 
-        mm3_x86_h32 const result = cexpr_murmur3_x86_32(value, ice::config::Hash32_DefaultSeed);
+        mm3_x86_h32 const result = cexpr_murmur3_x86_32(value, ice::build::Constant_Hash32_DefaultSeed);
         return result.h[0];
     }
 

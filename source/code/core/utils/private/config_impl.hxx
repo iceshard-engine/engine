@@ -3,7 +3,6 @@
 
 #pragma once
 #include <ice/config.hxx>
-#include <ice/config.hxx>
 #include <ice/container/hashmap.hxx>
 #include <ice/mem_allocator_forward.hxx>
 #include <ice/mem_allocator_host.hxx>

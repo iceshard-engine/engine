@@ -13,15 +13,15 @@ namespace ice
 
     //! \copy ice::BaseStringID.
     using StringID = BaseStringID<
-        ice::config::StringID_DebugInfoEnabled
+        ice::build::Constant_StringID_DebugInfoEnabled
     >;
 
     //! \brief Argument type used to pass \ref ice::StringID values to functions.
     //!
     //! \note This allows the engine to control how \ref ice::StringID values are passed in the engine.
-    //!     When \ref ice::config::StringID_DebugInfoEnabled is \b false values are passed by values.
+    //!     When \ref ice::build::Constant_StringID_DebugInfoEnabled is \b false values are passed by values.
     using StringID_Arg = std::conditional_t<
-        ice::config::StringID_DebugInfoEnabled,
+        ice::build::Constant_StringID_DebugInfoEnabled,
         StringID const&,
         StringID
     >;
@@ -92,9 +92,9 @@ namespace ice
     constexpr auto stringid(std::string_view value) noexcept
     {
         using namespace ice::detail::murmur2_hash;
-        mm2_x64_64 const hash_result = cexpr_murmur2_x64_64(value, ice::config::StringID_DefaultSeed);
+        mm2_x64_64 const hash_result = cexpr_murmur2_x64_64(value, ice::build::Constant_StringID_DefaultSeed);
 
-        if constexpr (ice::config::StringID_DebugInfoEnabled)
+        if constexpr (ice::build::Constant_StringID_DebugInfoEnabled)
         {
             if (std::is_constant_evaluated())
             {

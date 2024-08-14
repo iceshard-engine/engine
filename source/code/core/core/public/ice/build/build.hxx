@@ -6,6 +6,7 @@
 #include <ice/build/platform.hxx>
 #include <ice/build/validate.hxx>
 #include <ice/build/warnings.hxx>
+#include <ice/build/constants.hxx>
 
 namespace ice::build
 {
