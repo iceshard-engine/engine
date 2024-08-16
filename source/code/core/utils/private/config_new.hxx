@@ -57,6 +57,17 @@ namespace ice
         ice::u32 internal;
     };
 
+    inline auto calc_varstring_size_total(ice::u32 size) noexcept -> ice::u32
+    {
+        ice::u32 bytes = 0;
+        while(size > 0x7f)
+        {
+            size >>= 7;
+            bytes += 1;
+        }
+        return (bytes + 1) + size;
+    }
+
     inline auto read_varstring_size(void const* data, ice::u32& out_bytes) noexcept -> ice::u32
     {
         ice::u32 result = 0;

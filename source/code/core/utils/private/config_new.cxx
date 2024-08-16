@@ -3,7 +3,7 @@
 namespace ice
 {
 
-    auto config_find_key(ice::Config_v2 const& config, ice::u32 idx) noexcept -> ice::Config_v2::Key const*
+    auto config_find_idx(ice::Config_v2 const& config, ice::u32 idx) noexcept -> ice::Config_v2::Key const*
     {
         // Can only index into 'none' key types.
         if (config._keys == nullptr || config._keys->type != CONFIG_KEYTYPE_NONE)
@@ -25,33 +25,93 @@ namespace ice
 
     auto config_find_key(ice::Config_v2 const& config, ice::String key) noexcept -> ice::Config_v2::Key const*
     {
-        if (config._keys == nullptr || config._keys->type != CONFIG_KEYTYPE_STRING)
+        if (config._keys == nullptr)
         {
             return nullptr;
         }
 
+        bool const is_table = config._keys->type != CONFIG_KEYTYPE_STRING;
+
         // If this key has multiple parts recursively enter config search
         // TODO: Turn into a loop?
-        ice::ucount const key_split_location = ice::string::find_first_of(key, '.');
+        ice::ucount const key_split_location = ice::string::find_first_of(key, {".|"});
         if (key_split_location != ice::String_NPos)
         {
-            Config_v2 const sub_cfg = config_get(config, ice::string::substr(key, 0, key_split_location));
-            return ice::config_find_key(sub_cfg, ice::string::substr(key, key_split_location + 1));
+            ice::String const keyval = ice::string::substr(key, 0, key_split_location);
+            if (is_table)
+            {
+                ice::u32 idx = 0;
+                char const* k = ice::string::begin(keyval);
+                while(*k >= '0' && *k <= '9')
+                {
+                    idx *= 10;
+                    idx += (*k - '0');
+
+                    k += 1;
+                }
+                Config_v2 const sub_cfg = config_get(config, idx);
+                return ice::config_find_key(sub_cfg, ice::string::substr(key, key_split_location + 1));
+            }
+            else
+            {
+                Config_v2 const sub_cfg = config_get(config, keyval);
+                return ice::config_find_key(sub_cfg, ice::string::substr(key, key_split_location + 1));
+            }
         }
 
-        Config_v2::Key const* key_info = config._keys;
-        bool found = key == Config_v2::Key::key_str(*key_info, config._strings);
-
-        while(key_info->next && found == false)
+        if (is_table) [[unlikely]]
         {
-            key_info += 1;
-            found = key == Config_v2::Key::key_str(*key_info, config._strings);
-        }
+            ice::u32 idx = 0;
+            char const* k = ice::string::begin(key);
+            while(*k >= '0' && *k <= '9')
+            {
+                idx *= 10;
+                idx += (*k - '0');
 
-        return found ? key_info : nullptr;
+                k += 1;
+            }
+
+            return ice::config_find_idx(config, idx);
+        }
+        else
+        {
+            Config_v2::Key const* key_info = config._keys;
+            bool found = key == Config_v2::Key::key_str(*key_info, config._strings);
+
+            while(key_info->next && found == false)
+            {
+                key_info += 1;
+                found = key == Config_v2::Key::key_str(*key_info, config._strings);
+            }
+
+            return found ? key_info : nullptr;
+        }
     }
 
-    auto config_get(ice::Config_v2 const& config, ice::String key) noexcept -> ice::Config_v2
+    auto config_get(ice::Config_v2 const& config, ice::u32 idx) noexcept -> ice::Config_v2
+    {
+        Config_v2::Key const* key_info = config_find_idx(config, idx);
+        if (key_info == nullptr || key_info->vtype < CONFIG_VALTYPE_TABLE) // 63 == obj, 62 == array
+        {
+            return {}; // empty config
+        }
+
+        ice::usize_raw const key_idx = key_info - config._keys;
+        if (config._values[key_idx].internal == ice::u32_max) // Empty array / object
+        {
+            return {};
+        }
+
+        return {
+            // Move both keys and values by their index and relative value where child values are located.
+            ._keys = config._keys + config._values[key_idx].internal + key_idx,
+            ._values = config._values + config._values[key_idx].internal + key_idx,
+            ._strings = config._strings,
+            ._data = config._data
+        };
+    }
+
+    auto config_get(ice::Config_v2 const &config, ice::String key) noexcept -> ice::Config_v2
     {
         Config_v2::Key const* key_info = config_find_key(config, key);
         if (key_info == nullptr || key_info->vtype < CONFIG_VALTYPE_TABLE) // 63 == obj, 62 == array
@@ -60,6 +120,10 @@ namespace ice
         }
 
         ice::usize_raw const key_idx = key_info - config._keys;
+        if (config._values[key_idx].internal == ice::u32_max) // Empty array / object
+        {
+            return {};
+        }
 
         return {
             // Move both keys and values by their index and relative value where child values are located.
@@ -96,17 +160,70 @@ namespace ice
         return true;
     }
 
+    bool config_get_u64(ice::Config_v2 const& config, ice::String key, ice::u64& out_val) noexcept
+    {
+        Config_v2::Key const* key_info = config_find_key(config, key);
+
+        if (key_info == nullptr || key_info->vtype != (CONFIG_VALTYPE_64B_BIT))
+        {
+            return false;
+        }
+
+        ice::u64 const* data = (ice::u64 const*) ice::ptr_add(config._data, { config._values[key_info - config._keys].internal });
+        out_val = *data;
+        return true;
+    }
+
+    bool config_get_f32(ice::Config_v2 const& config, ice::String key, ice::f32& out_val) noexcept
+    {
+        Config_v2::Key const* key_info = config_find_key(config, key);
+
+        if (key_info == nullptr || key_info->vtype != (CONFIG_VALTYPE_32B_BIT | CONFIG_VALTYPE_FP_BIT)) // Stored directly in `.internal`
+        {
+            return false;
+        }
+
+        out_val = std::bit_cast<ice::f32>(config._values[key_info - config._keys].internal);
+        return true;
+    }
+
     bool config_get_f64(ice::Config_v2 const& config, ice::String key, ice::f64& out_val) noexcept
     {
         Config_v2::Key const* key_info = config_find_key(config, key);
 
-        if (key_info == nullptr || key_info->vtype != (CONFIG_VALTYPE_64B_BIT | CONFIG_VALTYPE_SIGN_BIT | CONFIG_VALTYPE_FP_BIT)) // Stored directly in `.internal`
+        if (key_info == nullptr || key_info->vtype != (CONFIG_VALTYPE_64B_BIT | CONFIG_VALTYPE_FP_BIT))
         {
             return false;
         }
 
         ice::u64 const* data = (ice::u64 const*) ice::ptr_add(config._data, { config._values[key_info - config._keys].internal });
         out_val = std::bit_cast<ice::f64>(*data);
+        return true;
+    }
+
+    bool config_get_u8(ice::Config_v2 const &config, ice::u32 idx, ice::u8 &out_val) noexcept
+    {
+        Config_v2::Key const* key_info = config_find_idx(config, idx);
+
+        if (key_info == nullptr || key_info->vtype != (CONFIG_VALTYPE_8B_BIT)) // Stored directly in `.internal`
+        {
+            return false;
+        }
+
+        out_val = (ice::u8) config._values[key_info - config._keys].internal;
+        return true;
+    }
+
+    bool config_get_f32(ice::Config_v2 const &config, ice::u32 idx, ice::f32 &out_val) noexcept
+    {
+        Config_v2::Key const* key_info = config_find_idx(config, idx);
+
+        if (key_info == nullptr || key_info->vtype != (CONFIG_VALTYPE_32B_BIT | CONFIG_VALTYPE_FP_BIT)) // Stored directly in `.internal`
+        {
+            return false;
+        }
+
+        out_val = std::bit_cast<ice::f32>(config._values[key_info - config._keys].internal);
         return true;
     }
 

@@ -61,6 +61,7 @@
 #include <ice/uri.hxx>
 
 #include <thread>
+#include <ice/config_new_builder_v2.hxx>
 
 #define USE_API_V1 0
 
@@ -346,6 +347,9 @@ auto ice_setup(
         dylib_path = storage->dylibs_location();
         ice::array::push_back(resource_paths, storage->data_locations());
     }
+
+    ice::ConfigBuilder cb{ state.alloc, ice::ConfigType::Object };
+    ice::configbuilder_root(cb, state.alloc);
 
     ice::framework::Config game_config{
         .module_dir = dylib_path,
