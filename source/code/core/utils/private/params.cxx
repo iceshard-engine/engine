@@ -7,6 +7,7 @@
 #include <ice/string/heap_string.hxx>
 #include <ice/string_utils.hxx>
 #include <ice/mem_allocator_stack.hxx>
+#include <ice/native_file.hxx>
 
 #include <CLI/CLI.hpp>
 #include <variant>
@@ -99,16 +100,76 @@ namespace ice
     {
     }
 
+    auto params_process_with_responsefile(
+        ice::Params& params,
+        ice::String response_file,
+        std::string& out_cmdline
+    ) noexcept -> ice::Result
+    {
+        ice::native_file::HeapFilePath filepath{ params->_allocator };
+        ice::native_file::path_from_string(response_file, filepath);
+        ice::native_file::File const file = ice::native_file::open_file(filepath, ice::native_file::FileOpenFlags::Read);
+        if (file == false)
+        {
+            // Failed to open response file
+            return E_Fail;
+        }
+
+        ice::usize const size_file = ice::native_file::sizeof_file(file);
+
+        // Prepare the buffer where we store the file contents
+        std::string cmdline{};
+        cmdline.resize(size_file.value);
+
+        ice::Memory const cmdline_mem{
+            .location = cmdline.data(),
+            .size = size_file,
+            .alignment = ice::ualign::b_1
+        };
+
+        ice::usize const dataread = ice::native_file::read_file(file, size_file, cmdline_mem);
+        // Failed to read the whole response file.
+        if (dataread.value < cmdline.size())
+        {
+            return E_Fail;
+        }
+
+        out_cmdline = ice::move(cmdline);
+        return S_Ok;
+    }
+
     auto params_process(ice::Params& params, int argc, char const* const* argv) noexcept -> ice::i32
     {
-        try
+        // Handle response files
+        if (argc == 2 && argv[1][0] == '@')
         {
-            (params->_app).parse(argc, argv);
+            std::string cmdline;
+            if (params_process_with_responsefile(params, ice::String{ argv[1] + 1 }, cmdline) == E_Fail)
+            {
+                // TODO: Log the error once proper errors are defined
+                return 1;
+            }
+
+            try
+            {
+                (params->_app).parse(std::move(cmdline), false);
+            }
+            catch (const CLI::ParseError& e)
+            {
+                return (params->_app).exit(e);
+            };
         }
-        catch(const CLI::ParseError& e)
+        else
         {
-            return (params->_app).exit(e);
-        };
+            try
+            {
+                (params->_app).parse(argc, argv);
+            }
+            catch (const CLI::ParseError& e)
+            {
+                return (params->_app).exit(e);
+            };
+        }
         return 0;
     }
 
