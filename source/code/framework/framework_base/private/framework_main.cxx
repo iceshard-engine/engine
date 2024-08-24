@@ -488,10 +488,11 @@ auto ice_resume(
                 .name = "default"_sid,
                 .flags = ice::render::QueueFlags::Graphics | ice::render::QueueFlags::Present
             },
-            ice::gfx::GfxQueueDefinition {
-                .name = "transfer"_sid,
-                .flags = ice::render::QueueFlags::Transfer
-            }
+            // TODO: Implement a proper implementation for an optional trasfer queue
+            // ice::gfx::GfxQueueDefinition {
+            //     .name = "transfer"_sid,
+            //     .flags = ice::render::QueueFlags::Transfer
+            // }
         };
 
         ice::platform::Threads* threads;

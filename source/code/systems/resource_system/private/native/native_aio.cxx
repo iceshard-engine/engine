@@ -78,9 +78,14 @@ namespace ice
 
         if (iocompleted)
         {
-            FileRequest* const asyncio = request_from_overlapped(overlapped);
-            asyncio->result.bytes_read = { bytes };
-            asyncio->coroutine.resume();
+            // If an event is set we should not resume the coroutine here.
+            // TODO: There might be an issue with how currently nativeio is setup.
+            if (overlapped->hEvent == nullptr)
+            {
+                FileRequest* const asyncio = request_from_overlapped(overlapped);
+                asyncio->result.bytes_read = { bytes };
+                asyncio->coroutine.resume();
+            }
         }
         else if (overlapped != nullptr)
         {

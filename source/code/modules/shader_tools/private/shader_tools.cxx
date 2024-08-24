@@ -13,7 +13,7 @@
 #include "shader_tools_glsl.hxx"
 #include "shader_tools_wgsl.hxx"
 
-#if ISP_WEBAPP
+#if ISP_WEBAPP || ISP_ANDROID
 #define strcmpi strcasecmp
 #endif
 
@@ -84,10 +84,14 @@ namespace ice
             return glsl::compiler_compile_shader_source(resctx, source, tracker, resources, uris, alloc);
         }
         else
-#endif
         {
             return wgsl::compiler_compile_shader_source(resctx, source, tracker, resources, uris, alloc);
         }
+#elif ISP_WEBAPP
+        return wgsl::compiler_compile_shader_source(resctx, source, tracker, resources, uris, alloc);
+#elif ISP_ANDROID
+        co_return {};
+#endif
     }
 
     auto compiler_build_shader_meta(
@@ -234,6 +238,6 @@ namespace ice
 
 } // namespace ice
 
-#if ISP_WEBAPP
+#if ISP_WEBAPP || ISP_ANDROID
 #undef strcmpi
 #endif
