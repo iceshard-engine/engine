@@ -50,7 +50,6 @@ namespace ice
         std::atomic<ice::u32> _refcount;
 
         // Data
-        ice::UniquePtr<ice::AssetData> _metadata;
         ice::UniquePtr<ice::AssetData> _data;
 
         // Loading
@@ -61,7 +60,6 @@ namespace ice
         : _identifier{ }
         , _shelve{ nullptr }
         , _refcount{ 0 }
-        , _metadata{ }
         , _data{ }
         , _request_trackers{ }
     {
@@ -75,7 +73,6 @@ namespace ice
         : _identifier{ id }
         , _shelve{ shelve }
         , _refcount{ 0 }
-        , _metadata{ }
         , _data{ ice::move(resource) }
         , _request_trackers{ }
     {
@@ -85,7 +82,6 @@ namespace ice
         : _identifier{ other._identifier }
         , _shelve{ other._shelve }
         , _refcount{ other._refcount.load(std::memory_order_relaxed) }
-        , _metadata{ ice::move(other._metadata) }
         , _data{ ice::move(other._data) }
         , _request_trackers{ other._request_trackers.load(std::memory_order_relaxed) }
     {

@@ -406,10 +406,14 @@ namespace ice
             ice::AssetState const current_state = transaction.asset.state();
             if (current_state == AssetState::Baked)
             {
+                ice::Data metadata_data;
+                ice::Metadata metadata;
+                if (co_await ice::asset_metadata_find(transaction.asset._data, metadata_data) == S_Ok)
+                {
+                    metadata = ice::meta_load(metadata_data);
+                }
+
                 ice::Memory load_result{};
-                ice::Metadata const metadata = ice::meta_load(
-                    ice::asset_data_find(transaction.asset._metadata, AssetState::Baked)
-                );
                 bool const load_success = co_await ice::detail::load_asset(
                     transaction.shelve.asset_allocator(),
                     transaction.shelve.definition,

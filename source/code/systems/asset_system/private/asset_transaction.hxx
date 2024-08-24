@@ -152,14 +152,14 @@ namespace ice
     {
         ice::AssetState const state = calculate_state(min_state, meta);
 
-        // Assign new metadata
-        asset._metadata = ice::create_asset_data_entry(alloc, AssetState::Baked, alloc, ice::meta_save(meta, alloc));
-        asset._metadata->_flags |= AssetDataFlags::Metadata;
+        // Create new metadata entry and assign as next
+        ice::UniquePtr<ice::AssetData> entry_meta = ice::create_asset_data_entry(alloc, state, alloc, ice::meta_save(meta, alloc));
+        entry_meta->_flags |= AssetDataFlags::Metadata;
+        entry_meta->_next = ice::move(asset._data);
 
-        // Append the next asset data block
-        ice::UniquePtr<ice::AssetData> entry_data = ice::create_asset_data_entry(alloc, state, dataalloc, data);
-        entry_data->_next = ice::move(asset._data);
-        asset._data = ice::move(entry_data);
+        // Set the asset data and point to the meta entry
+        asset._data = ice::create_asset_data_entry(alloc, state, dataalloc, data);
+        asset._data->_next = ice::move(entry_meta);
     }
 
     inline void AssetStateTransaction::set_result_data(
