@@ -18,6 +18,8 @@ namespace ice::detail
         ice::detail::LogLocation location
     ) noexcept;
 
+    void terminate() noexcept;
+
 } // namespace ice
 
 #if defined ICE_ASSERT
@@ -36,7 +38,7 @@ namespace ice::detail
                     fmt::make_format_args(__VA_ARGS__), \
                     ice::detail::LogLocation{ .file = __FILE__, .line = __LINE__ } \
                 ); \
-                std::terminate(); \
+                ice::detail::terminate(); \
             } \
         } \
     } while(false)

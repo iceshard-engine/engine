@@ -9,9 +9,10 @@
 #include "log_internal.hxx"
 #include "log_buffer.hxx"
 
-#include <ctime>
 #include <fmt/format.h>
 #include <fmt/chrono.h>
+#include <exception>
+#include <ctime>
 
 
 #undef assert
@@ -36,6 +37,11 @@ namespace ice::detail
             ice::move(args),
             location
         );
+    }
+
+    void terminate() noexcept
+    {
+        std::terminate();
     }
 
     void default_assert_fn(
