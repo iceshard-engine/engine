@@ -2,9 +2,9 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/mem_types.hxx>
-#include <ice/mem_data.hxx>
 #include <ice/mem_arithmetic.hxx>
+#include <ice/mem_data.hxx>
+#include <ice/mem_size_types.hxx>
 
 namespace ice
 {
