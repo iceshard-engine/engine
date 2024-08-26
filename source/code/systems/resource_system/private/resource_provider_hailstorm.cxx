@@ -202,7 +202,7 @@ namespace ice
         , _entrymap{ _allocator }
         , _devui_widget{ create_hailstorm_provider_devui(_allocator, _packname, *this) }
     {
-        ice::native_file::path_from_string(path, _hspack_path);
+        ice::native_file::path_from_string(_hspack_path, path);
     }
 
     HailStormResourceProvider::~HailStormResourceProvider() noexcept
@@ -349,7 +349,7 @@ namespace ice
                     );
                 }
 
-                ice::multi_hashmap::insert(_entrymap, ice::hash(res_uri.path), idx);
+                ice::multi_hashmap::insert(_entrymap, ice::hash(res_uri.path()), idx);
                 ice::array::push_back(out_changes, _entries[idx]);
             }
 
@@ -363,10 +363,10 @@ namespace ice
     ) const noexcept -> ice::Resource const*
     {
         u32 idx = ice::u32_max;
-        auto it = ice::multi_hashmap::find_first(_entrymap, ice::hash(uri.path));
+        auto it = ice::multi_hashmap::find_first(_entrymap, ice::hash(uri.path()));
         while (it != nullptr && idx == ice::u32_max)
         {
-            if (_entries[it.value()]->name() == uri.path)
+            if (_entries[it.value()]->name() == uri.path())
             {
                 idx = it.value();
             }

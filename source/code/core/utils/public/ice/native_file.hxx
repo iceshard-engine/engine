@@ -92,8 +92,8 @@ namespace ice::native_file
     ) noexcept;
 
     void path_from_string(
-        ice::String path_string,
-        ice::native_file::HeapFilePath& out_filepath
+        ice::native_file::HeapFilePath& out_filepath,
+        ice::String path_string
     ) noexcept;
 
     void path_to_string(

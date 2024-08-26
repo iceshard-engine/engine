@@ -24,7 +24,7 @@ namespace ice::render::vk
             return AssetState::Baked;
         }
 
-        ice::String const ext = ice::path::extension(uri.path);
+        ice::String const ext = ice::path::extension(uri.path());
         if (ext == ".glsl" || ext == ".asl")
         {
             return AssetState::Raw;

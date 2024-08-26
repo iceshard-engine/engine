@@ -22,24 +22,30 @@
 namespace ice
 {
 
-    class FileSystemResourceProvider;
+    struct FileListEntry
+    {
+        ice::native_file::HeapFilePath path;
+        ice::ucount basepath_size;
+    };
+
+    class FileListResourceProvider;
 
     auto create_filesystem_provider_devui(
         ice::Allocator& alloc,
         ice::HashMap<ice::FileSystemResource*> const& resources
     ) noexcept -> ice::UniquePtr<ice::DevUIWidget>;
 
-    class FileSystemResourceProvider final : public ice::ResourceProvider
+    class FileListResourceProvider final : public ice::ResourceProvider
     {
     public:
-        FileSystemResourceProvider(
+        FileListResourceProvider(
             ice::Allocator& alloc,
-            ice::Span<ice::String const> const& paths,
+            ice::Span<ice::ResourceFileEntry const> entries,
             ice::TaskScheduler* scheduler,
             ice::String virtual_hostname
         ) noexcept;
 
-        ~FileSystemResourceProvider() noexcept override;
+        ~FileListResourceProvider() noexcept override;
 
         auto schemeid() const noexcept -> ice::StringID override;
 
@@ -48,29 +54,7 @@ namespace ice
             ice::native_file::FilePath file_path
         ) noexcept;
 
-        struct TraverseResourceRequest;
-
-        auto traverse_async(
-            ice::native_file::HeapFilePath dir_path,
-            TraverseResourceRequest& request
-        ) noexcept -> ice::Task<>;
-
-        auto create_resource_from_file_async(
-            ice::native_file::FilePath base_path,
-            ice::native_file::HeapFilePath file_path,
-            TraverseResourceRequest& request
-        ) noexcept -> ice::Task<>;
-
-        static auto traverse_callback(
-            ice::native_file::FilePath,
-            ice::native_file::FilePath path,
-            ice::native_file::EntityType type,
-            void* userdata
-        ) noexcept -> ice::native_file::TraverseAction;
-
         void initial_traverse() noexcept;
-
-        void initial_traverse_mt() noexcept;
 
         auto collect(
             ice::Array<ice::Resource const*>& out_changes
@@ -111,8 +95,7 @@ namespace ice
     protected:
         ice::ProxyAllocator _named_allocator;
         ice::Allocator& _allocator;
-        ice::Array<ice::native_file::HeapFilePath, ice::ContainerLogic::Complex> _base_paths;
-        ice::TaskScheduler* _scheduler;
+        ice::Array<ice::FileListEntry> _file_paths;
         ice::String _virtual_hostname;
 
         ice::HashMap<ice::FileSystemResource*> _resources;

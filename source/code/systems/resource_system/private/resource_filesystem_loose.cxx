@@ -40,7 +40,7 @@ namespace ice
         ) noexcept -> ice::Task<ice::Memory>
         {
             ice::native_file::HeapFilePath native_filepath{ alloc };
-            ice::native_file::path_from_string(filepath, native_filepath);
+            ice::native_file::path_from_string(native_filepath, filepath);
 
             ice::Memory result{
                 .location = nullptr,
@@ -85,7 +85,7 @@ namespace ice
         ) noexcept -> ice::Memory
         {
             ice::native_file::HeapFilePath native_filepath{ alloc };
-            ice::native_file::path_from_string(filepath, native_filepath);
+            ice::native_file::path_from_string(native_filepath, filepath);
 
             ice::Memory result{
                 .location = nullptr,
@@ -259,7 +259,7 @@ namespace ice
     {
         ice::StackAllocator_1024 alloc;
         ice::native_file::HeapFilePath path{ alloc };
-        ice::native_file::path_from_string(_origin_path, path);
+        ice::native_file::path_from_string(path, _origin_path);
         return ice::native_file::sizeof_file(path);
     }
 
@@ -312,7 +312,7 @@ namespace ice
     {
         ice::StackAllocator_1024 alloc;
         ice::native_file::HeapFilePath path{ alloc };
-        ice::native_file::path_from_string(_origin_path, path);
+        ice::native_file::path_from_string(path, _origin_path);
         return ice::native_file::sizeof_file(path);
     }
 

@@ -107,7 +107,7 @@ namespace ice
     ) noexcept -> ice::Result
     {
         ice::native_file::HeapFilePath filepath{ params->_allocator };
-        ice::native_file::path_from_string(response_file, filepath);
+        ice::native_file::path_from_string(filepath, response_file);
         ice::native_file::File const file = ice::native_file::open_file(filepath, ice::native_file::FileOpenFlags::Read);
         if (file == false)
         {

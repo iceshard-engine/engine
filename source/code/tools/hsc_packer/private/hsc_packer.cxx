@@ -111,7 +111,7 @@ public:
         {
             ice::HeapString<> const config_path_utf8 = hscp_process_directory(_allocator, config);
             ice::native_file::HeapFilePath config_path{ _allocator };
-            ice::native_file::path_from_string(config_path_utf8, config_path);
+            ice::native_file::path_from_string(config_path, config_path_utf8);
 
             HSCP_ERROR_IF(
                 ice::native_file::exists_file(config_path) == false,
@@ -258,7 +258,7 @@ public:
         };
 
         ice::native_file::HeapFilePath output{ _allocator };
-        ice::native_file::path_from_string(_param_output, output);
+        ice::native_file::path_from_string(output, _param_output);
         HSCPWriteParams const write_params{
             .filename = output,
             .task_scheduler = _tsched,

@@ -105,6 +105,7 @@ namespace ice
         auto const* const other_str_begin = ice::string::begin(str);
         bool const part_of_this = other_str_begin >= ice::string::begin(*this)
             && other_str_begin < ice::string::end(*this);
+        ICE_ASSERT_CORE(part_of_this == false);
 
         if (!part_of_this)
         {
