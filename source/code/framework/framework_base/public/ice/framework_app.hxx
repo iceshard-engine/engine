@@ -12,6 +12,11 @@
 namespace ice::framework
 {
 
+    // TODO: Move later into a separate file.
+    static constexpr ice::ErrorCode E_FailedLoadingIceshardLibrary{ "E.2990:Framework:Failed to load iceshard.dll library!" };
+    static constexpr ice::ErrorCode E_FailedCreateEngineObject{ "E.2991:Framework:Failed to create Engine object" };
+    static constexpr ice::ErrorCode E_FailedCreateRenderObject{ "E.2992:Framework:Failed to create Renderer object" };
+
     struct Config
     {
         ice::String module_dir;

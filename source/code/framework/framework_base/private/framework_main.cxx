@@ -415,7 +415,10 @@ auto ice_setup(
 
     // Load everything to resume the game.
     ice::HeapString<> engine_module = ice::resolve_dynlib_path(*state.resources, state.alloc, "iceshard");
-    state.modules->load_module(state.modules_alloc, engine_module);
+    if (state.modules->load_module(state.modules_alloc, engine_module) == false)
+    {
+        return ice::framework::E_FailedLoadingIceshardLibrary;
+    }
 
     ice::EngineCreateInfo engine_create_info{ .states = ice::create_state_tracker(state.alloc) };
     {
@@ -435,7 +438,15 @@ auto ice_setup(
     }
 
     state.engine = ice::create_engine(state.engine_alloc, *state.modules, ice::move(engine_create_info));
+    if (state.engine == nullptr)
+    {
+        return ice::framework::E_FailedCreateEngineObject;
+    }
     state.renderer = ice::render::create_render_driver(alloc, *state.modules);
+    if (state.renderer == nullptr)
+    {
+        return ice::framework::E_FailedCreateRenderObject;
+    }
 
     if (state.engine == nullptr || state.renderer == nullptr)
     {
