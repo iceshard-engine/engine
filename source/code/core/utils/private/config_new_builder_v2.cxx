@@ -90,9 +90,9 @@ namespace ice
     {
         ConfigBuilderContainer(ice::Allocator& alloc, ice::Config_ValType vtype) noexcept
             : Entry{ { .next = 0, .type = 0, .vtype = vtype, .offset = 0, .size = 0 } }
+            , _refcount{ 1 }
             , _entries{ alloc }
             , _keystrings{ alloc }
-            , _refcount{ 1 }
         {
         }
 
