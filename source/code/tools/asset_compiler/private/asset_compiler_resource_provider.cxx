@@ -17,7 +17,7 @@ AssetCompilerResource::AssetCompilerResource(
     , _uri{ ice::Scheme_File, _path }
 {
     ice::native_file::HeapFilePath metapath{ _allocator };
-    ice::native_file::path_from_string(_path, metapath);
+    ice::native_file::path_from_string(metapath, _path);
     ice::string::push_back(metapath, ISP_PATH_LITERAL(".isrm"));
 
     ice::Data result{};
@@ -73,7 +73,7 @@ AssetCompilerResourceProvider::AssetCompilerResourceProvider(
     for (ice::String file : files)
     {
         ice::native_file::HeapFilePath filepath{ _allocator };
-        ice::native_file::path_from_string(file, filepath);
+        ice::native_file::path_from_string(filepath, file);
         ice::native_file::File filehandle = ice::native_file::open_file(filepath, ice::native_file::FileOpenFlags::Read);
         ICE_ASSERT(filehandle == true, "Couldn't open file {}", file);
 

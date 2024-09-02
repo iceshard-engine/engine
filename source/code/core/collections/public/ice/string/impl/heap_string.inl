@@ -345,6 +345,12 @@ namespace ice
         }
 
         template<typename CharType>
+        inline bool any(ice::HeapString<CharType> const& str) noexcept
+        {
+            return str._size != 0;
+        }
+
+        template<typename CharType>
         inline auto begin(ice::HeapString<CharType> const& str) noexcept -> typename ice::HeapString<CharType>::ConstIterator
         {
             return str._data;

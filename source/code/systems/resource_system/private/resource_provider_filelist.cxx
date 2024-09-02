@@ -22,19 +22,24 @@ namespace ice
         ice::native_file::HeapFilePath file_path{ _allocator };
         for (ice::ResourceFileEntry const& entry : entries)
         {
+            using enum native_file::PathFlags;
             if (ice::path::is_absolute(entry.path) == false)
             {
-                ice::native_file::path_from_string(file_path, entry.basepath);
-                ice::native_file::path_join_string(file_path, entry.path);
-                ice::path::normalize(file_path);
+                file_path = ice::native_file::path_from_strings<Normalized>(
+                    _allocator, entry.basepath, entry.path
+                );
             }
             else
             {
-                ice::native_file::HeapFilePath base_path{ _allocator };
-                ice::native_file::path_from_string(base_path, entry.basepath);
-                ice::native_file::path_from_string(file_path, entry.path);
-                ice::path::normalize(base_path);
-                ice::path::normalize(file_path);
+                // Create temporary basepath from string
+                ice::native_file::HeapFilePath base_path = ice::native_file::path_from_strings<Normalized>(
+                    _allocator, entry.basepath
+                );
+
+                file_path = ice::native_file::path_from_strings<Normalized>(
+                    _allocator, entry.path
+                );
+
                 ICE_ASSERT_CORE(ice::string::starts_with((ice::WString)file_path, (ice::WString)base_path));
             }
 

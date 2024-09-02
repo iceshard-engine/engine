@@ -21,6 +21,12 @@ namespace ice::native_file
 #   define ISP_PATH_LITERAL(val) val
 #endif
 
+    enum class PathFlags : ice::u8
+    {
+        None = 0x00,
+        Normalized = 0x01,
+    };
+
     enum class FileOpenFlags : ice::u8
     {
         //! \brief Same as 'ReadOnly'
@@ -105,5 +111,21 @@ namespace ice::native_file
         ice::native_file::HeapFilePath& path,
         ice::String string
     ) noexcept;
+
+    template<PathFlags Flags = PathFlags::None, typename... Strings>
+        requires (std::convertible_to<Strings, ice::String> && ...)
+    inline auto path_from_strings(
+        ice::Allocator& alloc,
+        Strings&&... strings
+    ) noexcept -> ice::native_file::HeapFilePath
+    {
+        ice::native_file::HeapFilePath result{ alloc };
+        (ice::native_file::path_join_string(result, ice::forward<Strings>(strings)), ...);
+        if constexpr (ice::has_all(Flags, PathFlags::Normalized))
+        {
+            ice::path::normalize(result);
+        }
+        return result;
+    }
 
 } // namespace ice::native_file

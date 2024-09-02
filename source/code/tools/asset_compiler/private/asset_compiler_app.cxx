@@ -36,7 +36,7 @@ public:
         , _queue{ }
         , _scheduler{ _queue }
     {
-        _thread = ice::create_thread(_allocator, _queue, { .exclusive_queue = 1, .wait_on_queue = 1, .debug_name = "compiler-thread",  });
+        _thread = ice::create_thread(_allocator, _queue, { .exclusive_queue = 1, .wait_on_queue = 1, .debug_name = "compiler-thread" });
     }
 
     bool parse_parameter(this AssetCompilerApp& self, ice::Span<ice::String const> results) noexcept
@@ -69,6 +69,12 @@ public:
             _output
         );
         ice::params_define(params, {
+                .name = "-b,--base,--base-path",
+                .description = "The base path from which asset name is created. Be default empty. If empty the filename will be the resources name.",
+            },
+            _asset_basepath
+        );
+        ice::params_define(params, {
                 .name = "-r,--resource,--name",
                 .description = "The name of the resource the asset to be created from. By default it's the first 'input' path provided.",
                 .type_name = "NAME",
@@ -96,7 +102,7 @@ public:
                 .description = "Additional parameters passed to the selected resource compiler. (-p name value)",
                 .typesize = { 1, 2 },
                 .flags = ice::ParamFlags::TakeAll,
-            }, this, (ice::ParamsCustomCallback) &AssetCompilerApp::parse_parameter
+            }, this, (ice::ParamsCustomCallback)&AssetCompilerApp::parse_parameter
         );
         ice::params_define(params, {
                 .name = "-m,--metadata",
@@ -147,19 +153,6 @@ public:
             "No output was selected, please use '-o,--output' or '--stdout'!"
         );
 
-        if (ice::string::empty(_asset_resource))
-        {
-            // First input is the resource name to be compiled
-            _asset_resource = ice::path::basename(_inputs[0]);
-        }
-
-        ICE_LOG_IF(
-            Param_Verbose,
-            ice::LogSeverity::Retail, ice::LogTag::Tool,
-            "Creating asset '{}' from {} sources and {} metadata files.",
-            _asset_resource, ice::count(_inputs), ice::count(_inputs_meta)
-        );
-
         // Setup the AssetCompiler resource provider.
         ice::UniquePtr<ice::ResourceTracker> resource_tracker = ice::create_resource_tracker(
             _allocator,
@@ -167,26 +160,51 @@ public:
             { .predicted_resource_count = 10'000, .io_dedicated_threads = 0 }
         );
 
-        resource_tracker->attach_provider(
-            ice::make_unique<AssetCompilerResourceProvider>(
-                _allocator, _allocator, _inputs
-            )
+        ice::ResourceFileEntry const file_list[]{ {.path = _inputs[0], .basepath = _asset_basepath} };
+        ice::ResourceProvider* const file_provider = resource_tracker->attach_provider(
+            ice::create_resource_provider_files(_allocator, file_list, &_scheduler, "<inputs>")
         );
         resource_tracker->attach_provider(
             ice::create_resource_provider(_allocator, _includes, &_scheduler)
         );
-
         resource_tracker->sync_resources();
 
-        ice::ResourceHandle* res = resource_tracker->find_resource(ice::URI{ ice::Scheme_URN, _asset_resource });
+        ice::Array<ice::Resource const*> input_resources{ _allocator };
+        if (file_provider->collect(input_resources) != 1)
+        {
+            ICE_LOG(
+                ice::LogSeverity::Critical, ice::LogTag::Tool,
+                "The input resources '{}' couldn't be properly loaded.",
+                file_list[0].path
+            );
+            return 1;
+        }
+
+        ice::Resource const* input_resource = input_resources[0];
+        ICE_LOG_IF(
+            Param_Verbose,
+            ice::LogSeverity::Retail, ice::LogTag::Tool,
+            "Creating asset '{}' from {} sources and {} metadata files.",
+            input_resource->name(), ice::count(_inputs), ice::count(_inputs_meta)
+        );
+
+        ice::HeapString<> uristr{ _allocator, "file://<inputs>" };
+        ice::string::push_back(uristr, input_resource->uri().path());
+
+        ice::ResourceHandle* res = resource_tracker->find_resource(ice::URI{ uristr });
         if (res == nullptr)
         {
             ICE_LOG(
                 ice::LogSeverity::Critical, ice::LogTag::Tool,
                 "The selected resource '{}' was not found.",
-                _asset_resource
+                input_resource->name()
             );
             return 1;
+        }
+
+        if (ice::string::empty(_asset_resource))
+        {
+            _asset_resource = input_resource->name();
         }
 
         ice::String const res_ext = ice::path::extension(ice::resource_origin(res));
@@ -217,7 +235,7 @@ public:
         for (ice::String input_meta : _inputs_meta)
         {
             ice::native_file::HeapFilePath input_meta_path{ _allocator };
-            ice::native_file::path_from_string(input_meta, input_meta_path);
+            ice::native_file::path_from_string(input_meta_path, input_meta);
             ice::native_file::File file = ice::native_file::open_file(input_meta_path, ice::native_file::FileOpenFlags::Read);
 
             static constexpr ice::ErrorCode ReadMetadataError{ "E.8000:AssetCompiler:Failed to read metadata file!" };
@@ -289,9 +307,9 @@ public:
             for (ice::ResourceHandle* source : sources)
             {
                 auto fn = [](ice::ResourceCompilerResult& out_result, ice::Task<ice::ResourceCompilerResult> task) noexcept -> ice::Task<>
-                {
-                    out_result = co_await task;
-                };
+                    {
+                        out_result = co_await task;
+                    };
 
                 ice::ManualResetEvent waitev{};
                 ice::ResourceCompilerResult result;
@@ -305,7 +323,7 @@ public:
                     )
                 );
 
-                while(waitev.is_set() == false)
+                while (waitev.is_set() == false)
                 {
                     _queue.process_all();
                 }
@@ -332,7 +350,7 @@ public:
                 ice::Memory const final_meta_data = ice::meta_save(meta, _allocator);
 
                 // Calc meta offset
-                ice::u32 meta_offset = (ice::u32) sizeof(ice::ResourceFormatHeader) + ice::string::size(_asset_resource) + 1;
+                ice::u32 meta_offset = (ice::u32)sizeof(ice::ResourceFormatHeader) + ice::string::size(_asset_resource) + 1;
                 ice::u32 const meta_diff = meta_offset & 0x7;
                 if (meta_diff != 0)
                 {
@@ -346,15 +364,15 @@ public:
                     .name_size = ice::string::size(_asset_resource),
                     .meta_offset = meta_offset,
                     .meta_size = static_cast<ice::u32>(final_meta_data.size.value),
-                    .offset = (ice::u32) (meta_offset + final_meta_data.size.value),
+                    .offset = (ice::u32)(meta_offset + final_meta_data.size.value),
                     .size = static_cast<ice::u32>(final_asset_data.size.value),
                 };
 
                 ice::native_file::HeapFilePath output_path{ _allocator };
-                ice::native_file::path_from_string(_output, output_path);
+                ice::native_file::path_from_string(output_path, _output);
                 ice::native_file::File output_file = ice::native_file::open_file(output_path, ice::native_file::FileOpenFlags::Write);
 
-                char const filler[8]{0};
+                char const filler[8]{ 0 };
                 ice::Data const file_parts[]{
                     ice::data_view(rfh), // Header
                     ice::string::data_view(_asset_resource), // Name
@@ -377,7 +395,7 @@ public:
 
             if (_output_std)
             {
-                fmt::println("{}", ice::String{(char const*)final_asset_data.location, (ice::ucount) final_asset_data.size.value});
+                fmt::println("{}", ice::String{ (char const*)final_asset_data.location, (ice::ucount)final_asset_data.size.value });
             }
 
             _allocator.deallocate(final_asset_data);
@@ -403,6 +421,7 @@ public: // Tool information
 
 private:
     ice::String _output;
+    ice::String _asset_basepath;
     ice::String _asset_resource;
     ice::String _compiler;
     ice::Array<ice::String> _includes;
