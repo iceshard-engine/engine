@@ -23,6 +23,7 @@ namespace ice::config::detail
 
         union Data
         {
+            bool val_bool;
             ice::u8 val_u8;
             ice::u16 val_u16;
             ice::u32 val_u32;

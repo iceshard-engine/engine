@@ -30,7 +30,7 @@ namespace ice
         auto set(ice::String value) noexcept -> ice::HeapVarString<>&;
         auto set(char const* value) noexcept -> ice::HeapVarString<>& { return set(ice::String{value}); }
 
-        template<typename T> requires std::is_trivial_v<T>
+        template<typename T> requires std::is_trivial_v<T> || std::is_same_v<T, ice::String>
         auto operator=(T value) noexcept -> decltype(set(T{}));
 
         void reset();
@@ -40,7 +40,7 @@ namespace ice
         ice::u32 _idx;
     };
 
-    template<typename T> requires std::is_trivial_v<T>
+    template<typename T> requires std::is_trivial_v<T> || std::is_same_v<T, ice::String>
     auto ConfigBuilderValue::operator=(T value) noexcept -> decltype(set(T{}))
     {
         return this->set(value);

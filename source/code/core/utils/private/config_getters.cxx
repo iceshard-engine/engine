@@ -29,6 +29,23 @@ namespace ice::config::detail
         ice::Config const& config,
         ice::config::detail::ConfigKey const* key,
         ice::config::detail::ConfigValue const* value,
+        ice::i32& out_value
+    ) noexcept -> ice::ErrorCode
+    {
+        if (key == nullptr || key->vtype != (ValType::CONFIG_VALTYPE_32B_BIT | ValType::CONFIG_VALTYPE_SIGN_BIT))
+        {
+            return E_ConfigValueTypeMissmatch;
+        }
+
+        out_value = ice::bit_cast<ice::i32>(value->internal);
+        return S_Ok;
+    }
+
+    template<>
+    auto config::detail::get(
+        ice::Config const& config,
+        ice::config::detail::ConfigKey const* key,
+        ice::config::detail::ConfigValue const* value,
         ice::String& out_value
     ) noexcept -> ice::ErrorCode
     {

@@ -9,6 +9,8 @@ namespace ice::config
 
     auto from_data(ice::Data data) noexcept -> ice::Config;
 
+    auto from_json(ice::Allocator& alloc, ice::String json, ice::Memory& out_memory) noexcept -> ice::Config;
+
     template<typename T, typename Key>
         requires (ice::concepts::ConfigValueType<T> && ice::concepts::ConfigKeyType<Key>)
     auto get(ice::Config const& config, Key key, T& out_value) noexcept -> ice::ErrorCode;
