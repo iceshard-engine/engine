@@ -1,7 +1,7 @@
 /// Copyright 2024 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
-#include "config_details.hxx"
+#include "config/config_detail.hxx"
 
 namespace ice
 {
@@ -53,7 +53,6 @@ namespace ice
         }
         return *this;
     }
-
 
     auto config::from_data(ice::Data data) noexcept -> ice::Config
     {

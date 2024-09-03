@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/config.hxx>
+#include <ice/config/config_types.hxx>
 #include <ice/container/array.hxx>
 #include <ice/string/heap_var_string.hxx>
 
@@ -11,9 +11,9 @@ namespace ice
 
     struct ConfigBuilderValue
     {
-        struct Entry;
+        using ConfigBuilderEntry = ice::config::detail::ConfigBuilderEntry;
 
-        ConfigBuilderValue(ice::Allocator* alloc, Entry* entry, ice::u32 ref) noexcept;
+        ConfigBuilderValue(ice::Allocator* alloc, ConfigBuilderEntry* entry, ice::u32 ref) noexcept;
         ~ConfigBuilderValue() noexcept;
 
         ConfigBuilderValue(ConfigBuilderValue&&) noexcept;
@@ -36,7 +36,7 @@ namespace ice
         void reset();
 
         ice::Allocator* _alloc;
-        Entry* _internal;
+        ConfigBuilderEntry* _internal;
         ice::u32 _idx;
     };
 
@@ -54,5 +54,35 @@ namespace ice
 
         auto finalize(ice::Allocator& alloc) noexcept -> ice::Memory;
     };
+
+    // inline auto configbuilder_root(ConfigBuilder& b, ice::Allocator& alloc) noexcept -> ice::Memory
+    // {
+    //     ConfigBuilderValue val = b["asd"];
+    //     b["asd"][0][1];
+    //     b["a"]["b"] = 31u;
+    //     val = b["a"];
+    //     val["c"][2] = ice::u8{42};
+    //     b["b"] = 32;
+    //     b["c"] = 33;
+    //     val = b["asd"][0];//[0][1]["ad"];
+    //     // b.reset();
+    //     val = b["e"][3];
+    //     b["e"][4];
+    //     ice::HeapVarString<>& str = b["f"] = "Test string";
+    //     str = "Maybe not?";
+    //     b["my"]["holy"]["cow"] = 69.420;
+
+    //     ice::Memory mem = b.finalize(alloc);
+
+    //     ice::Config c = ice::config::from_data(ice::data_view(mem));
+    //     [[maybe_unused]]
+    //     ice::u32 f;
+    //     ice::config::get<ice::u32>(c, "a.b", f);
+    //     ice::String s = ice::config::get<ice::String>(c, "f").value();
+    //     f = 23;
+
+    //     alloc.deallocate(mem);
+    //     return {};
+    // }
 
 } // namespace ice

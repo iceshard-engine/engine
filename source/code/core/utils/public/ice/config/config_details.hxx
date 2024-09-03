@@ -31,6 +31,7 @@ namespace ice
 
         struct ConfigKey;
         struct ConfigValue;
+        struct ConfigBuilderEntry;
 
         enum KeyType : ice::u8;
         enum ValType : ice::u8;
