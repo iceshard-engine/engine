@@ -2,7 +2,6 @@
 /// SPDX-License-Identifier: MIT
 
 #include "config_impl.hxx"
-
 ISC_WARNING_PUSH
 ISCW_OPERATOR_DEPRECATED_BETWEEN_UNRELATED_ENUMERATIONS(ISCW_OP_DISABLE)
 #include <rapidjson/document.h>
@@ -11,6 +10,8 @@ ISC_WARNING_POP
 
 namespace ice
 {
+
+#if 0
 
     namespace detail
     {
@@ -171,5 +172,6 @@ namespace ice
             deserialize_json_config_helper(doc.GetObject(), ".", config);
         }
     } // namespace detail
+#endif
 
 } // namespace ice

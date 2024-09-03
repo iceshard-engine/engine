@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 
@@ -118,11 +118,6 @@ namespace ice
         {
             return ice::string::size(str);
         }
-
-        //template<typename CharType>
-        //    requires std::is_same_v<CharType, ice::utf8> // TODO: utf-16, utf-32?
-        //constexpr auto utf8_codepoints(ice::BasicString<CharType> str) noexcept -> ice::ucount = delete;
-
 
         template<typename CharType>
         constexpr bool empty(ice::BasicString<CharType> str) noexcept

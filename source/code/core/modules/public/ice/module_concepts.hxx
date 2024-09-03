@@ -52,4 +52,4 @@ namespace ice::concepts
     template<typename T>
     concept ModuleType = ModuleLoadable<T>;
 
-} // namespace ice::concept
+} // namespace ice::concepts

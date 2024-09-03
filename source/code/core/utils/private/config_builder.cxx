@@ -1,9 +1,18 @@
-#include <ice/config_new_builder_v2.hxx>
+#include <ice/config_builder.hxx>
 #include <ice/container/hashmap.hxx>
+#include <ice/string/heap_string.hxx>
+#include <ice/string/heap_var_string.hxx>
+
+#include "config_details.hxx"
 #include "config_new.hxx"
 
 namespace ice
 {
+    using Config_KeyType = ice::config::detail::KeyType;
+    using Config_ValType = ice::config::detail::ValType;
+
+    using enum ice::config::detail::KeyType;
+    using enum ice::config::detail::ValType;
 
     struct ConfigBuilderContainer;
 
@@ -16,6 +25,12 @@ namespace ice
             ice::Allocator& alloc,
             ice::ConfigBuilderValue::Entry& entry,
             ice::Config_ValType vtype
+        ) noexcept;
+
+        void assign_value_type(
+            ice::Allocator& alloc,
+            ice::ConfigBuilderValue::Entry& entry,
+            ice::i32 vtype
         ) noexcept;
 
         void clear_value_type(
@@ -37,16 +52,6 @@ namespace ice
             bool clean
         ) noexcept -> ice::ConfigBuilderValue::Entry*;
 
-        // auto get_value_entry(
-        //     ice::ConfigBuilderValue::Entry* entry,
-        //     ice::u32 ref
-        // ) noexcept -> ice::ConfigBuilderValue::Entry*;
-
-        auto get_value_entry(
-            ice::ConfigBuilderContainer* container,
-            ice::u32 ref
-        ) noexcept -> ice::ConfigBuilderValue::Entry*;
-
         auto get_or_set_container(
             ice::Allocator& alloc,
             ice::ConfigBuilderValue::Entry& entry,
@@ -57,10 +62,10 @@ namespace ice
 
     struct ConfigBuilderContainer;
 
-    struct ConfigBuilderValue::Entry : ice::Config_v2::Key
+    struct ConfigBuilderValue::Entry : ice::config::detail::ConfigKey
     {
-        Entry(ice::Config_v2::Key key) noexcept
-            : ice::Config_v2::Key{ key }
+        Entry(ice::config::detail::ConfigKey key) noexcept
+            : ice::config::detail::ConfigKey{ key }
             , data{ .val_custom = { } }
         { }
 
@@ -70,13 +75,20 @@ namespace ice
 
         union Data
         {
+            ice::u8 val_u8;
+            ice::u16 val_u16;
             ice::u32 val_u32;
-            ice::i32 val_i32;
-            ice::f32 val_f32;
             ice::u64 val_u64;
+
+            ice::i8 val_i8;
+            ice::i16 val_i16;
+            ice::i32 val_i32;
             ice::i64 val_i64;
+
+            ice::f32 val_f32;
             ice::f64 val_f64;
-            ice::VarString val_varstr;
+
+            ice::HeapVarString<>* val_varstr;
             ice::ConfigBuilderContainer* val_container;
             struct
             {
@@ -89,11 +101,13 @@ namespace ice
     struct ConfigBuilderContainer : ConfigBuilderValue::Entry
     {
         ConfigBuilderContainer(ice::Allocator& alloc, ice::Config_ValType vtype) noexcept
-            : Entry{ { .next = 0, .type = 0, .vtype = vtype, .offset = 0, .size = 0 } }
+            : Entry{ { .next = 0, .type = CONFIG_KEYTYPE_NONE, .vtype = vtype, .offset = 0, .size = 0 } }
             , _refcount{ 1 }
             , _entries{ alloc }
             , _keystrings{ alloc }
         {
+            // Since we are a container we point to ourselves.
+            data.val_container = this;
         }
 
         auto addref() noexcept -> ConfigBuilderContainer*
@@ -252,11 +266,11 @@ namespace ice
         }
         else
         {
-            detail::clear_value_type(*_alloc, ice::exchange(_internal->data.val_container, nullptr));
+            detail::clear_value_type(*_alloc, ice::exchange(_internal, nullptr));
         }
     }
 
-    ConfigBuilder_v2::ConfigBuilder_v2(ice::Allocator &alloc) noexcept
+    ConfigBuilder::ConfigBuilder(ice::Allocator &alloc) noexcept
         : ConfigBuilderValue{
             ice::addressof(alloc),
             alloc.create<ConfigBuilderContainer>(alloc, CONFIG_VALTYPE_OBJECT),
@@ -266,9 +280,111 @@ namespace ice
         _internal->data.val_container = static_cast<ConfigBuilderContainer*>(_internal);
     }
 
-    ice::ConfigBuilder_v2::~ConfigBuilder_v2() noexcept
+    ice::ConfigBuilder::~ConfigBuilder() noexcept
     {
         detail::clear_value_type(*_alloc, _internal);
+    }
+
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    template<>
+    auto ConfigBuilderValue::set(ice::u8 value) noexcept -> ice::u8&
+    {
+        ConfigBuilderContainer::Entry* const entry = _idx == ice::u32_max
+            ? _internal : (static_cast<ConfigBuilderContainer*>(_internal)->_entries._data + _idx);
+
+        detail::assign_value_type(*_alloc, *entry, CONFIG_VALTYPE_8B_BIT);
+        entry->data.val_u8 = value;
+        return entry->data.val_u8;
+    }
+
+    template<>
+    auto ConfigBuilderValue::set(ice::u16 value) noexcept -> ice::u16&
+    {
+        ConfigBuilderContainer::Entry* const entry = _idx == ice::u32_max
+            ? _internal : (static_cast<ConfigBuilderContainer*>(_internal)->_entries._data + _idx);
+
+        detail::assign_value_type(*_alloc, *entry, CONFIG_VALTYPE_16B_BIT);
+        entry->data.val_u16 = value;
+        return entry->data.val_u16;
+    }
+
+    template<>
+    auto ConfigBuilderValue::set(ice::u32 value) noexcept -> ice::u32&
+    {
+        ConfigBuilderContainer::Entry* const entry = _idx == ice::u32_max
+            ? _internal : (static_cast<ConfigBuilderContainer*>(_internal)->_entries._data + _idx);
+
+        detail::assign_value_type(*_alloc, *entry, CONFIG_VALTYPE_32B_BIT);
+        entry->data.val_u32 = value;
+        return entry->data.val_u32;
+    }
+
+    template<>
+    auto ConfigBuilderValue::set(ice::i8 value) noexcept -> ice::i8&
+    {
+        ConfigBuilderContainer::Entry* const entry = _idx == ice::u32_max
+            ? _internal : (static_cast<ConfigBuilderContainer*>(_internal)->_entries._data + _idx);
+
+        detail::assign_value_type(*_alloc, *entry, CONFIG_VALTYPE_8B_BIT | CONFIG_VALTYPE_SIGN_BIT);
+        entry->data.val_i8 = value;
+        return entry->data.val_i8;
+    }
+
+    template<>
+    auto ConfigBuilderValue::set(ice::i16 value) noexcept -> ice::i16&
+    {
+        ConfigBuilderContainer::Entry* const entry = _idx == ice::u32_max
+            ? _internal : (static_cast<ConfigBuilderContainer*>(_internal)->_entries._data + _idx);
+
+        detail::assign_value_type(*_alloc, *entry, CONFIG_VALTYPE_16B_BIT | CONFIG_VALTYPE_SIGN_BIT);
+        entry->data.val_i16 = value;
+        return entry->data.val_i16;
+    }
+
+    template<>
+    auto ConfigBuilderValue::set(ice::i32 value) noexcept -> ice::i32&
+    {
+        ConfigBuilderContainer::Entry* const entry = _idx == ice::u32_max
+            ? _internal : (static_cast<ConfigBuilderContainer*>(_internal)->_entries._data + _idx);
+
+        detail::assign_value_type(*_alloc, *entry, CONFIG_VALTYPE_32B_BIT | CONFIG_VALTYPE_SIGN_BIT);
+        entry->data.val_u32 = value;
+        return entry->data.val_i32;
+    }
+
+    template<>
+    auto ConfigBuilderValue::set(ice::f32 value) noexcept -> ice::f32&
+    {
+        ConfigBuilderContainer::Entry* const entry = _idx == ice::u32_max
+            ? _internal : (static_cast<ConfigBuilderContainer*>(_internal)->_entries._data + _idx);
+
+        detail::assign_value_type(*_alloc, *entry, CONFIG_VALTYPE_32B_BIT | CONFIG_VALTYPE_SIGN_BIT | CONFIG_VALTYPE_FP_BIT);
+        entry->data.val_f32 = value;
+        return entry->data.val_f32;
+    }
+
+    template<>
+    auto ConfigBuilderValue::set(ice::f64 value) noexcept -> ice::f64&
+    {
+        ConfigBuilderContainer::Entry* const entry = _idx == ice::u32_max
+            ? _internal : (static_cast<ConfigBuilderContainer*>(_internal)->_entries._data + _idx);
+
+        detail::assign_value_type(*_alloc, *entry, CONFIG_VALTYPE_64B_BIT | CONFIG_VALTYPE_SIGN_BIT | CONFIG_VALTYPE_FP_BIT);
+        entry->data.val_f64 = value;
+        return entry->data.val_f64;
+    }
+
+    auto ConfigBuilderValue::set(ice::String value) noexcept -> ice::HeapVarString<>&
+    {
+        ConfigBuilderContainer::Entry* const entry = _idx == ice::u32_max
+            ? _internal : (static_cast<ConfigBuilderContainer*>(_internal)->_entries._data + _idx);
+
+        detail::assign_value_type(*_alloc, *entry, CONFIG_VALTYPE_STRING);
+
+        entry->data.val_varstr = _alloc->create<ice::HeapVarString<>>(*_alloc, value);
+        return *entry->data.val_varstr;
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -370,8 +486,9 @@ namespace ice
             }
             else if (entry->vtype == CONFIG_VALTYPE_STRING)
             {
-                ice::u32 const strsize = calc_varstring_size_total(entry->size);
-                out_data_size += { strsize + 1 }; // +1 for '\0'
+                ice::ucount bytes = 0;
+                ice::ucount const size = ice::string::detail::read_varstring_size(entry->data.val_varstr->_data, bytes);
+                out_data_size += { bytes + size + 1 }; // +1 for '\0'
             }
             else if (entry->vtype >= CONFIG_VALTYPE_LARGE)
             {
@@ -410,8 +527,8 @@ namespace ice
         ice::HashMap<KeyString>& keystrings,
         ice::Span<ice::u32 const> keystringoffsets,
         ice::ConfigBuilderContainer const& config,
-        ice::Config_v2::Key* out_keylist,
-        ice::Config_v2::Value* out_vallist,
+        ice::config::detail::ConfigKey* out_keylist,
+        ice::config::detail::ConfigValue* out_vallist,
         ice::DataBuffer& out_data
     ) noexcept -> ice::u32
     {
@@ -478,16 +595,13 @@ namespace ice
             }
             else if (it_entry->vtype == CONFIG_VALTYPE_STRING)
             {
-                ice::u32 bytes = 0;
-                ice::u32 const in_str_size = ice::read_varstring_size(it_entry->data.val_varstr.ptr, bytes);
+                ice::HeapVarString<> const& varstr = *config._entries[out_keyidx].data.val_varstr;
+                ice::Data const in_data = ice::string::data_view(varstr);
 
-                ice::Data const in_data{
-                    .location = it_entry->data.val_varstr.ptr,
-                    .size = { bytes + in_str_size + 1 }, // Include the '\0' when copying
-                    .alignment = ice::ualign::b_1
-                };
+                // Set the '\0' character
+                *(reinterpret_cast<char*>(out_data.memory.location) + out_data.offset_strings) = '\0';
 
-                // Update strings offset (including '\0')
+                // Update strings offset (excluding '\0')
                 out_data.offset_strings -= (ice::u32) in_data.size.value;
 
                 // Set the value to the current 'offset_strings' value.
@@ -529,7 +643,10 @@ namespace ice
         return keyoffset;
     }
 
-    auto ConfigBuilder_v2::finalize(ice::Allocator& alloc) noexcept -> ice::Memory
+    using ice::config::detail::ConfigKey;
+    using ice::config::detail::ConfigValue;
+
+    auto ConfigBuilder::finalize(ice::Allocator& alloc) noexcept -> ice::Memory
     {
         ice::ConfigBuilderContainer& container = *_internal->data.val_container;
         if (ice::array::empty(container._entries))
@@ -542,7 +659,9 @@ namespace ice
 
         ice::u32 final_count = 0;
         ice::usize const final_size = cb_v2_calculate_final_size(keystrings, container, final_count);
-        ice::usize const keyvalue_size = ice::size_of<Config_v2::Key> + ice::size_of<Config_v2::Value>;
+
+        static_assert(ice::size_of<ConfigKey> + ice::size_of<ConfigValue> == 8_B);
+        ice::usize const keyvalue_size = ice::size_of<ConfigKey> + ice::size_of<ConfigValue>;
 
         // Not sure when that could happen
         if (final_count == 0)
@@ -571,12 +690,12 @@ namespace ice
         }
 
         // Build the new key and value arrays + copy large data.
-        ice::Config_v2::Key* new_keys = reinterpret_cast<ice::Config_v2::Key*>(final_buffer.location);
+        ice::ConfigKey* new_keys = reinterpret_cast<ice::ConfigKey*>(final_buffer.location);
 
         // First key is the root key (It has no value attached!)
-        new_keys[0] = ice::Config_v2::Key{ .next = 1, .type = 0, .vtype = CONFIG_VALTYPE_ROOT, .offset = final_count >> 8, .size = final_count & 0xf };
+        new_keys[0] = ice::ConfigKey{ .next = 1, .type = CONFIG_KEYTYPE_NONE, .vtype = CONFIG_VALTYPE_ROOT, .offset = final_count >> 8, .size = final_count & 0xff };
 
-        ice::Config_v2::Value* new_values = reinterpret_cast<ice::Config_v2::Value*>(new_keys + final_count + 2);
+        ice::ConfigValue* new_values = reinterpret_cast<ice::ConfigValue*>(new_keys + final_count + 2);
 
         ice::usize const keystrings_end = ice::ptr_distance(final_buffer.location, final_keystrings_mem.location);
         ice::usize const data_start = ice::align_to(keystrings_end, ice::ualign::b_8).value;
@@ -628,6 +747,10 @@ namespace ice
                 {
                     clear_vtype = entry->data.val_container->release(alloc);
                 }
+                else if (entry->vtype == CONFIG_VALTYPE_STRING)
+                {
+                    alloc.destroy(entry->data.val_varstr);
+                }
 
                 if (clear_vtype)
                 {
@@ -649,19 +772,6 @@ namespace ice
                 entry.data.val_container = alloc.create<ConfigBuilderContainer>(alloc, vtype);
             }
         }
-
-        // auto get_or_set_container(
-        //     ice::Allocator& alloc,
-        //     ice::ConfigBuilderValue::Entry& entry,
-        //     ice::Config_ValType vtype
-        // ) noexcept -> ice::ConfigBuilderValue
-        // {
-        //     if (entry.vtype != vtype)
-        //     {
-        //         detail::assign_value_type(alloc, entry, vtype);
-        //     }
-        //     return { ice::addressof(alloc), entry.data.val_container, 0 };
-        // }
 
         auto get_entry(
             ice::Allocator& alloc,
@@ -699,7 +809,7 @@ namespace ice
                 ice::string::push_back(container._keystrings, key);
 
                 // Add the new entry
-                ice::array::push_back(container._entries, Config_v2::Key{ 0, CONFIG_KEYTYPE_STRING, CONFIG_VALTYPE_NONE, offset, ice::size(key) });
+                ice::array::push_back(container._entries, ConfigKey{ 0, CONFIG_KEYTYPE_STRING, CONFIG_VALTYPE_NONE, offset, ice::size(key) });
 
                 // Return the entry
                 result = ice::array::begin(container._entries) + idx;
@@ -736,7 +846,7 @@ namespace ice
 
                 while(ice::count(container._entries) <= idx)
                 {
-                    ice::array::push_back(container._entries, Config_v2::Key{ 0, CONFIG_KEYTYPE_NONE, CONFIG_VALTYPE_NONE, 0, 0 });
+                    ice::array::push_back(container._entries, ConfigKey{ 0, CONFIG_KEYTYPE_NONE, CONFIG_VALTYPE_NONE, 0, 0 });
                 }
 
                 // Return the entry
@@ -744,21 +854,6 @@ namespace ice
             }
 
             return result;
-        }
-
-        auto get_value_entry(ice::ConfigBuilderContainer* container, ice::u32 ref) noexcept -> ice::ConfigBuilderValue::Entry*
-        {
-            // ice::ConfigBuilderValue::Entry* result = nullptr;
-            return container->_entries._data + ref;
-            // if (ref == ice::u32_max)
-            // {
-            //     result = static_cast<ConfigBuilderContainer*>(entry);
-            // }
-            // else
-            // {
-            //     result = entry->data.val_container->_entries._data + ref;
-            // }
-            // return result;
         }
 
     } // namespace detail

@@ -1,3 +1,6 @@
+/// Copyright 2024 - 2024, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/math/constants.hxx>
 
@@ -12,7 +15,7 @@ namespace ice::math
             (... && std::is_arithmetic_v<Args>);
         };
 
-    } // namespace concept
+    } // namespace concepts
 
     template<typename T = void, typename U, typename... Args>
         requires concepts::is_arithmetic<U, Args...>

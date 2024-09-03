@@ -119,10 +119,18 @@ namespace ice
             return _state == 2u && _error == error;
         }
 
-        inline operator bool() const noexcept
+        inline explicit operator bool() const noexcept
         {
             return _state == 1u;
         }
+
+#if 0
+        inline operator Value const&() const noexcept
+            requires (std::is_same_v<Value, bool> == false)
+        {
+            return value();
+        }
+#endif
 
     private:
         union
