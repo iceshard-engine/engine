@@ -110,6 +110,22 @@ namespace ice
         co_return true;
     }
 
+    auto compiler_result_extension(ice::Span<ice::Shard const> params) noexcept -> ice::String
+    {
+#if ISP_WINDOWS
+        ice::ShaderTargetPlatform const target = param_shader_target(params);
+        switch (target)
+        {
+            using enum ShaderTargetPlatform;
+        case GLSL: return ".spv";
+        case WGSL: return ".wgsl";
+        default: return {};
+        }
+#else // On other platforms we don't care about result extension, this is only used by the compiler
+        return {};
+#endif
+    }
+
     struct ShaderTools_ResourceCompilerModule : ice::Module<ShaderTools_ResourceCompilerModule>
     {
         static void v1_compiler_api(ice::api::resource_compiler::v1::ResourceCompilerAPI& api) noexcept
@@ -120,6 +136,7 @@ namespace ice
             api.fn_supported_resources = compiler_supported_shader_resources;
             api.fn_compile_source = compiler_compile_shader_source;
             api.fn_build_metadata = compiler_build_shader_meta;
+            api.fn_bake_result_extension = compiler_result_extension;
 #endif // #if ISP_WINDOWS || ISP_WEBAPP
         }
 

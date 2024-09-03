@@ -17,7 +17,7 @@
 namespace ice
 {
 
-    class BakedFileResource final : public ice::FileSystemResource
+    class BakedFileResource final : public ice::FileSystemResource, public ice::LooseResource /* REDESIGN */
     {
     public:
         BakedFileResource(
@@ -46,6 +46,14 @@ namespace ice
             ice::NativeAIO* nativeio
         ) const noexcept -> ice::Task<ice::Memory> override;
 
+        auto load_named_part(
+            ice::StringID_Arg part_name,
+            ice::Allocator& alloc
+        ) const noexcept -> ice::Task<ice::Memory> override
+        {
+            co_return{};
+        }
+
     private:
         ice::Allocator& _allocator;
         ice::ResourceFormatHeader const _header;
@@ -57,6 +65,7 @@ namespace ice
 
     auto create_resource_from_baked_file(
         ice::Allocator& alloc,
+        ice::String uri_base,
         ice::native_file::FilePath file_path
     ) noexcept -> ice::FileSystemResource*;
 

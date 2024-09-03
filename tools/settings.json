@@ -9,7 +9,7 @@
     },
     "linux": {
         "project": {
-            "script_file": "ice.sh",
+            "script_file": "ice.sh"
         }
     },
     "project": {
@@ -24,6 +24,9 @@
         "authors": "Dandielo <dandielo@iceshard.net>"
     },
     "android": {
+        "gradle": {
+            "version": "8.2.0"
+        },
         "projects": [ "source/code/example/android" ]
     },
     "webasm": {

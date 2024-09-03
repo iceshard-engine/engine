@@ -10,6 +10,14 @@
 
     .CopyModules = true
 
+    // The 'packer' tool can be used as a 'librarian' tool in data pipelines.
+    .LocalCompiler =
+    [
+        .Name = 'hscp'
+        .Type = 'librarian'
+        .LocalCompilerConfig = 'Release'
+    ]
+
     .Requires = {
         'Windows'
     }

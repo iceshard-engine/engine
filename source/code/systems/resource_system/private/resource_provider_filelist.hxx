@@ -18,6 +18,7 @@
 
 #include "native/native_aio_tasks.hxx"
 #include "resource_filesystem_loose.hxx"
+#include "resource_filesystem_baked.hxx"
 
 namespace ice
 {

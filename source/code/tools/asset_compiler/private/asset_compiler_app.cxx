@@ -202,11 +202,6 @@ public:
             return 1;
         }
 
-        if (ice::string::empty(_asset_resource))
-        {
-            _asset_resource = input_resource->name();
-        }
-
         ice::String const res_ext = ice::path::extension(ice::resource_origin(res));
 
         ice::ResourceCompiler const* resource_compiler = nullptr;
@@ -253,6 +248,8 @@ public:
             ICE_LOG_IF(result == ice::E_Fail, ice::LogSeverity::Warning, ice::LogTag::Tool, "{}", result.error());
         }
 
+        ice::HeapString<> final_asset_name{ _allocator, _asset_resource };
+
         // If asset is in 'raw' format execute the resource compiler.
         // if (state == ice::AssetState::Raw)
         {
@@ -269,18 +266,52 @@ public:
                 return 1;
             }
 
+            // Get the extension from the provided argument or empty
+            ice::String result_extension = ice::path::extension(final_asset_name);
+
+            // ... but replace it if bake results expects a specific extension.
+            if (resource_compiler->fn_bake_result_extension != nullptr)
+            {
+                result_extension = resource_compiler->fn_bake_result_extension(_params);
+            }
+
+            // If no name was provided use the input name and replace the extension is needed
+            if (ice::string::empty(final_asset_name))
+            {
+                final_asset_name = input_resource->name();
+
+                // Replace the extension if a result extension is provided.
+                if (ice::string::any(result_extension))
+                {
+                    ice::path::replace_extension(final_asset_name, result_extension);
+                }
+            }
+            // If asset name has no extension, attach the result extension
+            else if (ice::string::empty(ice::path::extension(final_asset_name)))
+            {
+                ice::path::replace_extension(final_asset_name, result_extension);
+            }
+
+            // Warn if the final extension is different than what the resource compiler expects.
+            ICE_LOG_IF(
+                ice::string::any(result_extension) && ice::path::extension(final_asset_name) != result_extension,
+                ice::LogSeverity::Warning, ice::LogTag::Tool,
+                "Asset compiler result extension '{}' differs from provided asset name extension {}!",
+                result_extension, ice::path::extension(final_asset_name)
+            );
+
             ice::ResourceCompilerCtx ctx{ .userdata = nullptr };
             ice::api::resource_compiler::v1::ResourceCompilerCtxCleanup ctx_cleanup{ _allocator, ctx, resource_compiler->fn_cleanup_context };
             if (resource_compiler->fn_prepare_context && resource_compiler->fn_prepare_context(_allocator, ctx, _params) == false)
             {
-                ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Falied preparing compiler context for {}.", _asset_resource);
+                ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Falied preparing compiler context for {}.", final_asset_name);
                 return 1;
             }
 
             ice::Array<ice::ResourceHandle*> sources{ _allocator };
             if (resource_compiler->fn_collect_sources(ctx, res, *resource_tracker, sources) == false)
             {
-                ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Falied gathering sources for {}.", _asset_resource);
+                ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Falied gathering sources for {}.", final_asset_name);
                 return 1;
             }
 
@@ -293,13 +324,13 @@ public:
             ice::Array<ice::URI> dependencies{ _allocator };
             if (resource_compiler->fn_collect_dependencies(ctx, res, *resource_tracker, dependencies) == false)
             {
-                ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Falied gathering dependencies for {}.", _asset_resource);
+                ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Falied gathering dependencies for {}.", final_asset_name);
                 return 1;
             }
 
             if (ice::wait_for_result(resource_compiler->fn_validate_source(ctx, res, *resource_tracker)) == false)
             {
-                ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Falied validation of sources for {}.", _asset_resource);
+                ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Falied validation of sources for {}.", final_asset_name);
                 return 1;
             }
 
@@ -333,7 +364,7 @@ public:
 
             if (ice::wait_for_result(resource_compiler->fn_build_metadata(ctx, res, *resource_tracker, results, dependencies, meta)) == false)
             {
-                ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Falied building metadata for {}.", _asset_resource);
+                ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Falied building metadata for {}.", final_asset_name);
                 return 1;
             }
 
@@ -341,7 +372,7 @@ public:
             ice::Memory const final_asset_data = resource_compiler->fn_finalize(ctx, res, results, dependencies, _allocator);
             if (final_asset_data.location == nullptr)
             {
-                ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Falied finalizing asset data for {}.", _asset_resource);
+                ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Falied finalizing asset data for {}.", final_asset_name);
                 return 1;
             }
 
@@ -350,21 +381,19 @@ public:
                 ice::Memory const final_meta_data = ice::meta_save(meta, _allocator);
 
                 // Calc meta offset
-                ice::u32 meta_offset = (ice::u32)sizeof(ice::ResourceFormatHeader) + ice::string::size(_asset_resource) + 1;
-                ice::u32 const meta_diff = meta_offset & 0x7;
-                if (meta_diff != 0)
-                {
-                    meta_offset += (8 - meta_diff);
-                }
+                ice::AlignResult const meta_offset = ice::align_to(
+                    (ice::u32)sizeof(ice::ResourceFormatHeader) + ice::string::size(final_asset_name) + 1,
+                    ice::ualign::b_8
+                );
 
                 // Prepare the resource header struct
                 ice::ResourceFormatHeader const rfh{
                     .magic = ice::Constant_ResourceFormatMagic,
                     .version = ice::Constant_ResourceFormatVersion,
-                    .name_size = ice::string::size(_asset_resource),
-                    .meta_offset = meta_offset,
+                    .name_size = ice::string::size(final_asset_name),
+                    .meta_offset = meta_offset.value,
                     .meta_size = static_cast<ice::u32>(final_meta_data.size.value),
-                    .offset = (ice::u32)(meta_offset + final_meta_data.size.value),
+                    .offset = (ice::u32)(meta_offset.value + final_meta_data.size.value),
                     .size = static_cast<ice::u32>(final_asset_data.size.value),
                 };
 
@@ -375,8 +404,9 @@ public:
                 char const filler[8]{ 0 };
                 ice::Data const file_parts[]{
                     ice::data_view(rfh), // Header
-                    ice::string::data_view(_asset_resource), // Name
-                    ice::Data{ &filler, meta_diff, ice::ualign::b_1 },
+                    ice::string::data_view(final_asset_name), // Name
+                    ice::Data{ &filler, 1, ice::ualign::b_1 },
+                    ice::Data{ &filler, meta_offset.padding, ice::ualign::b_1 },
                     ice::data_view(final_meta_data), // Metadata
                     ice::data_view(final_asset_data) // Data
                 };
@@ -386,7 +416,7 @@ public:
                 {
                     if (ice::native_file::append_file(output_file, file_part) != file_part.size)
                     {
-                        ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Falied to write final output file {}.", _asset_resource);
+                        ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Falied to write final output file {}.", final_asset_name);
                     }
                 }
 

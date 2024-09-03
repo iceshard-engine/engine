@@ -3,6 +3,7 @@
 
 #include <ice/mem_allocator_host.hxx>
 #include <ice/resource.hxx>
+#include <ice/resource_format.hxx>
 #include <ice/resource_meta.hxx>
 #include <ice/resource_provider.hxx>
 #include <ice/resource_tracker.hxx>
@@ -86,6 +87,11 @@ inline auto hsdata_view(ice::Memory mem) noexcept -> hailstorm::Data
     return { mem.location, mem.size.value, (size_t)mem.alignment };
 }
 
+inline auto hsdata_view(ice::Data mem) noexcept -> hailstorm::Data
+{
+    return { mem.location, mem.size.value, (size_t)mem.alignment };
+}
+
 class HailStormPackerApp final : public ice::tool::ToolApp<HailStormPackerApp>
 {
 public:
@@ -97,15 +103,22 @@ public:
         , _param_configs{ _allocator }
         , _param_output{ _allocator }
         , _param_verbose{ false }
+        , _inputs{ _allocator }
         , _filter_extensions_heap{ _allocator }
         , _filter_extensions{ _allocator }
     {
         _tpool = ice::create_thread_pool(_allocator, _tqueue, { .thread_count = 8 });
+        ice::array::push_back(_filter_extensions, ".isr");
     }
 
     ~HailStormPackerApp() noexcept = default;
 
     auto run() noexcept -> ice::i32 override
+    {
+        return run_explicit();
+    }
+
+    auto run_from_directories() noexcept -> ice::i32
     {
         for (ice::String config : _param_configs)
         {
@@ -189,6 +202,59 @@ public:
             return 1;
         }
 
+        // TODO: Filter out any resources we don't want and set the pointer to 'nullptr'
+#if 0
+        auto* const end = _filter_extensions._data + _filter_extensions._count;
+        bool const found = std::find(
+            _filter_extensions._data,
+            end,
+            ice::path::extension(resource->name())
+        ) != end;
+
+        if (found)
+#endif
+
+        return create_package(*tracker, resources);
+    }
+
+    auto run_explicit() noexcept -> ice::i32
+    {
+        // Prepare the output file name.
+        _param_output = hscp_process_directory(_allocator, _param_output);
+
+        // The paths that will be searched for loose file resources.
+        ice::Array<ice::ResourceFileEntry> files{ _allocator,  };
+        ice::array::reserve(files, ice::count(_inputs));
+        for (ice::String file : _inputs)
+        {
+            ice::array::push_back(files, { .path = file });
+        }
+
+        ice::UniquePtr<ice::ResourceProvider> fsprov = ice::create_resource_provider_files(
+            _allocator, files, &_tsched
+        );
+
+        // Spawning one dedicated IO thread for AIO support. Allows us to read resources MUCH faster.
+        ice::ResourceTrackerCreateInfo rtinfo{
+            .predicted_resource_count = 1'000'000,
+            .io_dedicated_threads = 1,
+            .flags_io_complete = ice::TaskFlags{},
+            .flags_io_wait = ice::TaskFlags{},
+        };
+        ice::UniquePtr<ice::ResourceTracker> tracker = ice::create_resource_tracker(
+            _allocator, _tsched, rtinfo
+        );
+
+        ice::ResourceProvider* provider = tracker->attach_provider(ice::move(fsprov));
+        tracker->sync_resources();
+
+        ice::Array<ice::Resource const*> resources{ _allocator };
+        if (provider->collect(resources) == 0)
+        {
+            HSCP_ERROR("No files where found in the included directories.");
+            return 1;
+        }
+
         return create_package(*tracker, resources);
     }
 
@@ -211,23 +277,20 @@ public:
         ice::MutableMetadata meta{ _allocator };
         ice::Memory metamem = ice::meta_save(meta, _allocator);
 
-        ice::array::push_back(resource_metas, hsdata_view(metamem));
+        //ice::array::push_back(resource_metas, hsdata_view(metamem));
 
         std::atomic_uint32_t res_count = 0;
         ice::u32 res_idx = 0;
-        auto* const end = _filter_extensions._data + _filter_extensions._count;
         for (ice::Resource const* resource : resources)
         {
-            bool const found = std::find(
-                _filter_extensions._data,
-                end,
-                ice::path::extension(resource->name())
-            ) != end;
-
-            if (found)
+            if (resource != nullptr)
             {
+                ice::Data md = ice::wait_for_result(resource->load_metadata());
+                //ice::Metadata m = ice::meta_load(md);
+                ice::array::push_back(resource_metas, hsdata_view(md));
+
                 resource_paths[res_idx] = resource->name();
-                resource_metamap[res_idx] = 0;
+                resource_metamap[res_idx] = res_idx;
                 resource_handles[res_idx] = tracker.find_resource(resource->uri());
 
                 ice::schedule_task(
@@ -277,8 +340,21 @@ public:
         ice::log_tag_register(LogTag_Details);
         ice::params_define(params, Param_Include, _param_includes);
         ice::params_define(params, Param_Output, _param_output);
-        ice::params_define(params, Param_Config, _param_configs);
         ice::params_define(params, Param_Verbose, _param_verbose);
+
+        ice::params_define(params, {
+                .name = "-c,--config",
+                .description = "Configuration file(s) with more detailed generation requirements.",
+            },
+            _param_configs
+        );
+        ice::params_define(params, {
+                .name = "input",
+                .description = "Input files to be stored in the HSC pack.",
+                .flags = ice::ParamFlags::TakeAll
+            },
+            _inputs
+        );
         return true;
     }
 
@@ -300,6 +376,8 @@ private:
     ice::Array<ice::String> _param_configs;
     ice::HeapString<> _param_output;
     bool _param_verbose;
+
+    ice::Array<ice::String> _inputs;
 
     // Filters
     ice::Array<ice::HeapString<>> _filter_extensions_heap;

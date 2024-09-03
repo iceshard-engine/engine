@@ -85,6 +85,10 @@ namespace ice
             ice::Allocator& result_alloc
         ) noexcept -> ice::Memory;
 
+        using FnBakeResultExtension = auto(*)(
+            ice::Span<ice::Shard const> params
+        ) noexcept -> ice::String;
+
         bool fn_collect_sources_default(
             ice::ResourceCompilerCtx& ctx,
             ice::ResourceHandle* resource_handle,
@@ -145,6 +149,7 @@ namespace ice
             FnCompileResourceSource fn_compile_source = fn_compile_source_default;
             FnBuildResourceMetadata fn_build_metadata = fn_build_metadata_default;
             FnFinalizeResource fn_finalize = fn_finalize_default;
+            FnBakeResultExtension fn_bake_result_extension = nullptr;
         };
 
         struct ResourceCompilerCtxCleanup

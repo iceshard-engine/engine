@@ -118,26 +118,6 @@ Settings
     ]
 ]
 
-.Vk_ShaderPipeline =
-[
-    Using( .Pipeline_VulkanShaders_13 )
-
-    ; .PipelineSteps + 'Gen-ShaderMeta'
-    ; .PipelineTasks + .Task_GenerateShaderISRM
-    .PipelineSteps + 'Package'
-    .PipelineTasks + .Task_CreateShaderPack
-
-    .PipelineName = 'VkShaders'
-    .PipelineToolchain = 'vk-glslc-1-3'
-]
-
-.ISAC_ShaderPipeline =
-[
-    Using( .Pipeline_AssetCompiler_2407 )
-
-    .PipelineName = 'ASLShaders'
-]
-
 .Unity_Pipeline_WebAsm_x86 =
 [
     Using( .Piepline_WebAsm )
@@ -160,6 +140,29 @@ Settings
     ]
 ]
 
+.Asset_Pipeline_Mobile =
+[
+    Using( .Pipeline_AssetCompiler_2407 )
+
+    .PipelineName = 'Assets-Mobile'
+    .PipelineArchitecture = 'assets-mobile'
+    .PipelineTasks + {
+        .Task_Assets_ShadersASL
+        .Task_Assets_ShadersGLSL
+    }
+]
+
+.Asset_Pipeline_WebApp =
+[
+    Using( .Pipeline_AssetCompiler_2407 )
+
+    .PipelineName = 'Assets-Web'
+    .PipelineArchitecture = 'assets-web'
+    .PipelineTasks + {
+        .Task_Assets_ShadersASL
+    }
+]
+
 ^BuildPipelines = {
     .Unity_Pipeline_Windows_x64
     .Unity_Pipeline_Linux_x64
@@ -167,6 +170,8 @@ Settings
     .Unity_Pipeline_Android_ARM64
     .Unity_Pipeline_Android_x64
     .Unity_Pipeline_WebAsm_x86
-    .Vk_ShaderPipeline
-    // .ISAC_ShaderPipeline
+    // Asset pipelines
+    .Asset_Pipeline_WebApp
+    .Asset_Pipeline_Mobile
+    ; .Asset_Pipeline_PC // TODO
 }

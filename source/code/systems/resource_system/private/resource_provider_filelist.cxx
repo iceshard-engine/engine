@@ -2,6 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #include "resource_provider_filelist.hxx"
+#include <ice/string_utils.hxx>
 
 namespace ice
 {
@@ -75,26 +76,39 @@ namespace ice
             return;
         }
 
-        ice::StackAllocator_1024 temp_alloc;
-        ice::native_file::FilePath const uribase = ice::path::directory(base_path);
-        ice::native_file::FilePath const datafile = file_path;
-        ice::native_file::HeapFilePath metafile{ temp_alloc };
-        ice::string::reserve(metafile, 512);
-        ice::string::push_back(metafile, file_path);
-        ice::string::push_back(metafile, ISP_PATH_LITERAL(".isrm"));
+        // Handle full .isr files
+        ice::FileSystemResource* resource = nullptr;
+        if (ice::path::extension(file_path) == ISP_PATH_LITERAL(".isr"))
+        {
+            ice::HeapString<> uri_base{ _allocator };
+            ice::string::push_format(uri_base, "file://{}/", _virtual_hostname);
 
-        ice::FileSystemResource* const resource = create_resources_from_loose_files(
-            _allocator,
-            base_path,
-            uribase,
-            metafile,
-            datafile
-        );
+            resource = create_resource_from_baked_file(_allocator, uri_base, file_path);
+        }
+        else
+        {
+
+            ice::StackAllocator_1024 temp_alloc;
+            ice::native_file::FilePath const uribase = ice::path::directory(base_path);
+            ice::native_file::FilePath const datafile = file_path;
+            ice::native_file::HeapFilePath metafile{ temp_alloc };
+            ice::string::reserve(metafile, 512);
+            ice::string::push_back(metafile, file_path);
+            ice::string::push_back(metafile, ISP_PATH_LITERAL(".isrm"));
+
+            resource = create_resources_from_loose_files(
+                _allocator,
+                base_path,
+                uribase,
+                metafile,
+                datafile
+            );
+        }
 
         if (resource != nullptr)
         {
 
-            ice::u64 const hash = ice::hash(resource->origin());
+            ice::u64 const hash = ice::hash(resource->uri().path());
             ICE_ASSERT(
                 ice::hashmap::has(_resources, hash) == false,
                 "A resource cannot be a explicit resource AND part of another resource."
@@ -165,7 +179,7 @@ namespace ice
             ice::native_file::path_to_string(file_entry.path, predicted_path);
             ice::path::normalize(predicted_path);
 
-            ice::u64 const resource_hash = ice::hash(ice::String{ predicted_path });
+            ice::u64 const resource_hash = ice::hash(uri.path());
             found_resource = ice::hashmap::get(_resources, resource_hash, nullptr);
             if (found_resource != nullptr)
             {
