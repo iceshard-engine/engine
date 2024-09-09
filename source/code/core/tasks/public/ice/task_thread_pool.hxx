@@ -4,6 +4,7 @@
 #pragma once
 #include <ice/task_types.hxx>
 #include <ice/mem_unique_ptr.hxx>
+#include <ice/native_aio.hxx>
 #include <ice/string_types.hxx>
 #include <ice/span.hxx>
 
@@ -14,6 +15,9 @@ namespace ice
     {
         //! \brief The thread count of this thread pool.
         ice::ucount thread_count = 0;
+
+        //! \brief The AIO port to be used for internal AIO threads.
+        ice::native_aio::AIOPort aioport = nullptr;
 
         //! \brief May be ignored in some builds.
         ice::String debug_name_format = "ice.thread {}";

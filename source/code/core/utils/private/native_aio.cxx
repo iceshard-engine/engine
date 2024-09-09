@@ -133,7 +133,14 @@ namespace ice::native_aio
         ) != FALSE;
 
         DWORD const last_error = GetLastError();
-        // Check the port wasn't closed!
+
+        // The port was closed, just return false == timeout.
+        if (last_error == ERROR_ABANDONED_WAIT_0)
+        {
+            return false;
+        }
+
+        // Check the port wasn't closed! (outdated?)
         ICE_ASSERT_CORE(last_error != ERROR_ABANDONED_WAIT_0 || overlapped != nullptr || iocompleted);
 
         out_size = { bytes };

@@ -63,6 +63,7 @@ namespace ice::platform::win32
         , _scheduler_gfx{ queue_gfx }
         , _scheduler_tasks{ queue_tasks }
         , _threads{ }
+        , _aioport{ ice::native_aio::aio_open(alloc, { .worker_limit = 1, .debug_name = "ice.aio-port" }) }
     {
         ice::ucount const hw_concurrency = ice::min(get_num_cores(alloc), 8u);
         ice::ucount tp_size = ice::max(hw_concurrency, 2u); // min 2 task threads
@@ -88,12 +89,19 @@ namespace ice::platform::win32
             alloc, queue_tasks,
             TaskThreadPoolCreateInfo {
                 .thread_count = tp_size,
+                .aioport = _aioport,
                 .debug_name_format = "ice.thread {}",
             }
         );
 
         // Attache the graphics thread to the threadpool so we don't need to manage it ourselfs.
         _threads->attach_thread("platform.graphics-thread"_sid, ice::move(gfx_thread));
+    }
+
+    Win32Threads::~Win32Threads() noexcept
+    {
+        // We close the port first (threads implicitly) to ensure we don't get stuck on io-port waiting indefinitely.
+        ice::native_aio::aio_close(_aioport);
     }
 
 } // namespace ice::platform::win32
