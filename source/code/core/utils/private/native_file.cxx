@@ -1,5 +1,8 @@
 /// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
+
+#include "native_aio.hxx"
+
 #include <ice/native_file.hxx>
 #include <ice/string_utils.hxx>
 #include <ice/mem_allocator_stack.hxx>
@@ -106,6 +109,49 @@ namespace ice::native_file
         return handle;
     }
 
+    auto open_file(
+        ice::native_aio::AIOPort port,
+        ice::native_file::FilePath path,
+        ice::native_file::FileOpenFlags flags /*= FileOpenFlags::Read*/
+    ) noexcept -> ice::Expected<ice::native_file::File>
+    {
+        IPT_ZONE_SCOPED;
+        ice::win32::FileHandle result;
+
+        // If port is nullptr, open file without AIO setup
+        if (port == nullptr)
+        {
+            return open_file(path, flags);
+        }
+        else
+        {
+            ice::native_aio::aio_file_flags(port, flags);
+
+            result = ice::win32::FileHandle{
+                CreateFileW(
+                    ice::string::begin(path),
+                    translate_access(flags),
+                    translate_mode(flags), // FILE_SHARE_*
+                    NULL, // SECURITY ATTRIBS
+                    translate_disposition(flags),
+                    translate_attribs(flags),
+                    NULL
+                )
+            };
+
+            if (result == NULL)
+            {
+                return E_FilePathProvidedIsInvalid;
+            }
+
+            if (ice::native_aio::aio_file_bind(port, result) == false)
+            {
+                return E_FileFailedToBindToAIOPort;
+            }
+        }
+        return result;
+    }
+
     auto sizeof_file(ice::native_file::File const& native_file) noexcept -> ice::usize
     {
         LARGE_INTEGER result;
@@ -187,6 +233,35 @@ namespace ice::native_file
             } while (characters_read == 0 && result != FALSE);
         }
         return requested_read_size;
+    }
+
+    auto read_file_request(
+        ice::native_aio::AIORequest& request,
+        ice::native_file::File const& native_file,
+        ice::usize requested_read_offset,
+        ice::usize requested_read_size,
+        ice::Memory memory
+    ) noexcept -> ice::native_file::FileRequestStatus
+    {
+        IPT_ZONE_SCOPED;
+        ICE_ASSERT_CORE(memory.size >= requested_read_size);
+
+        static_assert(sizeof(OVERLAPPED) <= sizeof(request._internal));
+        // static_assert(alignof(OVERLAPPED) <= offsetof(ice::native_aio::AIORequest, _internal));
+
+        FileRequestStatus result = FileRequestStatus::Error;
+        if (requested_read_size > 0_B)
+        {
+            result = ice::native_aio::aio_file_read_request(
+                request,
+                native_file,
+                requested_read_offset,
+                requested_read_size,
+                memory
+            );
+        }
+
+        return result;
     }
 
     auto write_file(

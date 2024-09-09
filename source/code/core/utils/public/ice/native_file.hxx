@@ -5,9 +5,16 @@
 #include <ice/os/unix.hxx>
 #include <ice/os/windows.hxx>
 #include <ice/path_utils.hxx>
+#include <ice/native_aio.hxx>
+#include <ice/expected.hxx>
 
 namespace ice::native_file
 {
+
+    static constexpr ErrorCode E_FileHandleInvalid{ "E.8800:FileSystem:File handle is invalid." };
+    static constexpr ErrorCode E_FilePathProvidedIsInvalid{ "E.8801:FileSystem:File path provided is invalid." };
+    static constexpr ErrorCode E_FileFailedToBindToAIOPort{ "E.8802:FileSystem:File handle failed to bind to provided AIO port." };
+    static constexpr ErrorCode E_FileFailedToReadRequestedSize{ "E.8803:FileSystem:Failed to read requested number of bytes from file." };
 
 #if ISP_WINDOWS
     using File = ice::win32::FileHandle;
@@ -39,6 +46,13 @@ namespace ice::native_file
         Asynchronous = 0b0010'0000,
     };
 
+    enum class FileRequestStatus : ice::u8
+    {
+        Error,
+        Pending,
+        Completed,
+    };
+
     bool exists_file(
         ice::native_file::FilePath path
     ) noexcept;
@@ -47,6 +61,12 @@ namespace ice::native_file
         ice::native_file::FilePath path,
         ice::native_file::FileOpenFlags flags = FileOpenFlags::Read
     ) noexcept -> ice::native_file::File;
+
+    auto open_file(
+        ice::native_aio::AIOPort port,
+        ice::native_file::FilePath path,
+        ice::native_file::FileOpenFlags flags = FileOpenFlags::Read
+    ) noexcept -> ice::Expected<ice::native_file::File>;
 
     auto sizeof_file(ice::native_file::File const& native_file) noexcept -> ice::usize;
     auto sizeof_file(ice::native_file::FilePath path) noexcept -> ice::usize;
@@ -63,6 +83,14 @@ namespace ice::native_file
         ice::usize requested_read_size,
         ice::Memory memory
     ) noexcept -> ice::usize;
+
+    auto read_file_request(
+        ice::native_aio::AIORequest& request,
+        ice::native_file::File const& native_file,
+        ice::usize requested_read_offset,
+        ice::usize requested_read_size,
+        ice::Memory memory
+    ) noexcept -> ice::native_file::FileRequestStatus;
 
     auto write_file(
         ice::native_file::File const& native_file,
