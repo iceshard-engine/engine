@@ -13,6 +13,7 @@ namespace ice::native_aio
     {
         ice::Allocator& _allocator;
         HANDLE _completion_port;
+        ice::u32 _worker_limit;
     };
 #else
     struct AIORequestInternal
@@ -29,6 +30,7 @@ namespace ice::native_aio
         ice::Allocator& _allocator;
         ice::AtomicLinkedQueue<AIORequestInternal> _requests;
         HANDLE _semaphore;
+        ice::u32 _worker_limit;
     };
 
     static_assert(sizeof(AIORequestInternal) == sizeof(AIORequest::_internal));

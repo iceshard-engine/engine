@@ -53,6 +53,7 @@ namespace ice::native_aio
     void aio_close(ice::native_aio::AIOPort port) noexcept;
     auto aio_status(ice::native_aio::AIOPort port) noexcept -> ice::native_aio::AIOStatusInfo;
     auto aio_native_handle(ice::native_aio::AIOPort port) noexcept -> void*;
+    auto aio_worker_limit(ice::native_aio::AIOPort port) noexcept -> ice::u32;
 
     struct AIOProcessLimits
     {

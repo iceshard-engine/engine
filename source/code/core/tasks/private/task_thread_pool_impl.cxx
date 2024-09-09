@@ -76,8 +76,10 @@ namespace ice
         }
 
         // Create one additional thread for the AIO port. (TODO: Allow the port to be awaited on existing threads?)
-        if (_info.aioport != nullptr)
+        for (ice::u32 idx = 0; idx < ice::native_aio::aio_worker_limit(_info.aioport); ++idx)
         {
+            detail::format_string(thread_name, "ice.aio {}", idx);
+
             ice::array::push_back(
                 _managed_threads,
                 ice::make_unique<ice::NativeTaskThread>(
@@ -89,7 +91,7 @@ namespace ice
                         .wait_on_queue = false,
                         .custom_procedure = detail::aio_thread_routine,
                         .custom_procedure_userdata = _info.aioport,
-                        .debug_name = "ice.aio",
+                        .debug_name = thread_name,
                     }
                 )
             );

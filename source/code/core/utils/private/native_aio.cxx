@@ -10,16 +10,15 @@ namespace ice::native_aio
         ice::native_aio::AIOPortInfo const& info
     ) noexcept -> ice::native_aio::AIOPort
     {
+        ice::u32 const worker_limit = std::max(info.worker_limit, 1u);
+
         AIOPortInternal* result = nullptr;
         HANDLE const completion_port = CreateIoCompletionPort(
-            INVALID_HANDLE_VALUE,
-            NULL,
-            NULL,
-            info.worker_limit
+            INVALID_HANDLE_VALUE, NULL, NULL, worker_limit
         );
         if (completion_port != NULL)
         {
-            result = alloc.create<AIOPortInternal>(alloc, completion_port);
+            result = alloc.create<AIOPortInternal>(alloc, completion_port, worker_limit);
         }
         return result;
     }
@@ -27,6 +26,11 @@ namespace ice::native_aio
     auto aio_native_handle(ice::native_aio::AIOPort port) noexcept -> void*
     {
         return port ? port->_completion_port : nullptr;
+    }
+
+    auto aio_worker_limit(ice::native_aio::AIOPort port) noexcept -> ice::u32
+    {
+        return port ? port->_worker_limit : 0;
     }
 
     void aio_close(ice::native_aio::AIOPort port) noexcept
@@ -165,14 +169,21 @@ namespace ice::native_aio
         ice::native_aio::AIOPortInfo const& info
     ) noexcept -> ice::native_aio::AIOPort
     {
+        ice::u32 const worker_limit = std::max(info.worker_limit, 1u);
         AIOPortInternal* internal = alloc.create<AIOPortInternal>(alloc);
-        internal->_semaphore = CreateSemaphore(NULL, 0, info.worker_limit, L"IS-AIO-Semaphore");
+        internal->_semaphore = CreateSemaphore(NULL, 0, worker_limit, L"IS-AIO-Semaphore");
+        internal->_worker_limit = worker_limit;
         return internal;
     }
 
     auto aio_native_handle(ice::native_aio::AIOPort port) noexcept -> void*
     {
         return port;
+    }
+
+    auto aio_worker_limit(ice::native_aio::AIOPort port) noexcept -> ice::u32
+    {
+        return port ? port->_worker_limit : 0;
     }
 
     void aio_close(ice::native_aio::AIOPort port) noexcept

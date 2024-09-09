@@ -63,7 +63,7 @@ namespace ice::platform::win32
         , _scheduler_gfx{ queue_gfx }
         , _scheduler_tasks{ queue_tasks }
         , _threads{ }
-        , _aioport{ ice::native_aio::aio_open(alloc, { .worker_limit = 1, .debug_name = "ice.aio-port" }) }
+        , _aioport{ ice::native_aio::aio_open(alloc, { .worker_limit = 2, .debug_name = "ice.aio-port" }) }
     {
         ice::ucount const hw_concurrency = ice::min(get_num_cores(alloc), 8u);
         ice::ucount tp_size = ice::max(hw_concurrency, 2u); // min 2 task threads
