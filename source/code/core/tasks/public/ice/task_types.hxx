@@ -10,6 +10,10 @@ namespace ice
 
     template<typename Value = void>
     class Task;
+
+    template<typename Result, typename ErrorType>
+    struct TaskExpected;
+
     class TaskQueue;
     class TaskScheduler;
 

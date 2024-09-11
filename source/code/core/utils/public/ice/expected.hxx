@@ -95,6 +95,8 @@ namespace ice
         }
 
         bool valid() const noexcept { return _state != 0u; }
+        bool succeeded() const noexcept { return _state == 1; }
+        bool failed() const noexcept { return _state == 2; }
 
         auto value() const & noexcept -> Value const&
         {
