@@ -1,3 +1,6 @@
+/// Copyright 2024 - 2024, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "native_aio.hxx"
 #include <ice/assert.hxx>
 
@@ -115,6 +118,75 @@ namespace ice::native_aio
         {
             return FileRequestStatus::Error;
         }
+    }
+
+    auto aio_file_write_request(
+        ice::native_aio::AIORequest& request,
+        ice::native_file::File const& file,
+        ice::usize requested_write_offset,
+        ice::Data data
+    ) noexcept -> ice::native_file::FileRequestStatus
+    {
+        using ice::native_file::FileRequestStatus;
+
+        ice::usize total_writes_requested = 0_B;
+
+        // Reset the request object internal buffer and get an overlapped pointer.
+        ice::memset(request._internal, 0, sizeof(request._internal));
+        OVERLAPPED* overlapped = reinterpret_cast<OVERLAPPED*>(request._internal + 0);
+
+        // Set the initial offset at which we want to write.
+        // NOTE: If offset is set to 0xffff'ffff'ffff'ffff == Append to end of file. From MSDN docs.
+        LARGE_INTEGER const offset{ .QuadPart = (LONGLONG) requested_write_offset.value };
+        overlapped->Offset = offset.LowPart;
+        overlapped->OffsetHigh = offset.HighPart;
+
+        FileRequestStatus current_status = FileRequestStatus::Pending;
+        while(data.size > 0_B && current_status != FileRequestStatus::Error)
+        {
+            // Calculate how much data we should write in a single call (up-to DWORD max value)
+            ice::usize::base_type const data_to_write = ice::min<ice::usize::base_type>(
+                data.size.value, std::numeric_limits<DWORD>::max()
+            );
+
+            BOOL const result = WriteFile(file.native(), data.location, (DWORD) data_to_write, nullptr, overlapped);
+            DWORD last_error = GetLastError();
+
+            if (result == TRUE && last_error == ERROR_SUCCESS)
+            {
+                current_status = FileRequestStatus::Completed;
+            }
+            else if (last_error == ERROR_IO_PENDING)
+            {
+                current_status = FileRequestStatus::Pending;
+            }
+            else
+            {
+                current_status = FileRequestStatus::Error;
+            }
+
+            total_writes_requested += { data_to_write };
+
+            // Update the offset where we should write. Unless we are always appending
+            if (requested_write_offset != ice::usize{ std::numeric_limits<ice::usize::base_type>::max() })
+            {
+                requested_write_offset += { data_to_write };
+
+                LARGE_INTEGER const new_offset{ .QuadPart = (LONGLONG) requested_write_offset.value };
+                overlapped->Offset = new_offset.LowPart;
+                overlapped->OffsetHigh = new_offset.HighPart;
+            }
+
+            // Move the memory block to the next location to be written
+            data = {
+                .location = ice::ptr_add(data.location, { data_to_write }),
+                .size = ice::usize::subtract(data.size, { data_to_write }),
+                .alignment = data.alignment
+            };
+        }
+
+        // TODO: tract the number of completed requests?
+        return current_status;
     }
 
     bool aio_file_await_request(

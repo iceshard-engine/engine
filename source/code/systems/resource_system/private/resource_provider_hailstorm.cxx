@@ -1,6 +1,7 @@
 /// Copyright 2024 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
+#include "resource_aio_request.hxx"
 #include "resource_provider_hailstorm.hxx"
 
 namespace ice
@@ -73,8 +74,8 @@ namespace ice
     auto HailstormChunkLoader_Persistent::request_slice(
         ice::u32 offset,
         ice::u32 size,
-        ice::NativeAIO* nativeio
-    ) noexcept -> ice::Task<ice::Memory>
+        ice::native_aio::AIOPort aioport
+    ) noexcept -> ice::Task<ice::Data>
     {
         if (_refcount.fetch_add(1u, std::memory_order_relaxed) > 0)
         {
@@ -91,11 +92,11 @@ namespace ice
         if (_memory.location == nullptr)
         {
             ice::Memory const res_memory = _allocator.allocate({ { size_t(_chunk.size_origin) }, (ice::ualign) _chunk.align });
-            ice::AsyncReadFileRef request{ nativeio, _file, res_memory, { size_t(_chunk.size) }, { size_t(_chunk.offset) } };
-            ice::AsyncReadFileRef::Result result = co_await request;
+            ice::detail::AsyncReadRequest request{ aioport, _file, ice::usize{_chunk.size}, ice::usize{_chunk.offset}, res_memory };
+            ice::usize const bytes_read = co_await request;
 
             // Clear memory if failed to load the file chunk
-            if (result.bytes_read == 0_B)
+            if (bytes_read == 0_B)
             {
                 _allocator.deallocate(res_memory);
             }
@@ -172,8 +173,8 @@ namespace ice
     auto HailstormChunkLoader_Regular::request_slice(
         ice::u32 offset,
         ice::u32 size,
-        ice::NativeAIO* /*nativeio*/
-    ) noexcept -> ice::Task<ice::Memory>
+        ice::native_aio::AIOPort aioport
+    ) noexcept -> ice::Task<ice::Data>
     {
         ice::u32 const ptr_idx = ice::hashmap::get_or_set(
             _offset_map, offset, ice::hashmap::count(_offset_map)
@@ -182,17 +183,23 @@ namespace ice
         {
             // TODO: See if we could use large page allocations if files size < 1kib
             ice::Memory const memory = _allocator.allocate({ { size }, (ice::ualign)_chunk.align });
-            ice::AsyncReadFileRef request{ nullptr, _file, memory, { size }, { offset } };
-            ice::AsyncReadFileRef::Result result = co_await request;
+            ice::detail::AsyncReadRequest request{ aioport, _file, ice::usize{_chunk.size}, ice::usize{_chunk.offset}, memory };
+            ice::usize const bytes_read = co_await request;
 
-            ICE_ASSERT_CORE(result.bytes_read == ice::usize{ size });
+            ICE_ASSERT_CORE(bytes_read == ice::usize{ size });
             _pointers[ptr_idx] = memory.location;
         }
-        co_return{ _pointers[ptr_idx], { size }, (ice::ualign)_chunk.align };
+        co_return { _pointers[ptr_idx], { size }, (ice::ualign)_chunk.align };
     }
 
-    HailStormResourceProvider::HailStormResourceProvider(ice::Allocator& alloc, ice::String path) noexcept
-        : _allocator{ alloc }
+    HailStormResourceProvider::HailStormResourceProvider(
+        ice::Allocator& alloc,
+        ice::String path,
+        ice::native_aio::AIOPort aioport
+    ) noexcept
+        : _allocator{ alloc, "Hailstorm" }
+        , _data_allocator{ alloc, "Data" }
+        , _aioport{ aioport }
         , _hspack_path{ _allocator }
         , _packname{ _allocator, ice::path::filename(path) }
         , _header_memory{ }
@@ -297,9 +304,10 @@ namespace ice
             // Reopen as async
             _hspack_file.close();
             _hspack_file = ice::native_file::open_file(
+                _aioport,
                 _hspack_path,
-                FileOpenFlags::Exclusive | FileOpenFlags::Asynchronous
-            );
+                FileOpenFlags::Exclusive
+            ).value();
 
             ice::array::resize(_loaders, _pack.header.count_chunks);
             for (ice::u32 idx = 0; idx < _pack.header.count_chunks; ++idx)
@@ -400,14 +408,11 @@ namespace ice
     }
 
     auto HailStormResourceProvider::load_resource(
-        ice::Allocator& alloc,
-        ice::Resource const* resource,
-        ice::TaskScheduler& scheduler,
-        ice::NativeAIO* nativeio
-    ) const noexcept -> ice::Task<ice::Memory>
+        ice::Resource const* resource
+    ) noexcept -> ice::TaskExpected<ice::Data>
     {
         hailstorm::HailstormResource const& hsres = static_cast<ice::HailstormResource const*>(resource)->_handle;
-        co_return co_await _loaders[hsres.chunk]->request_slice(hsres.offset, hsres.size, nativeio);
+        co_return co_await _loaders[hsres.chunk]->request_slice(hsres.offset, hsres.size, _aioport);
     }
 
     auto HailStormResourceProvider::resolve_relative_resource(

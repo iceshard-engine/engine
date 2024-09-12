@@ -317,6 +317,31 @@ namespace ice::native_file
         return total_written;
     }
 
+    auto write_file_request(
+        ice::native_aio::AIORequest& request,
+        ice::native_file::File const& native_file,
+        ice::usize write_offset,
+        ice::Data data
+    ) noexcept -> ice::native_file::FileRequestStatus
+    {
+        IPT_ZONE_SCOPED;
+
+        static_assert(sizeof(OVERLAPPED) <= sizeof(request._internal));
+        // static_assert(alignof(OVERLAPPED) <= offsetof(ice::native_aio::AIORequest, _internal));
+
+        FileRequestStatus result = FileRequestStatus::Completed;
+        if (data.size > 0_B)
+        {
+            result = ice::native_aio::aio_file_write_request(
+                request,
+                native_file,
+                write_offset,
+                data
+            );
+        }
+        return result;
+    }
+
     auto append_file(
         ice::native_file::File const& native_file,
         ice::Data data

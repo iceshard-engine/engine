@@ -16,7 +16,10 @@ struct HSCPWriteParams
     //! \note As of now it needs to be an absoulte path.
     ice::native_file::FilePath filename;
 
-    //! \brief Scheduler onto which AIO tasks should be scheduled.
+    //! \brief The Async IO port to be used for async write request handling.
+    ice::native_aio::AIOPort aioport;
+
+    //! \brief Scheduler onto which read AIO tasks should be re-scheduled.
     ice::TaskScheduler& task_scheduler;
 
     //! \brief Size for each data chunk.

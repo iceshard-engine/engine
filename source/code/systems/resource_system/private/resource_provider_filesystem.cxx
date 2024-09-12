@@ -10,13 +10,17 @@ namespace ice
     FileSystemResourceProvider::FileSystemResourceProvider(
         ice::Allocator& alloc,
         ice::Span<ice::String const> const& paths,
-        ice::TaskScheduler* scheduler
+        ice::TaskScheduler* scheduler,
+        ice::native_aio::AIOPort aioport
     ) noexcept
         : _named_allocator{ alloc, "FileSystem" }
+        , _data_allocator{ _named_allocator, "Data" }
         , _allocator{ _named_allocator }
-        , _base_paths{ _allocator }
+        , _base_paths{ _named_allocator }
         , _scheduler{ scheduler }
-        , _resources{ _allocator }
+        , _aioport{ aioport }
+        , _resources{ _named_allocator }
+        , _resources_data{ _data_allocator }
         , _devui_widget{ create_filesystem_provider_devui(_allocator, _resources) }
     {
         ice::native_file::HeapFilePath base_path{ _allocator };
@@ -30,9 +34,13 @@ namespace ice
 
     FileSystemResourceProvider::~FileSystemResourceProvider() noexcept
     {
+        for (ice::Memory const& res_data : _resources_data)
+        {
+            _data_allocator.deallocate(res_data);
+        }
         for (FileSystemResource* res_entry : _resources)
         {
-            _allocator.destroy(res_entry);
+            _named_allocator.destroy(res_entry);
         }
     }
 
@@ -67,6 +75,9 @@ namespace ice
             metafile,
             datafile
         );
+
+        resource->data_index = ice::array::count(_resources_data);
+        ice::array::push_back(_resources_data, ice::Memory{});
 
         if (resource != nullptr)
         {
@@ -135,6 +146,9 @@ namespace ice
         );
 
         co_await *request.final_thread;
+
+        resource->data_index = ice::array::count(_resources_data);
+        ice::array::push_back(_resources_data, ice::Memory{});
 
         if (resource != nullptr)
         {
@@ -320,23 +334,26 @@ namespace ice
     }
 
     void FileSystemResourceProvider::unload_resource(
-        ice::Allocator& alloc,
-        ice::Resource const* /*resource*/,
-        ice::Memory memory
+        ice::Allocator&,
+        ice::Resource const* resource,
+        ice::Memory
     ) noexcept
     {
-        alloc.deallocate(memory);
+        ice::FileSystemResource const* const filesys_res = static_cast<ice::FileSystemResource const*>(resource);
+        _data_allocator.deallocate(std::exchange(_resources_data[filesys_res->data_index], {}));
     }
 
     auto FileSystemResourceProvider::load_resource(
-        ice::Allocator& alloc,
-        ice::Resource const* resource,
-        ice::TaskScheduler& scheduler,
-        ice::NativeAIO* nativeio
-    ) const noexcept -> ice::Task<ice::Memory>
+        ice::Resource const* resource
+    ) noexcept -> ice::TaskExpected<ice::Data, ice::ErrorCode>
     {
+        ice::TaskQueue unused{};
+        ice::TaskScheduler unused2{unused};
+
         ice::FileSystemResource const* const filesys_res = static_cast<ice::FileSystemResource const*>(resource);
-        co_return co_await filesys_res->load_data(alloc, scheduler, nativeio);
+        _resources_data[filesys_res->data_index] = co_await filesys_res->load_data(_data_allocator, unused2, _aioport);
+
+        co_return ice::data_view(_resources_data[filesys_res->data_index]);
     }
 
     auto FileSystemResourceProvider::resolve_relative_resource(
@@ -378,16 +395,18 @@ namespace ice
 auto ice::create_resource_provider(
     ice::Allocator& alloc,
     ice::Span<ice::String const> paths,
+    ice::native_aio::AIOPort aioport,
     ice::TaskScheduler* scheduler
 ) noexcept -> ice::UniquePtr<ice::ResourceProvider>
 {
-    return ice::make_unique<ice::FileSystemResourceProvider>(alloc, alloc, paths, scheduler);
+    return ice::make_unique<ice::FileSystemResourceProvider>(alloc, alloc, paths, scheduler, aioport);
 }
 
 auto ice::create_resource_provider_hailstorm(
     ice::Allocator& alloc,
-    ice::String path
+    ice::String path,
+    ice::native_aio::AIOPort aioport
 ) noexcept -> ice::UniquePtr<ice::ResourceProvider>
 {
-    return ice::make_unique<ice::HailStormResourceProvider>(alloc, alloc, path);
+    return ice::make_unique<ice::HailStormResourceProvider>(alloc, alloc, path, aioport);
 }

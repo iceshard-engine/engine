@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #include "resource_filesystem_loose.hxx"
-#include "native/native_aio_tasks.hxx"
+#include "resource_aio_request.hxx"
 
 #include <ice/mem_allocator_stack.hxx>
 #include <ice/path_utils.hxx>
@@ -19,23 +19,24 @@ namespace ice
         auto async_file_read(
             ice::native_file::File file,
             ice::usize filesize,
-            ice::NativeAIO* nativeio,
+            ice::native_aio::AIOPort aioport,
             ice::Memory data
         ) noexcept -> ice::Task<bool>
         {
-            ice::AsyncReadFile asyncio{ nativeio, ice::move(file), data, filesize };
-            ice::AsyncReadFile::Result const read_result = co_await asyncio;
+            ice::detail::AsyncReadRequest request{ aioport, file, filesize, 0_B, data };
+            ice::usize const bytes_read = co_await request;
+
             ICE_ASSERT(
-                read_result.bytes_read == filesize,
+                bytes_read == filesize,
                 "Failed to load file into memory, requested bytes: {}!",
                 filesize
             );
-            co_return read_result.bytes_read == filesize;
+            co_return bytes_read == filesize;
         }
 
         auto async_file_load(
             ice::Allocator& alloc,
-            ice::NativeAIO* nativeio,
+            ice::native_aio::AIOPort aioport,
             ice::String filepath
         ) noexcept -> ice::Task<ice::Memory>
         {
@@ -48,13 +49,10 @@ namespace ice
                 .alignment = ice::ualign::invalid,
             };
 
-            ice::native_file::File handle = ice::native_file::open_file(
-                native_filepath,
-                ice::native_file::FileOpenFlags::Asynchronous
-            );
+            ice::Expected<ice::native_file::File> handle = ice::native_file::open_file(aioport, native_filepath);
             if (handle)
             {
-                ice::usize const filesize = ice::native_file::sizeof_file(handle);
+                ice::usize const filesize = ice::native_file::sizeof_file(handle.value());
                 ICE_ASSERT(
                     filesize.value < ice::ucount_max,
                     "Trying to load file larger than supported!"
@@ -63,7 +61,7 @@ namespace ice
                 if (filesize > 0_B)
                 {
                     result = alloc.allocate(filesize);
-                    bool const success = co_await async_file_read(ice::move(handle), filesize, nativeio, result);
+                    bool const success = co_await async_file_read(ice::move(handle).value(), filesize, aioport, result);
                     if (success == false)
                     {
                         alloc.deallocate(result);
@@ -242,12 +240,12 @@ namespace ice
     auto LooseFilesResource::load_data(
         ice::Allocator& alloc,
         ice::TaskScheduler& scheduler,
-        ice::NativeAIO* nativeio
+        ice::native_aio::AIOPort aioport
     ) const noexcept -> ice::Task<ice::Memory>
     {
-        if (nativeio != nullptr)
+        if (aioport != nullptr)
         {
-            co_return co_await detail::async_file_load(alloc, nativeio, _origin_path);
+            co_return co_await detail::async_file_load(alloc, aioport, _origin_path);
         }
         else
         {
@@ -302,10 +300,10 @@ namespace ice
     auto LooseFilesResource::ExtraResource::load_data(
         ice::Allocator& alloc,
         ice::TaskScheduler& scheduler,
-        ice::NativeAIO* nativeio
+        ice::native_aio::AIOPort aioport
     ) const noexcept -> ice::Task<ice::Memory>
     {
-        co_return co_await detail::async_file_load(alloc, nativeio, _origin_path);
+        co_return co_await detail::async_file_load(alloc, aioport, _origin_path);
     }
 
     auto LooseFilesResource::ExtraResource::size() const noexcept -> ice::usize

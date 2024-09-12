@@ -1,4 +1,8 @@
+/// Copyright 2024 - 2024, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "resource_filesystem_baked.hxx"
+#include "resource_aio_request.hxx"
 #include <ice/mem_allocator_stack.hxx>
 
 namespace ice
@@ -12,23 +16,24 @@ namespace ice
             ice::native_file::File file,
             ice::usize fileoffset,
             ice::usize filesize,
-            ice::NativeAIO* nativeio,
+            ice::native_aio::AIOPort aioport,
             ice::Memory data
         ) noexcept -> ice::Task<bool>
         {
-            ice::AsyncReadFile asyncio{ nativeio, ice::move(file), data, filesize, fileoffset };
-            ice::AsyncReadFile::Result const read_result = co_await asyncio;
+            ice::detail::AsyncReadRequest request{ aioport, file, filesize, 0_B, data };
+            ice::usize const bytes_read = co_await request;
+
             ICE_ASSERT(
-                read_result.bytes_read == filesize,
+                bytes_read == filesize,
                 "Failed to load file into memory, requested bytes: {}!",
                 filesize
             );
-            co_return read_result.bytes_read == filesize;
+            co_return bytes_read == filesize;
         }
 
         auto async_file_load(
             ice::Allocator& alloc,
-            ice::NativeAIO* nativeio,
+            ice::native_aio::AIOPort aioport,
             ice::String filepath,
             ice::ResourceFormatHeader const& header
         ) noexcept -> ice::Task<ice::Memory>
@@ -51,7 +56,7 @@ namespace ice
                 if (header.size > 0)
                 {
                     result = alloc.allocate(ice::usize{ header.size });
-                    bool const success = co_await async_file_read(ice::move(handle), { header.offset }, { header.size }, nativeio, result);
+                    bool const success = co_await async_file_read(ice::move(handle), { header.offset }, { header.size }, aioport, result);
                     if (success == false)
                     {
                         alloc.deallocate(result);
@@ -162,12 +167,12 @@ namespace ice
     auto BakedFileResource::load_data(
         ice::Allocator& alloc,
         ice::TaskScheduler& scheduler,
-        ice::NativeAIO* nativeio
+        ice::native_aio::AIOPort aioport
     ) const noexcept -> ice::Task<ice::Memory>
     {
-        if (nativeio != nullptr)
+        if (aioport != nullptr)
         {
-            co_return co_await detail::async_file_load(alloc, nativeio, _origin, { _header.offset });
+            co_return co_await detail::async_file_load(alloc, aioport, _origin, { _header.offset });
         }
         else
         {

@@ -98,6 +98,13 @@ namespace ice::native_file
         ice::Data data
     ) noexcept -> ice::usize;
 
+    auto write_file_request(
+        ice::native_aio::AIORequest& request,
+        ice::native_file::File const& native_file,
+        ice::usize write_offset,
+        ice::Data data
+    ) noexcept -> ice::native_file::FileRequestStatus;
+
     auto append_file(
         ice::native_file::File const& native_file,
         ice::Data data

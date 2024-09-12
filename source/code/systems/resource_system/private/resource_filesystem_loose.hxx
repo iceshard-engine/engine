@@ -1,8 +1,9 @@
-
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
+
 #pragma once
+#include <ice/native_aio.hxx>
 #include <ice/native_file.hxx>
 #include <ice/resource_meta.hxx>
 #include <ice/resource_flags.hxx>
@@ -50,7 +51,7 @@ namespace ice
         auto load_data(
             ice::Allocator& alloc,
             ice::TaskScheduler& scheduler,
-            ice::NativeAIO* nativeio
+            ice::native_aio::AIOPort aioport
         ) const noexcept -> ice::Task<ice::Memory> override;
 
         auto size() const noexcept -> ice::usize override;
@@ -88,7 +89,7 @@ namespace ice
         auto load_data(
             ice::Allocator& alloc,
             ice::TaskScheduler& scheduler,
-            ice::NativeAIO* nativeio
+            ice::native_aio::AIOPort aioport
         ) const noexcept -> ice::Task<ice::Memory> override;
 
         auto load_named_part(

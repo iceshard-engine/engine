@@ -1,3 +1,6 @@
+/// Copyright 2024 - 2024, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/native_aio.hxx>
 #include <ice/native_file.hxx>
@@ -52,6 +55,13 @@ namespace ice::native_aio
         ice::usize requested_read_offset,
         ice::usize requested_read_size,
         ice::Memory memory
+    ) noexcept -> ice::native_file::FileRequestStatus;
+
+    auto aio_file_write_request(
+        ice::native_aio::AIORequest& request,
+        ice::native_file::File const& file,
+        ice::usize requested_write_offset,
+        ice::Data data
     ) noexcept -> ice::native_file::FileRequestStatus;
 
     bool aio_file_await_request(

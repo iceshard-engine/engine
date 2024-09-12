@@ -2,7 +2,6 @@
 /// SPDX-License-Identifier: MIT
 
 #include "resource_tracker.hxx"
-#include "native/native_aio.hxx"
 
 namespace ice
 {
@@ -43,18 +42,13 @@ namespace ice
 
     ResourceTrackerImplementation::ResourceTrackerImplementation(
         ice::Allocator& alloc,
-        ice::TaskScheduler& scheduler,
         ice::ResourceTrackerCreateInfo const& info
     ) noexcept
         : ResourceTracker{ }
         , _allocator{ alloc }
         , _allocator_handles{ _allocator, "Handles" }
         , _allocator_data{ _allocator, "Data" }
-        , _scheduler{ scheduler }
         , _info{ info }
-        , _io_queue{ }
-        , _io_thread_data{ }
-        , _io_thread{ }
         , _handles{ _allocator_handles }
         , _resources{ _allocator }
         , _resource_providers{ _allocator }
@@ -68,25 +62,6 @@ namespace ice
         ice::array::reserve(_handles, _info.predicted_resource_count);
         ice::hashmap::reserve(_resources, _info.predicted_resource_count);
         ice::hashmap::reserve(_resource_providers, 10);
-
-        if (_info.io_dedicated_threads > 0)
-        {
-            _io_thread_data = ice::create_nativeio_thread_data(
-                _allocator,
-                _scheduler,
-                _info.io_dedicated_threads
-            );
-
-            ice::TaskThreadInfo const io_thread_info{
-                //.exclusive_queue = true, // ignored
-                //.sort_by_priority = false, // ignored
-                .wait_on_queue = false, // AIO is already awaiting for FS to finish work and is not spinning mindlessly.
-                .custom_procedure = (ice::TaskThreadProcedure*)ice::nativeio_thread_procedure,
-                .custom_procedure_userdata = _io_thread_data.get(),
-                .debug_name = "ice.res_tracker",
-            };
-            _io_thread = ice::create_thread(_allocator, _io_queue, io_thread_info);
-        }
     }
 
     ResourceTrackerImplementation::~ResourceTrackerImplementation() noexcept
@@ -95,14 +70,10 @@ namespace ice
         {
             if (handle->refcount.load(std::memory_order_relaxed) > 0)
             {
-                handle->provider->unload_resource(_allocator_data, handle->resource, handle->data);
+                handle->provider->unload_resource(_allocator_data, handle->resource, {}/* REMOVE */);
                 //IPT_MESSAGE_C("Encountered unreleased resource object during resource tracker destruction.", 0xEE99AA);
             }
         }
-
-        // Close thr thread first then the thread data.
-        _io_thread.reset();
-        _io_thread_data.reset();
     }
 
     auto ResourceTrackerImplementation::attach_provider(
@@ -213,67 +184,46 @@ namespace ice
         ice::ResourceHandle* resource_handle
     ) noexcept -> ice::Task<ice::ResourceResult>
     {
-        ice::TaskScheduler io_scheduler{ _io_queue };
-
-        bool const load_task = resource_handle->refcount.fetch_add(1, std::memory_order_relaxed) == 0;
-        if (load_task)
+        ice::ResourceLoadContext load_context{ .resource = *resource_handle };
+        if (co_await load_context)
         {
             resource_handle->status = ResourceStatus::Loading;
 
-            ice::Memory result{ };
-            if (_info.io_dedicated_threads > 0)
+            ice::Expected<ice::Data, ice::ErrorCode> const result
+                = co_await resource_handle->provider->load_resource(resource_handle->resource);
+
+            if (result.failed())
             {
-                result = co_await resource_handle->provider->load_resource(
-                    _allocator_data,
-                    resource_handle->resource,
-                    io_scheduler,
-                    _io_thread_data.get()
+                ICE_LOG(
+                    LogSeverity::Error, LogTag::Engine,
+                    "Failed to load resource {} with error: {}",
+                    ice::resource_origin(resource_handle),
+                    result.error()
                 );
+                resource_handle->status = ResourceStatus::Invalid;
             }
             else
             {
-                // Load using provided scheduler. This allows us to load resources without using any multi threading at all if we wish to do so.
-                co_await _scheduler.schedule(_info.flags_io_wait);
-
-                result = co_await resource_handle->provider->load_resource(
-                    _allocator_data,
-                    resource_handle->resource,
-                    io_scheduler,
-                    nullptr /* If 'nullptr' it will load the resource synchronously */
-                );
+                resource_handle->data = result.value();
+                resource_handle->status = ResourceStatus::Loaded;
             }
 
-            resource_handle->data = result;
-            resource_handle->status = result.location == nullptr ? ResourceStatus::Invalid : ResourceStatus::Loaded;
-            ICE_ASSERT(
-                resource_handle->status != ResourceStatus::Invalid,
-                "Failed loading '{}' resource",
-                ice::resource_origin(resource_handle)
-            );
+            // Ensure resource_handle changes are visible after this point
+            std::atomic_thread_fence(std::memory_order_release);
+
+            // Process all awaiting load contexts.
+            // TODO: Schedule all of them instead?
+            load_context.process_all();
         }
         else
         {
-            // Busy wait to make sure we don't run into a data race on two threads trying to load same resource at the same time.
-            while (resource_handle->status == ResourceStatus::Available)
-            {
-                co_await io_scheduler;
-            }
-
-            // Await the other thread to finish loading the data
-            while (resource_handle->status == ResourceStatus::Loading)
-            {
-                co_await io_scheduler;
-            }
+            ICE_ASSERT_CORE(resource_handle->status == ResourceStatus::Loaded);
         }
-
-        co_await _scheduler.schedule(_info.flags_io_complete);
-
-        //TracyMessageLC(resource_handle->resource->name()._data, 0xee2222ff);
 
         co_return ice::ResourceResult{
             .resource_status = resource_handle->status,
             .resource = resource_handle->resource,
-            .data = ice::data_view(resource_handle->data),
+            .data = resource_handle->data,
         };
     }
 
@@ -305,7 +255,7 @@ namespace ice
         //  we need to save the data information here before we decrease the refcount.
         //  Once decreased another request could already increase it and start loading new data and finish before
         //  we have a chance get the pointer to be released. (might happen... probably will)
-        ice::Memory const data = resource_handle->data;
+        // ice::Memory const data = resource_handle->data;
         ice::ResourceStatus const last_status = resource_handle->status;
         ice::u32 const last_refcount = resource_handle->refcount.load(std::memory_order_relaxed);
 
@@ -324,7 +274,7 @@ namespace ice
         {
             // We can now safely release the current saved memory pointer.
             resource_handle->provider->unload_resource(
-                _allocator_data, resource_handle->resource, data
+                _allocator_data, resource_handle->resource, {} /* REMOVE */
             );
 
             // We don't update the internal state nor the data member, as these will be considered invalid since refcount == 0
@@ -422,11 +372,10 @@ namespace ice
 
     auto create_resource_tracker(
         ice::Allocator& alloc,
-        ice::TaskScheduler& scheduler,
         ice::ResourceTrackerCreateInfo const& create_info
     ) noexcept -> ice::UniquePtr<ice::ResourceTracker>
     {
-        return ice::make_unique<ice::ResourceTrackerImplementation>(alloc, alloc, scheduler, create_info);
+        return ice::make_unique<ice::ResourceTrackerImplementation>(alloc, alloc, create_info);
     }
 
     auto resolve_dynlib_path(

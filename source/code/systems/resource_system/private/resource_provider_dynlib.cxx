@@ -134,13 +134,10 @@ namespace ice
         ) noexcept override { }
 
         auto load_resource(
-            ice::Allocator& alloc,
-            ice::Resource const* resource,
-            ice::TaskScheduler& scheduler,
-            ice::NativeAIO* nativeio
-        ) const noexcept -> ice::Task<ice::Memory> override
+            ice::Resource const* resource
+        ) noexcept -> ice::TaskExpected<ice::Data> override
         {
-            co_return ice::Memory{ };
+            co_return ice::Data{ };
         }
 
     private:

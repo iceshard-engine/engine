@@ -163,7 +163,6 @@ public:
         // Setup the AssetCompiler resource provider.
         ice::UniquePtr<ice::ResourceTracker> resource_tracker = ice::create_resource_tracker(
             _allocator,
-            _scheduler,
             { .predicted_resource_count = 10'000, .io_dedicated_threads = 0 }
         );
 
@@ -173,7 +172,7 @@ public:
             )
         );
         resource_tracker->attach_provider(
-            ice::create_resource_provider(_allocator, _includes, &_scheduler)
+            ice::create_resource_provider(_allocator, _includes, nullptr, &_scheduler)
         );
 
         resource_tracker->sync_resources();

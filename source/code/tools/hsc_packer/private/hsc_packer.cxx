@@ -93,6 +93,7 @@ public:
         : _tqueue{ }
         , _tsched{ _tqueue }
         , _tpool{ }
+        , _aioport{ ice::native_aio::aio_open(_allocator, {.worker_limit=4}) }
         , _param_includes{ _allocator }
         , _param_configs{ _allocator }
         , _param_output{ _allocator }
@@ -100,10 +101,14 @@ public:
         , _filter_extensions_heap{ _allocator }
         , _filter_extensions{ _allocator }
     {
-        _tpool = ice::create_thread_pool(_allocator, _tqueue, { .thread_count = 8 });
+        _tpool = ice::create_thread_pool(_allocator, _tqueue, { .thread_count = 12, .aioport = _aioport });
     }
 
-    ~HailStormPackerApp() noexcept = default;
+    ~HailStormPackerApp() noexcept
+    {
+        _tpool.reset(); // Need to close the threadpool before the aio
+        ice::native_aio::aio_close(_aioport);
+    }
 
     auto run() noexcept -> ice::i32 override
     {
@@ -165,7 +170,7 @@ public:
 
         // The paths that will be searched for loose file resources.
         ice::UniquePtr<ice::ResourceProvider> fsprov = ice::create_resource_provider(
-            _allocator, _param_includes, &_tsched
+            _allocator, _param_includes, _aioport, &_tsched
         );
 
         // Spawning one dedicated IO thread for AIO support. Allows us to read resources MUCH faster.
@@ -176,7 +181,7 @@ public:
             .flags_io_wait = ice::TaskFlags{},
         };
         ice::UniquePtr<ice::ResourceTracker> tracker = ice::create_resource_tracker(
-            _allocator, _tsched, rtinfo
+            _allocator, rtinfo
         );
 
         ice::ResourceProvider* provider = tracker->attach_provider(ice::move(fsprov));
@@ -261,6 +266,7 @@ public:
         ice::native_file::path_from_string(_param_output, output);
         HSCPWriteParams const write_params{
             .filename = output,
+            .aioport = _aioport,
             .task_scheduler = _tsched,
             .fn_chunk_selector = select_chunk_loose_resource,
             .fn_chunk_create = create_chunk_loose_resource,
@@ -294,6 +300,7 @@ private:
     ice::TaskQueue _tqueue;
     ice::TaskScheduler _tsched;
     ice::UniquePtr<ice::TaskThreadPool> _tpool;
+    ice::native_aio::AIOPort _aioport;
 
     // Params
     ice::Array<ice::String> _param_includes;

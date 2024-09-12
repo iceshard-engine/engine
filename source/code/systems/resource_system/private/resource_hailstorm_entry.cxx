@@ -3,7 +3,6 @@
 
 #include "resource_hailstorm_entry.hxx"
 #include "resource_provider_hailstorm.hxx"
-#include "native/native_aio_tasks.hxx"
 #include <ice/task_utils.hxx>
 
 namespace ice
@@ -53,13 +52,6 @@ namespace ice
             }
             return result;
         }
-
-        auto async_offset_file_read(
-            ice::NativeAIO* nativeio,
-            ice::native_file::File const& file,
-            ice::usize offset,
-            ice::usize size
-        ) noexcept -> ice::Task<ice::Memory>;
 
     } // namespace detail
 

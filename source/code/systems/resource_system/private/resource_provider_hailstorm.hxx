@@ -21,7 +21,6 @@
 #include <ice/devui_widget.hxx>
 
 #include "resource_hailstorm_entry.hxx"
-#include "native/native_aio_tasks.hxx"
 
 #include <hailstorm/hailstorm_operations.hxx>
 #include <atomic>
@@ -52,8 +51,8 @@ namespace ice
         virtual auto request_slice(
             ice::u32 offset,
             ice::u32 size,
-            ice::NativeAIO* nativeio
-        ) noexcept -> ice::Task<ice::Memory> = 0;
+            ice::native_aio::AIOPort aioport
+        ) noexcept -> ice::Task<ice::Data> = 0;
 
         virtual void release_slice_refcount() noexcept { }
 
@@ -111,8 +110,8 @@ namespace ice
         auto request_slice(
             ice::u32 offset,
             ice::u32 size,
-            ice::NativeAIO* nativeio
-        ) noexcept -> ice::Task<ice::Memory> override;
+            ice::native_aio::AIOPort aioport
+        ) noexcept -> ice::Task<ice::Data> override;
 
         void release_slice_refcount() noexcept override;
 
@@ -145,8 +144,8 @@ namespace ice
         auto request_slice(
             ice::u32 offset,
             ice::u32 size,
-            ice::NativeAIO* /*nativeio*/
-        ) noexcept -> ice::Task<ice::Memory> override;
+            ice::native_aio::AIOPort aioport
+        ) noexcept -> ice::Task<ice::Data> override;
 
     private:
         ice::native_file::File const& _file;
@@ -157,7 +156,11 @@ namespace ice
     class HailStormResourceProvider final : public ice::ResourceProvider
     {
     public:
-        HailStormResourceProvider(ice::Allocator& alloc, ice::String path) noexcept;
+        HailStormResourceProvider(
+            ice::Allocator& alloc,
+            ice::String path,
+            ice::native_aio::AIOPort aioport
+        ) noexcept;
         ~HailStormResourceProvider() noexcept override;
 
         auto schemeid() const noexcept -> ice::StringID override;
@@ -181,11 +184,8 @@ namespace ice
         ) noexcept override;
 
         auto load_resource(
-            ice::Allocator& alloc,
-            ice::Resource const* resource,
-            ice::TaskScheduler& scheduler,
-            ice::NativeAIO* nativeio
-        ) const noexcept -> ice::Task<ice::Memory> override;
+            ice::Resource const* resource
+        ) noexcept -> ice::TaskExpected<ice::Data> override;
 
         auto resolve_relative_resource(
             ice::URI const& relative_uri,
@@ -195,7 +195,9 @@ namespace ice
         class DevUI;
 
     private:
-        ice::Allocator& _allocator;
+        ice::ProxyAllocator _allocator;
+        ice::ProxyAllocator _data_allocator;
+        ice::native_aio::AIOPort _aioport;
         ice::native_file::HeapFilePath _hspack_path;
         ice::native_file::File _hspack_file;
         ice::HeapString<> _packname;

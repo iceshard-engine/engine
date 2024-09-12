@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -11,7 +11,7 @@ namespace ice
     template<typename Value = void>
     class Task;
 
-    template<typename Result, typename ErrorType>
+    template<typename Result, typename ErrorType = ice::ErrorCode>
     struct TaskExpected;
 
     class TaskQueue;

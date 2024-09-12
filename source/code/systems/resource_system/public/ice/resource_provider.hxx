@@ -8,12 +8,12 @@
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/container_types.hxx>
 #include <ice/resource_types.hxx>
+#include <ice/native_aio.hxx>
 #include <ice/task_types.hxx>
+#include <ice/task_expected.hxx>
 
 namespace ice
 {
-
-    struct NativeAIO;
 
     enum class ResourceProviderResult : ice::u32
     {
@@ -61,11 +61,8 @@ namespace ice
         ) noexcept = 0;
 
         virtual auto load_resource(
-            ice::Allocator& alloc,
-            ice::Resource const* resource,
-            ice::TaskScheduler& scheduler,
-            ice::NativeAIO* nativeio
-        ) const noexcept -> ice::Task<ice::Memory> = 0;
+            ice::Resource const* resource
+        ) noexcept -> ice::TaskExpected<ice::Data> = 0;
 
         virtual auto resolve_relative_resource(
             ice::URI const& relative_uri,
@@ -79,6 +76,7 @@ namespace ice
     auto create_resource_provider(
         ice::Allocator& alloc,
         ice::Span<ice::String const> paths,
+        ice::native_aio::AIOPort port = nullptr,
         ice::TaskScheduler* scheduler = nullptr
     ) noexcept -> ice::UniquePtr<ice::ResourceProvider>;
 
@@ -89,7 +87,8 @@ namespace ice
 
     auto create_resource_provider_hailstorm(
         ice::Allocator& alloc,
-        ice::String path
+        ice::String path,
+        ice::native_aio::AIOPort aioport = nullptr
     ) noexcept -> ice::UniquePtr<ice::ResourceProvider>;
 
 } // namespace ice
