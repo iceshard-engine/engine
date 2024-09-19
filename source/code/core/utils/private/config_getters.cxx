@@ -7,6 +7,19 @@
 namespace ice::config::detail
 {
 
+    auto get_data_u64(
+        ice::Config const& config,
+        ice::config::detail::ConfigValue const* value
+    ) noexcept -> ice::u64
+    {
+        // TODO: Is unaligned access worse than performing 32bit moves?
+        ice::u32 const* bitdata = reinterpret_cast<ice::u32 const*>(ice::ptr_add(config._data, {value->internal}));
+        ice::u64 result = bitdata[1];
+        result <<= 32;
+        result += bitdata[0];
+        return result;
+    }
+
     template<typename T> requires (std::is_same_v<T, ice::String> == false)
     auto try_get_casted(
         ice::Config const& config,
@@ -30,11 +43,7 @@ namespace ice::config::detail
         bool const is64bit = ice::has_any(valtype, CONFIG_VALTYPE_64B_BIT);
         if (is64bit)
         {
-            // TODO: Is unaligned access worse than performing 32bit moves?
-            ice::u32 const* bitdata = reinterpret_cast<ice::u32 const*>(ice::ptr_add(config._data, {value->internal}));
-            generic_value = bitdata[1];
-            generic_value <<= 32;
-            generic_value += bitdata[0];
+            generic_value = get_data_u64(config, value);
         }
 
         if (ice::has_any(valtype, CONFIG_VALTYPE_FP_BIT))
@@ -61,21 +70,21 @@ namespace ice::config::detail
         else if (ice::has_any(valtype, CONFIG_VALTYPE_SIGN_BIT))
         {
             ice::i64 valsigned;
-            if (ice::has_any(valtype, CONFIG_VALTYPE_8B_BIT))
+            if (ice::has_all(valtype, CONFIG_VALTYPE_64B_BIT))
             {
-                valsigned = std::bit_cast<ice::i8>(ice::u8(generic_value));
+                valsigned = std::bit_cast<ice::i64>(generic_value);
             }
-            else if (ice::has_any(valtype, CONFIG_VALTYPE_16B_BIT))
-            {
-                valsigned = std::bit_cast<ice::i16>(ice::u16(generic_value));
-            }
-            else if (ice::has_any(valtype, CONFIG_VALTYPE_32B_BIT))
+            else if (ice::has_all(valtype, CONFIG_VALTYPE_32B_BIT))
             {
                 valsigned = std::bit_cast<ice::i32>(ice::u32(generic_value));
             }
-            else
+            else if (ice::has_all(valtype, CONFIG_VALTYPE_16B_BIT))
             {
-                valsigned = std::bit_cast<ice::i64>(generic_value);
+                valsigned = std::bit_cast<ice::i16>(ice::u16(generic_value));
+            }
+            else // (ice::has_all(valtype, CONFIG_VALTYPE_8B_BIT))
+            {
+                valsigned = std::bit_cast<ice::i8>(ice::u8(generic_value));
             }
 
             if constexpr (std::is_unsigned_v<T>)
@@ -136,6 +145,24 @@ namespace ice::config::detail
         ice::Config const& config,
         ice::config::detail::ConfigKey const* key,
         ice::config::detail::ConfigValue const* value,
+        ice::u16& out_value,
+        ice::ConfigValueFlags flags
+    ) noexcept -> ice::ErrorCode
+    {
+        if (key == nullptr || key->vtype != ValType::CONFIG_VALTYPE_16B_BIT)
+        {
+            return try_get_casted(config, key, value, out_value, flags);
+        }
+
+        out_value = static_cast<ice::u16>(value->internal);
+        return S_Ok;
+    }
+
+    template<>
+    auto config::detail::get(
+        ice::Config const& config,
+        ice::config::detail::ConfigKey const* key,
+        ice::config::detail::ConfigValue const* value,
         ice::u32& out_value,
         ice::ConfigValueFlags flags
     ) noexcept -> ice::ErrorCode
@@ -146,6 +173,60 @@ namespace ice::config::detail
         }
 
         out_value = value->internal;
+        return S_Ok;
+    }
+
+    template<>
+    auto config::detail::get(
+        ice::Config const& config,
+        ice::config::detail::ConfigKey const* key,
+        ice::config::detail::ConfigValue const* value,
+        ice::u64& out_value,
+        ice::ConfigValueFlags flags
+    ) noexcept -> ice::ErrorCode
+    {
+        if (key == nullptr || key->vtype != ValType::CONFIG_VALTYPE_64B_BIT)
+        {
+            return try_get_casted(config, key, value, out_value, flags);
+        }
+
+        out_value = get_data_u64(config, value);
+        return S_Ok;
+    }
+
+    template<>
+    auto config::detail::get(
+        ice::Config const& config,
+        ice::config::detail::ConfigKey const* key,
+        ice::config::detail::ConfigValue const* value,
+        ice::i8& out_value,
+        ice::ConfigValueFlags flags
+    ) noexcept -> ice::ErrorCode
+    {
+        if (key == nullptr || key->vtype != (ValType::CONFIG_VALTYPE_8B_BIT | ValType::CONFIG_VALTYPE_SIGN_BIT))
+        {
+            return try_get_casted(config, key, value, out_value, flags);
+        }
+
+        out_value = ice::bit_cast<ice::i8>(static_cast<u8>(value->internal));
+        return S_Ok;
+    }
+
+    template<>
+    auto config::detail::get(
+        ice::Config const& config,
+        ice::config::detail::ConfigKey const* key,
+        ice::config::detail::ConfigValue const* value,
+        ice::i16& out_value,
+        ice::ConfigValueFlags flags
+    ) noexcept -> ice::ErrorCode
+    {
+        if (key == nullptr || key->vtype != (ValType::CONFIG_VALTYPE_16B_BIT | ValType::CONFIG_VALTYPE_SIGN_BIT))
+        {
+            return try_get_casted(config, key, value, out_value, flags);
+        }
+
+        out_value = ice::bit_cast<ice::i16>(static_cast<u16>(value->internal));
         return S_Ok;
     }
 
@@ -172,6 +253,24 @@ namespace ice::config::detail
         ice::Config const& config,
         ice::config::detail::ConfigKey const* key,
         ice::config::detail::ConfigValue const* value,
+        ice::i64& out_value,
+        ice::ConfigValueFlags flags
+    ) noexcept -> ice::ErrorCode
+    {
+        if (key == nullptr || key->vtype != (ValType::CONFIG_VALTYPE_64B_BIT | ValType::CONFIG_VALTYPE_SIGN_BIT))
+        {
+            return try_get_casted(config, key, value, out_value, flags);
+        }
+
+        out_value = ice::bit_cast<ice::i64>(get_data_u64(config, value));
+        return S_Ok;
+    }
+
+    template<>
+    auto config::detail::get(
+        ice::Config const& config,
+        ice::config::detail::ConfigKey const* key,
+        ice::config::detail::ConfigValue const* value,
         ice::f32& out_value,
         ice::ConfigValueFlags flags
     ) noexcept -> ice::ErrorCode
@@ -182,6 +281,24 @@ namespace ice::config::detail
         }
 
         out_value = ice::bit_cast<ice::f32>(value->internal);
+        return S_Ok;
+    }
+
+    template<>
+    auto config::detail::get(
+        ice::Config const& config,
+        ice::config::detail::ConfigKey const* key,
+        ice::config::detail::ConfigValue const* value,
+        ice::f64& out_value,
+        ice::ConfigValueFlags flags
+    ) noexcept -> ice::ErrorCode
+    {
+        if (key == nullptr || key->vtype != (ValType::CONFIG_VALTYPE_64B_BIT | ValType::CONFIG_VALTYPE_SIGN_BIT | ValType::CONFIG_VALTYPE_FP_BIT))
+        {
+            return try_get_casted(config, key, value, out_value, flags);
+        }
+
+        out_value = ice::bit_cast<ice::f64>(get_data_u64(config, value));
         return S_Ok;
     }
 
