@@ -6,7 +6,6 @@
 #include <ice/asset_storage.hxx>
 #include <ice/asset_category_archive.hxx>
 #include <ice/resource_tracker.hxx>
-#include <ice/resource_meta.hxx>
 #include <ice/resource.hxx>
 #include <ice/container/hashmap.hxx>
 #include <ice/string/static_string.hxx>

@@ -4,16 +4,17 @@
 #include <ice/asset.hxx>
 #include <ice/asset_category_archive.hxx>
 #include <ice/container/hashmap.hxx>
+#include <ice/config.hxx>
 #include <ice/mem_allocator_stack.hxx>
 #include <ice/assert.hxx>
 
 namespace ice
 {
 
-    auto default_asset_state(void*, ice::AssetCategoryDefinition const&, ice::Metadata const& metadata, ice::URI const&) noexcept -> ice::AssetState
+    auto default_asset_state(void*, ice::AssetCategoryDefinition const&, ice::Config const& metadata, ice::URI const&) noexcept -> ice::AssetState
     {
         bool is_pre_baked = false;
-        ice::meta_read_bool(metadata, "asset.state.pre-baked"_sid, is_pre_baked);
+        ice::config::get(metadata, "asset.state.baked", is_pre_baked);
         return is_pre_baked ? AssetState::Baked : AssetState::Raw;
     }
 

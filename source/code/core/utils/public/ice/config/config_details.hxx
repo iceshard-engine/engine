@@ -11,9 +11,10 @@ namespace ice
     static constexpr ice::ErrorCode E_ConfigIsInvalid{ "E.2210:Config:Config is invalid." };
     static constexpr ice::ErrorCode E_ConfigKeyNotFound{ "E.2211:Config:Config key was not found." };
     static constexpr ice::ErrorCode E_ConfigIndexOutOfBounds{ "E.2211:Config:Config index was out-of-bounds." };
-    static constexpr ice::ErrorCode E_ConfigValueNotAnTable{ "E.2215:Config:Config value is not a table." };
-    static constexpr ice::ErrorCode E_ConfigValueNotAnObject{ "E.2216:Config:Config value is not an object." };
-    static constexpr ice::ErrorCode E_ConfigValueTypeMissmatch{ "E.2217:Config:Config value type does not match the requested type." };
+    static constexpr ice::ErrorCode E_ConfigValueInvalid{ "E.2215:Config:Config value is not valid." };
+    static constexpr ice::ErrorCode E_ConfigValueNotAnTable{ "E.2216:Config:Config value is not a table." };
+    static constexpr ice::ErrorCode E_ConfigValueNotAnObject{ "E.2217:Config:Config value is not an object." };
+    static constexpr ice::ErrorCode E_ConfigValueTypeMissmatch{ "E.2218:Config:Config value type does not match the requested type." };
 
     namespace concepts
     {

@@ -18,7 +18,7 @@ namespace ice
         auto(*fn_asset_state)(
             void*,
             ice::AssetCategoryDefinition const&,
-            ice::Metadata const&,
+            ice::Config const&,
             ice::URI const&
         ) noexcept -> ice::AssetState;
 
@@ -26,7 +26,7 @@ namespace ice
             void*,
             ice::Allocator&,
             ice::AssetStorage&,
-            ice::Metadata const&,
+            ice::Config const&,
             ice::Data,
             ice::Memory&
         ) noexcept;

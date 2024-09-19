@@ -415,12 +415,12 @@ namespace ice
             ice::ResourceTracker& tracker,
             ice::Span<ice::ResourceCompilerResult const>,
             ice::Span<ice::URI const>,
-            ice::MutableMetadata& out_meta
+            ice::ConfigBuilder& out_meta
         ) noexcept -> ice::Task<bool>
         {
             ShaderCompilerContext sctx = *shader_context(ctx);
-            ice::meta_set_int32(out_meta, "ice.shader.stage"_sid, sctx.shader_type);
-            ice::meta_set_string(out_meta, "ice.shader.entry_point"_sid, sctx.shader_main);
+            out_meta["ice.shader.stage"] = sctx.shader_type;
+            out_meta["ice.shader.entry_point"] = ice::String{ sctx.shader_main };
             co_return true;
         }
 

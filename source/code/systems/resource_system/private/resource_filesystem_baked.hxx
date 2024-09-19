@@ -4,7 +4,6 @@
 
 #pragma once
 #include <ice/native_file.hxx>
-#include <ice/resource_meta.hxx>
 #include <ice/resource_flags.hxx>
 #include <ice/resource_format.hxx>
 #include <ice/mem_unique_ptr.hxx>

@@ -3,23 +3,19 @@
 
 #include "trait_render_texture_loader.hxx"
 
-#include <ice/engine_runner.hxx>
-#include <ice/world/world_trait_archive.hxx>
-
-#include <ice/gfx/gfx_context.hxx>
-
-#include <ice/render/render_command_buffer.hxx>
-#include <ice/render/render_swapchain.hxx>
-#include <ice/render/render_image.hxx>
-#include <ice/render/render_device.hxx>
-#include <ice/render/render_buffer.hxx>
-
-#include <ice/uri.hxx>
-#include <ice/resource.hxx>
-#include <ice/resource_meta.hxx>
-#include <ice/asset_storage.hxx>
 #include <ice/asset_request.hxx>
+#include <ice/asset_storage.hxx>
+#include <ice/engine_runner.hxx>
+#include <ice/gfx/gfx_context.hxx>
 #include <ice/profiler.hxx>
+#include <ice/render/render_buffer.hxx>
+#include <ice/render/render_command_buffer.hxx>
+#include <ice/render/render_device.hxx>
+#include <ice/render/render_image.hxx>
+#include <ice/render/render_swapchain.hxx>
+#include <ice/resource.hxx>
+#include <ice/uri.hxx>
+#include <ice/world/world_trait_archive.hxx>
 
 #if 0
 namespace ice

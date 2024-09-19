@@ -3,12 +3,13 @@
 
 #include <ice/mem_allocator_host.hxx>
 #include <ice/resource.hxx>
-#include <ice/resource_meta.hxx>
 #include <ice/resource_provider.hxx>
 #include <ice/resource_tracker.hxx>
 #include <ice/task_thread_pool.hxx>
 #include <ice/task_utils.hxx>
 #include <ice/tool_app.hxx>
+#include <ice/config.hxx>
+#include <ice/config/config_builder.hxx>
 #include <ice/sort.hxx>
 #include <ice/uri.hxx>
 
@@ -112,9 +113,9 @@ public:
 
     auto run() noexcept -> ice::i32 override
     {
-        for (ice::String config : _param_configs)
+        for (ice::String configpath : _param_configs)
         {
-            ice::HeapString<> const config_path_utf8 = hscp_process_directory(_allocator, config);
+            ice::HeapString<> const config_path_utf8 = hscp_process_directory(_allocator, configpath);
             ice::native_file::HeapFilePath config_path{ _allocator };
             ice::native_file::path_from_string(config_path_utf8, config_path);
 
@@ -132,11 +133,17 @@ public:
                 ice::Memory const filemem = _allocator.allocate(filesize);
                 ice::native_file::read_file(file, filesize, filemem);
 
-                ice::MutableMetadata config_meta{ _allocator };
-                ice::Result const res = ice::meta_deserialize_from(config_meta, ice::data_view(filemem));
+                // When loading from json, we always get the finalized version of the config.
+                // That memory needs to have the same lifetiem as the Config object.
+                ice::Memory configmem;
+                ice::Config const config = ice::config::from_json(
+                    _allocator,
+                    ice::String{ (char const*)filemem.location, (ice::ucount)filemem.size.value },
+                    configmem
+                );
 
                 ice::Array<ice::String> extensions{ _allocator };
-                if (ice::meta_read_string_array(config_meta, "filter.extensions"_sid, extensions))
+                if (ice::config::get_array(config, "filter.extensions", extensions))
                 {
                     for (ice::String ext : extensions)
                     {
@@ -145,12 +152,13 @@ public:
                     }
                 }
                 HSCP_ERROR_IF(
-                    res != ice::S_Success,
+                    ice::E_Fail != ice::S_Success,
                     "Failed to parse config file '{}'...",
                     ice::String{ config_path_utf8 }
                 );
 
                 _allocator.deallocate(filemem);
+                _allocator.deallocate(configmem);
             }
         }
 
@@ -213,8 +221,9 @@ public:
         ice::array::resize(resource_handles, ice::count(resources));
         ice::array::resize(resource_paths, ice::count(resources));
 
-        ice::MutableMetadata meta{ _allocator };
-        ice::Memory metamem = ice::meta_save(meta, _allocator);
+        // We serialize an empty meta object
+        ice::ConfigBuilder meta{ _allocator };
+        ice::Memory metamem = meta.finalize(_allocator);
 
         ice::array::push_back(resource_metas, hsdata_view(metamem));
 

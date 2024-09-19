@@ -7,11 +7,21 @@
 namespace ice
 {
 
+    enum class ConfigValueFlags : ice::u8
+    {
+        None,
+        AllowImplicitCasts = 0x01,
+        // AllowStringCasts = 0x02,
+    };
+
     enum class ConfigValueType : ice::u8
     {
-        U8, U16, U32, U65,
-        S8, S16, S32, S65,
-        F32, F65,
+        Invalid,
+
+        Bool,
+        U8, U16, U32, U64,
+        S8, S16, S32, S64,
+        F32, F64,
 
         String,
         Blob, // Unused

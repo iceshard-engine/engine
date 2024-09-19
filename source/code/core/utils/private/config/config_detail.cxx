@@ -175,4 +175,111 @@ namespace ice::config::detail
         return result;
     }
 
+    auto gettype(
+        ice::config::detail::ConfigKey const* key
+    ) noexcept -> ice::ConfigValueType
+    {
+        if (key == nullptr)
+        {
+            return ConfigValueType::Invalid;
+        }
+
+        ValType const actual_type = static_cast<ValType>(key->vtype);
+        switch (actual_type)
+        {
+            using enum ConfigValueType;
+        case CONFIG_VALTYPE_SIGN_BIT: return Bool;
+        case CONFIG_VALTYPE_8B_BIT: return U8;
+        case CONFIG_VALTYPE_16B_BIT: return U16;
+        case CONFIG_VALTYPE_32B_BIT: return U32;
+        case CONFIG_VALTYPE_64B_BIT: return U64;
+        case CONFIG_VALTYPE_8B_BIT | CONFIG_VALTYPE_SIGN_BIT: return S8;
+        case CONFIG_VALTYPE_16B_BIT | CONFIG_VALTYPE_SIGN_BIT: return S16;
+        case CONFIG_VALTYPE_32B_BIT | CONFIG_VALTYPE_SIGN_BIT: return S32;
+        case CONFIG_VALTYPE_64B_BIT | CONFIG_VALTYPE_SIGN_BIT: return S64;
+        case CONFIG_VALTYPE_FP_BIT | CONFIG_VALTYPE_SIGN_BIT: return F32;
+        case CONFIG_VALTYPE_64B_BIT | CONFIG_VALTYPE_FP_BIT | CONFIG_VALTYPE_SIGN_BIT: return F64;
+        case CONFIG_VALTYPE_STRING: return String;
+        case CONFIG_VALTYPE_ROOT:
+        case CONFIG_VALTYPE_OBJECT: return Object;
+        case CONFIG_VALTYPE_TABLE: return Table;
+        default: return Invalid;
+        }
+    }
+
+    bool istype(
+        ice::config::detail::ConfigKey const* key,
+        ice::ConfigValueType value_type
+    ) noexcept
+    {
+        return key != nullptr && gettype(key) == value_type;
+    }
+
+    auto entry_key(
+        ice::Config const& config,
+        ice::config::detail::ConfigKey const& key
+    ) noexcept -> ice::String
+    {
+        return keyval(config, key);
+    }
+
+    auto entry_first(
+        ice::config::detail::ConfigKey const*& array_key,
+        ice::config::detail::ConfigValue const*& array_value
+    ) noexcept -> ice::ErrorCode
+    {
+        array_key += array_value->internal;
+        array_value += array_value->internal;
+        return S_Ok;
+    }
+
+    auto entry_next(
+        ice::config::detail::ConfigKey const*& array_key,
+        ice::config::detail::ConfigValue const*& array_value
+    ) noexcept -> ice::ErrorCode
+    {
+        if (array_key->type != CONFIG_KEYTYPE_STRING || array_key->next == 0)
+        {
+            return E_Fail;
+        }
+
+        array_key += 1;
+        array_value += 1;
+        return S_Ok;
+    }
+
+    auto array_size(ice::config::detail::ConfigKey const* array_first_key) noexcept -> ice::u32
+    {
+        if (array_first_key->type != CONFIG_KEYTYPE_NONE)
+        {
+            return 0;
+        }
+
+        return (array_first_key->offset << 8) | array_first_key->size;
+    }
+
+    // Rename to table_first?
+    auto array_first(
+        ice::config::detail::ConfigKey const*& array_key,
+        ice::config::detail::ConfigValue const*& array_value
+    ) noexcept -> ice::ErrorCode
+    {
+        return entry_first(array_key, array_value);
+    }
+
+    auto array_next(
+        ice::config::detail::ConfigKey const*& array_key,
+        ice::config::detail::ConfigValue const*& array_value
+    ) noexcept -> ice::ErrorCode
+    {
+        if (array_key->type != CONFIG_KEYTYPE_NONE || array_key->next == 0)
+        {
+            return E_Fail;
+        }
+
+        array_key += 1;
+        array_value += 1;
+        return S_Ok;
+    }
+
 } // namespace ice::config::detail

@@ -365,6 +365,21 @@ namespace ice
         }
 
 
+        template<typename T, typename CharType> requires ice::concepts::RODataObject<T>
+        constexpr auto from_data(T ro_data) noexcept -> ice::BasicString<CharType>
+        {
+            return ice::string::from_data(ro_data, 0_B, static_cast<ice::ucount>(ro_data.size.value));
+        }
+
+        template<typename T, typename CharType> requires ice::concepts::RODataObject<T>
+        constexpr auto from_data(T ro_data, ice::usize offset, ice::ucount size) noexcept -> ice::String
+        {
+            return ice::String{
+                reinterpret_cast<char const*>(ro_data.location) + offset.value,
+                ice::min(static_cast<ice::ucount>(ro_data.size.value), size)
+            };
+        }
+
         template<typename CharType>
         constexpr auto data_view(ice::BasicString<CharType> str) noexcept -> typename ice::Data
         {

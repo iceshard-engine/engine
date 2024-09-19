@@ -2,24 +2,20 @@
 /// SPDX-License-Identifier: MIT
 
 #include "trait_sprite_animator.hxx"
-#include <ice/game_anim.hxx>
-#include <ice/game_entity.hxx>
 
-#include <ice/engine_frame.hxx>
-#include <ice/ecs/ecs_entity_storage.hxx>
-
-#include <ice/render/render_image.hxx>
-
-#include <ice/engine.hxx>
-#include <ice/engine_runner.hxx>
-#include <ice/engine_frame.hxx>
-
-#include <ice/string/static_string.hxx>
-#include <ice/data_storage.hxx>
-#include <ice/resource_meta.hxx>
-#include <ice/task_utils.hxx>
 #include <ice/asset_storage.hxx>
 #include <ice/asset.hxx>
+#include <ice/data_storage.hxx>
+#include <ice/ecs/ecs_entity_storage.hxx>
+#include <ice/engine_frame.hxx>
+#include <ice/engine_frame.hxx>
+#include <ice/engine_runner.hxx>
+#include <ice/engine.hxx>
+#include <ice/game_anim.hxx>
+#include <ice/game_entity.hxx>
+#include <ice/render/render_image.hxx>
+#include <ice/string/static_string.hxx>
+#include <ice/task_utils.hxx>
 
 namespace ice
 {

@@ -3,6 +3,7 @@
 
 #include "iceshard_gfx_image_storage_trait.hxx"
 #include <ice/asset_storage.hxx>
+#include <ice/config.hxx>
 #include <ice/resource.hxx>
 #include <ice/resource_tracker.hxx>
 #include <ice/render/render_device.hxx>
@@ -72,15 +73,15 @@ namespace ice::gfx
                 continue;
             }
 
-            ice::Metadata const meta = ice::meta_load(metadata_data);
+            ice::Config const meta = ice::config::from_data(metadata_data);
 
             ice::i32 image_format;
             ice::vec2i size;
 
             [[maybe_unused]]
-            bool valid_data = ice::meta_read_int32(meta, "texture.format"_sid, image_format);
-            valid_data &= ice::meta_read_int32(meta, "texture.size.x"_sid, size.x);
-            valid_data &= ice::meta_read_int32(meta, "texture.size.y"_sid, size.y);
+            bool valid_data = ice::config::get(meta, "texture.format", image_format);
+            valid_data &= ice::config::get(meta, "texture.size.x", size.x);
+            valid_data &= ice::config::get(meta, "texture.size.y", size.y);
 
             [[maybe_unused]]
             ice::Data const* d = reinterpret_cast<ice::Data const*>(request->data().location);

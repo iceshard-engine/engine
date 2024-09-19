@@ -5,7 +5,6 @@
 #include <ice/game_render_traits.hxx>
 #include <ice/render/render_declarations.hxx>
 
-#include <ice/resource_meta.hxx>
 #include <ice/mem_data.hxx>
 
 namespace ice

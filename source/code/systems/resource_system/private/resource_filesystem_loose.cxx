@@ -4,11 +4,13 @@
 #include "resource_filesystem_loose.hxx"
 #include "resource_aio_request.hxx"
 
+#include <ice/config.hxx>
+#include <ice/config/config_builder.hxx>
+#include <ice/container/hashmap.hxx>
 #include <ice/mem_allocator_stack.hxx>
 #include <ice/path_utils.hxx>
-#include <ice/container/hashmap.hxx>
-#include <ice/task.hxx>
 #include <ice/task_utils.hxx>
+#include <ice/task.hxx>
 
 namespace ice
 {
@@ -124,7 +126,7 @@ namespace ice
             ice::Allocator& alloc,
             ice::native_file::FilePath path,
             ice::Memory& out_memory,
-            ice::MutableMetadata& out_metadata
+            ice::ConfigBuilder& out_metadata
         ) noexcept
         {
             ice::native_file::File meta_handle = ice::native_file::open_file(path);
@@ -134,21 +136,16 @@ namespace ice
             }
 
             ice::usize const meta_size = ice::native_file::sizeof_file(meta_handle);
-            if (meta_size.value <= ice::string::size(Constant_FileHeader_MetadataFile))
-            {
-                return false;
-            }
 
             ice::Memory metafile_data = alloc.allocate(meta_size);
             if (ice::native_file::read_file(meta_handle, meta_size, metafile_data) > 0_B)
             {
-                if (ice::meta_deserialize_from(out_metadata, data_view(metafile_data)))
+                if (ice::config::from_json(out_metadata, ice::string::from_data(metafile_data)))
                 {
                     // return the memory, we won't release it
                     out_memory = metafile_data;
                     return true;
                 }
-
             }
 
             alloc.deallocate(metafile_data);
@@ -327,7 +324,7 @@ namespace ice
         bool const data_exists = true;// ice::native_file::exists_file(data_filepath);
         bool const meta_exists = ice::native_file::exists_file(meta_filepath);
 
-        ice::MutableMetadata mutable_meta{ alloc };
+        ice::ConfigBuilder mutable_meta{ alloc };
         if (data_exists)
         {
             // We create the main resource in a different scope so we dont accidentaly use data from there
@@ -367,6 +364,7 @@ namespace ice
                 );
             }
 
+#if 0
             IPT_ZONE_SCOPED_NAMED("stage: extra_files");
             ice::Metadata const metadata = mutable_meta;
             bool const has_paths = ice::meta_has_entry(metadata, "resource.extra_files.paths"_sid);
@@ -384,8 +382,8 @@ namespace ice
 
             if (has_paths && has_names)
             {
-                ice::meta_read_string_array(metadata, "resource.extra_files.paths"_sid, paths);
-                ice::meta_read_string_array(metadata, "resource.extra_files.names"_sid, names);
+                ice::config::get_array(metadata, "resource.extra_files.paths", paths);
+                ice::config::get_array(metadata, "resource.extra_files.names", names);
 
                 ice::HeapString<> utf8_file_path{ alloc };
 
@@ -421,6 +419,7 @@ namespace ice
                     }
                 }
             }
+#endif
         }
 
         // return main_resource;

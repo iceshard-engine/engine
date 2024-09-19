@@ -3,7 +3,6 @@
 
 #pragma once
 #include <hailstorm/hailstorm.hxx>
-#include <ice/resource_meta.hxx>
 #include <ice/resource.hxx>
 #include <ice/uri.hxx>
 

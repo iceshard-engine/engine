@@ -69,6 +69,27 @@ namespace ice
     struct Data;
     struct Memory;
 
+    // MEMORY TYPE CONCEPTS
+
+    namespace concepts
+    {
+
+        template<typename T>
+        concept RWDataObject = requires(T t) {
+            { t.location } -> std::convertible_to<void*>;
+            { t.size } -> std::convertible_to<ice::usize>;
+            { t.alignment } -> std::convertible_to<ice::ualign>;
+        };
+
+        template<typename T>
+        concept RODataObject = requires(T t) {
+            { t.location } -> std::convertible_to<void const*>;
+            { t.size } -> std::convertible_to<ice::usize>;
+            { t.alignment } -> std::convertible_to<ice::ualign>;
+        };
+
+    } // namespace concepts
+
     // MEMORY SIZE LITERALS
 
     constexpr auto operator""_B(unsigned long long v) noexcept -> ice::usize

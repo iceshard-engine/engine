@@ -50,10 +50,21 @@ namespace ice
     {
     public:
         ConfigBuilder(ice::Allocator& alloc) noexcept;
+        ConfigBuilder(ice::Allocator& alloc, ice::Config const& config) noexcept;
         ~ConfigBuilder() noexcept;
+
+        auto merge(ice::String json) noexcept -> ice::ErrorCode;
+        auto merge(ice::Config const& config) noexcept -> ice::ErrorCode;
 
         auto finalize(ice::Allocator& alloc) noexcept -> ice::Memory;
     };
+
+    namespace config
+    {
+
+        auto from_json(ice::ConfigBuilder& builder, ice::String json) noexcept -> ice::ErrorCode;
+
+    } // namespace config
 
     // inline auto configbuilder_root(ConfigBuilder& b, ice::Allocator& alloc) noexcept -> ice::Memory
     // {

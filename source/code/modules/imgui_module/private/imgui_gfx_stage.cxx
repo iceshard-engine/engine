@@ -11,6 +11,7 @@
 #include <ice/render/render_device.hxx>
 #include <ice/render/render_profiler.hxx>
 #include <ice/math/projection.hxx>
+#include <ice/config.hxx>
 
 namespace ice::devui
 {
@@ -30,16 +31,16 @@ namespace ice::devui
             ice::Data metadata;
             if (co_await asset.metadata(metadata) == S_Ok)
             {
-                ice::Metadata const meta = ice::meta_load(metadata);
+                ice::Config const meta = ice::config::from_data(metadata);
                 ice::i32 shader_stage;
-                if (ice::meta_read_int32(meta, "ice.shader.stage"_sid, shader_stage) == false)
+                if (ice::config::get(meta, "ice.shader.stage", shader_stage) == E_Fail)
                 {
-                    co_return E_Error;
+                    co_return E_Fail;
                 }
 
-                if (ice::meta_read_string(meta, "ice.shader.entry_point"_sid, out_shader.entry_point) == false)
+                if (ice::config::get(meta, "ice.shader.entry_point", out_shader.entry_point) == E_Fail)
                 {
-                    co_return E_Error;
+                    co_return E_Fail;
                 }
 
                 out_shader.stage = static_cast<ice::render::ShaderStageFlags>(shader_stage);

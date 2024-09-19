@@ -2,6 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#include <ice/container_types.hxx>
 #include <ice/config/config_impl.hxx>
 
 namespace ice::config
@@ -13,31 +14,70 @@ namespace ice::config
 
     template<typename T, typename Key>
         requires (ice::concepts::ConfigValueType<T> && ice::concepts::ConfigKeyType<Key>)
-    auto get(ice::Config const& config, Key key, T& out_value) noexcept -> ice::ErrorCode;
+    auto get(
+        ice::Config const& config,
+        Key key,
+        T& out_value,
+        ice::ConfigValueFlags flags = ConfigValueFlags::None
+    ) noexcept -> ice::ErrorCode;
 
     template<typename T, typename Key>
         requires (ice::concepts::ConfigValueType<T> && ice::concepts::ConfigKeyType<Key>)
-    auto get(ice::Config const& config, Key key) noexcept -> ice::Expected<T>;
+    auto get(
+        ice::Config const& config,
+        Key key,
+        ice::ConfigValueFlags flags = ConfigValueFlags::None
+    ) noexcept -> ice::Expected<T>;
+
+    template<typename T, typename Key>
+        requires (ice::concepts::ConfigValueType<T> && ice::concepts::ConfigKeyType<Key>)
+    auto get_array(
+        ice::Config const& config,
+        Key key,
+        ice::Array<T>& out_values,
+        ice::ConfigValueFlags flags = ConfigValueFlags::None
+    ) noexcept -> ice::ErrorCode;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     template<typename T, typename Key>
         requires (ice::concepts::ConfigValueType<T> && ice::concepts::ConfigKeyType<Key>)
-    auto get(ice::Config const& config, Key key, T& out_value) noexcept -> ice::ErrorCode
+    auto get(
+        ice::Config const& config,
+        Key key,
+        T& out_value,
+        ice::ConfigValueFlags flags
+    ) noexcept -> ice::ErrorCode
     {
-        return ice::config::detail::get(config, key, out_value);
+        return ice::config::detail::get(config, key, out_value, flags);
     }
 
     template<typename T, typename Key>
         requires (ice::concepts::ConfigValueType<T> && ice::concepts::ConfigKeyType<Key>)
-    auto get(ice::Config const& config, Key key) noexcept -> ice::Expected<T>
+    auto get(
+        ice::Config const& config,
+        Key key,
+        ice::ConfigValueFlags flags
+    ) noexcept -> ice::Expected<T>
     {
         T result{};
-        if (ErrorCode const err = ice::config::get(config, key, result); err != S_Ok)
+        if (ErrorCode const err = ice::config::get(config, key, result, flags); err != S_Ok)
         {
             return err;
         }
         return result;
+    }
+
+    template<typename T, typename Key>
+        requires (ice::concepts::ConfigValueType<T> && ice::concepts::ConfigKeyType<Key>)
+    auto  get_array(
+        ice::Config const& config,
+        Key key,
+        ice::Array<T>& out_values,
+        ice::ConfigValueFlags flags
+    ) noexcept -> ice::ErrorCode
+    {
+        return ice::config::detail::get_array(config, key, out_values, flags);
     }
 
 } // namespace ice

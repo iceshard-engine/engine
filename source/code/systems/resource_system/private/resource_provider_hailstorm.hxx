@@ -8,7 +8,6 @@
 #include <ice/container/array.hxx>
 #include <ice/string/heap_string.hxx>
 #include <ice/resource_provider.hxx>
-#include <ice/resource_meta.hxx>
 #include <ice/task_awaitable.hxx>
 #include <ice/task_queue.hxx>
 #include <ice/mem_allocator.hxx>

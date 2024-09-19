@@ -199,7 +199,7 @@ namespace ice
         {
             ice::u32 const table_size = ice::count(config._entries);
 
-            // Safe table size in first key
+            // Save table size in first key
             out_keylist[0].offset = table_size >> 8;
             out_keylist[0].size = (table_size & 0xff);
         }
@@ -228,10 +228,10 @@ namespace ice
                 ice::Data const in_data = ice::string::data_view(varstr);
 
                 // Set the '\0' character
-                *(reinterpret_cast<char*>(out_data.memory.location) + out_data.offset_strings) = '\0';
+                *(reinterpret_cast<char*>(out_data.memory.location) + (out_data.offset_strings - 1)) = '\0';
 
-                // Update strings offset (excluding '\0')
-                out_data.offset_strings -= (ice::u32) in_data.size.value;
+                // Update strings offset (including '\0')
+                out_data.offset_strings -= (ice::u32) (in_data.size.value + 1);
 
                 // Set the value to the current 'offset_strings' value.
                 out_vallist[out_keyidx].internal = out_data.offset_strings;
@@ -271,6 +271,96 @@ namespace ice
 
         return keyoffset;
     }
+
+    void foreach_object_entry(
+        ice::ConfigBuilderValue out_builder,
+        ice::Config const& config,
+        ice::config::detail::ConfigKey const* key,
+        ice::config::detail::ConfigValue const* val
+    ) noexcept;
+
+    void foreach_table_entry(
+        ice::ConfigBuilderValue out_builder,
+        ice::Config const& config,
+        ice::config::detail::ConfigKey const* key,
+        ice::config::detail::ConfigValue const* val
+    ) noexcept;
+
+    void set_object_entry(
+        ice::ConfigBuilderValue& out_builder,
+        ice::Config const& config,
+        ice::config::detail::ConfigKey const* key,
+        ice::config::detail::ConfigValue const* val
+    ) noexcept
+    {
+    }
+
+    void foreach_table_entry(
+        ice::ConfigBuilderValue out_builder,
+        ice::Config const& config,
+        ice::config::detail::ConfigKey const* key,
+        ice::config::detail::ConfigValue const* val
+    ) noexcept
+    {
+        ice::config::detail::array_first(key, val);
+
+        ice::u32 idx = 0;
+        do
+        {
+            switch (ice::config::detail::gettype(key))
+            {
+                using enum ice::ConfigValueType;
+            case Object: foreach_object_entry(out_builder[idx], config, key, val);
+            case Table: foreach_table_entry(out_builder[idx], config, key, val);
+            case Blob:
+            case Invalid: continue;
+            default: continue; // TODO: Set value
+            }
+
+        } while (ice::config::detail::array_next(key, val) != E_Fail);
+    }
+
+    void foreach_object_entry(
+        ice::ConfigBuilderValue out_builder,
+        ice::Config const& config,
+        ice::config::detail::ConfigKey const* key,
+        ice::config::detail::ConfigValue const* val
+    ) noexcept
+    {
+        ice::config::detail::entry_first(key, val);
+
+        do
+        {
+            ice::String const keyval = ice::config::detail::entry_key(config, *key);
+
+            switch (ice::config::detail::gettype(key))
+            {
+                using enum ice::ConfigValueType;
+            case Object: foreach_object_entry(out_builder[keyval], config,  key, val);
+            case Table: foreach_table_entry(out_builder[keyval], config, key, val);
+            case Blob:
+            case Invalid: continue;
+            default: continue; // TODO: Set value
+            }
+
+        } while (ice::config::detail::entry_next(key, val) != E_Fail);
+    }
+
+    auto ConfigBuilder::merge(ice::String json) noexcept -> ice::ErrorCode
+    {
+        return ice::config::from_json(*this, json);
+    }
+
+    auto ConfigBuilder::merge(ice::Config const& config) noexcept -> ice::ErrorCode
+    {
+        ice::config::detail::ConfigKey const* key = config._keys;
+        ice::config::detail::ConfigValue const* val = config._values;
+
+        ICE_ASSERT_CORE(false); // TODO: Unfinished!
+        foreach_object_entry(*this, config, key, val);
+        return S_Ok;
+    }
+
 
     auto ConfigBuilder::finalize(ice::Allocator& alloc) noexcept -> ice::Memory
     {
@@ -333,9 +423,9 @@ namespace ice
         ICE_ASSERT_CORE((void*)(new_values + final_count + 2) == (void*)final_keystrings);
 
         ice::CBDataBuffer new_data{
-            .memory = ice::ptr_adv(final_keystrings_mem, 0_B, ice::ualign::b_8),
+            .memory = ice::ptr_adv(final_buffer, data_start, ice::ualign::b_8),
             .offset = 0,
-            .offset_strings = ice::u32(final_size.value - new_values[0].internal),
+            .offset_strings = ice::u32(final_size.value - data_start.value)
         };
 
         ice::u32 const updated_count = cb_finalize_store_keysvalues(

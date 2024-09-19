@@ -2,7 +2,6 @@
 /// SPDX-License-Identifier: MIT
 
 #include "resource_dynlib.hxx"
-#include <ice/resource_meta.hxx>
 #include <ice/resource_flags.hxx>
 #include <ice/path_utils.hxx>
 

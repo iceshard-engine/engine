@@ -5,7 +5,6 @@
 #pragma once
 #include <ice/native_aio.hxx>
 #include <ice/native_file.hxx>
-#include <ice/resource_meta.hxx>
 #include <ice/resource_flags.hxx>
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/container_types.hxx>

@@ -2,11 +2,11 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/math.hxx>
-#include <ice/task.hxx>
-#include <ice/resource.hxx>
-#include <ice/resource_meta.hxx>
+#include <ice/config.hxx>
 #include <ice/log_tag.hxx>
+#include <ice/math.hxx>
+#include <ice/resource.hxx>
+#include <ice/task.hxx>
 
 namespace ice
 {
@@ -27,7 +27,7 @@ namespace ice
         void*,
         ice::Allocator& alloc,
         ice::AssetStorage&,
-        ice::Metadata const& meta,
+        ice::Config const& meta,
         ice::Data data,
         ice::Memory& out_data
     ) noexcept -> ice::Task<bool>;
