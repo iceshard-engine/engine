@@ -24,8 +24,6 @@ public:
     auto name() const noexcept -> ice::String override;
     auto origin() const noexcept -> ice::String override;
 
-    auto load_metadata() const noexcept -> ice::Task<ice::Data> override;
-
     auto file() const noexcept -> ice::native_file::File const& { return _handle; }
 
     ice::u32 idx;
@@ -69,7 +67,8 @@ public:
     ) noexcept override;
 
     auto load_resource(
-        ice::Resource const* resource
+        ice::Resource const* resource,
+        ice::String fragment
     ) noexcept -> ice::TaskExpected<ice::Data> override;
 
     auto resolve_relative_resource(

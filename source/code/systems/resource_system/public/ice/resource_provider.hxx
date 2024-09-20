@@ -61,7 +61,8 @@ namespace ice
         ) noexcept = 0;
 
         virtual auto load_resource(
-            ice::Resource const* resource
+            ice::Resource const* resource,
+            ice::String fragment
         ) noexcept -> ice::TaskExpected<ice::Data> = 0;
 
         virtual auto resolve_relative_resource(

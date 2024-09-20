@@ -74,11 +74,6 @@ namespace ice
     {
     }
 
-    auto HailstormResourceMixed::load_metadata() const noexcept -> ice::Task<ice::Data>
-    {
-        co_return ice::data_view(co_await _loader.request_slice(_handle.meta_offset, _handle.meta_size, nullptr));
-    }
-
     HailstormResourceSplit::HailstormResourceSplit(
         ice::URI const& uri,
         hailstorm::HailstormResource const& handle,
@@ -89,11 +84,6 @@ namespace ice
         , _meta_loader{ meta_loader }
         , _data_loader{ data_loader }
     {
-    }
-
-    auto HailstormResourceSplit::load_metadata() const noexcept -> ice::Task<ice::Data>
-    {
-        co_return ice::data_view(co_await _meta_loader.request_slice(_handle.meta_offset, _handle.meta_size, nullptr));
     }
 
 } // namespace ice

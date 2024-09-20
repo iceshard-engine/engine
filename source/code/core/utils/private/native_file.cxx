@@ -175,7 +175,7 @@ namespace ice::native_file
                 NULL
             )
         };
-        return sizeof_file(handle);
+        return handle ? sizeof_file(handle) : 0_B;
     }
 
     auto read_file(

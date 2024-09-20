@@ -408,11 +408,19 @@ namespace ice
     }
 
     auto HailStormResourceProvider::load_resource(
-        ice::Resource const* resource
+        ice::Resource const* resource,
+        ice::String fragment
     ) noexcept -> ice::TaskExpected<ice::Data>
     {
         hailstorm::HailstormResource const& hsres = static_cast<ice::HailstormResource const*>(resource)->_handle;
-        co_return co_await _loaders[hsres.chunk]->request_slice(hsres.offset, hsres.size, _aioport);
+        if (ice::string::size(fragment) && fragment == "meta")
+        {
+            co_return co_await _loaders[hsres.meta_chunk]->request_slice(hsres.meta_offset, hsres.meta_size, _aioport);
+        }
+        else
+        {
+            co_return co_await _loaders[hsres.chunk]->request_slice(hsres.offset, hsres.size, _aioport);
+        }
     }
 
     auto HailStormResourceProvider::resolve_relative_resource(

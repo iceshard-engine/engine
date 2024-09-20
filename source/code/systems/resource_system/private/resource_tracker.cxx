@@ -23,13 +23,8 @@ namespace ice
 
     auto resource_meta(ice::ResourceHandle const* handle, ice::Data& out_metadata) noexcept -> ice::Task<ice::Result>
     {
-        ice::Data const data = co_await handle->resource->load_metadata();
-        if (data.location != nullptr)
-        {
-            out_metadata = data;
-            co_return ice::S_Success;
-        }
-        co_return ice::E_InvalidArgument;
+        out_metadata = co_await handle->provider->load_resource(handle->resource, "meta");
+        co_return out_metadata.location == nullptr;
     }
 
     // Might need to be moved somewhere else?
@@ -190,7 +185,7 @@ namespace ice
             resource_handle->status = ResourceStatus::Loading;
 
             ice::Expected<ice::Data, ice::ErrorCode> const result
-                = co_await resource_handle->provider->load_resource(resource_handle->resource);
+                = co_await resource_handle->provider->load_resource(resource_handle->resource, {});
 
             if (result.failed())
             {

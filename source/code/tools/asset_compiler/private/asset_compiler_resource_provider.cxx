@@ -57,11 +57,6 @@ auto AssetCompilerResource::origin() const noexcept -> ice::String
     return _path;
 }
 
-auto AssetCompilerResource::load_metadata() const noexcept -> ice::Task<ice::Data>
-{
-    co_return ice::data_view(_metadata);
-}
-
 AssetCompilerResourceProvider::AssetCompilerResourceProvider(
     ice::Allocator& alloc,
     ice::Span<ice::String const> files
@@ -144,7 +139,8 @@ void AssetCompilerResourceProvider::unload_resource(
 }
 
 auto AssetCompilerResourceProvider::load_resource(
-    ice::Resource const* resource
+    ice::Resource const* resource,
+    ice::String fragment
 ) noexcept -> ice::TaskExpected<ice::Data>
 {
     using ice::operator""_B;

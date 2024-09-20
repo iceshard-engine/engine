@@ -43,8 +43,6 @@ namespace ice
             ice::HailstormChunkLoader& loader
         ) noexcept;
 
-        auto load_metadata() const noexcept -> ice::Task<ice::Data> override;
-
     private:
         ice::HailstormChunkLoader& _loader;
     };
@@ -58,8 +56,6 @@ namespace ice
             ice::HailstormChunkLoader& meta_loader,
             ice::HailstormChunkLoader& data_loader
         ) noexcept;
-
-        auto load_metadata() const noexcept -> ice::Task<ice::Data> override;
 
     private:
         ice::HailstormChunkLoader& _meta_loader;

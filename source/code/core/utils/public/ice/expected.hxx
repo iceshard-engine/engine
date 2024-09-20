@@ -152,6 +152,11 @@ namespace ice
             : _value{ ice::E_Error } // Unknown error if never set
         { }
 
+        Expected(bool issuccess) noexcept
+            : _value{ issuccess ? ErrorCode{S_Ok} : ErrorCode{E_Fail} }
+        {
+        }
+
         Expected(ice::ErrorCode error) noexcept
             : _value{ error }
         {

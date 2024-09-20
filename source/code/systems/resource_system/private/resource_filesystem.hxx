@@ -4,7 +4,7 @@
 #pragma once
 #include <ice/native_aio.hxx>
 #include <ice/resource.hxx>
-#include <ice/task.hxx>
+#include <ice/task_expected.hxx>
 
 namespace ice
 {
@@ -16,9 +16,10 @@ namespace ice
 
         virtual auto load_data(
             ice::Allocator& alloc,
-            ice::TaskScheduler& scheduler,
+            ice::Memory& memory,
+            ice::String fragment,
             ice::native_aio::AIOPort aioport
-        ) const noexcept -> ice::Task<ice::Memory> = 0;
+        ) const noexcept -> ice::TaskExpected<ice::Data> = 0;
 
         ice::u32 data_index;
     };

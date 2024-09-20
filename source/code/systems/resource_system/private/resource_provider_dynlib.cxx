@@ -134,7 +134,8 @@ namespace ice
         ) noexcept override { }
 
         auto load_resource(
-            ice::Resource const* resource
+            ice::Resource const* resource,
+            ice::String fragment
         ) noexcept -> ice::TaskExpected<ice::Data> override
         {
             co_return ice::Data{ };

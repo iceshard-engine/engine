@@ -35,22 +35,20 @@ namespace ice
         auto name() const noexcept -> ice::String override;
         auto origin() const noexcept -> ice::String override;
 
-        auto load_metadata() const noexcept -> ice::Task<ice::Data> override;
-
         auto size() const noexcept -> ice::usize override;
 
         auto load_data(
             ice::Allocator& alloc,
-            ice::TaskScheduler& scheduler,
+            ice::Memory& memory,
+            ice::String fragment,
             ice::native_aio::AIOPort aioport
-        ) const noexcept -> ice::Task<ice::Memory> override;
+        ) const noexcept -> ice::TaskExpected<ice::Data> override;
 
     private:
         ice::Allocator& _allocator;
         ice::ResourceFormatHeader const _header;
         ice::HeapString<> _origin;
         ice::HeapString<> _name;
-        ice::Memory _metadata;
         ice::URI _uri;
     };
 

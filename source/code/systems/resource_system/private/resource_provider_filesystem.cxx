@@ -344,16 +344,14 @@ namespace ice
     }
 
     auto FileSystemResourceProvider::load_resource(
-        ice::Resource const* resource
+        ice::Resource const* resource,
+        ice::String fragment
     ) noexcept -> ice::TaskExpected<ice::Data, ice::ErrorCode>
     {
-        ice::TaskQueue unused{};
-        ice::TaskScheduler unused2{unused};
-
         ice::FileSystemResource const* const filesys_res = static_cast<ice::FileSystemResource const*>(resource);
-        _resources_data[filesys_res->data_index] = co_await filesys_res->load_data(_data_allocator, unused2, _aioport);
-
-        co_return ice::data_view(_resources_data[filesys_res->data_index]);
+        co_return co_await filesys_res->load_data(
+            _data_allocator, _resources_data[filesys_res->data_index], fragment, _aioport
+        );
     }
 
     auto FileSystemResourceProvider::resolve_relative_resource(

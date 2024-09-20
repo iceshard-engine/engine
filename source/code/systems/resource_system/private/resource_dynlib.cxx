@@ -38,11 +38,6 @@ namespace ice
         return _origin_path;
     }
 
-    auto Resource_DynLib::load_metadata() const noexcept -> ice::Task<ice::Data>
-    {
-        co_return {};
-    }
-
     auto create_dynlib_resource_from_path(
         ice::Allocator& alloc,
         ice::native_file::FilePath dll_path

@@ -27,8 +27,6 @@ namespace ice
         auto name() const noexcept -> ice::String override;
         auto origin() const noexcept -> ice::String override;
 
-        auto load_metadata() const noexcept -> ice::Task<ice::Data> override;
-
     private:
         ice::HeapString<> _origin_path;
         ice::String _origin_name;
