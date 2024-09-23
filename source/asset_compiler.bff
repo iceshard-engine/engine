@@ -1,21 +1,36 @@
 
-.PlatformRule_GameAssets_ShadersTools =
+
+.PlatformRule_GameAssets_ShadersMobile =
 [
-    .Name = 'GameAssets-ShadersTools'
-    .Requires = { 'Step-Shaders' }
-    .BuildOptions = { '-c shader_tools.dll' }
+    .Name = 'Assets-Shaders-Mobile'
+    .Requires = { 'assets-mobile', 'Step-Bake-Shaders' }
+    .BuildOptions = {
+        '-c shader_tools.dll'
+        '--param shader:target GLSL'
+    }
+]
+
+.PlatformRule_GameAssets_ShadersWeb =
+[
+    .Name = 'Assets-Shaders-Web'
+    .Requires = { 'assets-web', 'Step-Bake-Shaders' }
+    .BuildOptions = {
+        '-c shader_tools.dll'
+        '--param shader:target WGSL'
+    }
 ]
 
 .Platform_GameAssets =
 [
     .PlatformSystem = 'GameAssets'
     .PlatformSupportedFlavours = { }
-    .PlatformSupportedArchitectures = { 'pc-asset', 'web-asset' }
-    .PlatformSupportedToolchainFamilies = { 'isac', 'hscp' }
+    .PlatformSupportedArchitectures = { 'assets-pc', 'assets-mobile', 'assets-web' }
+    .PlatformSupportedToolchainFamilies = { 'isac' }
 
     .PlatformRequiredSDKs = { }
     .PlatformRules = {
-        .PlatformRule_GameAssets_ShadersTools
+        .PlatformRule_GameAssets_ShadersMobile
+        .PlatformRule_GameAssets_ShadersWeb
     }
 
     .PlatformExtensions =
@@ -81,7 +96,7 @@
     [
         .CompilerOptions + ' %1 -o %2'
         .LinkerOptions + ' '
-        .LibrarianOptions + ' %1 -o %2 -v'
+        .LibrarianOptions + ' %1 -o %2'
     ]
 ]
 
@@ -98,13 +113,14 @@
 
     .ToolchainCompilerFamily = 'isac'
     .ToolchainSupportedArchitectures = {
-        'pc-asset'
-        'web-asset'
+        'assets-pc'
+        'assets-mobile'
+        'assets-web'
     }
     .ToolchainToolset = 'local'
     .ToolchainFrontend = 'ISAC'
     .ToolchainCompiler = 'isac-compiler'
-    .ToolchainLibrarian = 'hscp-compiler'
+    .ToolchainLibrarian = 'hscp-librarian'
     .ToolchainLinker = ''
     .ToolchainIncludeDirs = {
     }
@@ -123,9 +139,9 @@
 }
 
 
-.Task_BuildAsset_ASLShaderSources =
+.Task_Assets_ShadersASL =
 [
-    .Step = 'Shaders'
+    .Step = 'Bake-Shaders'
     .Type = 'Compile'
 
     .AllowUnityBuilds = false
@@ -134,9 +150,23 @@
     .CompilerOutputExtension = '.isr'
 ]
 
-.Task_BuildAsset_ASLAssetPack =
+.Task_Assets_ShadersGLSL =
 [
-    .Step = 'Packs'
+    .Step = 'Bake-Shaders'
+    .Type = 'Compile'
+
+    .AllowUnityBuilds = false
+    .TaskInputPattern = { '*-vert.glsl', '*-frag.glsl' }
+
+    .CompilerOutputExtension = '.isr'
+]
+
+.Task_Assets_AssetPack =
+[
+    .LibrarianAllowResponseFile = true
+    .LibrarianForceResponseFile = true
+
+    .Step = 'Bundle'
     .Type = 'Link'
 ]
 
@@ -153,17 +183,16 @@
 [
     .PipelineName = 'isac'
     .PipelinePlatform = 'GameAssets'
-    .PipelineArchitecture = 'pc-asset'
+    .PipelineArchitecture = 'assets-pc'
     .PipelineToolchain = 'isac-local'
 
     .PipelineAllowUnityBuilds = false
     .PipelineRequirements = { }
     .PipelineProjectRequirements = { 'AssetPipeline' }
-    .PipelineSteps = { 'Shaders', 'Packs' }
+    .PipelineSteps = { 'Bake-Shaders', 'Bundle' }
 
     .PipelineTasks = {
-        .Task_BuildAsset_ASLShaderSources
-        // .Task_BuildAsset_ASLAssetPack
+        .Task_Assets_AssetPack
     }
 
     ; Will override the default configurations assigned to Vulkan Shaders

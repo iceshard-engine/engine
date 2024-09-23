@@ -2,9 +2,9 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/mem_info.hxx>
-#include <ice/mem_data.hxx>
 #include <ice/mem_arithmetic.hxx>
+#include <ice/mem_data.hxx>
+#include <ice/mem_size_types.hxx>
 
 namespace ice
 {
@@ -17,6 +17,9 @@ namespace ice
     };
 
     constexpr auto data_view(ice::Memory memory) noexcept -> ice::Data;
+
+    template<typename T> requires(std::is_array_v<T> == false && std::is_pointer_v<T> == false)
+    constexpr auto memory_from(T& object) noexcept -> ice::Memory;
 
     //! \return 'memory' object advanced by the number of 'offset' bytes, aligned to 'meminfo.alignment' with reduced 'size' member.
     //! \note The resulting 'size' member is not checked and the value may overflow.
@@ -64,6 +67,16 @@ namespace ice
             .location = memory.location,
             .size = memory.size,
             .alignment = memory.alignment
+        };
+    }
+
+    template<typename T> requires(std::is_array_v<T> == false && std::is_pointer_v<T> == false)
+    constexpr auto memory_from(T& object) noexcept -> ice::Memory
+    {
+        return Memory{
+            .location = ice::addressof(object),
+            .size = ice::size_of<T>,
+            .alignment = ice::align_of<T>
         };
     }
 

@@ -36,6 +36,7 @@
     .Requires = { 'MSVC-Frontend' }
     .BuildOptions = {
         '/std:c++latest'
+        '/Zc:preprocessor'
         '/wd4127' // conditional expression is constant'
         '/permissive-'
         '/Z7'

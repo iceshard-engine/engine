@@ -141,7 +141,7 @@ namespace ice
         ice::ResourceFlags flags
     ) const noexcept -> ice::ResourceHandle*
     {
-        if (resource_uri.scheme == ice::stringid_hash(ice::Scheme_URN))
+        if (resource_uri.scheme() == ice::stringid_hash(ice::Scheme_URN))
         {
             return find_resource_by_urn(resource_uri, flags);
         }
@@ -293,13 +293,13 @@ namespace ice
     ) const noexcept -> ice::ResourceHandle*
     {
         ICE_ASSERT(
-            resource_urn.scheme == ice::stringid_hash(Scheme_URN),
+            resource_urn.scheme() == ice::stringid_hash(Scheme_URN),
             "Invalid URI object. Expected resource name got [{}]",
-            resource_urn.scheme
+            resource_urn.scheme()
         );
 
         ice::ResourceHandle* result = nullptr;
-        ice::u64 const hash_resouce = ice::hash(resource_urn.path);
+        ice::u64 const hash_resouce = ice::hash(resource_urn.path());
 
         // Just grab the first for now
         auto it = ice::multi_hashmap::find_first(_resources, hash_resouce);
@@ -347,7 +347,7 @@ namespace ice
         ice::Resource const*& resource
     ) const noexcept
     {
-        ice::u64 const hash_scheme = ice::hash(resource_uri.scheme);
+        ice::u64 const hash_scheme = ice::hash(resource_uri.scheme());
 
         auto it = ice::multi_hashmap::find_first(_resource_providers, hash_scheme);
         while (it != nullptr && provider == nullptr)

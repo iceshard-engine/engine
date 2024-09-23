@@ -35,7 +35,7 @@ namespace ice::render
 namespace ice::render::vk
 {
 
-    constexpr ice::LogTagDefinition log_tag = ice::create_log_tag(ice::LogTag::Module, "Vulkan");
+    constexpr ice::LogTagDefinition Constant_VkLogTag = ice::create_log_tag(ice::LogTag::Module, "Vulkan");
 
     template<typename T, typename Fn, typename... Args>
     bool enumerate_objects(ice::Array<T>& objects_out, Fn&& fn, Args&&... args) noexcept;
@@ -465,4 +465,4 @@ namespace ice::render::vk
 } // namespace ice::render::vk
 
 #define VK_LOG(severity, message, ...) \
-    ICE_LOG(severity, ice::render::vk::log_tag, message, __VA_ARGS__)
+    ICE_LOG(severity, ice::render::vk::Constant_VkLogTag, message, __VA_ARGS__)

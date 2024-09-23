@@ -378,10 +378,10 @@ auto ice_setup(
         ice::create_resource_provider(
             state.resources_alloc,
             game_config.resource_dirs,
-            state.platform.threads->aio_port(),
             ice::build::current_platform == ice::build::System::WebApp
                 ? nullptr
-                : &state.platform.threads->threadpool()
+                : &state.platform.threads->threadpool(),
+            state.platform.threads->aio_port()
         )
     );
 
@@ -418,7 +418,10 @@ auto ice_setup(
 
     // Load everything to resume the game.
     ice::HeapString<> engine_module = ice::resolve_dynlib_path(*state.resources, state.alloc, "iceshard");
-    state.modules->load_module(state.modules_alloc, engine_module);
+    if (state.modules->load_module(state.modules_alloc, engine_module) == false)
+    {
+        return ice::framework::E_FailedLoadingIceshardLibrary;
+    }
 
     ice::EngineCreateInfo engine_create_info{ .states = ice::create_state_tracker(state.alloc) };
     {
@@ -438,7 +441,15 @@ auto ice_setup(
     }
 
     state.engine = ice::create_engine(state.engine_alloc, *state.modules, ice::move(engine_create_info));
+    if (state.engine == nullptr)
+    {
+        return ice::framework::E_FailedCreateEngineObject;
+    }
     state.renderer = ice::render::create_render_driver(alloc, *state.modules);
+    if (state.renderer == nullptr)
+    {
+        return ice::framework::E_FailedCreateRenderObject;
+    }
 
     if (state.engine == nullptr || state.renderer == nullptr)
     {
@@ -491,10 +502,11 @@ auto ice_resume(
                 .name = "default"_sid,
                 .flags = ice::render::QueueFlags::Graphics | ice::render::QueueFlags::Present
             },
-            ice::gfx::GfxQueueDefinition {
-                .name = "transfer"_sid,
-                .flags = ice::render::QueueFlags::Transfer
-            }
+            // TODO: Implement a proper implementation for an optional trasfer queue
+            // ice::gfx::GfxQueueDefinition {
+            //     .name = "transfer"_sid,
+            //     .flags = ice::render::QueueFlags::Transfer
+            // }
         };
 
         ice::platform::Threads* threads;

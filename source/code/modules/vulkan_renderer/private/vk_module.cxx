@@ -67,7 +67,7 @@ namespace ice::render::vk
         static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator auto const& negotiator) noexcept
         {
             ice::LogModule::init(alloc, negotiator);
-            ice::log_tag_register(log_tag);
+            ice::log_tag_register(Constant_VkLogTag);
             return negotiator.register_api(v1_driver_api);
         }
 

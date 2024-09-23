@@ -17,6 +17,16 @@ struct fmt::formatter<ice::BasicString<CharType>> : public fmt::formatter<std::b
     }
 };
 
+template<typename CharType>
+struct fmt::formatter<ice::HeapString<CharType>> : public fmt::formatter<ice::BasicString<CharType>>
+{
+    template<typename FormatContext>
+    constexpr auto format(ice::HeapString<CharType> const& value, FormatContext& ctx)
+    {
+        return fmt::formatter<ice::BasicString<CharType>>::format({ value._data, value._size }, ctx);
+    }
+};
+
 template<>
 struct fmt::formatter<ice::StringID_Hash>
 {

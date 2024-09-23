@@ -64,6 +64,9 @@ namespace ice::string
     inline bool empty(ice::HeapString<CharType> const& str) noexcept;
 
     template<typename CharType>
+    inline bool any(ice::HeapString<CharType> const& str) noexcept;
+
+    template<typename CharType>
     inline auto begin(ice::HeapString<CharType> const& str) noexcept -> typename ice::HeapString<CharType>::ConstIterator;
 
     template<typename CharType>

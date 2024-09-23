@@ -435,8 +435,8 @@ namespace ice::native_file
     }
 
     void path_from_string(
-        ice::String path_string,
-        ice::native_file::HeapFilePath& out_filepath
+        ice::native_file::HeapFilePath& out_filepath,
+        ice::String path_string
     ) noexcept
     {
         ice::string::clear(out_filepath);
@@ -458,7 +458,7 @@ namespace ice::native_file
     ) noexcept
     {
         // TODO: Think if maybe moving this to a different function is possible?
-        if (ice::string::back(path) != L'/' && ice::string::back(path) != L'\\')
+        if (ice::string::any(path) && ice::string::back(path) != L'/' && ice::string::back(path) != L'\\')
         {
             if (ice::string::front(string) != '/' && ice::string::front(string) != '\\')
             {

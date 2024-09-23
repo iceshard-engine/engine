@@ -50,7 +50,7 @@ namespace ice
             }
 
             ice::native_file::HeapFilePath native_filepath{ alloc };
-            ice::native_file::path_from_string(filepath, native_filepath);
+            ice::native_file::path_from_string(native_filepath, filepath);
             if (readmeta)
             {
                 ice::string::push_back(native_filepath, ISP_PATH_LITERAL(".isrm"));
@@ -78,7 +78,7 @@ namespace ice
             }
 
             ice::native_file::HeapFilePath native_filepath{ alloc };
-            ice::native_file::path_from_string(filepath, native_filepath);
+            ice::native_file::path_from_string(native_filepath, filepath);
             if (readmeta)
             {
                 ice::string::push_back(native_filepath, ISP_PATH_LITERAL(".isrm"));
@@ -240,7 +240,7 @@ namespace ice
     {
         ice::StackAllocator_1024 alloc;
         ice::native_file::HeapFilePath path{ alloc };
-        ice::native_file::path_from_string(_origin_path, path);
+        ice::native_file::path_from_string(path, _origin_path);
         return ice::native_file::sizeof_file(path);
     }
 
@@ -293,7 +293,7 @@ namespace ice
     {
         ice::StackAllocator_1024 alloc;
         ice::native_file::HeapFilePath path{ alloc };
-        ice::native_file::path_from_string(_origin_path, path);
+        ice::native_file::path_from_string(path, _origin_path);
         return ice::native_file::sizeof_file(path);
     }
 #endif

@@ -8,6 +8,7 @@ import ScriptCommand from require 'ice.commands.script'
 import ExecCommand from require 'ice.commands.exec'
 import AndroidCommand from require 'ice.commands.android'
 import WebAsmCommand from require 'ice.commands.webasm'
+import SettingsCommand from require 'ice.commands.settings'
 
 import RunCommand from require 'tools.run'
 import NatvisCommand from require 'tools.natvis'
@@ -30,6 +31,7 @@ class IceShard extends Application
         'script': ScriptCommand
         'android': AndroidCommand
         'webasm': WebAsmCommand
+        'settings': SettingsCommand
     }
 
 { :IceShard }

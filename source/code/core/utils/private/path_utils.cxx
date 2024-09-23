@@ -157,7 +157,7 @@ namespace ice::path
             while (it != end)
             {
                 // Solve returning '..' paths
-                if (*it == Separators_Dot<CharType>[0] && *(it + 1) == Separators_Dot<CharType>[0])
+                if (*it == Separators_Dot<CharType>[0] && *(it + 1) == Separators_Dot<CharType>[0] && it > beg)
                 {
                     copy_to -= 1; // move to the previous slash '/'
                     copy_to -= (copy_to != beg); // Move past the slash if we are not at the path begining

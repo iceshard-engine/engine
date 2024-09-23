@@ -7,7 +7,6 @@ with Project "IceShard"
     -- Set explicitly all the additional compilers we have defined
     \set 'project.fbuild.user_includes', {
         'source/asset_compiler.bff'
-        'source/isrm_compiler.bff'
     }
 
     \finish!

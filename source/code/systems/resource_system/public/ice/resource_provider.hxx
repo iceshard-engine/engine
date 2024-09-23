@@ -74,11 +74,25 @@ namespace ice
         }
     };
 
+    struct ResourceFileEntry
+    {
+        ice::String path;
+        ice::String basepath = {};
+    };
+
     auto create_resource_provider(
         ice::Allocator& alloc,
         ice::Span<ice::String const> paths,
-        ice::native_aio::AIOPort port = nullptr,
-        ice::TaskScheduler* scheduler = nullptr
+        ice::TaskScheduler* scheduler = nullptr,
+        ice::native_aio::AIOPort aioport = nullptr,
+        ice::String virtual_hostname = {}
+    ) noexcept -> ice::UniquePtr<ice::ResourceProvider>;
+
+    auto create_resource_provider_files(
+        ice::Allocator& alloc,
+        ice::Span<ice::ResourceFileEntry const> entries,
+        ice::native_aio::AIOPort aioport = nullptr,
+        ice::String virtual_hostname = {}
     ) noexcept -> ice::UniquePtr<ice::ResourceProvider>;
 
     auto create_resource_provider_dlls(
@@ -90,6 +104,10 @@ namespace ice
         ice::Allocator& alloc,
         ice::String path,
         ice::native_aio::AIOPort aioport = nullptr
+    ) noexcept -> ice::UniquePtr<ice::ResourceProvider>;
+
+    auto create_resource_provider_custom(
+        ice::Allocator& alloc
     ) noexcept -> ice::UniquePtr<ice::ResourceProvider>;
 
 } // namespace ice

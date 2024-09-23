@@ -430,6 +430,8 @@ namespace ice
             }
             else
             {
+                out_entry_point = "main";
+
                 co_return ice::String{
                     (char const*)result.data.location,
                     (ice::ucount)result.data.size.value

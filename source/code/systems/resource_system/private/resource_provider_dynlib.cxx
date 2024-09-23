@@ -24,7 +24,7 @@ namespace ice
             , _base_path{ _allocator }
             , _resources{ _allocator }
         {
-            ice::native_file::path_from_string(path, _base_path);
+            ice::native_file::path_from_string(_base_path, path);
             ice::path::normalize(_base_path);
         }
 
@@ -45,7 +45,7 @@ namespace ice
             ice::URI const& uri
         ) const noexcept -> ice::Resource const* override
         {
-            ice::u64 const resource_hash = ice::hash(uri.path);
+            ice::u64 const resource_hash = ice::hash(uri.path());
             return ice::hashmap::get(_resources, resource_hash, nullptr);
         }
 
@@ -58,7 +58,7 @@ namespace ice
                 file_path
             );
 
-            ice::u64 const resource_hash = ice::hash(resource->uri().path);
+            ice::u64 const resource_hash = ice::hash(resource->uri().path());
             if (ice::hashmap::has(_resources, resource_hash))
             {
                 ICE_LOG(

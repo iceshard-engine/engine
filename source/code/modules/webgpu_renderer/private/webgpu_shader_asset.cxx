@@ -25,7 +25,7 @@ namespace ice::render::vk
             return AssetState::Baked;
         }
 
-        if (ice::path::extension(uri.path) == ".asl")
+        if (ice::path::extension(uri.path()) == ".asl")
         {
             return AssetState::Raw;
         }

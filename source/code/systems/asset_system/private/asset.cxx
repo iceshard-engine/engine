@@ -66,7 +66,6 @@ namespace ice
         {
             // Release all data and metadata loaded
             _handle->_data.reset();
-            _handle->_metadata.reset(); // Maybe keep this?
 
             // Unload the resource (if not yet done yet)
             // ice::wait_for(_info.resource_tracker.unload_resource(entry->_resource));
@@ -75,14 +74,6 @@ namespace ice
 
     auto Asset::metadata(ice::Data& out_metadata) const noexcept -> ice::Task<ice::Result>
     {
-        if constexpr(ice::build::is_debug || ice::build::is_develop)
-        {
-            if (_handle->_metadata != nullptr)
-            {
-                co_return co_await ice::asset_metadata_find(_handle->_metadata, out_metadata);
-            }
-        }
-
         co_return co_await ice::asset_metadata_find(_handle->_data, out_metadata);
     }
 

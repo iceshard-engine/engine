@@ -37,7 +37,7 @@ namespace ice::config::detail
             return E_ConfigValueTypeMissmatch;
         }
 
-        ice::usize_raw const key_idx = (keyptr - config._keys);
+        ice::usize::base_type const key_idx = (keyptr - config._keys);
         config._keys += valptr->internal + key_idx;
         config._values += valptr->internal + key_idx;
         return S_Ok;
@@ -63,7 +63,7 @@ namespace ice::config::detail
             return E_ConfigValueTypeMissmatch;
         }
 
-        ice::usize_raw const key_idx = (keyptr - config._keys);
+        ice::usize::base_type const key_idx = (keyptr - config._keys);
         config._keys += valptr->internal + key_idx;
         config._values += valptr->internal + key_idx;
         return S_Ok;

@@ -24,9 +24,9 @@ namespace ice
 
         virtual auto name() const noexcept -> ice::String override
         {
-            return ice::string::substr(_uri.path, ice::string::find_first_of(_uri.path, '.') + 5);
+            return ice::string::substr(_uri.path(), ice::string::find_first_of(_uri.path(), '.') + 5);
         }
-        virtual auto origin() const noexcept -> ice::String override { return _uri.path; }
+        virtual auto origin() const noexcept -> ice::String override { return _uri.path(); }
 
         hailstorm::HailstormResource const& _handle;
 

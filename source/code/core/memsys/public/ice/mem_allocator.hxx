@@ -9,13 +9,6 @@
 namespace ice
 {
 
-    template<bool WithDebugInfo>
-    struct AllocatorBase;
-
-    using Allocator = ice::AllocatorBase<ice::build::is_debug || ice::build::is_develop>;
-
-    class AllocatorDebugInfo;
-
 
     template<bool WithDebugInfo>
     struct AllocatorBase

@@ -44,7 +44,7 @@ namespace ice
             }
 
             ice::native_file::HeapFilePath native_filepath{ alloc };
-            ice::native_file::path_from_string(filepath, native_filepath);
+            ice::native_file::path_from_string(native_filepath, filepath);
             ice::Expected<ice::native_file::File> handle = ice::native_file::open_file(aioport, native_filepath);
             if (handle)
             {
@@ -66,7 +66,7 @@ namespace ice
             }
 
             ice::native_file::HeapFilePath native_filepath{ alloc };
-            ice::native_file::path_from_string(filepath, native_filepath);
+            ice::native_file::path_from_string(native_filepath, filepath);
             ice::native_file::File handle = ice::native_file::open_file(native_filepath);
             if (handle == false)
             {
@@ -115,7 +115,7 @@ namespace ice
 
     auto BakedFileResource::name() const noexcept -> ice::String
     {
-        return _name;
+        return ice::string::substr(_uri.path(), 1);
     }
 
     auto BakedFileResource::origin() const noexcept -> ice::String
@@ -170,15 +170,55 @@ namespace ice
 
     auto create_resource_from_baked_file(
         ice::Allocator& alloc,
+        ice::String uri_base,
         ice::native_file::FilePath file_path
     ) noexcept -> ice::FileSystemResource*
     {
-        ice::ResourceFormatHeader header;
-        ice::HeapString<> origin{ alloc };
-        ice::HeapString<> name{ alloc };
-        ice::Memory metadata{ };
+        IPT_ZONE_SCOPED;
+        using enum ice::native_file::FileOpenFlags;
 
-        return alloc.create<BakedFileResource>(alloc, header, ice::move(origin), ice::move(name), metadata);
+        ice::BakedFileResource* main_resource = nullptr;
+        ice::native_file::File file = ice::native_file::open_file(file_path, Read);
+        if (file == false)
+        {
+            return main_resource;
+        }
+
+        ice::ResourceFormatHeader header{};
+        ice::usize read = ice::native_file::read_file(
+            file, ice::size_of<ice::ResourceFormatHeader>, ice::memory_from(header)
+        );
+
+        if (read < 8_B
+            || header.magic != ice::Constant_ResourceFormatMagic
+            || header.version != ice::Constant_ResourceFormatVersion)
+        {
+            return main_resource;
+        }
+
+        ice::HeapString<> utf8_file_path{ alloc };
+        ice::native_file::path_to_string(file_path, utf8_file_path);
+        ice::path::normalize(utf8_file_path);
+        IPT_ZONE_TEXT_STR(utf8_file_path);
+
+        ice::HeapString<> utf8_uri{ alloc };
+        ice::string::push_back(utf8_uri, uri_base);
+
+        char temp[128];
+        read = ice::native_file::read_file(
+            file, ice::size_of<ResourceFormatHeader>, ice::usize{ header.name_size }, Memory{ temp, 128, ualign::b_1 }
+        );
+
+        ICE_ASSERT_CORE(read >= 0_B);
+        ice::string::push_back(utf8_uri, { temp, header.name_size });
+
+        ice::Memory metadata = alloc.allocate(ice::usize{ header.meta_size });
+        read = ice::native_file::read_file(
+            file, {header.meta_offset}, {header.meta_size}, metadata
+        );
+        ICE_ASSERT_CORE(read >= 0_B);
+
+        return alloc.create<BakedFileResource>(alloc, header, ice::move(utf8_file_path), ice::move(utf8_uri), metadata);
     }
 
 } // namespace ice

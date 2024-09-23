@@ -188,7 +188,8 @@ namespace ice::gfx
 
             v2::GfxQueueGroup_Temp& group = _context->queue_group(0);
             ice::gfx::GfxQueue* queue;
-            bool const queue_exists = group.get_queue(ice::render::QueueFlags::Transfer, queue);
+            // Graphics Queues can accept TransferQueue work
+            bool const queue_exists = group.get_queue(ice::render::QueueFlags::Graphics, queue);
             ICE_ASSERT_CORE(queue_exists);
             queue->reset();
 

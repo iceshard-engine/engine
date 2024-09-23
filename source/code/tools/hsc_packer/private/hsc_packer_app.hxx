@@ -25,7 +25,7 @@ static constexpr ice::ParamDefinition Param_Output{
 static constexpr ice::ParamDefinition Param_Include{
     .name = "-i,--include",
     .description = "Adds a directory which will be searched for resource files.",
-    .flags = ice::ParamFlags::IsRequired,
+    .flags = ice::ParamFlags::TakeAll,
 };
 
 static constexpr ice::ParamDefinition Param_Config{

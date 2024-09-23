@@ -11,22 +11,23 @@ namespace ice
         ice::Allocator& alloc,
         ice::Span<ice::String const> const& paths,
         ice::TaskScheduler* scheduler,
-        ice::native_aio::AIOPort aioport
+        ice::native_aio::AIOPort aioport,
+        ice::String virtual_hostname
     ) noexcept
         : _named_allocator{ alloc, "FileSystem" }
         , _data_allocator{ _named_allocator, "Data" }
-        , _allocator{ _named_allocator }
         , _base_paths{ _named_allocator }
         , _scheduler{ scheduler }
         , _aioport{ aioport }
         , _resources{ _named_allocator }
         , _resources_data{ _data_allocator }
-        , _devui_widget{ create_filesystem_provider_devui(_allocator, _resources) }
+        , _devui_widget{ create_filesystem_provider_devui(_named_allocator, _resources) }
+        , _virtual_hostname{ virtual_hostname }
     {
-        ice::native_file::HeapFilePath base_path{ _allocator };
+        ice::native_file::HeapFilePath base_path{ _named_allocator };
         for (ice::String path : paths)
         {
-            ice::native_file::path_from_string(path, base_path);
+            ice::native_file::path_from_string(base_path, path);
             ice::path::normalize(base_path);
             ice::array::push_back(_base_paths, base_path);
         }
@@ -69,18 +70,17 @@ namespace ice
         ice::string::push_back(metafile, ISP_PATH_LITERAL(".isrm"));
 
         ice::FileSystemResource* const resource = create_resources_from_loose_files(
-            _allocator,
+            _named_allocator,
             base_path,
             uribase,
             metafile,
             datafile
         );
 
-        resource->data_index = ice::array::count(_resources_data);
-        ice::array::push_back(_resources_data, ice::Memory{});
-
         if (resource != nullptr)
         {
+            resource->data_index = ice::array::count(_resources_data);
+            ice::array::push_back(_resources_data, ice::Memory{});
 
             ice::u64 const hash = ice::hash(resource->origin());
             ICE_ASSERT(
@@ -138,7 +138,7 @@ namespace ice
         ice::string::push_back(metafile, ISP_PATH_LITERAL(".isrm"));
 
         ice::FileSystemResource* const resource = create_resources_from_loose_files(
-            _allocator,
+            _named_allocator,
             base_path,
             uribase,
             metafile,
@@ -182,7 +182,7 @@ namespace ice
             if (request->worker_thread != nullptr)
             {
                 request->remaining += 1;
-                ice::Allocator& alloc = request->self._allocator;
+                ice::Allocator& alloc = request->self._named_allocator;
                 ice::schedule_task(
                     request->self.create_resource_from_file_async(request->base_path, { alloc, path }, *request),
                     *request->worker_thread
@@ -197,7 +197,7 @@ namespace ice
         {
             request->remaining += 1;
 
-            ice::Allocator& alloc = request->self._allocator;
+            ice::Allocator& alloc = request->self._named_allocator;
             ice::schedule_task(
                 request->self.traverse_async({ alloc, path }, *request),
                 *request->worker_thread
@@ -213,7 +213,7 @@ namespace ice
 
     void FileSystemResourceProvider::initial_traverse() noexcept
     {
-        ice::Array<TraverseResourceRequest, ContainerLogic::Complex> requests{ _allocator };
+        ice::Array<TraverseResourceRequest, ContainerLogic::Complex> requests{ _named_allocator };
         ice::array::reserve(requests, ice::array::count(_base_paths));
 
         [[maybe_unused]]
@@ -232,7 +232,7 @@ namespace ice
         ice::TaskQueue local_queue{ };
         ice::TaskScheduler local_sched{ local_queue };
 
-        ice::Array<TraverseResourceRequest, ContainerLogic::Complex> requests{ _allocator };
+        ice::Array<TraverseResourceRequest, ContainerLogic::Complex> requests{ _named_allocator };
         ice::array::reserve(requests, ice::array::count(_base_paths));
 
         std::atomic_uint32_t remaining = 0;
@@ -292,14 +292,19 @@ namespace ice
     ) const noexcept -> ice::Resource const*
     {
         ICE_ASSERT(
-            uri.scheme == ice::stringid_hash(schemeid()),
+            uri.scheme() == ice::stringid_hash(schemeid()),
             "Trying to find resource for URI that is not handled by this provider."
         );
 
-        ice::FileSystemResource const* found_resource = nullptr;
-        ice::u32 const origin_size = ice::string::size(uri.path);
+        if (ice::string::any(uri.host()) && _virtual_hostname != uri.host())
+        {
+            return nullptr;
+        }
 
-        ice::HeapString<> predicted_path{ _allocator };
+        ice::FileSystemResource const* found_resource = nullptr;
+        ice::u32 const origin_size = ice::string::size(uri.path());
+
+        ice::HeapString<> predicted_path{ (ice::Allocator&) _named_allocator };
         for (ice::native_file::FilePath base_path : _base_paths)
         {
             ice::string::resize(predicted_path, 0);
@@ -313,7 +318,7 @@ namespace ice
             {
                 ice::path::join(predicted_path, "..");
             }
-            ice::path::join(predicted_path, uri.path);
+            ice::path::join(predicted_path, uri.path());
             ice::path::normalize(predicted_path);
 
             ice::u64 const resource_hash = ice::hash(ice::String{ predicted_path });
@@ -361,8 +366,8 @@ namespace ice
     {
         ice::u32 const origin_size = ice::string::size(root_resource->origin());
 
-        ice::HeapString<> predicted_path{ _allocator };
-        ice::string::reserve(predicted_path, origin_size + ice::string::size(relative_uri.path));
+        ice::HeapString<> predicted_path{ (ice::Allocator&) _named_allocator };
+        ice::string::reserve(predicted_path, origin_size + ice::string::size(relative_uri.path()));
 
         predicted_path = ice::string::substr(
             root_resource->origin(),
@@ -372,7 +377,7 @@ namespace ice
             )
         );
 
-        ice::path::join(predicted_path, relative_uri.path);
+        ice::path::join(predicted_path, relative_uri.path());
         ice::path::normalize(predicted_path);
 
         ice::u64 const resource_hash = ice::hash(ice::String{ predicted_path });
@@ -393,11 +398,12 @@ namespace ice
 auto ice::create_resource_provider(
     ice::Allocator& alloc,
     ice::Span<ice::String const> paths,
+    ice::TaskScheduler* scheduler,
     ice::native_aio::AIOPort aioport,
-    ice::TaskScheduler* scheduler
+    ice::String virtual_hostname
 ) noexcept -> ice::UniquePtr<ice::ResourceProvider>
 {
-    return ice::make_unique<ice::FileSystemResourceProvider>(alloc, alloc, paths, scheduler, aioport);
+    return ice::make_unique<ice::FileSystemResourceProvider>(alloc, alloc, paths, scheduler, aioport, virtual_hostname);
 }
 
 auto ice::create_resource_provider_hailstorm(

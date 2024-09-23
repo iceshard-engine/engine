@@ -111,7 +111,7 @@ inline auto HailstormAIOWriter::async_write(ice::usize write_offset, hailstorm::
                 *this, _file, _offset.to_usize(), { _data.location, _data.size, (ice::ualign) _data.align }
             );
             ICE_ASSERT_CORE(status != ice::native_file::FileRequestStatus::Error);
-            return true;
+            return status != ice::native_file::FileRequestStatus::Completed;
         }
 
         inline bool await_resume() const noexcept { return true; }

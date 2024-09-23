@@ -92,18 +92,22 @@ namespace ice
 
     inline auto asset_metadata_find(ice::UniquePtr<ice::AssetData> const& data, ice::Data& out_data) noexcept -> ice::Task<ice::Result>
     {
-        ICE_ASSERT_CORE(ice::has_all(data->_flags, AssetDataFlags::Metadata));
-
-        if (data->_state == AssetState::Baked)
+        if (ice::has_all(data->_flags, AssetDataFlags::Metadata))
         {
-            out_data = { data->_readonly, data->_size, data->_alignment };
-            co_return S_Success;
+            if (ice::has_any(data->_flags, AssetDataFlags::Resource))
+            {
+                ice::ResourceAssetData* resdata = static_cast<ice::ResourceAssetData*>(data.get());
+                co_return co_await ice::resource_meta(resdata->_resource_handle, out_data);
+            }
+            else // The data stored in this object is pure metadata
+            {
+                out_data = { data->_readonly, data->_size, data->_alignment };
+                co_return S_Success;
+            }
         }
-        else if (ice::has_any(data->_flags, AssetDataFlags::Resource))
+        else if (data->_next != nullptr)
         {
-            ice::ResourceAssetData* resdata = static_cast<ice::ResourceAssetData*>(data.get());
-            ICE_ASSERT_CORE(resdata->_state == AssetState::Exists);
-            co_return co_await ice::resource_meta(resdata->_resource_handle, out_data);
+            co_return co_await asset_metadata_find(data->_next, out_data);
         }
         co_return E_Fail;
     }

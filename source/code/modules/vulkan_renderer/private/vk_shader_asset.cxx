@@ -25,7 +25,7 @@ namespace ice::render::vk
             return AssetState::Baked;
         }
 
-        ice::String const ext = ice::path::extension(uri.path);
+        ice::String const ext = ice::path::extension(uri.path());
         if (ext == ".glsl" || ext == ".asl")
         {
             return AssetState::Raw;
@@ -56,7 +56,11 @@ namespace ice::render::vk
         ice::ModuleQuery const& module_query
     ) noexcept
     {
-        static ice::String constexpr extensions[]{ ".asl", ".glsl", ".spv" };
+#if ISP_WINDOWS
+        static ice::String constexpr extensions[]{ ".asl", ".glsl",".spv" };
+#else
+        static ice::String constexpr extensions[]{ ".spv" };
+#endif
 
         static ice::AssetCategoryDefinition definition{
             .resource_extensions = extensions,

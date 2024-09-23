@@ -63,7 +63,7 @@ private:
     {
         using namespace hailstorm;
 
-        ice::native_file::path_from_string(_param_packfile, _file_path);
+        ice::native_file::path_from_string(_file_path, _param_packfile);
         _file_path = ice::tool::path_make_absolute(_file_path);
         if (_file = ice::native_file::open_file(_file_path); _file)
         {
