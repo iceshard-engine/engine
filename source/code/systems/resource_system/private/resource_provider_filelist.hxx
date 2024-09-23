@@ -16,7 +16,6 @@
 #include <ice/mem_allocator_proxy.hxx>
 #include <ice/devui_widget.hxx>
 
-#include "native/native_aio_tasks.hxx"
 #include "resource_filesystem_loose.hxx"
 #include "resource_filesystem_baked.hxx"
 
@@ -42,7 +41,7 @@ namespace ice
         FileListResourceProvider(
             ice::Allocator& alloc,
             ice::Span<ice::ResourceFileEntry const> entries,
-            ice::TaskScheduler* scheduler,
+            ice::native_aio::AIOPort aioport,
             ice::String virtual_hostname
         ) noexcept;
 
@@ -80,11 +79,9 @@ namespace ice
         ) noexcept override;
 
         auto load_resource(
-            ice::Allocator& alloc,
             ice::Resource const* resource,
-            ice::TaskScheduler& scheduler,
-            ice::NativeAIO* nativeio
-        ) const noexcept -> ice::Task<ice::Memory> override;
+            ice::String fragment
+        ) noexcept -> ice::TaskExpected<ice::Data> override;
 
         auto resolve_relative_resource(
             ice::URI const& relative_uri,
@@ -95,11 +92,13 @@ namespace ice
 
     protected:
         ice::ProxyAllocator _named_allocator;
-        ice::Allocator& _allocator;
+        ice::ProxyAllocator _data_allocator;
         ice::Array<ice::FileListEntry> _file_paths;
         ice::String _virtual_hostname;
+        ice::native_aio::AIOPort _aioport;
 
         ice::HashMap<ice::FileSystemResource*> _resources;
+        ice::Array<ice::Memory> _resources_data;
         ice::UniquePtr<ice::DevUIWidget> _devui_widget;
     };
 

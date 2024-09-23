@@ -34,6 +34,7 @@ struct HailstormAIOWriter
 {
     ice::native_file::FilePath _filepath{};
     ice::native_file::File _file{};
+    ice::native_aio::AIOPort _aioport;
     ice::TaskScheduler& _scheduler;
 
     ice::ResourceTracker& _resource_tracker;
@@ -41,14 +42,6 @@ struct HailstormAIOWriter
 
     std::atomic_uint32_t _started_writes;
     std::atomic_uint32_t _finished_writes;
-
-    HANDLE _aio_completion_port = NULL;
-
-    struct OverlappedCoroutine
-    {
-        OVERLAPPED _overlapped{};
-        std::coroutine_handle<> _coroutine = nullptr;
-    };
 
     ~HailstormAIOWriter() noexcept = default;
 
@@ -71,13 +64,26 @@ private:
 
 inline auto HailstormAIOWriter::async_write(ice::usize write_offset, hailstorm::Data data) noexcept
 {
-    struct Awaitable : OverlappedCoroutine
+    struct Awaitable : ice::native_aio::AIORequest
     {
         ice::native_file::File& _file;
         ice::isize const _offset;
         hailstorm::Data const _data;
+        std::coroutine_handle<> coroutine;
+
+        static void aio_read_request_callback(
+            ice::native_aio::AIORequestResult result,
+            ice::usize bytes_read,
+            void* userdata
+        ) noexcept
+        {
+            Awaitable* const req = reinterpret_cast<Awaitable*>(userdata);
+            req->coroutine.resume();
+        }
+
 
         inline Awaitable(
+            ice::native_aio::AIOPort aioport,
             ice::native_file::File& file,
             ice::isize offset,
             hailstorm::Data data
@@ -85,7 +91,11 @@ inline auto HailstormAIOWriter::async_write(ice::usize write_offset, hailstorm::
             : _file{ file }
             , _offset{ offset }
             , _data{ data }
-        { }
+        {
+            _callback = aio_read_request_callback;
+            _userdata = this;
+            _port = aioport;
+        }
 
         inline bool await_ready() const noexcept { return false; }
         inline bool await_suspend(std::coroutine_handle<> coro_handle) noexcept
@@ -95,34 +105,19 @@ inline auto HailstormAIOWriter::async_write(ice::usize write_offset, hailstorm::
 
             // Need to set the coroutine before calling Write, since we could already be finishing writing on a different thread
             //   before we get to set this pointer after calling WriteFile
-            _coroutine = coro_handle;
+            coroutine = coro_handle;
 
-            LARGE_INTEGER const large_int{ .QuadPart = _offset.value };
-            _overlapped.Offset = large_int.LowPart;
-            _overlapped.OffsetHigh = large_int.HighPart;
-
-            BOOL const result = WriteFile(
-                _file.native(),
-                _data.location,
-                (DWORD)_data.size,
-                NULL,
-                &_overlapped
+            ice::native_file::FileRequestStatus const status = ice::native_file::write_file_request(
+                *this, _file, _offset.to_usize(), { _data.location, _data.size, (ice::ualign) _data.align }
             );
+            ICE_ASSERT_CORE(status != ice::native_file::FileRequestStatus::Error);
+            return status != ice::native_file::FileRequestStatus::Completed;
+        }
 
-            // https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-writefile
-            if ((result == TRUE) || (GetLastError() != ERROR_IO_PENDING))
-            {
-                _coroutine = nullptr;
-            }
-            return _coroutine != nullptr;
-        }
-        inline bool await_resume() const noexcept
-        {
-            return _coroutine != nullptr;
-        }
+        inline bool await_resume() const noexcept { return true; }
     };
 
-    return Awaitable{ _file, write_offset, data };
+    return Awaitable{ _aioport, _file, write_offset, data };
 }
 
 auto stream_open(ice::usize total_size, HailstormAIOWriter* writer) noexcept -> bool
@@ -197,7 +192,7 @@ bool hscp_write_hailstorm_file(
     };
 
     HailstormAllocator hsalloc{ alloc };
-    HailstormAIOWriter writer{ params.filename, {}, params.task_scheduler, tracker, resources };
+    HailstormAIOWriter writer{ params.filename, {}, params.aioport, params.task_scheduler, tracker, resources };
     HailstormAsyncWriteParams const hsparams{
         .base_params = HailstormWriteParams{
             .temp_alloc = hsalloc,
@@ -223,7 +218,7 @@ inline bool HailstormAIOWriter::open_and_resize(ice::usize total_size) noexcept
 {
     using ice::operator|;
     using enum ice::native_file::FileOpenFlags;
-    _file = ice::native_file::open_file(_filepath, Write | Exclusive | Asynchronous);
+    _file = ice::native_file::open_file(_aioport, _filepath, Write | Exclusive | Asynchronous).value();
 
     // Resize the file
     SetFilePointerEx(_file.native(), { .QuadPart = ice::isize(total_size).value }, NULL, FILE_BEGIN);
@@ -231,8 +226,7 @@ inline bool HailstormAIOWriter::open_and_resize(ice::usize total_size) noexcept
     SetFilePointerEx(_file.native(), { 0 }, NULL, FILE_BEGIN);
 
     // Create the completion port
-    _aio_completion_port = CreateIoCompletionPort(_file.native(), NULL, 0, 1);
-    return _aio_completion_port != NULL;
+    return true;
 }
 
 inline bool HailstormAIOWriter::write_header(
@@ -260,24 +254,9 @@ inline bool HailstormAIOWriter::close() noexcept
 {
     while (_finished_writes != _started_writes)
     {
-        DWORD bytes_written;
-        OVERLAPPED* overlapped;
-        ULONG_PTR key;
-        DWORD const result = GetQueuedCompletionStatus(
-            _aio_completion_port,
-            &bytes_written,
-            &key,
-            &overlapped,
-            INFINITE
-        );
-        ICE_ASSERT_CORE(result != FALSE);
-
-        // Resume the coroutine
-        OverlappedCoroutine* ov_coro = (OverlappedCoroutine*)overlapped;
-        ov_coro->_coroutine.resume();
+        SleepEx(5, FALSE);
     }
 
-    CloseHandle(_aio_completion_port);
     return true;
 }
 

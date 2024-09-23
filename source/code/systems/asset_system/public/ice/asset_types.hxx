@@ -3,9 +3,10 @@
 
 #pragma once
 #include <ice/span.hxx>
+#include <ice/expected.hxx>
+#include <ice/stringid.hxx>
 #include <ice/mem_data.hxx>
 #include <ice/mem_unique_ptr.hxx>
-#include <ice/resource_meta.hxx>
 #include <ice/resource_types.hxx>
 #include <ice/task_flags.hxx>
 #include <ice/task_types.hxx>

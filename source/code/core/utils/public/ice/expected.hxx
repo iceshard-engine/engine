@@ -95,6 +95,8 @@ namespace ice
         }
 
         bool valid() const noexcept { return _state != 0u; }
+        bool succeeded() const noexcept { return _state == 1; }
+        bool failed() const noexcept { return _state == 2; }
 
         auto value() const & noexcept -> Value const&
         {
@@ -119,10 +121,18 @@ namespace ice
             return _state == 2u && _error == error;
         }
 
-        inline operator bool() const noexcept
+        inline explicit operator bool() const noexcept
         {
             return _state == 1u;
         }
+
+#if 0
+        inline operator Value const&() const noexcept
+            requires (std::is_same_v<Value, bool> == false)
+        {
+            return value();
+        }
+#endif
 
     private:
         union
@@ -141,6 +151,11 @@ namespace ice
         Expected() noexcept
             : _value{ ice::E_Error } // Unknown error if never set
         { }
+
+        Expected(bool issuccess) noexcept
+            : _value{ issuccess ? ErrorCode{S_Ok} : ErrorCode{E_Fail} }
+        {
+        }
 
         Expected(ice::ErrorCode error) noexcept
             : _value{ error }

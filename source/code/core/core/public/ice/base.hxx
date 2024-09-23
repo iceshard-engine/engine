@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -8,7 +8,6 @@
 #include <ice/workarounds.hxx>
 #include <ice/build/build.hxx>
 #include <ice/assert_core.hxx>
-#include <ice/config.hxx>
 #include <ice/hash.hxx>
 
 #include <ice/concept/enum_bools.hxx>

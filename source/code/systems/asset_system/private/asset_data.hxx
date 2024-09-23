@@ -1,5 +1,6 @@
 #pragma once
 #include <ice/asset.hxx>
+#include <ice/config.hxx>
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/resource_tracker.hxx>
 
@@ -121,7 +122,7 @@ namespace ice
         co_return co_await tracker.load_resource(resdata->_resource_handle);
     }
 
-    inline auto asset_metadata_load(ice::UniquePtr<ice::AssetData> const& asset_data, ice::Metadata& out_meta) noexcept -> ice::Task<ice::Result>
+    inline auto asset_metadata_load(ice::UniquePtr<ice::AssetData> const& asset_data, ice::Config& out_meta) noexcept -> ice::Task<ice::Result>
     {
         ice::Data data{};
         ice::Result result = co_await asset_metadata_find(asset_data, data);
@@ -129,7 +130,7 @@ namespace ice
         {
             if (data.location != nullptr)
             {
-                out_meta = ice::meta_load(data);
+                out_meta = ice::config::from_data(data);
             }
         }
         co_return result;

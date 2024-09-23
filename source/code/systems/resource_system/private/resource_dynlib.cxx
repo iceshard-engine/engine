@@ -2,7 +2,6 @@
 /// SPDX-License-Identifier: MIT
 
 #include "resource_dynlib.hxx"
-#include <ice/resource_meta.hxx>
 #include <ice/resource_flags.hxx>
 #include <ice/path_utils.hxx>
 
@@ -37,11 +36,6 @@ namespace ice
     auto Resource_DynLib::origin() const noexcept -> ice::String
     {
         return _origin_path;
-    }
-
-    auto Resource_DynLib::load_metadata() const noexcept -> ice::Task<ice::Data>
-    {
-        co_return {};
     }
 
     auto create_dynlib_resource_from_path(

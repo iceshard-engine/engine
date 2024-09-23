@@ -1,4 +1,5 @@
 #include <ice/resource_compiler_api.hxx>
+#include <ice/config.hxx>
 
 namespace ice::api::resource_compiler::v1
 {
@@ -56,13 +57,14 @@ namespace ice::api::resource_compiler::v1
         ice::ResourceTracker& resource_tracker,
         ice::Span<ice::ResourceCompilerResult const> compiled_sources,
         ice::Span<ice::URI const> dependencies,
-        ice::MutableMetadata& out_metadata
+        ice::ConfigBuilder& out_metadata
     ) noexcept -> ice::Task<bool>
     {
         ice::Data data{};
         if (co_await ice::resource_meta(resource_handle, data) == S_Ok)
         {
-            co_return ice::meta_deserialize_from(out_metadata, data) == S_Ok;
+            out_metadata.merge(ice::config::from_data(data));
+            co_return true;
         }
         co_return true;
     }

@@ -1,3 +1,6 @@
+/// Copyright 2024 - 2024, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "shader_tools_asl_importer.hxx"
 
 #include <ice/resource_tracker.hxx>
@@ -34,6 +37,7 @@ namespace ice
             );
             if (import_resource == nullptr)
             {
+                ICE_LOG(LogSeverity::Error, LogTag::Tool, "Failed to import ASL file: {}", ice::String{ import_path_final });
                 return {};
             }
 

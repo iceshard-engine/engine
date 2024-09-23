@@ -10,35 +10,37 @@ namespace ice
     FileListResourceProvider::FileListResourceProvider(
         ice::Allocator& alloc,
         ice::Span<ice::ResourceFileEntry const> entries,
-        ice::TaskScheduler* scheduler,
+        ice::native_aio::AIOPort aioport,
         ice::String virtual_hostname
     ) noexcept
         : _named_allocator{ alloc, "FileSystem" }
-        , _allocator{ _named_allocator }
-        , _file_paths{ _allocator }
+        , _data_allocator{ alloc }
+        , _file_paths{ _named_allocator }
         , _virtual_hostname{ virtual_hostname }
-        , _resources{ _allocator }
-        , _devui_widget{ create_filesystem_provider_devui(_allocator, _resources) }
+        , _aioport{ aioport }
+        , _resources{ _data_allocator }
+        , _resources_data{ _named_allocator }
+        , _devui_widget{ create_filesystem_provider_devui(_named_allocator, _resources) }
     {
-        ice::native_file::HeapFilePath file_path{ _allocator };
+        ice::native_file::HeapFilePath file_path{ _named_allocator };
         for (ice::ResourceFileEntry const& entry : entries)
         {
             using enum native_file::PathFlags;
             if (ice::path::is_absolute(entry.path) == false)
             {
                 file_path = ice::native_file::path_from_strings<Normalized>(
-                    _allocator, entry.basepath, entry.path
+                    _named_allocator, entry.basepath, entry.path
                 );
             }
             else
             {
                 // Create temporary basepath from string
                 ice::native_file::HeapFilePath base_path = ice::native_file::path_from_strings<Normalized>(
-                    _allocator, entry.basepath
+                    _named_allocator, entry.basepath
                 );
 
                 file_path = ice::native_file::path_from_strings<Normalized>(
-                    _allocator, entry.path
+                    _named_allocator, entry.path
                 );
 
                 ICE_ASSERT_CORE(ice::string::starts_with((ice::WString)file_path, (ice::WString)base_path));
@@ -56,7 +58,7 @@ namespace ice
     {
         for (FileSystemResource* res_entry : _resources)
         {
-            _allocator.destroy(res_entry);
+            _named_allocator.destroy(res_entry);
         }
     }
 
@@ -80,10 +82,10 @@ namespace ice
         ice::FileSystemResource* resource = nullptr;
         if (ice::path::extension(file_path) == ISP_PATH_LITERAL(".isr"))
         {
-            ice::HeapString<> uri_base{ _allocator };
+            ice::HeapString<> uri_base{ _named_allocator };
             ice::string::push_format(uri_base, "file://{}/", _virtual_hostname);
 
-            resource = create_resource_from_baked_file(_allocator, uri_base, file_path);
+            resource = create_resource_from_baked_file(_named_allocator, uri_base, file_path);
         }
         else
         {
@@ -97,7 +99,7 @@ namespace ice
             ice::string::push_back(metafile, ISP_PATH_LITERAL(".isrm"));
 
             resource = create_resources_from_loose_files(
-                _allocator,
+                _named_allocator,
                 base_path,
                 uribase,
                 metafile,
@@ -107,6 +109,8 @@ namespace ice
 
         if (resource != nullptr)
         {
+            resource->data_index = ice::array::count(_resources_data);
+            ice::array::push_back(_resources_data, ice::Memory{});
 
             ice::u64 const hash = ice::hash(resource->uri().path());
             ICE_ASSERT(
@@ -173,7 +177,7 @@ namespace ice
 
         ice::FileSystemResource const* found_resource = nullptr;
 
-        ice::HeapString<> predicted_path{ _allocator };
+        ice::HeapString<> predicted_path{ (ice::Allocator&)_named_allocator };
         for (ice::FileListEntry const& file_entry : _file_paths)
         {
             ice::native_file::path_to_string(file_entry.path, predicted_path);
@@ -198,22 +202,23 @@ namespace ice
 
     void FileListResourceProvider::unload_resource(
         ice::Allocator& alloc,
-        ice::Resource const* /*resource*/,
+        ice::Resource const* resource,
         ice::Memory memory
     ) noexcept
     {
-        alloc.deallocate(memory);
+        ice::FileSystemResource const* const filesys_res = static_cast<ice::FileSystemResource const*>(resource);
+        _data_allocator.deallocate(std::exchange(_resources_data[filesys_res->data_index], {}));
     }
 
     auto FileListResourceProvider::load_resource(
-        ice::Allocator& alloc,
         ice::Resource const* resource,
-        ice::TaskScheduler& scheduler,
-        ice::NativeAIO* nativeio
-    ) const noexcept -> ice::Task<ice::Memory>
+        ice::String fragment
+    ) noexcept -> ice::TaskExpected<ice::Data>
     {
         ice::FileSystemResource const* const filesys_res = static_cast<ice::FileSystemResource const*>(resource);
-        co_return co_await filesys_res->load_data(alloc, scheduler, nativeio);
+        co_return co_await filesys_res->load_data(
+            _data_allocator, _resources_data[filesys_res->data_index], fragment, _aioport
+        );
     }
 
     auto FileListResourceProvider::resolve_relative_resource(
@@ -223,7 +228,7 @@ namespace ice
     {
         ice::u32 const origin_size = ice::string::size(root_resource->origin());
 
-        ice::HeapString<> predicted_path{ _allocator };
+        ice::HeapString<> predicted_path{ (ice::Allocator&) _data_allocator };
         ice::string::reserve(predicted_path, origin_size + ice::string::size(relative_uri.path()));
 
         predicted_path = ice::string::substr(
@@ -255,9 +260,9 @@ namespace ice
 auto ice::create_resource_provider_files(
     ice::Allocator& alloc,
     ice::Span<ice::ResourceFileEntry const> entries,
-    ice::TaskScheduler* scheduler,
+    ice::native_aio::AIOPort aioport,
     ice::String virtual_hostname
 ) noexcept -> ice::UniquePtr<ice::ResourceProvider>
 {
-    return ice::make_unique<ice::FileListResourceProvider>(alloc, alloc, entries, scheduler, virtual_hostname);
+    return ice::make_unique<ice::FileListResourceProvider>(alloc, alloc, entries, aioport, virtual_hostname);
 }

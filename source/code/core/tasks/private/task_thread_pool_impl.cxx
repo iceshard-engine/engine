@@ -26,6 +26,13 @@ namespace ice
             out_string = ice::String{ raw_buffer, (ice::ucount) result.size };
         }
 
+        auto aio_thread_routine(void* userdata, ice::TaskQueue&) noexcept -> ice::u32
+        {
+            ice::native_aio::AIOPort port = reinterpret_cast<ice::native_aio::AIOPort>(userdata);
+            ice::native_aio::aio_process_events(port, {.timeout_ms = 250, .events_max = 4});
+            return 0;
+        }
+
     } // namespace detail
 
     TaskThreadPoolImplementation::TaskThreadPoolImplementation(
@@ -64,6 +71,28 @@ namespace ice
                     _allocator,
                     _queue,
                     thread_info
+                )
+            );
+        }
+
+        // Create one additional thread for the AIO port. (TODO: Allow the port to be awaited on existing threads?)
+        for (ice::u32 idx = 0; idx < ice::native_aio::aio_worker_limit(_info.aioport); ++idx)
+        {
+            detail::format_string(thread_name, "ice.aio {}", idx);
+
+            ice::array::push_back(
+                _managed_threads,
+                ice::make_unique<ice::NativeTaskThread>(
+                    _allocator,
+                    _queue,
+                    ice::TaskThreadInfo{
+                        .exclusive_queue = true,
+                        .sort_by_priority = false,
+                        .wait_on_queue = false,
+                        .custom_procedure = detail::aio_thread_routine,
+                        .custom_procedure_userdata = _info.aioport,
+                        .debug_name = thread_name,
+                    }
                 )
             );
         }

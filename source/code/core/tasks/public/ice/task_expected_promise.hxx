@@ -4,6 +4,7 @@
 #pragma once
 #include <ice/task_types.hxx>
 #include <ice/task_handle.hxx>
+#include <ice/expected.hxx>
 
 namespace ice
 {

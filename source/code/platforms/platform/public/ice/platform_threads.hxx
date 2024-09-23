@@ -30,6 +30,9 @@ namespace ice::platform
 
         //! \returns Pointer to the threadpool object managed by the platform.
         virtual auto threadpool_object() noexcept -> ice::TaskThreadPool* = 0;
+
+        //! \returns Platform managed async-IO port to be used with various resource and network API's.
+        virtual auto aio_port() const noexcept -> ice::native_aio::AIOPort { return nullptr; }
     };
 
     template<>

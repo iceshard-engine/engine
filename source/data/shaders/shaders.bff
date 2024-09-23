@@ -20,18 +20,3 @@
     ]
 ]
 .Projects + .Project
-
-
-.Task_CreateShaderPack =
-[
-    .Step = 'Package'
-    .Type = 'Exec'
-
-    .TaskID = 'shader-pack'
-    .TaskRequires = { 'GameAssets' }
-    .TaskExecOutput = 'shaders.hsc'
-
-    // Relies on Release build for HSC-Packer (TODO: Simplify targed dependencies)
-    .ExecExecutable = 'hsc_packer-x64-Windows-Release-msvc-x64-v143-link'
-    .ExecArguments = '-o %2'
-]

@@ -5,7 +5,7 @@
 
 #include <ice/uri.hxx>
 #include <ice/resource.hxx>
-#include <ice/resource_meta.hxx>
+#include <ice/config.hxx>
 #include <ice/font.hxx>
 #include <ice/font_utils.hxx>
 #include <ice/task_utils.hxx>
@@ -212,7 +212,7 @@ namespace ice
         void*,
         ice::Allocator& alloc,
         ice::AssetStorage& storage,
-        ice::Metadata const& meta,
+        ice::Config const& meta,
         ice::Data data,
         ice::Memory& out_data
     ) noexcept -> ice::Task<bool>

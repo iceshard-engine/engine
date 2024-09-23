@@ -1,4 +1,8 @@
+/// Copyright 2024 - 2024, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "resource_filesystem_baked.hxx"
+#include "resource_aio_request.hxx"
 #include <ice/mem_allocator_stack.hxx>
 
 namespace ice
@@ -12,98 +16,70 @@ namespace ice
             ice::native_file::File file,
             ice::usize fileoffset,
             ice::usize filesize,
-            ice::NativeAIO* nativeio,
+            ice::native_aio::AIOPort aioport,
             ice::Memory data
         ) noexcept -> ice::Task<bool>
         {
-            ice::AsyncReadFile asyncio{ nativeio, ice::move(file), data, filesize, fileoffset };
-            ice::AsyncReadFile::Result const read_result = co_await asyncio;
+            ice::detail::AsyncReadRequest request{ aioport, file, filesize, 0_B, data };
+            ice::usize const bytes_read = co_await request;
+
             ICE_ASSERT(
-                read_result.bytes_read == filesize,
+                bytes_read == filesize,
                 "Failed to load file into memory, requested bytes: {}!",
                 filesize
             );
-            co_return read_result.bytes_read == filesize;
+            co_return bytes_read == filesize;
         }
-
         auto async_file_load(
             ice::Allocator& alloc,
-            ice::NativeAIO* nativeio,
-            ice::String filepath,
-            ice::ResourceFormatHeader const& header
-        ) noexcept -> ice::Task<ice::Memory>
+            ice::usize offset,
+            ice::Memory target_memory,
+            ice::native_aio::AIOPort aioport,
+            ice::String filepath
+        ) noexcept -> ice::Task<ice::Result>
         {
+            if (target_memory.size == 0_B)
+            {
+                co_return S_Ok;
+            }
+
             ice::native_file::HeapFilePath native_filepath{ alloc };
             ice::native_file::path_from_string(native_filepath, filepath);
-
-            ice::Memory result{
-                .location = nullptr,
-                .size = 0_B,
-                .alignment = ice::ualign::invalid,
-            };
-
-            ice::native_file::File handle = ice::native_file::open_file(
-                native_filepath,
-                ice::native_file::FileOpenFlags::Asynchronous
-            );
+            ice::Expected<ice::native_file::File> handle = ice::native_file::open_file(aioport, native_filepath);
             if (handle)
             {
-                if (header.size > 0)
-                {
-                    result = alloc.allocate(ice::usize{ header.size });
-                    bool const success = co_await async_file_read(ice::move(handle), { header.offset }, { header.size }, nativeio, result);
-                    if (success == false)
-                    {
-                        alloc.deallocate(result);
-                    }
-                }
-                else
-                {
-                    // Allocate 1 byte just to not return a nullptr.
-                    // TODO: Find a better way to handle this.
-                    result = alloc.allocate(1_B);
-                }
+                co_await async_file_read(ice::move(handle).value(), offset, target_memory.size, aioport, target_memory);
             }
-            co_return result;
+            co_return handle.error();
         }
 
         auto sync_file_load(
             ice::Allocator& alloc,
-            ice::String filepath,
-            ice::ResourceFormatHeader const& header
-        ) noexcept -> ice::Memory
+            ice::usize offset,
+            ice::Memory target_memory,
+            ice::String filepath
+        ) noexcept -> ice::Result
         {
+            if (target_memory.size == 0_B)
+            {
+                return S_Ok;
+            }
+
             ice::native_file::HeapFilePath native_filepath{ alloc };
             ice::native_file::path_from_string(native_filepath, filepath);
-
-            ice::Memory result{
-                .location = nullptr,
-                .size = 0_B,
-                .alignment = ice::ualign::invalid,
-            };
-
             ice::native_file::File handle = ice::native_file::open_file(native_filepath);
-            if (handle)
+            if (handle == false)
             {
-                result = alloc.allocate(ice::usize{ header.size });
-                // TODO: Better error handling. Using "expected".
-                ice::usize const bytes_read = ice::native_file::read_file(
-                    ice::move(handle),
-                    { header.offset },
-                    { header.size },
-                    result
-                );
-                if (bytes_read.value == 0)
-                {
-                    ICE_ASSERT(
-                        bytes_read.value != 0,
-                        "Failed to load file!"
-                    );
-
-                    alloc.deallocate(result);
-                }
+                return E_Fail;
             }
-            return result;
+
+            ice::usize const bytes_read = ice::native_file::read_file(
+                ice::move(handle),
+                offset,
+                target_memory.size,
+                target_memory
+            );
+            return bytes_read == 0_B;
         }
 
     } // namespace detail
@@ -119,14 +95,12 @@ namespace ice
         , _header{ header }
         , _origin{ ice::move(origin) }
         , _name{ ice::move(name) }
-        , _metadata{ metadata }
-        , _uri{ _name }
+        , _uri{ ice::Scheme_File, _name }
     {
     }
 
     BakedFileResource::~BakedFileResource() noexcept
     {
-        _allocator.deallocate(_metadata);
     }
 
     auto BakedFileResource::uri() const noexcept -> ice::URI const&
@@ -149,11 +123,6 @@ namespace ice
         return _origin;
     }
 
-    auto BakedFileResource::load_metadata() const noexcept -> ice::Task<ice::Data>
-    {
-        co_return ice::data_view(_metadata);
-    }
-
     auto BakedFileResource::size() const noexcept -> ice::usize
     {
         return { _header.size };
@@ -161,17 +130,41 @@ namespace ice
 
     auto BakedFileResource::load_data(
         ice::Allocator& alloc,
-        ice::TaskScheduler& scheduler,
-        ice::NativeAIO* nativeio
-    ) const noexcept -> ice::Task<ice::Memory>
+        ice::Memory& memory,
+        ice::String fragment,
+        ice::native_aio::AIOPort aioport
+    ) const noexcept -> ice::TaskExpected<ice::Data>
     {
-        if (nativeio != nullptr)
+        ice::usize const datasize = ice::usize{(_header.offset - _header.meta_offset) + _header.size};
+        ICE_ASSERT(
+            memory.location == nullptr || memory.size >= datasize,
+            "Allocated memory is not large enough to store resource data and metadata!"
+        );
+        if (memory.location == nullptr)
         {
-            co_return co_await detail::async_file_load(alloc, nativeio, _origin, _header);
+            memory = alloc.allocate(datasize);
+
+            if (aioport != nullptr)
+            {
+                co_await detail::async_file_load(alloc, { _header.meta_offset }, memory, aioport, _origin);
+            }
+            else
+            {
+                detail::sync_file_load(alloc, { _header.meta_offset }, memory, _origin);
+            }
+        }
+
+        if (fragment == "meta")
+        {
+            co_return Data{ memory.location, {_header.meta_size}, ice::ualign::b_8 };
         }
         else
         {
-            co_return detail::sync_file_load(alloc, _origin, _header);
+            co_return Data{
+                ice::ptr_add(memory.location, {_header.offset - _header.meta_offset}),
+                {_header.size},
+                ice::ualign::b_default
+            };
         }
     }
 

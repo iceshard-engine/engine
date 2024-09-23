@@ -1,11 +1,10 @@
-/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#include <ice/native_aio.hxx>
 #include <ice/resource.hxx>
-#include <ice/task.hxx>
-
-#include "native/native_aio_tasks.hxx"
+#include <ice/task_expected.hxx>
 
 namespace ice
 {
@@ -17,9 +16,12 @@ namespace ice
 
         virtual auto load_data(
             ice::Allocator& alloc,
-            ice::TaskScheduler& scheduler,
-            ice::NativeAIO* nativeio
-        ) const noexcept -> ice::Task<ice::Memory> = 0;
+            ice::Memory& memory,
+            ice::String fragment,
+            ice::native_aio::AIOPort aioport
+        ) const noexcept -> ice::TaskExpected<ice::Data> = 0;
+
+        ice::u32 data_index;
     };
 
 } // namespace ice

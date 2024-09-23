@@ -16,7 +16,6 @@
 #include <ice/mem_allocator_proxy.hxx>
 #include <ice/devui_widget.hxx>
 
-#include "native/native_aio_tasks.hxx"
 #include "resource_filesystem_loose.hxx"
 
 namespace ice
@@ -65,11 +64,9 @@ namespace ice
         ) noexcept override;
 
         auto load_resource(
-            ice::Allocator& alloc,
             ice::Resource const* resource,
-            ice::TaskScheduler& scheduler,
-            ice::NativeAIO* nativeio
-        ) const noexcept -> ice::Task<ice::Memory> override;
+            ice::String fragment
+        ) noexcept -> ice::TaskExpected<ice::Data> override;
 
         auto resolve_relative_resource(
             ice::URI const& relative_uri,

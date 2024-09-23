@@ -26,7 +26,7 @@ namespace ice::wgsl
         ice::ResourceTracker& tracker,
         ice::Span<ice::ResourceCompilerResult const>,
         ice::Span<ice::URI const>,
-        ice::MutableMetadata& out_meta
+        ice::ConfigBuilder& out_meta
     ) noexcept -> ice::Task<bool>;
 
 } // namespace ice::wgsl

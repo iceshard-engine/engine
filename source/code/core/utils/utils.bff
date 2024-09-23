@@ -21,5 +21,12 @@
             'modules'
         }
     ]
+
+    .Private =
+    [
+        .Modules = {
+            'rapidjson'
+        }
+    ]
 ]
 .Projects + .Project

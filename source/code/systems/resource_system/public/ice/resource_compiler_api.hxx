@@ -2,8 +2,8 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#include <ice/config/config_builder.hxx>
 #include <ice/resource_tracker.hxx>
-#include <ice/resource_meta.hxx>
 #include <ice/stringid.hxx>
 #include <ice/task.hxx>
 #include <ice/uri.hxx>
@@ -74,7 +74,7 @@ namespace ice
             ice::ResourceTracker& resource_tracker,
             ice::Span<ice::ResourceCompilerResult const> compiled_sources,
             ice::Span<ice::URI const> dependencies,
-            ice::MutableMetadata& out_metadata
+            ice::ConfigBuilder& out_config
         ) noexcept -> ice::Task<bool>;
 
         using FnFinalizeResource = auto(*)(
@@ -124,7 +124,7 @@ namespace ice
             ice::ResourceTracker& resource_tracker,
             ice::Span<ice::ResourceCompilerResult const> compiled_sources,
             ice::Span<ice::URI const> dependencies,
-            ice::MutableMetadata& out_metadata
+            ice::ConfigBuilder& out_config
         ) noexcept -> ice::Task<bool>;
 
         auto fn_finalize_default(

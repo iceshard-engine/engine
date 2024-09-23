@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -12,11 +12,6 @@ namespace ice::string
 
     template<typename CharType>
     constexpr auto capacity(ice::BasicString<CharType> str) noexcept -> ice::ucount;
-
-    template<typename CharType>
-        //requires std::is_same_v<CharType, ice::utf8> // TODO: utf-16, utf-32?
-    constexpr auto utf8_codepoints(ice::BasicString<CharType> str) noexcept -> ice::ucount = delete;
-
 
     template<typename CharType>
     constexpr bool empty(ice::BasicString<CharType> str) noexcept;
@@ -104,6 +99,12 @@ namespace ice::string
         ice::ucount start_idx = 0
     ) noexcept -> ice::ucount;
 
+
+    template<typename T, typename CharType = char> requires ice::concepts::RODataObject<T>
+    constexpr auto from_data(T ro_data) noexcept -> ice::BasicString<CharType>;
+
+    template<typename T, typename CharType = char> requires ice::concepts::RODataObject<T>
+    constexpr auto from_data(T ro_data, ice::usize offset, ice::ucount size) noexcept -> ice::String;
 
     template<typename CharType>
     constexpr auto data_view(ice::BasicString<CharType> str) noexcept -> typename ice::Data;

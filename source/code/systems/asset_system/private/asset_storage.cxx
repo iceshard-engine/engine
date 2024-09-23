@@ -8,6 +8,8 @@
 #include "asset_request_awaitable.hxx"
 #include "asset_transaction.hxx"
 
+#include <ice/config.hxx>
+
 namespace ice
 {
     namespace detail
@@ -162,14 +164,14 @@ namespace ice
             co_await ice::await_tasks(tasks);
 
             // Build the metadata
-            ice::MutableMetadata meta{ alloc };
+            ice::ConfigBuilder meta{ alloc };
             if (ice::wait_for_result(compiler.fn_build_metadata(ctx, resource, resource_tracker, compiled_sources, dependencies, meta)))
             {
                 // Finalize the asset
                 transaction.set_result_data(
                     alloc,
                     AssetState::Baked,
-                    meta,
+                    meta.finalize(alloc),
                     compiler.fn_finalize(ctx, resource, compiled_sources, dependencies, alloc)
                 );
             }
@@ -188,7 +190,7 @@ namespace ice
             ice::Allocator& alloc,
             ice::AssetCategoryDefinition const& definition,
             ice::AssetStorage& asset_storage,
-            ice::Metadata const& asset_metadata,
+            ice::Config const& asset_metadata,
             ice::Data baked_data,
             ice::Memory& result
         ) noexcept -> ice::Task<bool>
@@ -407,10 +409,10 @@ namespace ice
             if (current_state == AssetState::Baked)
             {
                 ice::Data metadata_data;
-                ice::Metadata metadata;
+                ice::Config metadata;
                 if (co_await ice::asset_metadata_find(transaction.asset._data, metadata_data) == S_Ok)
                 {
-                    metadata = ice::meta_load(metadata_data);
+                    metadata = ice::config::from_data(metadata_data);
                 }
 
                 ice::Memory load_result{};
@@ -503,7 +505,7 @@ namespace ice
             ice::AssetState const current_state = transaction.asset.state();
             ICE_ASSERT_CORE(current_state == AssetState::Exists);
 
-            ice::Metadata metadata;
+            ice::Config metadata;
             co_await ice::asset_metadata_load(transaction.asset._data, metadata);
 
             // Update the initial data object

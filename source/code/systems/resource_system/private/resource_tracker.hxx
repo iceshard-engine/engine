@@ -13,6 +13,7 @@
 #include <ice/log_tag.hxx>
 #include <ice/log_formatters.hxx>
 #include <ice/task_utils.hxx>
+#include <ice/container/linked_queue.hxx>
 #include <ice/path_utils.hxx>
 #include <ice/devui_widget.hxx>
 
@@ -27,24 +28,78 @@ namespace ice
         ) noexcept
             : resource{ resource }
             , provider{ provider }
+            , refcount{ 0 }
             , status{ ResourceStatus::Available }
             , data{ }
-            , refcount{ 0 }
         { }
 
         ResourceHandle(ResourceHandle const& other) noexcept
             : resource{ other.resource }
             , provider{ other.provider }
+            , refcount{ other.refcount.load(std::memory_order_relaxed) }
             , status{ other.status }
             , data{ other.data }
-            , refcount{ other.refcount.load(std::memory_order_relaxed) }
         { }
 
         ice::Resource const* resource;
         ice::ResourceProvider* provider;
-        ice::ResourceStatus status;
-        ice::Memory data;
         std::atomic<ice::u32> refcount;
+
+        ice::ResourceStatus status;
+        ice::Data data;
+    };
+
+    struct ResourceLoadContext : ice::TaskAwaitableBase
+    {
+        ice::ResourceHandle& resource;
+        std::atomic<ice::i32> request_count = 0;
+        ice::AtomicLinkedQueue<ice::TaskAwaitableBase> request_queue = {};
+        bool request_load = false;
+
+        inline bool await_ready() noexcept
+        {
+            request_load = resource.refcount.fetch_add(1, std::memory_order_relaxed) == 0;
+            return request_load || resource.status == ResourceStatus::Loaded;
+        }
+
+        inline bool await_suspend(std::coroutine_handle<> coro) noexcept
+        {
+            // If count is below 0 then we are already "loaded" and can just continue
+            if (request_count.fetch_add(1, std::memory_order_relaxed) < 0)
+            {
+                return false;
+            }
+
+            // Else queue this load request and suspend
+            ice::linked_queue::push(request_queue, this);
+            return true;
+        }
+
+        inline bool await_resume() const noexcept// -> ice::Data
+        {
+            return request_load;
+            // We will get a pointer to the loaded data in the result part.
+            // return *reinterpret_cast<ice::Data const*>(result.ptr);
+        }
+
+        inline void process_all() noexcept
+        {
+            // We get the number of queued requests and set int min as a replacement indicating that everything after
+            //  this operation should just continue normally.
+            ice::i32 const requests_awaiting = request_count.exchange(ice::i32_min, std::memory_order_relaxed);
+            ice::i32 requests_processed = 0;
+
+            // Loop as long as we did not reach the number of requests awaiting processing.
+            while(requests_processed < requests_awaiting)
+            {
+                for (ice::TaskAwaitableBase* awaitable : ice::linked_queue::consume(request_queue))
+                {
+                    // Resume to coroutine
+                    awaitable->_coro.resume();
+                    requests_processed += 1;
+                }
+            }
+        }
     };
 
     class ResourceTrackerImplementation final : public ice::ResourceTracker
@@ -52,7 +107,6 @@ namespace ice
     public:
         ResourceTrackerImplementation(
             ice::Allocator& alloc,
-            ice::TaskScheduler& scheduler,
             ice::ResourceTrackerCreateInfo const& info
         ) noexcept;
 
@@ -115,12 +169,7 @@ namespace ice
         ice::Allocator& _allocator;
         ice::ProxyAllocator _allocator_handles;
         ice::ProxyAllocator _allocator_data;
-        ice::TaskScheduler& _scheduler;
         ice::ResourceTrackerCreateInfo _info;
-
-        ice::TaskQueue _io_queue;
-        ice::UniquePtr<ice::NativeAIO> _io_thread_data;
-        ice::UniquePtr<ice::TaskThread> _io_thread;
 
         ice::Array<ice::ResourceHandle, ContainerLogic::Complex> _handles;
         ice::HashMap<ice::ResourceHandle*> _resources;

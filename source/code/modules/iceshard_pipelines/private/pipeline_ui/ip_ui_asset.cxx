@@ -563,7 +563,7 @@ namespace ice
         void*,
         ice::Allocator& alloc,
         ice::AssetStorage& storage,
-        ice::Metadata const& metadata,
+        ice::Config const& metadata,
         ice::Data data,
         ice::Memory& out_memory
     ) noexcept -> ice::Task<bool>

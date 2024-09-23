@@ -82,8 +82,9 @@ namespace ice::input
         ice::input::InputID identifier;
         ice::input::DeviceHandle device;
 
-        bool reserved : 4;
+        bool reserved : 2;
         bool initial_event : 1;
+        ice::u8 axis_idx : 2;
         ice::input::InputValueType value_type : 3;
 
         ice::input::InputValue value;

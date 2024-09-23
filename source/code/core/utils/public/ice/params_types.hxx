@@ -25,6 +25,6 @@ namespace ice
             std::is_same_v<decltype(&T::param_parse_results), bool(*)(T&, ice::Span<ice::String const>) noexcept>;
         };
 
-    } // namespace concept
+    } // namespace concepts
 
 } // namespace ice

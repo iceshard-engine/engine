@@ -24,4 +24,25 @@ namespace ice
 
     using Allocator = ice::AllocatorBase<ice::build::is_debug || ice::build::is_develop>;
 
+    // MEMORY TYPE CONCEPTS
+
+    namespace concepts
+    {
+
+        template<typename T>
+        concept RWDataObject = requires(T t) {
+            { t.location } -> std::convertible_to<void*>;
+            { t.size } -> std::convertible_to<ice::usize>;
+            { t.alignment } -> std::convertible_to<ice::ualign>;
+        };
+
+        template<typename T>
+        concept RODataObject = requires(T t) {
+            { t.location } -> std::convertible_to<void const*>;
+            { t.size } -> std::convertible_to<ice::usize>;
+            { t.alignment } -> std::convertible_to<ice::ualign>;
+        };
+
+    } // namespace concepts
+
 } // namespace ice

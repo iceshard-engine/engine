@@ -3,19 +3,15 @@
 
 #include "asset_tilemap.hxx"
 
-#include <ice/game_tilemap.hxx>
-
-#include <ice/uri.hxx>
-#include <ice/resource.hxx>
-#include <ice/resource_meta.hxx>
-#include <ice/resource_tracker.hxx>
-#include <ice/task_utils.hxx>
-
 #include <ice/asset_storage.hxx>
-
-#include <ice/string/static_string.hxx>
-#include <ice/string_utils.hxx>
+#include <ice/game_tilemap.hxx>
 #include <ice/log.hxx>
+#include <ice/resource_tracker.hxx>
+#include <ice/resource.hxx>
+#include <ice/string_utils.hxx>
+#include <ice/string/static_string.hxx>
+#include <ice/task_utils.hxx>
+#include <ice/uri.hxx>
 
 #include <rapidxml/rapidxml.hpp>
 #undef assert

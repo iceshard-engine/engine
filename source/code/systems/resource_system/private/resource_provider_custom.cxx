@@ -125,14 +125,11 @@ namespace ice
     }
 
     auto CustomResourceProvider::load_resource(
-        ice::Allocator& alloc,
         ice::Resource const* resource,
-        ice::TaskScheduler& scheduler,
-        ice::NativeAIO* nativeio
-    ) const noexcept -> ice::Task<ice::Memory>
+        ice::String fragment
+    ) noexcept -> ice::TaskExpected<ice::Data>
     {
-        ice::FileSystemResource const* const filesys_res = static_cast<ice::FileSystemResource const*>(resource);
-        co_return co_await filesys_res->load_data(alloc, scheduler, nativeio);
+        co_return {};
     }
 
     auto CustomResourceProvider::resolve_relative_resource(

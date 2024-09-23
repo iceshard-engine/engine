@@ -24,9 +24,9 @@ public:
     auto name() const noexcept -> ice::String override;
     auto origin() const noexcept -> ice::String override;
 
-    auto load_metadata() const noexcept -> ice::Task<ice::Data> override;
-
     auto file() const noexcept -> ice::native_file::File const& { return _handle; }
+
+    ice::u32 idx;
 
 private:
     ice::Allocator& _allocator;
@@ -67,11 +67,9 @@ public:
     ) noexcept override;
 
     auto load_resource(
-        ice::Allocator& alloc,
         ice::Resource const* resource,
-        ice::TaskScheduler& scheduler,
-        ice::NativeAIO* nativeio
-    ) const noexcept -> ice::Task<ice::Memory> override;
+        ice::String fragment
+    ) noexcept -> ice::TaskExpected<ice::Data> override;
 
     auto resolve_relative_resource(
         ice::URI const& relative_uri,
@@ -81,4 +79,5 @@ public:
 private:
     ice::Allocator& _allocator;
     ice::Array<AssetCompilerResource*> _resources;
+    ice::Array<ice::Memory> _data;
 };

@@ -98,6 +98,11 @@ namespace ice
 
         auto create_timer(
             ice::Clock const& clock,
+            ice::i64 step_microseconds
+        ) noexcept -> ice::Timer;
+
+        auto create_timer(
+            ice::Clock const& clock,
             ice::f32 step_seconds,
             ice::i64 initial_timestamp
         ) noexcept -> ice::Timer;
@@ -108,6 +113,8 @@ namespace ice
 
         auto elapsed(ice::Timer const& timer) noexcept -> ice::f32;
 
+        auto elapsed_us(ice::Timer const& timer) noexcept -> ice::u64;
+
         auto alpha(ice::Timer const& timer) noexcept -> ice::f32;
 
     } // namespace timer
@@ -117,16 +124,24 @@ namespace ice
 
         auto create_timeline(ice::Clock const& clock) noexcept -> ice::Timeline;
 
+        void reset(ice::Timeline& timeline) noexcept;
+
         auto elapsed(ice::Timeline const& timeline) noexcept -> ice::f32;
+
+        auto elapsed_us(ice::Timeline const& timeline) noexcept -> ice::u64;
 
     } // namespace timeline
 
     namespace stopwatch
     {
 
+        // Always uses system clock
+        auto create_stopwatch() noexcept -> ice::Stopwatch;
         auto create_stopwatch(ice::Clock const& clock) noexcept -> ice::Stopwatch;
 
-        auto elapsed(ice::Stopwatch const& timeline) noexcept -> ice::f32;
+        auto elapsed(ice::Stopwatch const& stopwatch) noexcept -> ice::f32;
+
+        auto elapsed_us(ice::Stopwatch const& stopwatch) noexcept -> ice::u64;
 
         void start(ice::Stopwatch& stopwatch) noexcept;
 

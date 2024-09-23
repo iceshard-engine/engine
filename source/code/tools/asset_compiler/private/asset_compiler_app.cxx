@@ -1,20 +1,20 @@
 /// Copyright 2024 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
-#include <ice/tool_app.hxx>
+#include <ice/config.hxx>
+#include <ice/log.hxx>
 #include <ice/module_register.hxx>
-#include <ice/resource.hxx>
-#include <ice/resource_tracker.hxx>
-#include <ice/resource_provider.hxx>
-#include <ice/resource_format.hxx>
 #include <ice/resource_compiler_api.hxx>
 #include <ice/resource_compiler.hxx>
-#include <ice/resource_meta.hxx>
+#include <ice/resource_format.hxx>
+#include <ice/resource_provider.hxx>
+#include <ice/resource_tracker.hxx>
+#include <ice/resource.hxx>
+#include <ice/sort.hxx>
 #include <ice/sync_manual_events.hxx>
 #include <ice/task_thread.hxx>
 #include <ice/task_utils.hxx>
-#include <ice/sort.hxx>
-#include <ice/log.hxx>
+#include <ice/tool_app.hxx>
 
 #include "asset_compiler_resource_provider.hxx"
 
@@ -156,13 +156,12 @@ public:
         // Setup the AssetCompiler resource provider.
         ice::UniquePtr<ice::ResourceTracker> resource_tracker = ice::create_resource_tracker(
             _allocator,
-            _scheduler,
             { .predicted_resource_count = 10'000, .io_dedicated_threads = 0 }
         );
 
         ice::ResourceFileEntry const file_list[]{ {.path = _inputs[0], .basepath = _asset_basepath} };
         ice::ResourceProvider* const file_provider = resource_tracker->attach_provider(
-            ice::create_resource_provider_files(_allocator, file_list, &_scheduler, "<inputs>")
+            ice::create_resource_provider_files(_allocator, file_list, nullptr, "<inputs>")
         );
         resource_tracker->attach_provider(
             ice::create_resource_provider(_allocator, _includes, &_scheduler)
@@ -226,7 +225,7 @@ public:
         }
 
         // Create the metadata object
-        ice::MutableMetadata meta{ _allocator };
+        ice::ConfigBuilder meta{ _allocator };
         for (ice::String input_meta : _inputs_meta)
         {
             ice::native_file::HeapFilePath input_meta_path{ _allocator };
@@ -240,7 +239,7 @@ public:
                 ice::Memory memory = _allocator.allocate(ice::native_file::sizeof_file(file));
                 if (ice::native_file::read_file(file, memory.size, memory) == memory.size)
                 {
-                    result = ice::meta_deserialize_from(meta, ice::data_view(memory));
+                    result = meta.merge(ice::config::from_data(ice::data_view(memory)));
                 }
                 _allocator.deallocate(memory);
             }
@@ -378,7 +377,7 @@ public:
 
             if (ice::string::any(_output))
             {
-                ice::Memory const final_meta_data = ice::meta_save(meta, _allocator);
+                ice::Memory const final_meta_data = meta.finalize(_allocator);
 
                 // Calc meta offset
                 ice::AlignResult const meta_offset = ice::align_to(
