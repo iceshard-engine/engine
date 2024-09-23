@@ -1,0 +1,35 @@
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
+.Project =
+[
+    .Name = 'utils_tests'
+    .Kind = .Kind_ConsoleApp
+    .Group = 'Tests'
+    .Requires = { 'Windows' }
+    .Tags = { 'UnitTests' }
+
+    .BaseDir = '$WorkspaceCodeDir$/core/utils'
+
+    .InputPaths = {
+        'tests'
+    }
+    .VStudioPaths = .InputPaths
+
+    .Private =
+    [
+        .Uses = {
+            'utils'
+        }
+
+        .Modules = {
+            'catch2'
+        }
+    ]
+
+    .UnitTests =
+    [
+        .Enabled = true
+    ]
+]
+.Projects + .Project

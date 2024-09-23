@@ -104,7 +104,6 @@ namespace ice
 
     auto create_resource_tracker(
         ice::Allocator& alloc,
-        ice::TaskScheduler& scheduler,
         ice::ResourceTrackerCreateInfo const& create_info
     ) noexcept -> ice::UniquePtr<ice::ResourceTracker>;
 

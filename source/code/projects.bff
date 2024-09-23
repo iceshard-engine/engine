@@ -43,6 +43,7 @@
 #include "core/math/math_tests.bff"
 #include "core/memsys/memsys_tests.bff"
 #include "core/collections/collections_tests.bff"
+#include "core/utils/utils_tests.bff"
 
 #include "systems/resource_system/resource_system_tests.bff"
 

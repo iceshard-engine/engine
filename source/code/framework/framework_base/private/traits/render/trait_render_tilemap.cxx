@@ -4,30 +4,24 @@
 #include "trait_render_tilemap.hxx"
 #include "../trait_camera.hxx"
 
-#include <ice/game_tilemap.hxx>
-
-#include <ice/engine.hxx>
-#include <ice/engine_frame.hxx>
-#include <ice/engine_runner.hxx>
-#include <ice/task.hxx>
-#include <ice/task_utils.hxx>
-#include <ice/world/world_trait_archive.hxx>
-
-#include <ice/gfx/gfx_context.hxx>
-
-#include <ice/render/render_device.hxx>
-#include <ice/render/render_pipeline.hxx>
-#include <ice/render/render_resource.hxx>
-#include <ice/render/render_buffer.hxx>
-#include <ice/render/render_shader.hxx>
-#include <ice/render/render_image.hxx>
-#include <ice/render/render_pass.hxx>
-
-#include <ice/resource_meta.hxx>
 #include <ice/asset_storage.hxx>
 #include <ice/asset.hxx>
-
+#include <ice/engine_frame.hxx>
+#include <ice/engine_runner.hxx>
+#include <ice/engine.hxx>
+#include <ice/game_tilemap.hxx>
+#include <ice/gfx/gfx_context.hxx>
 #include <ice/profiler.hxx>
+#include <ice/render/render_buffer.hxx>
+#include <ice/render/render_device.hxx>
+#include <ice/render/render_image.hxx>
+#include <ice/render/render_pass.hxx>
+#include <ice/render/render_pipeline.hxx>
+#include <ice/render/render_resource.hxx>
+#include <ice/render/render_shader.hxx>
+#include <ice/task_utils.hxx>
+#include <ice/task.hxx>
+#include <ice/world/world_trait_archive.hxx>
 
 namespace ice
 {

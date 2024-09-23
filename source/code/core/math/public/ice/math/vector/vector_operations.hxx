@@ -24,7 +24,8 @@ namespace ice::math
 
     constexpr auto dot(vec<3, f32> left, vec<3, f32> right) noexcept -> f32;
 
-    inline auto normalize(vec<3, f32> value) noexcept -> vec<3, f32>;
+    template<u32 Size, typename T> requires(Size > 1)
+    inline auto normalize(vec<Size, T> value) noexcept -> vec<Size, T>;
 
 
     template<u32 Size, typename T, typename U>
@@ -87,10 +88,11 @@ namespace ice::math
             left.v[0][2] * right.v[0][2];
     }
 
-    inline auto normalize(vec<3, f32> value) noexcept -> vec<3, f32>
+    template<u32 Size, typename T> requires(Size > 1)
+    inline auto normalize(vec<Size, T> value) noexcept -> vec<Size, T>
     {
         f32 square_sum = 0;
-        for (uint32_t row = 0; row < 3; ++row)
+        for (ucount row = 0; row < Size; ++row)
         {
             square_sum += value.v[0][row] * value.v[0][row];
         }

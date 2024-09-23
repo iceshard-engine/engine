@@ -16,7 +16,6 @@
 #include <ice/mem_allocator_proxy.hxx>
 #include <ice/devui_widget.hxx>
 
-#include "native/native_aio_tasks.hxx"
 #include "resource_filesystem_loose.hxx"
 
 namespace ice
@@ -35,7 +34,8 @@ namespace ice
         FileSystemResourceProvider(
             ice::Allocator& alloc,
             ice::Span<ice::String const> const& paths,
-            ice::TaskScheduler* scheduler
+            ice::TaskScheduler* scheduler,
+            ice::native_aio::AIOPort aioport
         ) noexcept;
 
         ~FileSystemResourceProvider() noexcept override;
@@ -94,11 +94,9 @@ namespace ice
         ) noexcept override;
 
         auto load_resource(
-            ice::Allocator& alloc,
             ice::Resource const* resource,
-            ice::TaskScheduler& scheduler,
-            ice::NativeAIO* nativeio
-        ) const noexcept -> ice::Task<ice::Memory> override;
+            ice::String fragment
+        ) noexcept -> ice::TaskExpected<ice::Data, ice::ErrorCode> override;
 
         auto resolve_relative_resource(
             ice::URI const& relative_uri,
@@ -109,11 +107,14 @@ namespace ice
 
     protected:
         ice::ProxyAllocator _named_allocator;
+        ice::ProxyAllocator _data_allocator;
         ice::Allocator& _allocator;
         ice::Array<ice::native_file::HeapFilePath, ice::ContainerLogic::Complex> _base_paths;
         ice::TaskScheduler* _scheduler;
+        ice::native_aio::AIOPort _aioport;
 
         ice::HashMap<ice::FileSystemResource*> _resources;
+        ice::Array<ice::Memory> _resources_data;
         ice::UniquePtr<ice::DevUIWidget> _devui_widget;
     };
 

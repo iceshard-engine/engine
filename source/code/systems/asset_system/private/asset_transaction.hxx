@@ -23,13 +23,13 @@ namespace ice
 
         auto calculate_state(
             ice::AssetState min_state,
-            ice::Metadata const& meta
+            ice::Config const& meta
         ) const noexcept -> ice::AssetState;
 
         void set_result_data(
             ice::Allocator& alloc,
             ice::AssetState min_state,
-            ice::Metadata const& meta,
+            ice::Memory const& metadata,
             ice::Memory data
         ) noexcept;
 
@@ -131,7 +131,7 @@ namespace ice
 
     inline auto AssetStateTransaction::calculate_state(
         ice::AssetState min_state,
-        ice::Metadata const& meta
+        ice::Config const& meta
     ) const noexcept -> ice::AssetState
     {
         ice::AssetState const calculated_state = asset._shelve->definition.fn_asset_state(
@@ -146,14 +146,15 @@ namespace ice
     inline void AssetStateTransaction::set_result_data(
         ice::Allocator& dataalloc,
         ice::AssetState min_state,
-        ice::Metadata const& meta,
+        ice::Memory const& metadata,
         ice::Memory data
     ) noexcept
     {
+        ice::Config const meta = ice::config::from_data(ice::data_view(metadata));
         ice::AssetState const state = calculate_state(min_state, meta);
 
         // Assign new metadata
-        asset._metadata = ice::create_asset_data_entry(alloc, AssetState::Baked, alloc, ice::meta_save(meta, alloc));
+        asset._metadata = ice::create_asset_data_entry(alloc, AssetState::Baked, dataalloc, metadata);
         asset._metadata->_flags |= AssetDataFlags::Metadata;
 
         // Append the next asset data block

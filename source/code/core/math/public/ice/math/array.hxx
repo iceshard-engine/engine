@@ -11,16 +11,16 @@ namespace ice::math
     struct arr_t;
 
     template<u32 Size, typename T, typename U = T>
-    constexpr auto arr(arr_t<Size, U> arr_val) noexcept -> arr_t<Size, T>;
-
-    template<u32 Size, typename T>
-    constexpr auto arr(vec<Size, T> vec_val) noexcept -> arr_t<Size, T>;
+    constexpr auto to_arr(arr_t<Size, U> arr_val) noexcept -> arr_t<Size, T>;
 
     template<u32 Size, typename T, typename U = T>
-    constexpr auto arr(vec<Size, U> vec_val) noexcept -> arr_t<Size, T>;
+    constexpr auto to_arr(vec<Size, U> vec_val) noexcept -> arr_t<Size, T>;
 
     template<u32 Size, typename T>
-    constexpr auto as_vec(vec<Size, T> vec_val) noexcept -> vec<Size, T>;
+    constexpr auto to_arr(vec<Size, T> vec_val) noexcept -> arr_t<Size, T>;
+
+    template<u32 Size, typename T>
+    constexpr auto to_vec(vec<Size, T> vec_val) noexcept -> vec<Size, T>;
 
 
     template<u32 Size, typename T>
@@ -136,7 +136,7 @@ namespace ice::math
 
 
     template<u32 Size, typename T, typename U>
-    constexpr auto arr(arr_t<Size, U> arr_val) noexcept -> arr_t<Size, T>
+    constexpr auto to_arr(arr_t<Size, U> arr_val) noexcept -> arr_t<Size, T>
     {
         arr_t<Size, T> result{ };
         for (u32 idx = 0; idx < Size; ++idx)
@@ -146,14 +146,8 @@ namespace ice::math
         return result;
     }
 
-    template<u32 Size, typename T>
-    constexpr auto arr(vec<Size, T> vec_val) noexcept -> arr_t<Size, T>
-    {
-        return arr<Size, T, T>(vec_val);
-    }
-
     template<u32 Size, typename T, typename U>
-    constexpr auto arr(vec<Size, U> vec_val) noexcept -> arr_t<Size, T>
+    constexpr auto to_arr(vec<Size, U> vec_val) noexcept -> arr_t<Size, T>
     {
         arr_t<Size, T> result{ };
         for (u32 idx = 0; idx < Size; ++idx)
@@ -164,7 +158,13 @@ namespace ice::math
     }
 
     template<u32 Size, typename T>
-    constexpr auto as_vec(arr_t<Size, T> arr_val) noexcept -> vec<Size, T>
+    constexpr auto to_arr(vec<Size, T> vec_val) noexcept -> arr_t<Size, T>
+    {
+        return to_arr<Size, T, T>(vec_val);
+    }
+
+    template<u32 Size, typename T>
+    constexpr auto to_vec(arr_t<Size, T> arr_val) noexcept -> vec<Size, T>
     {
         vec<Size, T> result{ };
         for (u32 idx = 0; idx < Size; ++idx)
@@ -174,21 +174,23 @@ namespace ice::math
         return result;
     }
 
+    template<u32 Size, typename T>
+    using arr = arr_t<Size, T>;
 
-    using arr1f = arr_t<1, f32>;
-    using arr1u = arr_t<1, u32>;
-    using arr1i = arr_t<1, i32>;
+    using arr1f = arr<1, f32>;
+    using arr1u = arr<1, u32>;
+    using arr1i = arr<1, i32>;
 
-    using arr2f = arr_t<2, f32>;
-    using arr2u = arr_t<2, u32>;
-    using arr2i = arr_t<2, i32>;
+    using arr2f = arr<2, f32>;
+    using arr2u = arr<2, u32>;
+    using arr2i = arr<2, i32>;
 
-    using arr3f = arr_t<3, f32>;
-    using arr3u = arr_t<3, u32>;
-    using arr3i = arr_t<3, i32>;
+    using arr3f = arr<3, f32>;
+    using arr3u = arr<3, u32>;
+    using arr3i = arr<3, i32>;
 
-    using arr4f = arr_t<4, f32>;
-    using arr4u = arr_t<4, u32>;
-    using arr4i = arr_t<4, i32>;
+    using arr4f = arr<4, f32>;
+    using arr4u = arr<4, u32>;
+    using arr4i = arr<4, i32>;
 
 } // namespace ice::math

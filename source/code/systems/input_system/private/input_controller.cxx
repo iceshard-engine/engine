@@ -134,12 +134,13 @@ namespace ice::input
             .device = _device
         };
 
-        auto publish_axis_value = [&event, &events_out](ControllerInput input, ice::f32 value, bool& reset) noexcept
+        auto publish_axis_value = [&event, &events_out](ControllerInput input, ice::f32 value, bool& reset, ice::u8 axis_index) noexcept
         {
             if (value >= 0.25 || value <= -0.25f)
             {
                 reset = false;
                 event.identifier = input_identifier(DeviceType::Controller, input);
+                event.axis_idx = axis_index;
                 event.value.axis.value_f32 = value;
                 event.value_type = InputValueType::AxisFloat;
                 ice::array::push_back(events_out, event);
@@ -148,18 +149,19 @@ namespace ice::input
             {
                 reset = true;
                 event.identifier = input_identifier(DeviceType::Controller, input);
+                event.axis_idx = axis_index;
                 event.value.axis.value_f32 = 0.0f;
                 event.value_type = InputValueType::AxisFloat;
                 ice::array::push_back(events_out, event);
             }
         };
 
-        publish_axis_value(ControllerInput::LeftAxisX, _left_axis[0], _axis_reset_event[0]);
-        publish_axis_value(ControllerInput::LeftAxisY, _left_axis[1], _axis_reset_event[1]);
-        publish_axis_value(ControllerInput::RightAxisX, _right_axis[0], _axis_reset_event[2]);
-        publish_axis_value(ControllerInput::RightAxisY, _right_axis[1], _axis_reset_event[3]);
-        publish_axis_value(ControllerInput::LeftTrigger, _triggers[0], _axis_reset_event[4]);
-        publish_axis_value(ControllerInput::RightTrigger, _triggers[1], _axis_reset_event[5]);
+        publish_axis_value(ControllerInput::LeftAxisX, _left_axis[0], _axis_reset_event[0], 0);
+        publish_axis_value(ControllerInput::LeftAxisY, _left_axis[1], _axis_reset_event[1], 1);
+        publish_axis_value(ControllerInput::RightAxisX, _right_axis[0], _axis_reset_event[2], 0);
+        publish_axis_value(ControllerInput::RightAxisY, _right_axis[1], _axis_reset_event[3], 1);
+        publish_axis_value(ControllerInput::LeftTrigger, _triggers[0], _axis_reset_event[4], 0);
+        publish_axis_value(ControllerInput::RightTrigger, _triggers[1], _axis_reset_event[5], 0);
 
         for (detail::ControlState& control : _controls)
         {

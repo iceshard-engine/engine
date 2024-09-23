@@ -57,19 +57,17 @@ auto AssetCompilerResource::origin() const noexcept -> ice::String
     return _path;
 }
 
-auto AssetCompilerResource::load_metadata() const noexcept -> ice::Task<ice::Data>
-{
-    co_return ice::data_view(_metadata);
-}
-
 AssetCompilerResourceProvider::AssetCompilerResourceProvider(
     ice::Allocator& alloc,
     ice::Span<ice::String const> files
 ) noexcept
     : _allocator{ alloc }
     , _resources{ _allocator }
+    , _data{ _allocator }
 {
     ice::array::reserve(_resources, ice::count(files));
+
+    ice::u32 idx = 0;
     for (ice::String file : files)
     {
         ice::native_file::HeapFilePath filepath{ _allocator };
@@ -77,11 +75,13 @@ AssetCompilerResourceProvider::AssetCompilerResourceProvider(
         ice::native_file::File filehandle = ice::native_file::open_file(filepath, ice::native_file::FileOpenFlags::Read);
         ICE_ASSERT(filehandle == true, "Couldn't open file {}", file);
 
-        ice::array::push_back(
-            _resources,
-            _allocator.create<AssetCompilerResource>(_allocator, ice::move(filehandle), file)
-        );
+        AssetCompilerResource* res = _allocator.create<AssetCompilerResource>(_allocator, ice::move(filehandle), file);
+        res->idx = idx++;
+        ice::array::push_back(_resources, res);
     }
+
+    ice::array::resize(_data, ice::count(_resources));
+    ice::memset(ice::begin(_data), '\0', ice::array::data_view(_data).size.value);
 }
 
 AssetCompilerResourceProvider::~AssetCompilerResourceProvider() noexcept
@@ -89,6 +89,11 @@ AssetCompilerResourceProvider::~AssetCompilerResourceProvider() noexcept
     for (AssetCompilerResource* resource : _resources)
     {
         _allocator.destroy(resource);
+    }
+
+    for (ice::Memory data : _data)
+    {
+        _allocator.deallocate(data);
     }
 }
 
@@ -134,11 +139,9 @@ void AssetCompilerResourceProvider::unload_resource(
 }
 
 auto AssetCompilerResourceProvider::load_resource(
-    ice::Allocator& alloc,
     ice::Resource const* resource,
-    ice::TaskScheduler& scheduler,
-    ice::NativeAIO* nativeio
-) const noexcept -> ice::Task<ice::Memory>
+    ice::String fragment
+) noexcept -> ice::TaskExpected<ice::Data>
 {
     using ice::operator""_B;
 
@@ -150,13 +153,13 @@ auto AssetCompilerResourceProvider::load_resource(
         co_return {};
     }
 
-    ice::Memory result = alloc.allocate(filesize);
-    if (ice::native_file::read_file(ac_resource->file(), filesize, result) != filesize)
+    _data[ac_resource->idx] = _allocator.allocate(filesize);
+    if (ice::native_file::read_file(ac_resource->file(), filesize, _data[ac_resource->idx]) != filesize)
     {
-        alloc.deallocate(ice::exchange(result, {}));
+        _allocator.deallocate(ice::exchange(_data[ac_resource->idx], {}));
     }
 
-    co_return result;
+    co_return ice::data_view(_data[ac_resource->idx]);
 }
 
 auto AssetCompilerResourceProvider::resolve_relative_resource(

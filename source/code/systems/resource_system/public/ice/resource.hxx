@@ -22,8 +22,6 @@ namespace ice
 
         virtual auto name() const noexcept -> ice::String = 0;
         virtual auto origin() const noexcept -> ice::String = 0;
-
-        virtual auto load_metadata() const noexcept -> ice::Task<ice::Data> { co_return {}; }
     };
 
     //! \todo Rethink how loose resources and their named parts can be accessed.

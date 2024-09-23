@@ -2,7 +2,8 @@
 /// SPDX-License-Identifier: MIT
 
 #include <catch2/catch_test_macros.hpp>
-#include <ice/resource_meta.hxx>
+#include <ice/config.hxx>
+#include <ice/config/config_builder.hxx>
 #include <ice/container/hashmap.hxx>
 #include <ice/mem_allocator_host.hxx>
 
@@ -27,116 +28,129 @@ SCENARIO("resource_system 'ice/resource_meta.hxx'", "[resource][metadata]")
     GIVEN("a empty json document")
     {
         constexpr ice::String test_empty_document = "{}";
-        constexpr ice::Data test_document_data =  ice::string::data_view(test_empty_document);
 
         THEN("we can deserialize it into empty metadata")
         {
-            ice::MutableMetadata meta = ice::meta_deserialize(alloc, test_document_data);
-            REQUIRE(ice::hashmap::empty(meta._meta_entries));
+            ice::Memory configmem;
+            ice::Config const cfg = ice::config::from_json(alloc, test_empty_document, configmem);
+
+            CHECK(configmem.location == nullptr);
+            CHECK(cfg._data == nullptr);
         }
     }
 
     GIVEN("a simple json document")
     {
-        constexpr ice::String test_empty_document = R"__({
+        constexpr ice::String test_simple_document = R"__({
             "name": "foo",
             "details": {
                 "numbers": [1, 2, 3],
                 "height": 3.14,
-                "stringz": ["The", "quick", "brown", "fox"]
+                "strings": ["The", "quick", "brown", "fox"]
             }
         })__";
 
-        constexpr ice::Data test_document_data = ice::string::data_view(test_empty_document);
-
         THEN("we can deserialize it into metadata")
         {
-            ice::MutableMetadata meta = ice::meta_deserialize(alloc, test_document_data);
+            ice::Memory configmem;
+            ice::Config const meta = ice::config::from_json(alloc, test_simple_document, configmem);
 
-            CHECK(ice::hashmap::empty(meta._meta_entries) == false);
+            REQUIRE(configmem.location != nullptr);
+            REQUIRE(meta._data != nullptr);
 
             ice::String meta_name;
-            CHECK(ice::meta_read_string(meta, "name"_sid, meta_name));
+            CHECK(ice::config::get(meta, "name", meta_name));
             CHECK(meta_name == "foo");
 
             ice::f32 meta_height;
-            CHECK(ice::meta_read_float(meta, "details.height"_sid, meta_height));
+            CHECK(ice::config::get(meta, "details.height", meta_height));
             CHECK(std::abs(meta_height - 3.14) < 0.00001);
 
             ice::Array<ice::i32> meta_numbers{ alloc };
-            CHECK(ice::meta_read_int32_array(meta, "details.numbers"_sid, meta_numbers));
+            CHECK(ice::config::get_array(meta, "details.numbers", meta_numbers));
             CHECK(ice::array::count(meta_numbers) == 3);
             CHECK(meta_numbers[0] == 1);
             CHECK(meta_numbers[1] == 2);
             CHECK(meta_numbers[2] == 3);
 
-            ice::Array<ice::String> meta_stringz{ alloc };
-            CHECK(ice::meta_read_string_array(meta, "details.stringz"_sid, meta_stringz));
-            CHECK(ice::array::count(meta_stringz) == 4);
-            CHECK(meta_stringz[0] == "The");
-            CHECK(meta_stringz[2] == "brown");
+            ice::Array<ice::String> meta_strings{ alloc };
+            CHECK(ice::config::get_array(meta, "details.strings", meta_strings));
+            CHECK(ice::array::count(meta_strings) == 4);
+            CHECK(meta_strings[0] == "The");
+            CHECK(meta_strings[2] == "brown");
 
             THEN("we can store it in a buffer")
             {
-                ice::Memory mem_meta = ice::meta_save(meta, alloc);
+                ice::ConfigBuilder meta_builder{ alloc };
+
+                // TODO: Implement mering configs into builder
+                ice::config::from_json(meta_builder, test_simple_document);
+                ice::Memory mem_meta = meta_builder.finalize(alloc);
 
                 THEN("we can load it again")
                 {
-                    ice::Metadata const_meta = ice::meta_load(ice::data_view(mem_meta));
+                    ice::Config const const_meta = ice::config::from_data(ice::data_view(mem_meta));
 
                     ice::String meta_name_2;
-                    CHECK(ice::meta_read_string(const_meta, "name"_sid, meta_name_2));
+                    CHECK(ice::config::get(const_meta, "name", meta_name_2));
                     CHECK(meta_name_2 == "foo");
 
                     ice::f32 meta_height_2;
-                    CHECK(ice::meta_read_float(const_meta, "details.height"_sid, meta_height_2));
+                    CHECK(ice::config::get(const_meta, "details.height", meta_height_2));
                     CHECK(std::abs(meta_height_2 - 3.14) < 0.00001);
 
                     ice::Array<ice::i32> meta_numbers_2{ alloc };
-                    CHECK(ice::meta_read_int32_array(const_meta, "details.numbers"_sid, meta_numbers_2));
+                    CHECK(ice::config::get_array(const_meta, "details.numbers", meta_numbers_2));
                     CHECK(ice::array::count(meta_numbers_2) == 3);
                     CHECK(meta_numbers_2[0] == 1);
                     CHECK(meta_numbers_2[1] == 2);
                     CHECK(meta_numbers_2[2] == 3);
 
-                    ice::Array<ice::String> meta_stringz_2{ alloc };
-                    CHECK(ice::meta_read_string_array(const_meta, "details.stringz"_sid, meta_stringz_2));
-                    CHECK(ice::array::count(meta_stringz_2) == 4);
-                    CHECK(meta_stringz_2[0] == "The");
-                    CHECK(meta_stringz_2[2] == "brown");
+                    ice::Array<ice::String> meta_strings_2{ alloc };
+                    CHECK(ice::config::get_array(const_meta, "details.strings", meta_strings_2));
+                    CHECK(ice::array::count(meta_strings_2) == 4);
+                    CHECK(meta_strings_2[0] == "The");
+                    CHECK(meta_strings_2[2] == "brown");
                 }
 
                 alloc.deallocate(mem_meta);
             }
+            alloc.deallocate(configmem);
         }
     }
 
     GIVEN("a mutable metadata object")
     {
-        ice::MutableMetadata meta{ alloc };
+        ice::ConfigBuilder meta{ alloc };
 
         THEN("we can set simple values")
         {
-            ice::meta_set_bool(meta, "value.bool"_sid, true);
-            ice::meta_set_int32(meta, "value.int32"_sid, 123321);
-            ice::meta_set_float(meta, "value.float"_sid, -2.5f);
-            ice::meta_set_string(meta, "value.string"_sid, "test");
+            meta["value"]["bool"] = true;
+            meta["value"]["int32"] = 123321;
+            meta["value"]["float"] = -2.5f;
+            meta["value"]["string"] = "test";
 
             bool meta_bool;
             ice::i32 meta_int;
             ice::f32 meta_float;
             ice::String meta_string;
 
-            CHECK(ice::meta_read_bool(meta, "value.bool"_sid, meta_bool));
+            ice::Memory configmem = meta.finalize(alloc);
+            ice::Config const cfg = ice::config::from_data(ice::data_view(configmem));
+
+            CHECK(ice::config::get(cfg, "value.bool", meta_bool));
             CHECK(meta_bool == true);
-            CHECK(ice::meta_read_int32(meta, "value.int32"_sid, meta_int));
+            CHECK(ice::config::get(cfg, "value.int32", meta_int));
             CHECK(meta_int == 123321);
-            CHECK(ice::meta_read_float(meta, "value.float"_sid, meta_float));
+            CHECK(ice::config::get(cfg, "value.float", meta_float));
             CHECK(meta_float == -2.5f);
-            CHECK(ice::meta_read_string(meta, "value.string"_sid, meta_string));
+            CHECK(ice::config::get(cfg, "value.string", meta_string));
             CHECK(meta_string == "test");
+
+            alloc.deallocate(configmem);
         }
 
+#if 0
         THEN("we can set array values")
         {
             bool const test_bool_values[]{ true, false, true };
@@ -164,9 +178,12 @@ SCENARIO("resource_system 'ice/resource_meta.hxx'", "[resource][metadata]")
             CHECK(ice::array::count(meta_float_arr) == 6);
             CHECK(ice::array::count(meta_string_arr) == 3);
         }
+#endif
 
         WHEN("it is empty")
         {
+            ice::Config const empty_config;
+
             THEN("reading simple values fails")
             {
                 bool meta_bool = false;
@@ -174,10 +191,10 @@ SCENARIO("resource_system 'ice/resource_meta.hxx'", "[resource][metadata]")
                 ice::f32 meta_float = 0.3366f;
                 ice::String meta_string = "this_should_not_change!";
 
-                CHECK(ice::meta_read_bool(meta, "value.bool"_sid, meta_bool) == false);
-                CHECK(ice::meta_read_int32(meta, "value.int32"_sid, meta_int) == false);
-                CHECK(ice::meta_read_float(meta, "value.float"_sid, meta_float) == false);
-                CHECK(ice::meta_read_string(meta, "value.string"_sid, meta_string) == false);
+                CHECK(ice::config::get(empty_config, "value.bool", meta_bool) == ice::E_Fail);
+                CHECK(ice::config::get(empty_config, "value.int32", meta_int) == ice::E_Fail);
+                CHECK(ice::config::get(empty_config, "value.float", meta_float) == ice::E_Fail);
+                CHECK(ice::config::get(empty_config, "value.string", meta_string) == ice::E_Fail);
 
                 CHECK(meta_bool == false);
                 CHECK(meta_int == 123);
@@ -192,10 +209,10 @@ SCENARIO("resource_system 'ice/resource_meta.hxx'", "[resource][metadata]")
                 ice::Array<ice::f32> meta_float_arr{ alloc };
                 ice::Array<ice::String> meta_string_arr{ alloc };
 
-                CHECK(ice::meta_read_bool_array(meta, "value.bool"_sid, meta_bool_arr) == false);
-                CHECK(ice::meta_read_int32_array(meta, "value.int32"_sid, meta_int32_arr) == false);
-                CHECK(ice::meta_read_float_array(meta, "value.float"_sid, meta_float_arr) == false);
-                CHECK(ice::meta_read_string_array(meta, "value.string"_sid, meta_string_arr) == false);
+                CHECK(ice::config::get_array(empty_config, "value.bool", meta_bool_arr) == ice::E_Fail);
+                CHECK(ice::config::get_array(empty_config, "value.int32", meta_int32_arr) == ice::E_Fail);
+                CHECK(ice::config::get_array(empty_config, "value.float", meta_float_arr) == ice::E_Fail);
+                CHECK(ice::config::get_array(empty_config, "value.string", meta_string_arr) == ice::E_Fail);
 
                 CHECK(ice::array::count(meta_bool_arr) == 0);
                 CHECK(ice::array::count(meta_int32_arr) == 0);

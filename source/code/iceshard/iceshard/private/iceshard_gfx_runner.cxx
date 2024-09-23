@@ -123,9 +123,9 @@ namespace ice::gfx
                 .frame_end = { _queue_end }
             };
 
-            auto s = ice::gfx::create_stage_registry(_alloc);
+            auto stage_registry = ice::gfx::create_stage_registry(_alloc);
             {
-                if (_rendergraph->prepare(gpu_stages, *s, _gfx_tasks))
+                if (_rendergraph->prepare(gpu_stages, *stage_registry, _gfx_tasks))
                 {
                     _gfx_tasks.execute_tasks();
                 }

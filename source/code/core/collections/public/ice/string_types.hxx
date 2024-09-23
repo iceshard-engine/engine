@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -17,12 +17,13 @@ namespace ice
     template<typename CharType = char>
     struct BasicString
     {
+        using SizeType = ice::ucount;
         using ValueType = CharType const;
         using ConstIterator = CharType const*;
         using ConstReverseIterator = std::reverse_iterator<CharType const*>;
 
-        ice::ucount _size = 0;
-        CharType const* _data = nullptr;
+        SizeType _size = 0;
+        ValueType* _data = nullptr;
 
         constexpr BasicString() noexcept = default;
         constexpr BasicString(BasicString&& other) noexcept = default;
@@ -53,6 +54,33 @@ namespace ice
     using WString = ice::BasicString<ice::wchar>;
 
 
+    using VarStringTag = struct _tagVarString;
+
+    template<typename CharType = char>
+    struct VarStringBase
+    {
+        using TypeTag = VarStringTag;
+        using ValueType = CharType const;
+        using ConstIterator = CharType const*;
+        using ConstReverseIterator = std::reverse_iterator<CharType const*>;
+
+        ValueType* _data;
+
+        inline VarStringBase() noexcept;
+        inline ~VarStringBase() noexcept = default;
+
+        inline explicit VarStringBase(CharType const* data) noexcept;
+
+        inline auto operator[](ice::ucount idx) noexcept -> CharType&;
+        inline auto operator[](ice::ucount idx) const noexcept -> CharType const&;
+
+        inline operator ice::BasicString<CharType>() const noexcept;
+    };
+
+    using VarString = VarStringBase<char>;
+    using VarWString = VarStringBase<ice::wchar>;
+
+
     //! \brief A heap allocated string object.
     //!
     //! \note Depending on the use case an allocator not related to system heap may be provided.
@@ -60,6 +88,7 @@ namespace ice
     template<typename CharType = char>
     struct HeapString
     {
+        using SizeType = ice::ucount;
         using ValueType = CharType;
         using Iterator = CharType*;
         using ReverseIterator = std::reverse_iterator<CharType*>;
@@ -67,9 +96,9 @@ namespace ice
         using ConstReverseIterator = std::reverse_iterator<CharType const*>;
 
         ice::Allocator* _allocator;
-        ice::ucount _capacity;
-        ice::ucount _size;
-        CharType* _data;
+        SizeType _capacity;
+        SizeType _size;
+        ValueType* _data;
 
         inline explicit HeapString(ice::Allocator& allocator) noexcept;
         inline HeapString(ice::Allocator& allocator, ice::BasicString<CharType> string) noexcept;
@@ -95,16 +124,17 @@ namespace ice
     template<ice::ucount Capacity = 12, typename CharType = char>
     struct StaticString
     {
+        using SizeType = ice::ucount;
         using ValueType = CharType;
         using Iterator = CharType*;
         using ReverSeIterator = std::reverse_iterator<CharType*>;
         using ConstIterator = CharType const*;
         using ConstReverseIterator = std::reverse_iterator<CharType const*>;
 
-        static constexpr ice::ucount Constant_Capacity = Capacity;
+        static constexpr SizeType Constant_Capacity = Capacity;
 
-        ice::ucount _size;
-        CharType _data[Constant_Capacity];
+        SizeType _size;
+        ValueType _data[Constant_Capacity];
 
         constexpr StaticString() noexcept;
         constexpr ~StaticString() noexcept = default;
@@ -127,6 +157,39 @@ namespace ice
         constexpr operator ice::BasicString<CharType>() const noexcept;
     };
 
+
+    template<typename CharType = char>
+    struct HeapVarString
+    {
+        using TypeTag = VarStringTag;
+        using ValueType = CharType;
+        using Iterator = CharType*;
+        using ReverSeIterator = std::reverse_iterator<CharType*>;
+        using ConstIterator = CharType const*;
+        using ConstReverseIterator = std::reverse_iterator<CharType const*>;
+
+        ice::Allocator* _allocator;
+        ValueType* _data;
+
+        inline explicit HeapVarString(ice::Allocator& alloc) noexcept;
+        inline HeapVarString(ice::Allocator& allocator, ice::BasicString<CharType> string) noexcept;
+        inline ~HeapVarString() noexcept;
+
+        inline HeapVarString(HeapVarString&& other) noexcept;
+        inline HeapVarString(HeapVarString const& other) noexcept;
+
+        inline auto operator=(HeapVarString&& other) noexcept -> HeapVarString&;
+        inline auto operator=(HeapVarString const& other) noexcept -> HeapVarString&;
+        inline auto operator=(ice::BasicString<CharType> str) noexcept -> HeapVarString&;
+
+        template<ice::ucount OtherCapacity>
+        inline auto operator=(ice::StaticString<OtherCapacity, CharType> const& other) noexcept -> HeapVarString&;
+
+        inline auto operator[](ice::ucount idx) noexcept -> CharType&;
+        inline auto operator[](ice::ucount idx) const noexcept -> CharType const&;
+
+        inline operator ice::BasicString<CharType>() const noexcept;
+    };
 
     static_assert(ice::TrivialContainerLogicAllowed<ice::String>);
     static_assert(ice::TrivialContainerLogicAllowed<ice::WString>);

@@ -2,13 +2,15 @@
 /// SPDX-License-Identifier: MIT
 
 #include "resource_filesystem_loose.hxx"
-#include "native/native_aio_tasks.hxx"
+#include "resource_aio_request.hxx"
 
+#include <ice/config.hxx>
+#include <ice/config/config_builder.hxx>
+#include <ice/container/hashmap.hxx>
 #include <ice/mem_allocator_stack.hxx>
 #include <ice/path_utils.hxx>
-#include <ice/container/hashmap.hxx>
-#include <ice/task.hxx>
 #include <ice/task_utils.hxx>
+#include <ice/task.hxx>
 
 namespace ice
 {
@@ -19,114 +21,88 @@ namespace ice
         auto async_file_read(
             ice::native_file::File file,
             ice::usize filesize,
-            ice::NativeAIO* nativeio,
+            ice::native_aio::AIOPort aioport,
             ice::Memory data
         ) noexcept -> ice::Task<bool>
         {
-            ice::AsyncReadFile asyncio{ nativeio, ice::move(file), data, filesize };
-            ice::AsyncReadFile::Result const read_result = co_await asyncio;
+            ice::detail::AsyncReadRequest request{ aioport, file, filesize, 0_B, data };
+            ice::usize const bytes_read = co_await request;
+
             ICE_ASSERT(
-                read_result.bytes_read == filesize,
+                bytes_read == filesize,
                 "Failed to load file into memory, requested bytes: {}!",
                 filesize
             );
-            co_return read_result.bytes_read == filesize;
+            co_return bytes_read == filesize;
         }
 
         auto async_file_load(
             ice::Allocator& alloc,
-            ice::NativeAIO* nativeio,
-            ice::String filepath
-        ) noexcept -> ice::Task<ice::Memory>
+            ice::Memory target_memory,
+            ice::native_aio::AIOPort aioport,
+            ice::String filepath,
+            bool readmeta
+        ) noexcept -> ice::Task<ice::Result>
         {
+            if (target_memory.size == 0_B)
+            {
+                co_return S_Ok;
+            }
+
             ice::native_file::HeapFilePath native_filepath{ alloc };
             ice::native_file::path_from_string(filepath, native_filepath);
+            if (readmeta)
+            {
+                ice::string::push_back(native_filepath, ISP_PATH_LITERAL(".isrm"));
+            }
 
-            ice::Memory result{
-                .location = nullptr,
-                .size = 0_B,
-                .alignment = ice::ualign::invalid,
-            };
-
-            ice::native_file::File handle = ice::native_file::open_file(
-                native_filepath,
-                ice::native_file::FileOpenFlags::Asynchronous
-            );
+            ice::Expected<ice::native_file::File> handle = ice::native_file::open_file(aioport, native_filepath);
             if (handle)
             {
-                ice::usize const filesize = ice::native_file::sizeof_file(handle);
-                ICE_ASSERT(
-                    filesize.value < ice::ucount_max,
-                    "Trying to load file larger than supported!"
-                );
-
-                if (filesize > 0_B)
-                {
-                    result = alloc.allocate(filesize);
-                    bool const success = co_await async_file_read(ice::move(handle), filesize, nativeio, result);
-                    if (success == false)
-                    {
-                        alloc.deallocate(result);
-                    }
-                }
-                else
-                {
-                    // Allocate 1 byte just to not return a nullptr.
-                    // TODO: Find a better way to handle this.
-                    result = alloc.allocate(1_B);
-                }
+                co_return co_await async_file_read(ice::move(handle).value(), target_memory.size, aioport, target_memory)
+                    ? S_Ok : E_Fail;
             }
-            co_return result;
+            co_return handle.error();
         }
 
         auto sync_file_load(
             ice::Allocator& alloc,
-            ice::String filepath
-        ) noexcept -> ice::Memory
+            ice::Memory target_memory,
+            ice::String filepath,
+            bool readmeta
+        ) noexcept -> ice::Result
         {
+            if (target_memory.size == 0_B)
+            {
+                return S_Ok;
+            }
+
             ice::native_file::HeapFilePath native_filepath{ alloc };
             ice::native_file::path_from_string(filepath, native_filepath);
-
-            ice::Memory result{
-                .location = nullptr,
-                .size = 0_B,
-                .alignment = ice::ualign::invalid,
-            };
+            if (readmeta)
+            {
+                ice::string::push_back(native_filepath, ISP_PATH_LITERAL(".isrm"));
+            }
 
             ice::native_file::File handle = ice::native_file::open_file(native_filepath);
-            if (handle)
+            if (handle == false)
             {
-                ice::usize const filesize = ice::native_file::sizeof_file(handle);
-                ICE_ASSERT(
-                    filesize.value < ice::ucount_max,
-                    "Trying to load file larger than supported!"
-                );
-
-                result = alloc.allocate(filesize);
-                // TODO: Better error handling. Using "expected".
-                ice::usize const bytes_read = ice::native_file::read_file(
-                    ice::move(handle),
-                    filesize,
-                    result
-                );
-                if (bytes_read.value == 0)
-                {
-                    ICE_ASSERT(
-                        bytes_read.value != 0,
-                        "Failed to load file!"
-                    );
-
-                    alloc.deallocate(result);
-                }
+                return E_Fail;
             }
-            return result;
+
+            ice::usize const bytes_read = ice::native_file::read_file(
+                ice::move(handle),
+                target_memory.size,
+                target_memory
+            );
+            return bytes_read == 0_B;
         }
 
         bool load_metadata_file(
             ice::Allocator& alloc,
             ice::native_file::FilePath path,
             ice::Memory& out_memory,
-            ice::MutableMetadata& out_metadata
+            ice::ConfigBuilder& out_metadata
         ) noexcept
         {
             ice::native_file::File meta_handle = ice::native_file::open_file(path);
@@ -136,21 +112,16 @@ namespace ice
             }
 
             ice::usize const meta_size = ice::native_file::sizeof_file(meta_handle);
-            if (meta_size.value <= ice::string::size(Constant_FileHeader_MetadataFile))
-            {
-                return false;
-            }
 
             ice::Memory metafile_data = alloc.allocate(meta_size);
             if (ice::native_file::read_file(meta_handle, meta_size, metafile_data) > 0_B)
             {
-                if (ice::meta_deserialize_from(out_metadata, data_view(metafile_data)))
+                if (ice::config::from_json(out_metadata, ice::string::from_data(metafile_data)))
                 {
                     // return the memory, we won't release it
                     out_memory = metafile_data;
                     return true;
                 }
-
             }
 
             alloc.deallocate(metafile_data);
@@ -161,25 +132,25 @@ namespace ice
 
     LooseFilesResource::LooseFilesResource(
         ice::Allocator& alloc,
-        ice::Memory metadata,
+        ice::usize meta_size,
+        ice::usize data_size,
         ice::HeapString<> origin_path,
         ice::String origin_name,
         ice::String uri_path
     ) noexcept
         : ice::FileSystemResource{ }
         , _allocator{ alloc }
-        , _raw_metadata{ metadata }
         , _origin_path{ ice::move(origin_path) }
         , _origin_name{ origin_name }
         , _uri_path{ uri_path }
         , _uri{ ice::Scheme_File, uri_path }
-        , _extra_resources{ alloc }
+        , _metasize{ meta_size }
+        , _datasize{ data_size }
     {
     }
 
     LooseFilesResource::~LooseFilesResource() noexcept
     {
-        _allocator.deallocate(_raw_metadata);
     }
 
     auto LooseFilesResource::uri() const noexcept -> ice::URI const&
@@ -202,28 +173,13 @@ namespace ice
         return _origin_path;
     }
 
-    auto LooseFilesResource::load_metadata() const noexcept -> ice::Task<ice::Data>
-    {
-        co_return ice::data_view(_raw_metadata);
-    }
-
     auto LooseFilesResource::load_named_part(
         ice::StringID_Arg name,
         ice::Allocator& alloc
     ) const noexcept -> ice::Task<Memory>
     {
-        ice::Memory result{
-            .location = nullptr,
-            .size = 0_B,
-            .alignment = ice::ualign::invalid,
-        };
-
-        ice::HeapString<> const* const extra_path = ice::hashmap::try_get(_extra_resources, ice::hash(name));
-        if (extra_path != nullptr)
-        {
-            result = ice::detail::sync_file_load(alloc, *extra_path);
-        }
-        co_return result;
+        ICE_ASSERT_CORE(false);
+        co_return ice::Memory{};
     }
 
     void LooseFilesResource::add_named_part(
@@ -231,27 +187,52 @@ namespace ice
         ice::HeapString<> path
     ) noexcept
     {
-        ICE_ASSERT(
-            ice::hashmap::has(_extra_resources, ice::hash(name)) == false,
-            "Extra file with name {} already exists!", name
-        );
-
-        ice::hashmap::set(_extra_resources, ice::hash(name), ice::move(path));
+        ICE_ASSERT_CORE(false);
     }
 
     auto LooseFilesResource::load_data(
         ice::Allocator& alloc,
-        ice::TaskScheduler& scheduler,
-        ice::NativeAIO* nativeio
-    ) const noexcept -> ice::Task<ice::Memory>
+        ice::Memory& memory,
+        ice::String fragment,
+        ice::native_aio::AIOPort aioport
+    ) const noexcept -> ice::TaskExpected<ice::Data>
     {
-        if (nativeio != nullptr)
+        ICE_ASSERT(
+            memory.location == nullptr || memory.size >= (_datasize + _metasize),
+            "Allocated memory is not large enough to store resource data and metadata!"
+        );
+
+        ice::usize const metaoffset = ice::align_to(_datasize, ice::ualign::b_8).value;
+        if (memory.location == nullptr)
         {
-            co_return co_await detail::async_file_load(alloc, nativeio, _origin_path);
+            memory = alloc.allocate(metaoffset + _metasize);
+
+            ice::Memory targetmem = memory;
+            if (aioport != nullptr)
+            {
+                targetmem.size = _datasize;
+                co_await detail::async_file_load(alloc, targetmem, aioport, _origin_path, false);
+                targetmem = ice::ptr_add(memory, metaoffset);
+                targetmem.size = _metasize;
+                co_await detail::async_file_load(alloc, targetmem, aioport, _origin_path, true);
+            }
+            else
+            {
+                targetmem.size = _datasize;
+                detail::sync_file_load(alloc, targetmem, _origin_path, false);
+                targetmem = ice::ptr_add(memory, metaoffset);
+                targetmem.size = _metasize;
+                detail::sync_file_load(alloc, targetmem, _origin_path, true);
+            }
+        }
+
+        if (fragment == "meta")
+        {
+            co_return Data{ ice::ptr_add(memory.location, metaoffset), _metasize, ice::ualign::b_8 };
         }
         else
         {
-            co_return detail::sync_file_load(alloc, _origin_path);
+            co_return Data{ memory.location, _datasize, ice::ualign::b_default };
         }
     }
 
@@ -263,6 +244,7 @@ namespace ice
         return ice::native_file::sizeof_file(path);
     }
 
+#if 0
     LooseFilesResource::ExtraResource::ExtraResource(
         ice::LooseFilesResource& parent,
         ice::HeapString<> origin_path,
@@ -301,11 +283,10 @@ namespace ice
 
     auto LooseFilesResource::ExtraResource::load_data(
         ice::Allocator& alloc,
-        ice::TaskScheduler& scheduler,
-        ice::NativeAIO* nativeio
+        ice::native_aio::AIOPort aioport
     ) const noexcept -> ice::Task<ice::Memory>
     {
-        co_return co_await detail::async_file_load(alloc, nativeio, _origin_path);
+        co_return co_await detail::async_file_load(alloc, aioport, _origin_path);
     }
 
     auto LooseFilesResource::ExtraResource::size() const noexcept -> ice::usize
@@ -315,6 +296,7 @@ namespace ice
         ice::native_file::path_from_string(_origin_path, path);
         return ice::native_file::sizeof_file(path);
     }
+#endif
 
     auto create_resources_from_loose_files(
         ice::Allocator& alloc,
@@ -326,49 +308,33 @@ namespace ice
     {
         IPT_ZONE_SCOPED;
         ice::LooseFilesResource* main_resource = nullptr;
-        bool const data_exists = true;// ice::native_file::exists_file(data_filepath);
-        bool const meta_exists = ice::native_file::exists_file(meta_filepath);
+        ice::usize const meta_size = ice::native_file::sizeof_file(meta_filepath);
+        ice::usize const data_size = ice::native_file::sizeof_file(data_filepath);
 
-        ice::MutableMetadata mutable_meta{ alloc };
-        if (data_exists)
+        // We create the main resource in a different scope so we dont accidentaly use data from there
         {
-            // We create the main resource in a different scope so we dont accidentaly use data from there
-            {
-                ice::HeapString<> utf8_file_path{ alloc };
-                ice::native_file::path_to_string(data_filepath, utf8_file_path);
-                ice::path::normalize(utf8_file_path);
-                IPT_ZONE_TEXT_STR(utf8_file_path);
+            ice::HeapString<> utf8_file_path{ alloc };
+            ice::native_file::path_to_string(data_filepath, utf8_file_path);
+            ice::path::normalize(utf8_file_path);
+            IPT_ZONE_TEXT_STR(utf8_file_path);
 
-                // TODO: Decide how to handle the basepath naming.
-                bool const remove_slash = utf8_file_path[ice::path::length(base_path)] == '/';
-                ice::String utf8_origin_name = ice::string::substr(utf8_file_path, ice::path::length(base_path) + remove_slash);
-                ice::String utf8_uri_path = ice::string::substr(utf8_file_path, ice::path::length(uri_base_path));
+            // TODO: Decide how to handle the basepath naming.
+            bool const remove_slash = utf8_file_path[ice::path::length(base_path)] == '/';
+            ice::String utf8_origin_name = ice::string::substr(utf8_file_path, ice::path::length(base_path) + remove_slash);
+            ice::String utf8_uri_path = ice::string::substr(utf8_file_path, ice::path::length(uri_base_path));
 
-                // We have a loose resource files which contain metadata associated data.
-                // We need now to read the metadata and check if there are more file associated and if all are available.
-                ice::Memory raw_metadata{};
-                if (meta_exists)
-                {
-                    IPT_ZONE_SCOPED_NAMED("stage: read_metadata");
-                    bool meta_load_success = ice::detail::load_metadata_file(alloc, meta_filepath, raw_metadata, mutable_meta);
-                    ICE_LOG_IF(
-                        meta_load_success == false,
-                        LogSeverity::Warning, LogTag::Core,
-                        "Failed to load metadata file {}.isrm",
-                        (ice::String)utf8_file_path
-                    );
-                }
+            IPT_ZONE_SCOPED_NAMED("stage: create_resource");
+            main_resource = alloc.create<ice::LooseFilesResource>(
+                alloc,
+                meta_size,
+                data_size,
+                ice::move(utf8_file_path), // we move so the pointer 'origin_name' calculated from 'utf8_file_path' is still valid!
+                utf8_origin_name,
+                utf8_uri_path
+            );
+        }
 
-                IPT_ZONE_SCOPED_NAMED("stage: create_resource");
-                main_resource = alloc.create<ice::LooseFilesResource>(
-                    alloc,
-                    raw_metadata,
-                    ice::move(utf8_file_path), // we move so the pointer 'origin_name' calculated from 'utf8_file_path' is still valid!
-                    utf8_origin_name,
-                    utf8_uri_path
-                );
-            }
-
+#if 0
             IPT_ZONE_SCOPED_NAMED("stage: extra_files");
             ice::Metadata const metadata = mutable_meta;
             bool const has_paths = ice::meta_has_entry(metadata, "resource.extra_files.paths"_sid);
@@ -386,8 +352,8 @@ namespace ice
 
             if (has_paths && has_names)
             {
-                ice::meta_read_string_array(metadata, "resource.extra_files.paths"_sid, paths);
-                ice::meta_read_string_array(metadata, "resource.extra_files.names"_sid, names);
+                ice::config::get_array(metadata, "resource.extra_files.paths", paths);
+                ice::config::get_array(metadata, "resource.extra_files.names", names);
 
                 ice::HeapString<> utf8_file_path{ alloc };
 
@@ -423,7 +389,7 @@ namespace ice
                     }
                 }
             }
-        }
+#endif
 
         // return main_resource;
         return main_resource;

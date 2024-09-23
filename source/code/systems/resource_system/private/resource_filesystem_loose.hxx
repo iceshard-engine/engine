@@ -1,10 +1,10 @@
-
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
+
 #pragma once
+#include <ice/native_aio.hxx>
 #include <ice/native_file.hxx>
-#include <ice/resource_meta.hxx>
 #include <ice/resource_flags.hxx>
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/container_types.hxx>
@@ -21,7 +21,8 @@ namespace ice
     public:
         LooseFilesResource(
             ice::Allocator& alloc,
-            ice::Memory metadata,
+            ice::usize meta_size,
+            ice::usize data_size,
             ice::HeapString<> origin_path,
             ice::String origin_name,
             ice::String uri_path
@@ -35,8 +36,6 @@ namespace ice
         auto name() const noexcept -> ice::String override;
         auto origin() const noexcept -> ice::String override;
 
-        auto load_metadata() const noexcept -> ice::Task<ice::Data> override;
-
         auto load_named_part(
             ice::StringID_Arg part_name,
             ice::Allocator& alloc
@@ -49,9 +48,10 @@ namespace ice
 
         auto load_data(
             ice::Allocator& alloc,
-            ice::TaskScheduler& scheduler,
-            ice::NativeAIO* nativeio
-        ) const noexcept -> ice::Task<ice::Memory> override;
+            ice::Memory& memory,
+            ice::String fragment,
+            ice::native_aio::AIOPort aioport
+        ) const noexcept -> ice::TaskExpected<ice::Data> override;
 
         auto size() const noexcept -> ice::usize override;
 
@@ -59,15 +59,19 @@ namespace ice
 
     private:
         ice::Allocator& _allocator;
-        ice::Memory _raw_metadata;
         ice::HeapString<> _origin_path;
         ice::String _origin_name;
         ice::String _uri_path;
         ice::URI _uri;
 
+        ice::usize _metasize;
+        ice::usize _datasize;
+#if 0
         ice::HashMap<ice::HeapString<>, ContainerLogic::Complex> _extra_resources;
+#endif
     };
 
+#if 0
     class LooseFilesResource::ExtraResource final : public ice::FileSystemResource, public ice::LooseResource
     {
     public:
@@ -87,8 +91,7 @@ namespace ice
 
         auto load_data(
             ice::Allocator& alloc,
-            ice::TaskScheduler& scheduler,
-            ice::NativeAIO* nativeio
+            ice::native_aio::AIOPort aioport
         ) const noexcept -> ice::Task<ice::Memory> override;
 
         auto load_named_part(
@@ -104,6 +107,7 @@ namespace ice
         ice::HeapString<> _origin_path;
         ice::ResourceFlags _flags;
     };
+#endif
 
     auto create_resources_from_loose_files(
         ice::Allocator& alloc,

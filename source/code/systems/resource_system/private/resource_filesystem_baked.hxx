@@ -1,10 +1,9 @@
-
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
+
 
 #pragma once
 #include <ice/native_file.hxx>
-#include <ice/resource_meta.hxx>
 #include <ice/resource_flags.hxx>
 #include <ice/resource_format.hxx>
 #include <ice/mem_unique_ptr.hxx>
@@ -36,22 +35,20 @@ namespace ice
         auto name() const noexcept -> ice::String override;
         auto origin() const noexcept -> ice::String override;
 
-        auto load_metadata() const noexcept -> ice::Task<ice::Data> override;
-
         auto size() const noexcept -> ice::usize override;
 
         auto load_data(
             ice::Allocator& alloc,
-            ice::TaskScheduler& scheduler,
-            ice::NativeAIO* nativeio
-        ) const noexcept -> ice::Task<ice::Memory> override;
+            ice::Memory& memory,
+            ice::String fragment,
+            ice::native_aio::AIOPort aioport
+        ) const noexcept -> ice::TaskExpected<ice::Data> override;
 
     private:
         ice::Allocator& _allocator;
         ice::ResourceFormatHeader const _header;
         ice::HeapString<> _origin;
         ice::HeapString<> _name;
-        ice::Memory _metadata;
         ice::URI _uri;
     };
 

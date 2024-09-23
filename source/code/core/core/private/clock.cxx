@@ -16,6 +16,9 @@ namespace ice
     namespace clock
     {
 
+        static constexpr ice::u64 Constant_MillisecondsInSecond = 1000;
+        static constexpr ice::u64 Constant_MicrosecondsInSecond = Constant_MillisecondsInSecond * 1000;
+
 #if ISP_WINDOWS
 
         auto clock_frequency() noexcept -> ice::u64
@@ -139,6 +142,18 @@ namespace ice
 
         auto create_timer(
             ice::Clock const& clock,
+            ice::i64 step_microseconds
+        ) noexcept -> ice::Timer
+        {
+            return ice::Timer{
+                .clock = &clock,
+                .step = ice::i64((step_microseconds * ice::clock::clock_frequency()) / ice::clock::Constant_MicrosecondsInSecond),
+                .last_tick_timestamp = clock.latest_timestamp,
+            };
+        }
+
+        auto create_timer(
+            ice::Clock const& clock,
             ice::f32 step_seconds,
             ice::i64 initial_timestamp
         ) noexcept -> ice::Timer
@@ -184,6 +199,13 @@ namespace ice
                 / ice::clock::clock_frequency();
         }
 
+        auto elapsed_us(ice::Timer const& timer) noexcept -> ice::u64
+        {
+            ice::u64 const freqdiff = timer.clock->latest_timestamp - timer.last_tick_timestamp;
+            // Multiply first to avoid loss in accuracy.
+            return (freqdiff * ice::clock::Constant_MicrosecondsInSecond) / ice::clock::clock_frequency();
+        }
+
         auto alpha(ice::Timer const& timer) noexcept -> ice::f32
         {
             return static_cast<ice::f32>(timer.clock->latest_timestamp - timer.last_tick_timestamp)
@@ -203,16 +225,33 @@ namespace ice
             };
         }
 
+        void reset(ice::Timeline& timeline) noexcept
+        {
+            timeline.initial_timestap = timeline.clock->latest_timestamp;
+        }
+
         auto elapsed(ice::Timeline const& timeline) noexcept -> ice::f32
         {
             return static_cast<ice::f32>(timeline.clock->latest_timestamp - timeline.initial_timestap)
                 / ice::clock::clock_frequency();
         }
 
+        auto elapsed_us(ice::Timeline const& timeline) noexcept -> ice::u64
+        {
+            ice::u64 const freqdiff = timeline.clock->latest_timestamp - timeline.initial_timestap;
+            // Multiply first to avoid loss in accuracy.
+            return (freqdiff * ice::clock::Constant_MicrosecondsInSecond) / ice::clock::clock_frequency();
+        }
+
     } // namespace timeline
 
     namespace stopwatch
     {
+
+        auto create_stopwatch() noexcept -> ice::Stopwatch
+        {
+            return ice::Stopwatch{ nullptr, 0, 0 };
+        }
 
         auto create_stopwatch(ice::Clock const& clock) noexcept -> ice::Stopwatch
         {
@@ -225,15 +264,36 @@ namespace ice
                 / ice::clock::clock_frequency();
         }
 
+        auto elapsed_us(ice::Stopwatch const& stopwatch) noexcept -> ice::u64
+        {
+            ice::u64 const freqdiff = stopwatch.final_timestamp - stopwatch.initial_timestamp;
+            // Multiply first to avoid loss in accuracy.
+            return (freqdiff * ice::clock::Constant_MicrosecondsInSecond) / ice::clock::clock_frequency();
+        }
+
         void start(ice::Stopwatch& stopwatch) noexcept
         {
-            stopwatch.initial_timestamp = stopwatch.clock->latest_timestamp;
+            if (stopwatch.clock == nullptr)
+            {
+                stopwatch.initial_timestamp = ice::clock::create_clock().latest_timestamp;
+            }
+            else
+            {
+                stopwatch.initial_timestamp = stopwatch.clock->latest_timestamp;
+            }
             stopwatch.final_timestamp = stopwatch.initial_timestamp;
         }
 
         void stop(ice::Stopwatch& stopwatch) noexcept
         {
-            stopwatch.final_timestamp = stopwatch.clock->latest_timestamp;
+            if (stopwatch.clock == nullptr)
+            {
+                stopwatch.final_timestamp = ice::clock::create_clock().latest_timestamp;
+            }
+            else
+            {
+                stopwatch.final_timestamp = stopwatch.clock->latest_timestamp;
+            }
         }
 
     } // namespace stopwatch

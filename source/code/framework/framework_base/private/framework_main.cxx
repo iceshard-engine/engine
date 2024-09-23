@@ -160,7 +160,7 @@ struct ice::app::State
             .flags_io_complete = ice::TaskFlags{ },
             .flags_io_wait = ice::TaskFlags{ }
         };
-        resources = ice::create_resource_tracker(resources_alloc, platform.threads->threadpool(), resource_info);
+        resources = ice::create_resource_tracker(resources_alloc, resource_info);
     }
 };
 
@@ -378,6 +378,7 @@ auto ice_setup(
         ice::create_resource_provider(
             state.resources_alloc,
             game_config.resource_dirs,
+            state.platform.threads->aio_port(),
             ice::build::current_platform == ice::build::System::WebApp
                 ? nullptr
                 : &state.platform.threads->threadpool()
@@ -397,7 +398,9 @@ auto ice_setup(
                 ICE_ASSERT(shaders_pak != nullptr, "Failed to locate shader pack!");
 
                 auto hailstorm = ice::create_resource_provider_hailstorm(
-                    state.resources_alloc, ice::resource_origin(shaders_pak)
+                    state.resources_alloc,
+                    ice::resource_origin(shaders_pak),
+                    state.platform.threads->aio_port()
                 );
 
                 state.resources->attach_provider(ice::move(hailstorm));

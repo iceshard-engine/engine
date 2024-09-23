@@ -37,6 +37,9 @@ namespace ice
         base_type value;
     };
 
+    using isize_raw = typename isize::base_type;
+    using usize_raw = typename usize::base_type;
+
     enum class ualign : ice::u32
     {
         invalid = 0,
@@ -65,6 +68,27 @@ namespace ice
 
     struct Data;
     struct Memory;
+
+    // MEMORY TYPE CONCEPTS
+
+    namespace concepts
+    {
+
+        template<typename T>
+        concept RWDataObject = requires(T t) {
+            { t.location } -> std::convertible_to<void*>;
+            { t.size } -> std::convertible_to<ice::usize>;
+            { t.alignment } -> std::convertible_to<ice::ualign>;
+        };
+
+        template<typename T>
+        concept RODataObject = requires(T t) {
+            { t.location } -> std::convertible_to<void const*>;
+            { t.size } -> std::convertible_to<ice::usize>;
+            { t.alignment } -> std::convertible_to<ice::ualign>;
+        };
+
+    } // namespace concepts
 
     // MEMORY SIZE LITERALS
 

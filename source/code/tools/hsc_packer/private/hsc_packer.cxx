@@ -3,12 +3,13 @@
 
 #include <ice/mem_allocator_host.hxx>
 #include <ice/resource.hxx>
-#include <ice/resource_meta.hxx>
 #include <ice/resource_provider.hxx>
 #include <ice/resource_tracker.hxx>
 #include <ice/task_thread_pool.hxx>
 #include <ice/task_utils.hxx>
 #include <ice/tool_app.hxx>
+#include <ice/config.hxx>
+#include <ice/config/config_builder.hxx>
 #include <ice/sort.hxx>
 #include <ice/uri.hxx>
 
@@ -93,6 +94,7 @@ public:
         : _tqueue{ }
         , _tsched{ _tqueue }
         , _tpool{ }
+        , _aioport{ ice::native_aio::aio_open(_allocator, {.worker_limit=4}) }
         , _param_includes{ _allocator }
         , _param_configs{ _allocator }
         , _param_output{ _allocator }
@@ -100,16 +102,20 @@ public:
         , _filter_extensions_heap{ _allocator }
         , _filter_extensions{ _allocator }
     {
-        _tpool = ice::create_thread_pool(_allocator, _tqueue, { .thread_count = 8 });
+        _tpool = ice::create_thread_pool(_allocator, _tqueue, { .thread_count = 12, .aioport = _aioport });
     }
 
-    ~HailStormPackerApp() noexcept = default;
+    ~HailStormPackerApp() noexcept
+    {
+        _tpool.reset(); // Need to close the threadpool before the aio
+        ice::native_aio::aio_close(_aioport);
+    }
 
     auto run() noexcept -> ice::i32 override
     {
-        for (ice::String config : _param_configs)
+        for (ice::String configpath : _param_configs)
         {
-            ice::HeapString<> const config_path_utf8 = hscp_process_directory(_allocator, config);
+            ice::HeapString<> const config_path_utf8 = hscp_process_directory(_allocator, configpath);
             ice::native_file::HeapFilePath config_path{ _allocator };
             ice::native_file::path_from_string(config_path_utf8, config_path);
 
@@ -127,11 +133,17 @@ public:
                 ice::Memory const filemem = _allocator.allocate(filesize);
                 ice::native_file::read_file(file, filesize, filemem);
 
-                ice::MutableMetadata config_meta{ _allocator };
-                ice::Result const res = ice::meta_deserialize_from(config_meta, ice::data_view(filemem));
+                // When loading from json, we always get the finalized version of the config.
+                // That memory needs to have the same lifetiem as the Config object.
+                ice::Memory configmem;
+                ice::Config const config = ice::config::from_json(
+                    _allocator,
+                    ice::String{ (char const*)filemem.location, (ice::ucount)filemem.size.value },
+                    configmem
+                );
 
                 ice::Array<ice::String> extensions{ _allocator };
-                if (ice::meta_read_string_array(config_meta, "filter.extensions"_sid, extensions))
+                if (ice::config::get_array(config, "filter.extensions", extensions))
                 {
                     for (ice::String ext : extensions)
                     {
@@ -140,12 +152,13 @@ public:
                     }
                 }
                 HSCP_ERROR_IF(
-                    res != ice::S_Success,
+                    ice::E_Fail != ice::S_Success,
                     "Failed to parse config file '{}'...",
                     ice::String{ config_path_utf8 }
                 );
 
                 _allocator.deallocate(filemem);
+                _allocator.deallocate(configmem);
             }
         }
 
@@ -165,7 +178,7 @@ public:
 
         // The paths that will be searched for loose file resources.
         ice::UniquePtr<ice::ResourceProvider> fsprov = ice::create_resource_provider(
-            _allocator, _param_includes, &_tsched
+            _allocator, _param_includes, _aioport, &_tsched
         );
 
         // Spawning one dedicated IO thread for AIO support. Allows us to read resources MUCH faster.
@@ -176,7 +189,7 @@ public:
             .flags_io_wait = ice::TaskFlags{},
         };
         ice::UniquePtr<ice::ResourceTracker> tracker = ice::create_resource_tracker(
-            _allocator, _tsched, rtinfo
+            _allocator, rtinfo
         );
 
         ice::ResourceProvider* provider = tracker->attach_provider(ice::move(fsprov));
@@ -208,8 +221,9 @@ public:
         ice::array::resize(resource_handles, ice::count(resources));
         ice::array::resize(resource_paths, ice::count(resources));
 
-        ice::MutableMetadata meta{ _allocator };
-        ice::Memory metamem = ice::meta_save(meta, _allocator);
+        // We serialize an empty meta object
+        ice::ConfigBuilder meta{ _allocator };
+        ice::Memory metamem = meta.finalize(_allocator);
 
         ice::array::push_back(resource_metas, hsdata_view(metamem));
 
@@ -261,6 +275,7 @@ public:
         ice::native_file::path_from_string(_param_output, output);
         HSCPWriteParams const write_params{
             .filename = output,
+            .aioport = _aioport,
             .task_scheduler = _tsched,
             .fn_chunk_selector = select_chunk_loose_resource,
             .fn_chunk_create = create_chunk_loose_resource,
@@ -294,6 +309,7 @@ private:
     ice::TaskQueue _tqueue;
     ice::TaskScheduler _tsched;
     ice::UniquePtr<ice::TaskThreadPool> _tpool;
+    ice::native_aio::AIOPort _aioport;
 
     // Params
     ice::Array<ice::String> _param_includes;

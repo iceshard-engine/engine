@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 
@@ -118,11 +118,6 @@ namespace ice
         {
             return ice::string::size(str);
         }
-
-        //template<typename CharType>
-        //    requires std::is_same_v<CharType, ice::utf8> // TODO: utf-16, utf-32?
-        //constexpr auto utf8_codepoints(ice::BasicString<CharType> str) noexcept -> ice::ucount = delete;
-
 
         template<typename CharType>
         constexpr bool empty(ice::BasicString<CharType> str) noexcept
@@ -369,6 +364,21 @@ namespace ice
             return it == it_end ? ice::String_NPos : ice::ucount(it_end - it) - 1;
         }
 
+
+        template<typename T, typename CharType> requires ice::concepts::RODataObject<T>
+        constexpr auto from_data(T ro_data) noexcept -> ice::BasicString<CharType>
+        {
+            return ice::string::from_data(ro_data, 0_B, static_cast<ice::ucount>(ro_data.size.value));
+        }
+
+        template<typename T, typename CharType> requires ice::concepts::RODataObject<T>
+        constexpr auto from_data(T ro_data, ice::usize offset, ice::ucount size) noexcept -> ice::String
+        {
+            return ice::String{
+                reinterpret_cast<char const*>(ro_data.location) + offset.value,
+                ice::min(static_cast<ice::ucount>(ro_data.size.value), size)
+            };
+        }
 
         template<typename CharType>
         constexpr auto data_view(ice::BasicString<CharType> str) noexcept -> typename ice::Data
