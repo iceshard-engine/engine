@@ -18,6 +18,26 @@ namespace ice::native_aio
         HANDLE _completion_port;
         ice::u32 _worker_limit;
     };
+#elif ISP_ANDROID || ISP_WEBAPP
+    struct AIORequestInternal
+    {
+        AIORequestInternal* next;
+        ice::i32 native_file_handle;
+        ice::u32 request_type; // 1 == read, 2 == write
+        void* data_location;
+        ice::u32 data_offset;
+        ice::u32 data_size;
+    };
+
+    struct AIOPortInternal
+    {
+        ice::Allocator& _allocator;
+        ice::AtomicLinkedQueue<AIORequestInternal> _requests;
+        sem_t _semaphore;
+        ice::u32 _worker_limit;
+    };
+
+    static_assert(sizeof(AIORequestInternal) <= sizeof(AIORequest::_internal));
 #else
     struct AIORequestInternal
     {

@@ -75,9 +75,9 @@ namespace ice::platform::webasm
             {
                 _initstage = 2;
             }
-            else if (res == ice::app::E_FailedApplicationSetup)
+            else if (res == ice::E_Fail)
             {
-                ICE_LOG(LogSeverity::Critical, LogTag::Engine, "Failed engine setup stage, exiting.");
+                ICE_LOG(LogSeverity::Critical, LogTag::Engine, "Failed setup stage, exiting. {}", res.error());
                 _initstage = 5;
             }
 
