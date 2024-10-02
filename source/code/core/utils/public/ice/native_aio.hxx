@@ -29,12 +29,13 @@ namespace ice::native_aio
         void* userdata
     ) noexcept;
 
-    struct AIORequest
+    struct alignas(8) AIORequest
     {
         using enum AIORequestResult;
 
         //! Note the buffer is large enough to store any systems internally required values.
-        char _internal[32] alignas(8);
+        //! \note (using 40 bytes to store one AIORequest in a single cacheline and not share them)
+        char _internal[40];
 
         ice::native_aio::AIOPort _port;
 

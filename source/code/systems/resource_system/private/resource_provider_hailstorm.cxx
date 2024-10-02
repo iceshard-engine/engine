@@ -92,7 +92,7 @@ namespace ice
         if (_memory.location == nullptr)
         {
             ice::Memory const res_memory = _allocator.allocate({ { size_t(_chunk.size_origin) }, (ice::ualign) _chunk.align });
-            ice::detail::AsyncReadRequest request{ aioport, _file, ice::usize{_chunk.size}, ice::usize{_chunk.offset}, res_memory };
+            ice::detail::AsyncReadRequest request{ aioport, _file, ice::usize{static_cast<ice::usize::base_type>(_chunk.size)}, ice::usize{static_cast<ice::usize::base_type>(_chunk.offset)}, res_memory };
             ice::usize const bytes_read = co_await request;
 
             // Clear memory if failed to load the file chunk
@@ -183,7 +183,7 @@ namespace ice
         {
             // TODO: See if we could use large page allocations if files size < 1kib
             ice::Memory const memory = _allocator.allocate({ { size }, (ice::ualign)_chunk.align });
-            ice::detail::AsyncReadRequest request{ aioport, _file, ice::usize{_chunk.size}, ice::usize{_chunk.offset}, memory };
+            ice::detail::AsyncReadRequest request{ aioport, _file, ice::usize{static_cast<ice::usize::base_type>(_chunk.size)}, ice::usize{static_cast<ice::usize::base_type>(_chunk.offset)}, memory };
             ice::usize const bytes_read = co_await request;
 
             ICE_ASSERT_CORE(bytes_read == ice::usize{ size });

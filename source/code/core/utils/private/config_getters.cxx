@@ -105,7 +105,7 @@ namespace ice::config::detail
     }
 
     template<>
-    auto config::detail::get(
+    auto get(
         ice::Config const& config,
         ice::config::detail::ConfigKey const* key,
         ice::config::detail::ConfigValue const* value,
@@ -123,7 +123,7 @@ namespace ice::config::detail
     }
 
     template<>
-    auto config::detail::get(
+    auto get(
         ice::Config const& config,
         ice::config::detail::ConfigKey const* key,
         ice::config::detail::ConfigValue const* value,
@@ -141,7 +141,7 @@ namespace ice::config::detail
     }
 
     template<>
-    auto config::detail::get(
+    auto get(
         ice::Config const& config,
         ice::config::detail::ConfigKey const* key,
         ice::config::detail::ConfigValue const* value,
@@ -159,7 +159,7 @@ namespace ice::config::detail
     }
 
     template<>
-    auto config::detail::get(
+    auto get(
         ice::Config const& config,
         ice::config::detail::ConfigKey const* key,
         ice::config::detail::ConfigValue const* value,
@@ -177,7 +177,7 @@ namespace ice::config::detail
     }
 
     template<>
-    auto config::detail::get(
+    auto get(
         ice::Config const& config,
         ice::config::detail::ConfigKey const* key,
         ice::config::detail::ConfigValue const* value,
@@ -195,7 +195,7 @@ namespace ice::config::detail
     }
 
     template<>
-    auto config::detail::get(
+    auto get(
         ice::Config const& config,
         ice::config::detail::ConfigKey const* key,
         ice::config::detail::ConfigValue const* value,
@@ -213,7 +213,7 @@ namespace ice::config::detail
     }
 
     template<>
-    auto config::detail::get(
+    auto get(
         ice::Config const& config,
         ice::config::detail::ConfigKey const* key,
         ice::config::detail::ConfigValue const* value,
@@ -231,7 +231,7 @@ namespace ice::config::detail
     }
 
     template<>
-    auto config::detail::get(
+    auto get(
         ice::Config const& config,
         ice::config::detail::ConfigKey const* key,
         ice::config::detail::ConfigValue const* value,
@@ -249,7 +249,7 @@ namespace ice::config::detail
     }
 
     template<>
-    auto config::detail::get(
+    auto get(
         ice::Config const& config,
         ice::config::detail::ConfigKey const* key,
         ice::config::detail::ConfigValue const* value,
@@ -267,7 +267,7 @@ namespace ice::config::detail
     }
 
     template<>
-    auto config::detail::get(
+    auto get(
         ice::Config const& config,
         ice::config::detail::ConfigKey const* key,
         ice::config::detail::ConfigValue const* value,
@@ -285,7 +285,7 @@ namespace ice::config::detail
     }
 
     template<>
-    auto config::detail::get(
+    auto get(
         ice::Config const& config,
         ice::config::detail::ConfigKey const* key,
         ice::config::detail::ConfigValue const* value,
@@ -303,7 +303,7 @@ namespace ice::config::detail
     }
 
     template<>
-    auto config::detail::get(
+    auto get(
         ice::Config const& config,
         ice::config::detail::ConfigKey const* key,
         ice::config::detail::ConfigValue const* value,

@@ -19,10 +19,10 @@ namespace ice
         , _base_paths{ _named_allocator }
         , _scheduler{ scheduler }
         , _aioport{ aioport }
+        , _virtual_hostname{ virtual_hostname }
         , _resources{ _named_allocator }
         , _resources_data{ _data_allocator }
         , _devui_widget{ create_filesystem_provider_devui(_named_allocator, _resources) }
-        , _virtual_hostname{ virtual_hostname }
     {
         ice::native_file::HeapFilePath base_path{ _named_allocator };
         for (ice::String path : paths)

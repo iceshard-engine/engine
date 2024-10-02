@@ -116,39 +116,36 @@ namespace ice::native_file
     ) noexcept -> ice::Expected<ice::native_file::File>
     {
         IPT_ZONE_SCOPED;
-        ice::win32::FileHandle result;
 
         // If port is nullptr, open file without AIO setup
         if (port == nullptr)
         {
             return open_file(path, flags);
         }
-        else
+
+        ice::native_aio::aio_file_flags(port, flags);
+        ice::win32::FileHandle result = ice::win32::FileHandle{
+            CreateFileW(
+                ice::string::begin(path),
+                translate_access(flags),
+                translate_mode(flags), // FILE_SHARE_*
+                NULL, // SECURITY ATTRIBS
+                translate_disposition(flags),
+                translate_attribs(flags),
+                NULL
+            )
+        };
+
+        if (result == NULL)
         {
-            ice::native_aio::aio_file_flags(port, flags);
-
-            result = ice::win32::FileHandle{
-                CreateFileW(
-                    ice::string::begin(path),
-                    translate_access(flags),
-                    translate_mode(flags), // FILE_SHARE_*
-                    NULL, // SECURITY ATTRIBS
-                    translate_disposition(flags),
-                    translate_attribs(flags),
-                    NULL
-                )
-            };
-
-            if (result == NULL)
-            {
-                return E_FilePathProvidedIsInvalid;
-            }
-
-            if (ice::native_aio::aio_file_bind(port, result) == false)
-            {
-                return E_FileFailedToBindToAIOPort;
-            }
+            return E_FilePathProvidedIsInvalid;
         }
+
+        if (ice::native_aio::aio_file_bind(port, result) == false)
+        {
+            return E_FileFailedToBindToAIOPort;
+        }
+
         return result;
     }
 
@@ -513,6 +510,24 @@ namespace ice::native_file
         return result;
     }
 
+    auto open_file(
+        ice::native_aio::AIOPort aioport,
+        ice::native_file::FilePath path,
+        ice::native_file::FileOpenFlags flags /*= FileOpenFlags::ReadOnly*/
+    ) noexcept -> ice::Expected<ice::native_file::File>
+    {
+        if (aioport == nullptr)
+        {
+            return open_file(path, flags);
+        }
+
+        // Change flags if necessary
+        ice::native_aio::aio_file_flags(aioport, flags);
+
+        // Open the file
+        return open_file(path, flags);
+    }
+
     auto sizeof_file(ice::native_file::File const& native_file) noexcept -> ice::usize
     {
         struct stat file_stats;
@@ -534,6 +549,17 @@ namespace ice::native_file
     ) noexcept -> ice::usize
     {
         return read_file(native_file, 0_B, requested_read_size, memory);
+    }
+
+    auto read_file_request(
+        ice::native_aio::AIORequest& request,
+        ice::native_file::File const& native_file,
+        ice::usize requested_read_offset,
+        ice::usize requested_read_size,
+        ice::Memory memory
+    ) noexcept -> ice::native_file::FileRequestStatus
+    {
+        return aio_file_read_request(request, native_file, requested_read_offset, requested_read_size, memory);
     }
 
     auto read_file(
@@ -643,8 +669,8 @@ namespace ice::native_file
     }
 
     void path_from_string(
-        ice::String path_string,
-        ice::native_file::HeapFilePath& out_filepath
+        ice::native_file::HeapFilePath& out_filepath,
+        ice::String path_string
     ) noexcept
     {
         out_filepath = path_string;

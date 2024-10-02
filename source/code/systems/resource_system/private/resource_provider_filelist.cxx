@@ -43,7 +43,7 @@ namespace ice
                     _named_allocator, entry.path
                 );
 
-                ICE_ASSERT_CORE(ice::string::starts_with((ice::WString)file_path, (ice::WString)base_path));
+                ICE_ASSERT_CORE(ice::string::starts_with((ice::native_file::FilePath)file_path, (ice::native_file::FilePath)base_path));
             }
 
             ice::ucount const basepath_size = ice::string::empty(entry.basepath)

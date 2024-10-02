@@ -206,7 +206,7 @@ namespace ice
 
         char temp[128];
         read = ice::native_file::read_file(
-            file, ice::size_of<ResourceFormatHeader>, ice::usize{ header.name_size }, Memory{ temp, 128, ualign::b_1 }
+            file, ice::size_of<ResourceFormatHeader>, ice::usize{ header.name_size }, Memory{ temp, 128_B, ualign::b_1 }
         );
 
         ICE_ASSERT_CORE(read >= 0_B);

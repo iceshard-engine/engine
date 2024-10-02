@@ -8,6 +8,7 @@
 
 #include <sys/time.h>
 #include <pthread.h>
+#include <semaphore.h>
 #include <unistd.h>
 #include <dlfcn.h>
 #pragma clang diagnostic ignored "-Wunknown-attributes"

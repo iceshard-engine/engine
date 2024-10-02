@@ -2,6 +2,7 @@
 #include <ice/platform.hxx>
 #include <ice/shard.hxx>
 #include <ice/task_scheduler.hxx>
+#include <ice/native_aio.hxx>
 
 namespace ice::platform
 {

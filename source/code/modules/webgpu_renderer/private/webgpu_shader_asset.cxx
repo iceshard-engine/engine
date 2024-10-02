@@ -7,6 +7,7 @@
 #include <ice/render/render_shader.hxx>
 #include <ice/asset_category_archive.hxx>
 #include <ice/asset.hxx>
+#include <ice/config.hxx>
 #include <ice/path_utils.hxx>
 
 namespace ice::render::vk
@@ -15,12 +16,12 @@ namespace ice::render::vk
     auto asset_shader_state(
         void*,
         ice::AssetCategoryDefinition const&,
-        ice::Metadata const& metadata,
+        ice::Config const& metadata,
         ice::URI const& uri
     ) noexcept -> ice::AssetState
     {
         bool baked = false;
-        if (ice::meta_read_bool(metadata, "ice.shader.baked"_sid, baked) && baked)
+        if (ice::config::get(metadata, "ice.shader.baked", baked) && baked)
         {
             return AssetState::Baked;
         }
@@ -36,7 +37,7 @@ namespace ice::render::vk
         void*,
         ice::Allocator& alloc,
         ice::AssetStorage&,
-        ice::Metadata const& meta,
+        ice::Config const& meta,
         ice::Data data,
         ice::Memory& out_data
     ) noexcept -> ice::Task<bool>

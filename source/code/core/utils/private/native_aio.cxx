@@ -235,6 +235,146 @@ namespace ice::native_aio
             request->_callback(result, read_size, request->_userdata);
         }
     }
+#elif ISP_WEBAPP || ISP_ANDROID
+    auto aio_open(
+        ice::Allocator& alloc,
+        ice::native_aio::AIOPortInfo const& info
+    ) noexcept -> ice::native_aio::AIOPort
+    {
+        AIOPortInternal* result = alloc.create<AIOPortInternal>(alloc);
+        result->_worker_limit = std::max(info.worker_limit, 1u);
+
+        if (sem_init(&result->_semaphore, 0 /*thread shared unnamed-semaphore*/, 0 /*start at 0*/) != 0)
+        {
+            alloc.destroy(result);
+            return nullptr;
+        }
+        return result;
+    }
+
+    auto aio_native_handle(ice::native_aio::AIOPort port) noexcept -> void*
+    {
+        return port;
+    }
+
+    auto aio_worker_limit(ice::native_aio::AIOPort port) noexcept -> ice::u32
+    {
+        return port ? port->_worker_limit : 0;
+    }
+
+    void aio_close(ice::native_aio::AIOPort port) noexcept
+    {
+        if (port != nullptr)
+        {
+            sem_destroy(&port->_semaphore);
+            port->_allocator.destroy(port);
+        }
+    }
+
+    void aio_file_flags(
+        ice::native_aio::AIOPort port,
+        ice::native_file::FileOpenFlags& flags
+    ) noexcept
+    {
+        flags &= ~ice::native_file::FileOpenFlags::Asynchronous;
+    }
+
+    bool aio_file_bind(
+        ice::native_aio::AIOPort port,
+        ice::native_file::File const& file
+    ) noexcept
+    {
+        return true; // We don't bind anything to this file
+    }
+
+    auto aio_file_read_request(
+        ice::native_aio::AIORequest& request,
+        ice::native_file::File const& file,
+        ice::usize requested_read_offset,
+        ice::usize requested_read_size,
+        ice::Memory memory
+    ) noexcept -> ice::native_file::FileRequestStatus
+    {
+        AIORequestInternal& internal = reinterpret_cast<AIORequestInternal&>(request);
+        internal.next = nullptr;
+        internal.native_file_handle = file.native();
+        internal.request_type = 1; // 1 = read, 2 = write
+        internal.data_location = memory.location;
+        internal.data_offset = static_cast<ice::u32>(requested_read_offset.value);
+        internal.data_size = static_cast<ice::u32>(requested_read_size.value);
+        ice::linked_queue::push(request._port->_requests, ice::addressof(internal));
+
+        // Increment the semaphore
+        sem_post(&request._port->_semaphore);
+        return ice::native_file::FileRequestStatus::Pending;
+    }
+
+    bool aio_file_await_request(
+        ice::native_aio::AIOPort port,
+        ice::native_aio::AIOProcessLimits limits,
+        ice::native_aio::AIORequest const*& out_request,
+        ice::usize& out_size
+    ) noexcept
+    {
+        ICE_ASSERT_CORE(port);
+
+        timespec timeval;
+        if (clock_gettime(CLOCK_REALTIME, &timeval) != 0)
+        {
+            return false;
+        }
+
+        // Set seconds to wait
+        timeval.tv_sec += limits.timeout_ms / 1000;
+        limits.timeout_ms -= timeval.tv_sec * 1000;
+        // Set remaining to wait
+        timeval.tv_nsec += limits.timeout_ms * 1000 * 1000;
+
+        if (sem_timedwait(&port->_semaphore, &timeval))
+        {
+            return false;
+        }
+
+        AIORequestInternal* internal = ice::linked_queue::pop(port->_requests);
+        if (internal)
+        {
+            out_request = reinterpret_cast<AIORequest const*>(internal);
+
+            if (internal->request_type == 1)
+            {
+                // TODO: Handle sizes / offsets above 4gb
+                ice::i32 const bytes_read = pread(
+                    internal->native_file_handle,
+                    internal->data_location,
+                    internal->data_size,
+                    internal->data_offset
+                );
+
+                ICE_ASSERT_CORE(bytes_read > 0); // 0 == eof, -1 == error
+                ICE_ASSERT_CORE(bytes_read == internal->data_size);
+
+                out_size = { (ice::usize::base_type) bytes_read };
+            }
+            else
+            {
+                // TODO: Write requests
+                ICE_ASSERT_CORE(false);
+            }
+        }
+        return out_size > 0_B;
+    }
+
+    void aio_complete_request(
+        ice::native_aio::AIORequest const* request,
+        ice::native_aio::AIORequestResult result,
+        ice::usize read_size
+    ) noexcept
+    {
+        if (request != nullptr && request->_callback != nullptr)
+        {
+            request->_callback(result, read_size, request->_userdata);
+        }
+    }
 #else
     auto aio_open(
         ice::Allocator& alloc,

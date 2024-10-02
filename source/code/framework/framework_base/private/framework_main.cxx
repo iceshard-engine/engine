@@ -418,9 +418,14 @@ auto ice_setup(
 
     // Load everything to resume the game.
     ice::HeapString<> engine_module = ice::resolve_dynlib_path(*state.resources, state.alloc, "iceshard");
-    if (state.modules->load_module(state.modules_alloc, engine_module) == false)
+
+    // TODO: Add another build constant to check for "Monolith" builds.
+    if constexpr (ice::build::is_webapp == false)
     {
-        return ice::framework::E_FailedLoadingIceshardLibrary;
+        if (state.modules->load_module(state.modules_alloc, engine_module) == false)
+        {
+            return ice::framework::E_FailedLoadingIceshardLibrary;
+        }
     }
 
     ice::EngineCreateInfo engine_create_info{ .states = ice::create_state_tracker(state.alloc) };
