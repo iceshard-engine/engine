@@ -115,6 +115,9 @@ namespace ice::detail
             fmt::make_format_args(log_header, LogState::minimal_header_length)
         );
 
+        [[maybe_unused]]
+        ice::usize::base_type const header_size = final_buffer.size();
+
         fmt::vformat_to(
             std::back_inserter(final_buffer),
             fmt_string(message),
@@ -137,6 +140,18 @@ namespace ice::detail
         }
 
         final_buffer.push_back('\0');
+
+        // Flush the sink message after pushing the final '0' character
+#if ICE_RELEASE == 0
+        ice::detail::internal_log_state->flush(
+            ice::LogSinkMessage{
+                .severity = severity,
+                .tag = tag,
+                .tag_name = tag_name,
+                .message = ice::String{ final_buffer.begin() + header_size, final_buffer.end() - 1 }
+            }
+        );
+#endif
 
 #if ISP_WINDOWS
         OutputDebugStringA(final_buffer.data());
