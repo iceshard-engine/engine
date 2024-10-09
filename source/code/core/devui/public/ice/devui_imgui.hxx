@@ -1,6 +1,7 @@
 #pragma once
 #include <ice/string/string.hxx>
 #include <ice/assert_core.hxx>
+#include <ice/color.hxx>
 
 #ifdef IM_ASSERT
 #undef IM_ASSERT
@@ -10,7 +11,6 @@
 #include <imgui/imgui.h>
 #include <fmt/core.h>
 #undef assert
-
 
 namespace ImGui
 {
@@ -24,8 +24,13 @@ namespace ImGui
 
     } // namespace Detail
 
+    inline auto ToColor(ice::Color<ice::u8> color) noexcept -> ImU32
+    {
+        return ImU32{ ice::u32(color.a) << 24 | ice::u32(color.b) << 16 | ice::u32(color.g) << 8 | ice::u32(color.r) };
+    }
+
     template<typename... Args>
-    void TextT(fmt::format_string<Args...> format, Args&&... args) noexcept
+    inline void TextT(fmt::format_string<Args...> format, Args&&... args) noexcept
     {
         fmt::format_to_n_result<char*> result = fmt::format_to_n(
             Detail::TempBuffer(),
