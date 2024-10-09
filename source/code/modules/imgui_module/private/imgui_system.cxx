@@ -30,11 +30,14 @@ namespace ice::devui
         : _allocator{ alloc, "ImGUI-System" }
         , _builtin_widgets{ alloc }
         , _widget_manager{ _allocator }
+        , _widget_logger{ _allocator }
     {
         ice::array::push_back(_builtin_widgets, create_allocator_tree_widget(_allocator));
+        // ice::array::push_back(_builtin_widgets, (ice::UniquePtr<ice::DevUIWidget>) ice::make_unique<ImGuiLogger>(_allocator, _allocator));
 
         // Register all built-in's
         _widget_manager.add_widget(&_widget_manager); // Add self...
+        _widget_manager.add_widget(&_widget_logger); // Add logger
         for (ice::UniquePtr<ice::DevUIWidget> const& widget : _builtin_widgets)
         {
             _widget_manager.add_widget(widget.get());

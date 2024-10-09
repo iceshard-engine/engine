@@ -8,6 +8,7 @@
 #include <ice/mem_allocator_proxy.hxx>
 #include <ice/container/array.hxx>
 #include "widgets/imgui_devui_manager.hxx"
+#include "widgets/imgui_logger.hxx"
 
 namespace ice::devui
 {
@@ -33,12 +34,15 @@ namespace ice::devui
 
         auto allocator() noexcept -> ice::Allocator& { return _allocator.backing_allocator(); }
 
+        auto logger() noexcept -> ice::devui::ImGuiLogger& { return _widget_logger; }
+
     private:
         ice::ProxyAllocator _allocator;
         ice::Array<ice::UniquePtr<ice::DevUIWidget>> _builtin_widgets;
 
         ice::devui::ImGuiDevUIManager _widget_manager;
         ice::devui::ImGuiWidgetFrame _widget_frame;
+        ice::devui::ImGuiLogger _widget_logger;
     };
 
 } // namespace ice::devui

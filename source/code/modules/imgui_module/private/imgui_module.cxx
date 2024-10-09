@@ -6,6 +6,7 @@
 
 #include <ice/mem_allocator.hxx>
 #include <ice/log_module.hxx>
+#include <ice/log_sink.hxx>
 #include <ice/devui_module.hxx>
 #include <ice/world/world_trait_module.hxx>
 
@@ -25,11 +26,18 @@ namespace ice::devui
         return reinterpret_cast<ice::ProxyAllocator*>(userdata)->deallocate(ptr);
     }
 
+    void imgui_logger_sink(void* userdata, ice::LogSinkMessage const& message) noexcept
+    {
+        reinterpret_cast<ImGuiSystem*>(userdata)->logger().add_entry(message);
+    }
+
     auto imgui_create_context(ice::Allocator& alloc) noexcept -> ice::DevUIContext*
     {
         ICE_ASSERT_CORE(global_ImGuiContext == nullptr);
 
         global_ImGuiContext = alloc.create<ImGuiSystem>(alloc);
+
+        ice::log_module_register_sink(imgui_logger_sink, global_ImGuiContext);
         return global_ImGuiContext;
     }
 
