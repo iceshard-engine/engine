@@ -134,7 +134,7 @@ struct TestTrait : public ice::Trait
         _querye = ice::make_unique<ice::ecs::Query<TestQueryE>>(_alloc, update.world.entity_queries().create_query(_alloc, TestQueryE{}));
 
         ICE_LOG(LogSeverity::Retail, LogTag::Game, "Test Activated!");
-        timer = ice::timer::create_timer(update.clock, 0.1f);
+        timer = ice::timer::create_timer(update.clock, 100_Tms);
         co_return;
     }
 

@@ -39,6 +39,12 @@ namespace ice
         return *this;
     }
 
+    auto Asset::uri() const noexcept -> ice::URI
+    {
+        ice::ResourceHandle const* resource = ice::asset_data_resource(_handle->_data);
+        return ice::resource_uri(resource);
+    }
+
     auto Asset::name() const noexcept -> ice::StringID_Arg
     {
         return _handle->_identifier;

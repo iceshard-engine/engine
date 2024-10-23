@@ -3,6 +3,7 @@
 
 #pragma once
 #include <ice/asset_types.hxx>
+#include <ice/uri.hxx>
 
 namespace ice
 {
@@ -52,6 +53,7 @@ namespace ice
 
         void release() const noexcept;
 
+        auto uri() const noexcept -> ice::URI;
         auto name() const noexcept -> ice::StringID_Arg;
         auto metadata(ice::Data& out_metadata) const noexcept -> ice::Task<ice::Result>;
         bool available(ice::AssetState state) const noexcept;
