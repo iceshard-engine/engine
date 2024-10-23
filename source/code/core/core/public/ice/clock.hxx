@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/types.hxx>
+#include <ice/clock_types.hxx>
 
 namespace ice
 {
@@ -15,8 +15,8 @@ namespace ice
     //! \see ice::CustomClock for how to create custom speed clocks.
     struct Clock
     {
-        ice::i64 previous_timestamp;
-        ice::i64 latest_timestamp;
+        ice::Timestamp _ts_previous;
+        ice::Timestamp _ts_latest;
     };
 
     //! \brief A system clock provides access to the actual time on the running system.
@@ -32,41 +32,43 @@ namespace ice
     //!   The result of this operation is the stored under the inherited Clock::latest_timestamp member.
     //!   This moves the previous Clock::latest_timestamp value to the Clock::previous_timestamp member.
     //!
-    //! \pre A Custom clock is only valid if the CustomClock::base_clock member is \b not-null.
+    //! \pre A Custom clock is only valid if the CustomClock::_clock_base member is \b not-null.
     //! \remark The user is allowed to set the modifier to 0.0f or negative values, reversing time. <em>(whoaaaa...)</em>
     //!
     //! \note To have consistent time changes, udpate child clocks the exact same number of times like their parents.
     struct CustomClock : ice::Clock
     {
-        ice::Clock const* base_clock;
+        ice::Clock const* _clock_base;
         ice::f32 modifier;
     };
 
     struct Timer
     {
-        ice::Clock const* clock;
-        ice::i64 step;
-        ice::i64 last_tick_timestamp;
+        ice::Clock const* _clock_base;
+        ice::Timestamp _timer_step;
+        ice::Timestamp _ts_latest;
     };
 
     struct Timeline
     {
-        ice::Clock const* clock;
-        ice::i64 initial_timestap;
+        ice::Clock const* _clock_base;
+        ice::Timestamp _ts_initial;
     };
 
     struct Stopwatch
     {
         ice::Clock const* clock;
 
-        ice::i64 initial_timestamp;
-        ice::i64 final_timestamp;
+        ice::Timestamp _ts_initial;
+        ice::Timestamp _ts_final;
     };
 
     namespace clock
     {
 
-        auto clock_frequency() noexcept -> ice::u64;
+        auto now() noexcept -> ice::Timestamp;
+
+        auto clock_frequency() noexcept -> ice::ClockFrequency;
 
         auto create_clock() noexcept -> ice::SystemClock;
 
@@ -81,10 +83,12 @@ namespace ice
 
         void update_max_delta(
             ice::CustomClock& clock,
-            ice::f32 max_elapsed_seconds
+            ice::Tns max_delta
         ) noexcept;
 
-        auto elapsed(ice::Clock const& clock) noexcept -> ice::f32;
+        auto elapsed(ice::Clock const& clock) noexcept -> ice::Tns;
+
+        auto elapsed(ice::Timestamp from, ice::Timestamp to) noexcept -> ice::Tns;
 
     } // namespace clock
 
@@ -93,27 +97,20 @@ namespace ice
 
         auto create_timer(
             ice::Clock const& clock,
-            ice::f32 step_seconds
+            ice::Tns timer_step
         ) noexcept -> ice::Timer;
 
         auto create_timer(
             ice::Clock const& clock,
-            ice::i64 step_microseconds
-        ) noexcept -> ice::Timer;
-
-        auto create_timer(
-            ice::Clock const& clock,
-            ice::f32 step_seconds,
-            ice::i64 initial_timestamp
+            ice::Tns timer_step,
+            ice::Timestamp initial_timestamp
         ) noexcept -> ice::Timer;
 
         bool update(ice::Timer& timer) noexcept;
 
         bool update_by_step(ice::Timer& timer) noexcept;
 
-        auto elapsed(ice::Timer const& timer) noexcept -> ice::f32;
-
-        auto elapsed_us(ice::Timer const& timer) noexcept -> ice::u64;
+        auto elapsed(ice::Timer const& timer) noexcept -> ice::Tns;
 
         auto alpha(ice::Timer const& timer) noexcept -> ice::f32;
 
@@ -126,9 +123,7 @@ namespace ice
 
         void reset(ice::Timeline& timeline) noexcept;
 
-        auto elapsed(ice::Timeline const& timeline) noexcept -> ice::f32;
-
-        auto elapsed_us(ice::Timeline const& timeline) noexcept -> ice::u64;
+        auto elapsed(ice::Timeline const& timeline) noexcept -> ice::Tns;
 
     } // namespace timeline
 
@@ -139,9 +134,7 @@ namespace ice
         auto create_stopwatch() noexcept -> ice::Stopwatch;
         auto create_stopwatch(ice::Clock const& clock) noexcept -> ice::Stopwatch;
 
-        auto elapsed(ice::Stopwatch const& stopwatch) noexcept -> ice::f32;
-
-        auto elapsed_us(ice::Stopwatch const& stopwatch) noexcept -> ice::u64;
+        auto elapsed(ice::Stopwatch const& stopwatch) noexcept -> ice::Tns;
 
         void start(ice::Stopwatch& stopwatch) noexcept;
 

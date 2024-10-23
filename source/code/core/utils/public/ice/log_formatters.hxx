@@ -6,6 +6,7 @@
 #include <ice/stringid.hxx>
 #include <ice/mem_types.hxx>
 #include <ice/string_types.hxx>
+#include <ice/clock_types.hxx>
 
 template<typename CharType>
 struct fmt::formatter<ice::BasicString<CharType>> : public fmt::formatter<std::basic_string_view<CharType>>
@@ -173,5 +174,72 @@ struct fmt::formatter<ice::ErrorCode>
     {
         fmt::string_view const type = value.type() == 'E' ? "Error" : "Success";
         return fmt::format_to(ctx.out(), "{}({}, '{}')", type, value.category(), value.description());
+    }
+};
+
+template<ice::TimeType T>
+struct fmt::formatter<T>
+{
+    static constexpr auto presentation_type(ice::Ts t) noexcept { return 's'; }
+    static constexpr auto presentation_type(ice::Tms t) noexcept { return t.value > 9999 ? presentation_type(ice::Ts(t)) : 'm'; }
+    static constexpr auto presentation_type(ice::Tus t) noexcept { return t.value > 9999 ? presentation_type(ice::Tms(t)) : 'u'; }
+    static constexpr auto presentation_type(ice::Tns t) noexcept { return t.value > 9999 ? presentation_type(ice::Tus(t)) : 'n'; }
+
+    // 'd' - dynamic, 's' - second, 'm' - millisecond, 'u' - microsecond, 'n' - nanosecond
+    char presentation = 'd';// T::Constant_Precision <= ice::Tms::Constant_Precision ? 's' : 'u';
+    ice::u8 floatingp = 0;
+
+    template<typename ParseContext>
+    constexpr auto parse(ParseContext& ctx)
+    {
+        auto it = ctx.begin(), end = ctx.end();
+
+        // Parse the presentation format and store it in the formatter:
+        if (it != end && it[0] == '.')
+        {
+            floatingp = it[1] - '0';
+            it += 2;
+        }
+
+        if (it != end && (*it == 'd' || *it == 's' || *it == 'm' || *it == 'u' || *it == 'n')) presentation = *it++;
+
+
+        // Check if reached the end of the range:
+        if (it != end && *it != '}') throw fmt::format_error("invalid format");
+
+        // Return an iterator past the end of the parsed range:
+        return it;
+    }
+
+    template<typename FormatContext>
+    constexpr auto format(ice::TimeType auto value, FormatContext& ctx)
+    {
+        if (presentation == 'd')
+        {
+            presentation = presentation_type(value);
+        }
+
+        if (floatingp == 0)
+        {
+            switch(presentation)
+            {
+            case 's': return fmt::format_to(ctx.out(), "{:.3f}s", ice::Ts(value).value, floatingp);
+            case 'm': return fmt::format_to(ctx.out(), "{}ms", ice::Tms(value).value);
+            case 'u': return fmt::format_to(ctx.out(), "{}us", ice::Tus(value).value);
+            case 'n':
+            default: return fmt::format_to(ctx.out(), "{}ns", ice::Tns(value).value);
+            }
+        }
+        else
+        {
+            switch(presentation)
+            {
+            case 's': return fmt::format_to(ctx.out(), "{:.{}f}s", ice::Ts(value).value, floatingp);
+            case 'm': return fmt::format_to(ctx.out(), "{:.{}f}ms", ice::Tms(value).value * 1.0, floatingp);
+            case 'u': return fmt::format_to(ctx.out(), "{:.{}f}us", ice::Tus(value).value * 1.0, floatingp);
+            case 'n':
+            default: return fmt::format_to(ctx.out(), "{:.{}f}ns", ice::Tns(value).value * 1.0, floatingp);
+            }
+        }
     }
 };
