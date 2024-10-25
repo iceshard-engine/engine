@@ -37,7 +37,7 @@ namespace ice
         IceshardTraitContext(ice::IceshardWorldContext& world_context, ice::u32 index) noexcept;
         ~IceshardTraitContext() noexcept;
 
-        void register_interface_selector(ice::InterfaceSelector* selector) noexcept override:
+        void register_interface_selector(ice::InterfaceSelector* selector) noexcept override;
 
         auto checkpoint(ice::StringID id) noexcept -> ice::TaskCheckpointGate override;
         bool register_checkpoint(ice::StringID id, ice::TaskCheckpoint& checkpoint) noexcept override;
