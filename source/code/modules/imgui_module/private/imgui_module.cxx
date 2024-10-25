@@ -135,7 +135,7 @@ namespace ice::devui
         static auto imgui_trait_factory(ice::Allocator& alloc, ice::TraitContext& ctx, void* userdata) noexcept -> UniquePtr<ice::Trait>
         {
             ICE_ASSERT_CORE(userdata == global_ImGuiContext);
-            return ice::make_unique<ImGuiTrait>(alloc, alloc, ctx, *global_ImGuiContext);
+            return ctx.make_unique<ImGuiTrait>(alloc, alloc, *global_ImGuiContext);
         }
 
         static bool imgui_register_trait(ice::TraitArchive& arch) noexcept

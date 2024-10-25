@@ -2,6 +2,8 @@
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_world.hxx"
+#include "iceshard_world_tasks_devui.hxx"
+
 #include <ice/engine_frame.hxx>
 #include <ice/engine_shards.hxx>
 #include <ice/engine_runner.hxx>
@@ -16,10 +18,12 @@ namespace ice
 
     IceshardTasksLauncher::IceshardTasksLauncher(
         ice::IceshardWorldContext& world_context,
-        ice::Span<ice::UniquePtr<IceshardTraitContext>> traits
+        ice::Span<ice::UniquePtr<IceshardTraitContext>> traits,
+        ice::detail::TraitTaskTracker* task_tracker
     ) noexcept
         : _world_context{ world_context }
         , _traits{ traits }
+        , _task_tracker{ task_tracker }
     {
     }
 
@@ -39,7 +43,7 @@ namespace ice
         {
             ice::IceshardEventHandler const& handler = it.value();
 
-            *out_it = handler.event_handler(_traits[handler.trait_idx]->trait.get(), shard, handler.userdata);
+            *out_it = handler.event_handler(_traits[handler.trait_idx]->trait.get(), shard, _task_tracker);
 
             out_it += 1;
             it = ice::multi_hashmap::find_next(_world_context._frame_handlers, it);
@@ -74,7 +78,7 @@ namespace ice
             //ICE_ASSERT(ice::array::count(out_tasks) < ice::array::capacity(out_tasks), "Maximum number of tasks suppored by default launcher reached!");
             ice::array::push_back(
                 out_tasks,
-                handler.event_handler(_traits[handler.trait_idx]->trait.get(), shard, handler.userdata)
+                handler.event_handler(_traits[handler.trait_idx]->trait.get(), shard, _task_tracker)
             );
 
             it = ice::multi_hashmap::find_next(_world_context._frame_handlers, it);

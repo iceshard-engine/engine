@@ -5,15 +5,52 @@
 #include "widgets/imgui_allocator_tree.hxx"
 
 #include <ice/assert.hxx>
-#include <imgui/imgui.h>
-#undef assert
+#include <ice/devui_imgui.hxx>
+#include <ice/string/static_string.hxx>
 
 namespace ice::devui
 {
 
+    namespace detail
+    {
+
+        void build_mainmenu(ice::StaticString<32>& temp, ice::String path, ice::String name, bool& state) noexcept
+        {
+            ice::ucount const separator_pos = ice::string::find_first_of(path, '/');
+            if (separator_pos != ice::String_NPos)
+            {
+                temp = ice::string::substr(path, 0, separator_pos);
+
+                if (ImGui::BeginMenu(ice::string::begin(temp)))
+                {
+                    build_mainmenu(temp, ice::string::substr(path, separator_pos + 1), name, state);
+                    ImGui::EndMenu();
+                }
+            }
+            else
+            {
+                if (ImGui::BeginMenu(ice::string::begin(path)))
+                {
+                    ImGui::MenuItem(ice::string::begin(name), nullptr, &state);
+                    ImGui::EndMenu();
+                }
+            }
+        }
+
+    } // namespace detail
+
+
     void ImGuiWidgetFrame::mainmenu(ice::DevUIWidgetInfo const& widget, ice::DevUIWidgetState& state) noexcept
     {
-        ImGui::MenuItem(ice::string::begin(widget.name), nullptr, &state.active);
+        ice::ucount const separator_pos = ice::string::find_first_of(widget.category, '/');
+        if (separator_pos == ice::String_NPos)
+        {
+            ImGui::MenuItem(ice::string::begin(widget.name), nullptr, &state.active);
+            return;
+        }
+
+        ice::StaticString<32> helper;
+        detail::build_mainmenu(helper, ice::string::substr(widget.category, separator_pos + 1), widget.name, state.active);
     }
 
     bool ImGuiWidgetFrame::begin(ice::DevUIWidgetInfo const& widget, ice::DevUIWidgetState& state) noexcept
@@ -71,6 +108,7 @@ namespace ice::devui
         ice::String categories[]{
             "File",
             "Settings",
+            "Engine",
             "Tools",
             "Help"
         };
@@ -112,6 +150,7 @@ namespace ice::devui
 
             for (ImGuiDevUIWidget& runtime : _widget_manager.widgets())
             {
+                runtime.widget->update_state(runtime);
                 if (runtime.active)
                 {
                     runtime.widget->build_widget(_widget_frame, runtime);
@@ -120,6 +159,35 @@ namespace ice::devui
         }
 
         ImGui::EndFrame();
+    }
+
+    void ImGuiSystem::devui_draw(ice::devui::ImGuiStats const& stats) noexcept
+    {
+        ImGuiIO& io = ImGui::GetIO();
+        ImVec2 const size = ImGui::GetContentRegionAvail();
+
+        // ImGui::Separator();//Text("Status");
+        ImGui::TextT("Display: {} x {}", io.DisplaySize.x, io.DisplaySize.y);
+        ImGui::SameLine(size.x * 0.5f, 1.0f);
+        ImGui::TextT("FPS: {} ({:m})", io.Framerate, ice::Ts{io.DeltaTime});
+
+        ImGui::NewLine();
+        ImGui::Text("Log file: %s", io.LogFilename);
+        ImGui::SameLine(size.x * 0.5f);
+        ImGui::Text("Config file: %s", io.IniFilename);
+
+        // ImGui::NewLine(); ImGui::SeparatorText("Info");
+        ImGui::NewLine(); ImGui::Separator();
+        ImGui::TextT("Widgets: {}", ice::count(_widget_manager.widgets()));
+
+        ImGui::NewLine(); ImGui::Separator();
+        ImGui::TextT("Draw calls: {} ({:p})", stats.draw_calls, stats.draw_datasize);
+        ImGui::SameLine(size.x * 0.5f);
+        ImGui::TextT("Time: {:.3d}", stats.draw_processtime);
+
+        ImGui::TextT("Vertices: {}", stats.draw_vertices);
+        ImGui::SameLine(size.x * 0.5f);
+        ImGui::TextT("Indices: {}", stats.draw_indices);
     }
 
 } // namespace ice::devui

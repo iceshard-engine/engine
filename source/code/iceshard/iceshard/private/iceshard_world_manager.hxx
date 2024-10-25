@@ -6,7 +6,9 @@
 #include <ice/world/world_assembly.hxx>
 #include <ice/world/world_updater.hxx>
 #include <ice/mem_allocator_proxy.hxx>
+
 #include "iceshard_world.hxx"
+#include "iceshard_world_tasks_devui.hxx"
 
 namespace ice
 {
@@ -74,6 +76,14 @@ namespace ice
     private:
         ice::HashMap<Entry> _worlds;
         ice::ShardContainer _pending_events;
+
+    private:
+        class DevUI;
+
+        auto create_devui() noexcept -> ice::UniquePtr<DevUI>;
+
+        ice::UniquePtr<DevUI> _devui;
+        ice::UniquePtr<TraitTasksTrackerDevUI> _devui_tasks;
     };
 
 } // namespace ice

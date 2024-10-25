@@ -15,10 +15,13 @@ namespace ice::devui
 
     class ImGuiSystem;
 
-    class ImGuiTrait final : public ice::Trait
+    class ImGuiTrait final
+        : public ice::Trait
+        , public ice::TraitDevUI
+        , public ice::InterfaceSelectorOf<ImGuiTrait, ice::TraitDevUI>
     {
     public:
-        ImGuiTrait(ice::Allocator& alloc, ice::TraitContext& ctx, ImGuiSystem& system) noexcept;
+        ImGuiTrait(ice::TraitContext& ctx, ice::Allocator& alloc, ImGuiSystem& system) noexcept;
         ~ImGuiTrait() noexcept override;
 
         auto activate(ice::WorldStateParams const& params) noexcept -> ice::Task<> override;
@@ -27,6 +30,11 @@ namespace ice::devui
         auto update(ice::EngineFrameUpdate const& update) noexcept -> ice::Task<>;
 
         auto on_window_resized(ice::vec2i new_size) noexcept -> ice::Task<>;
+
+    public:
+        void build_content() noexcept override;
+
+        auto trait_name() const noexcept -> ice::String override { return "ImGui.DevUI"; };
 
     public: // Gfx State Events
         auto gfx_start(ice::gfx::GfxStateChange const& params) noexcept -> ice::Task<>;
@@ -38,6 +46,8 @@ namespace ice::devui
 
     private:
         ice::Allocator& _allocator;
+        ice::devui::ImGuiSystem& _system;
+        ice::devui::ImGuiStats _stats;
         ice::UniquePtr<ImGuiGfxStage> _imgui_gfx_stage;
         bool _resized;
     };

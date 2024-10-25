@@ -7,11 +7,22 @@
 #include <ice/devui_frame.hxx>
 #include <ice/mem_allocator_proxy.hxx>
 #include <ice/container/array.hxx>
+#include <ice/engine_frame.hxx>
+
 #include "widgets/imgui_devui_manager.hxx"
 #include "widgets/imgui_logger.hxx"
 
 namespace ice::devui
 {
+
+    struct ImGuiStats
+    {
+        ice::u32 draw_calls;
+        ice::u32 draw_vertices;
+        ice::u32 draw_indices;
+        ice::Tns draw_processtime;
+        ice::usize draw_datasize;
+    };
 
     class ImGuiWidgetFrame final : public ice::DevUIFrame
     {
@@ -35,6 +46,8 @@ namespace ice::devui
         auto allocator() noexcept -> ice::Allocator& { return _allocator.backing_allocator(); }
 
         auto logger() noexcept -> ice::devui::ImGuiLogger& { return _widget_logger; }
+
+        void devui_draw(ice::devui::ImGuiStats const& stats) noexcept;
 
     private:
         ice::ProxyAllocator _allocator;

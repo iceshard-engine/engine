@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/stringid.hxx>
+#include <ice/interfaces.hxx>
 #include <ice/task_types.hxx>
 
 namespace ice
