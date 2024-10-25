@@ -156,13 +156,6 @@ namespace ice
         return Type{ left_op.value - right_op.value };
     }
 
-    constexpr auto operator*(ice::TimeType auto left, auto right) noexcept
-        requires (std::is_arithmetic_v<decltype(right)>)
-    {
-        using Type = decltype(left);
-        return Type{ left.value * right };
-    }
-
     constexpr auto operator==(ice::TimeType auto left, TimeType auto right) noexcept
     {
         using Type = ice::detail::TTLowestPrecisionType<decltype(left), decltype(right)>;

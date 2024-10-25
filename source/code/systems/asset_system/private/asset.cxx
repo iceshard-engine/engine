@@ -60,7 +60,7 @@ namespace ice
         return valid() == false;
     }
 
-    void Asset::release() const noexcept
+    void Asset::release() noexcept
     {
         if (this->empty())
         {
@@ -76,6 +76,8 @@ namespace ice
             // Unload the resource (if not yet done yet)
             // ice::wait_for(_info.resource_tracker.unload_resource(entry->_resource));
         }
+
+        _handle = nullptr;
     }
 
     auto Asset::metadata(ice::Data& out_metadata) const noexcept -> ice::Task<ice::Result>

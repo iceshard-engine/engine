@@ -93,10 +93,13 @@ namespace ice::gfx
 
     auto Trait_GfxShaderStorage::gfx_shutdown(ice::gfx::GfxStateChange const& params) noexcept -> ice::Task<>
     {
-        for (ice::gfx::GfxShaderEntry const& entry : _loaded_shaders)
+        for (ice::gfx::GfxShaderEntry& entry : ice::hashmap::values(_loaded_shaders))
         {
             params.context.device().destroy_shader(entry.shader);
+            entry.asset.release();
         }
+
+        ice::hashmap::clear(_loaded_shaders);
         co_return;
     }
 

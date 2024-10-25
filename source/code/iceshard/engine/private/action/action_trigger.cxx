@@ -14,23 +14,23 @@ namespace ice::action
     namespace detail
     {
 
-        bool trigger_success(ice::Shard const&, ice::Shard const&, ice::f32) noexcept
+        bool trigger_success(ice::Shard const&, ice::Shard const&, ice::Tns) noexcept
         {
             return true;
         }
 
-        bool trigger_failure(ice::Shard const&, ice::Shard const&, ice::f32) noexcept
+        bool trigger_failure(ice::Shard const&, ice::Shard const&, ice::Tns) noexcept
         {
             return false;
         }
 
-        bool trigger_time_elapsed(ice::Shard const& user_shard, ice::Shard const&, ice::f32 stage_time_elapsed) noexcept
+        bool trigger_time_elapsed(ice::Shard const& user_shard, ice::Shard const&, ice::Tns stage_time_elapsed) noexcept
         {
-            ice::f32 time_data;
+            ice::Tns time_data;
             return ice::shard_inspect(user_shard, time_data) && time_data < stage_time_elapsed;
         }
 
-        bool trigger_check_action(ice::Shard const& user_shard, ice::Shard const& event_shard, ice::f32) noexcept
+        bool trigger_check_action(ice::Shard const& user_shard, ice::Shard const& event_shard, ice::Tns) noexcept
         {
             ice::StringID_Hash expected_action;
             ice::StringID_Hash incoming_action;
@@ -42,7 +42,7 @@ namespace ice::action
             return false;
         }
 
-        bool trigger_input_button(ice::Shard const& user_shard, ice::Shard const& event_shard, ice::f32) noexcept
+        bool trigger_input_button(ice::Shard const& user_shard, ice::Shard const& event_shard, ice::Tns) noexcept
         {
             ice::input::InputEvent expected_input;
             ice::input::InputEvent incoming_input;
@@ -55,7 +55,7 @@ namespace ice::action
             return false;
         }
 
-        bool trigger_input_axis_above(ice::Shard const& user_shard, ice::Shard const& event_shard, ice::f32) noexcept
+        bool trigger_input_axis_above(ice::Shard const& user_shard, ice::Shard const& event_shard, ice::Tns) noexcept
         {
             ice::input::InputEvent expected_input;
             ice::input::InputEvent incoming_input;
@@ -68,7 +68,7 @@ namespace ice::action
             return false;
         }
 
-        bool trigger_input_axis_below(ice::Shard const& user_shard, ice::Shard const& event_shard, ice::f32) noexcept
+        bool trigger_input_axis_below(ice::Shard const& user_shard, ice::Shard const& event_shard, ice::Tns) noexcept
         {
             ice::input::InputEvent expected_input;
             ice::input::InputEvent incoming_input;
