@@ -39,6 +39,12 @@ namespace ice
         return *this;
     }
 
+    auto Asset::uri() const noexcept -> ice::URI
+    {
+        ice::ResourceHandle const* resource = ice::asset_data_resource(_handle->_data);
+        return ice::resource_uri(resource);
+    }
+
     auto Asset::name() const noexcept -> ice::StringID_Arg
     {
         return _handle->_identifier;
@@ -54,7 +60,7 @@ namespace ice
         return valid() == false;
     }
 
-    void Asset::release() const noexcept
+    void Asset::release() noexcept
     {
         if (this->empty())
         {
@@ -70,6 +76,8 @@ namespace ice
             // Unload the resource (if not yet done yet)
             // ice::wait_for(_info.resource_tracker.unload_resource(entry->_resource));
         }
+
+        _handle = nullptr;
     }
 
     auto Asset::metadata(ice::Data& out_metadata) const noexcept -> ice::Task<ice::Result>

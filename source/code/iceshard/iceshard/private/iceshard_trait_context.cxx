@@ -6,7 +6,8 @@ namespace ice
 {
 
     IceshardWorldContext::IceshardWorldContext(ice::Allocator& alloc) noexcept
-        : _always_reached_checkpoint{ true }
+        : _allocator{ alloc }
+        , _always_reached_checkpoint{ true }
         , _checkpoints{ alloc }
         , _frame_handlers{ alloc }
         , _runner_handlers{ alloc }
@@ -26,11 +27,17 @@ namespace ice
     ) noexcept
         : _trait_index{ trait_idx }
         , _world_context{ world_context }
+        , _interface_selector{ nullptr }
     {
     }
 
     IceshardTraitContext::~IceshardTraitContext() noexcept
     {
+    }
+
+    void IceshardTraitContext::register_interface_selector(ice::InterfaceSelector* selector) noexcept
+    {
+        _interface_selector = selector;
     }
 
     auto IceshardTraitContext::checkpoint(ice::StringID id) noexcept -> ice::TaskCheckpointGate
@@ -76,10 +83,18 @@ namespace ice
                 .event_id = trigger_event,
                 .trait_idx = _trait_index,
                 .event_handler = binding.procedure,
-                .userdata = binding.procedure_userdata
             }
         );
 
+        return ice::E_Fail;
+    }
+
+    auto IceshardTraitContext::query_interface(ice::StringID_Arg id) noexcept -> ice::Expected<void*>
+    {
+        if (_interface_selector != nullptr)
+        {
+            return _interface_selector->query_interface(id);
+        }
         return ice::E_Fail;
     }
 

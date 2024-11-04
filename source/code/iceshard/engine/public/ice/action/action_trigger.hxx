@@ -5,6 +5,7 @@
 #include <ice/shard.hxx>
 #include <ice/stringid.hxx>
 #include <ice/mem_unique_ptr.hxx>
+#include <ice/clock.hxx>
 
 namespace ice::action
 {
@@ -12,7 +13,7 @@ namespace ice::action
     using ActionTriggerHandler = bool (
         ice::Shard const& user_shard,
         ice::Shard const& event_shard,
-        ice::f32 stage_time_elapsed
+        ice::Tns stage_time_elapsed
     ) noexcept;
 
     struct ActionTriggerDefinition

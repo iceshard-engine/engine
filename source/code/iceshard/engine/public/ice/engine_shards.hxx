@@ -3,6 +3,7 @@
 
 #pragma once
 #include <ice/shard.hxx>
+#include <ice/shard_payloads.hxx>
 
 namespace ice
 {

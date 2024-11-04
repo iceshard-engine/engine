@@ -4,8 +4,21 @@
 namespace ice::detail
 {
 
+    struct TraitTaskTracker
+    {
+        virtual ~TraitTaskTracker() noexcept = default;
+        virtual auto report_resume(ice::u32 id) noexcept -> ice::u32 = 0;
+        virtual auto report_suspend(ice::u32 id) noexcept -> ice::u32 = 0;
+        virtual void report_finish(ice::u32 id) noexcept = 0;
+    };
+
+
     template<auto MethodPtr>
-    static auto trait_method_task_wrapper(ice::Trait* self, ice::Shard sh, void*) noexcept -> ice::Task<>
+    static auto trait_method_task_wrapper(
+        ice::Trait* self,
+        ice::Shard sh,
+        ice::detail::TraitTaskTracker* tracker
+    ) noexcept -> ice::Task<>
     {
         using member_t = decltype(MethodPtr);
         using class_t = ice::member_class_type_t<member_t>;
@@ -71,7 +84,11 @@ namespace ice::detail
     }
 
     template<auto MethodPtr, typename DataType>
-    static auto trait_method_task_wrapper(ice::Trait* self, ice::Shard sh, void*) noexcept -> ice::Task<>
+    static auto trait_method_task_wrapper(
+        ice::Trait* self,
+        ice::Shard sh,
+        ice::detail::TraitTaskTracker* tracker
+    ) noexcept -> ice::Task<>
     {
         using member_t = decltype(MethodPtr);
         using class_t = ice::member_class_type_t<member_t>;

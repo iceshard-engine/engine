@@ -29,18 +29,8 @@ namespace ice
             ice::detail::internal_log_state->enable_tag(tag, enabled);
         }
 
-        void uninitialized_register_tag_fn(
-            ice::LogTagDefinition /*log_def*/
-        ) noexcept
-        {
-        }
-
-        void uninitialized_enable_tag_fn(
-            ice::LogTag /*tag*/,
-            bool /*enabled*/
-        ) noexcept
-        {
-        }
+        void uninitialized_register_tag_fn(ice::LogTagDefinition /*log_def*/) noexcept { }
+        void uninitialized_enable_tag_fn(ice::LogTag /*tag*/, bool /*enabled*/) noexcept { }
 
     } // namespace detail
 

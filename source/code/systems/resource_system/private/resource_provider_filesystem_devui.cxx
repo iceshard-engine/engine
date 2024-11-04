@@ -4,9 +4,7 @@
 #include "resource_provider_filesystem_devui.hxx"
 #include <ice/devui_context.hxx>
 #include <ice/devui_frame.hxx>
-
-#include <imgui/imgui.h>
-#undef assert
+#include <ice/devui_imgui.hxx>
 
 namespace ice
 {
@@ -59,7 +57,7 @@ namespace ice
 
         ImGui::InputTextWithHint("Filter", "Filter...", _filter, ice::count(_filter) - 1);
 
-        if (ImGui::BeginTable("FileSystemResourceProvider:Resources", 3, flags, { 0, (ice::f32) table_size }))
+        if (ImGui::BeginTable("FileSystemResourceProvider:Resources", 4, flags, { 0, (ice::f32) table_size }))
         {
             ice::u32 const scroll_value = (ice::u32) ImGui::GetScrollY();
             ice::u32 const scroll_idx = scroll_value / entry_size;
@@ -72,6 +70,7 @@ namespace ice
 
             ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_NoHide | ImGuiTableColumnFlags_WidthStretch);
             ImGui::TableSetupColumn("Origin");
+            ImGui::TableSetupColumn("URI", ImGuiTableColumnFlags_DefaultHide);
             ImGui::TableSetupColumn("Size", ImGuiTableColumnFlags_DefaultHide);
             ImGui::TableHeadersRow();
 
@@ -110,7 +109,12 @@ namespace ice
 
             if (ImGui::TableNextColumn())
             {
-                ImGui::Text(ice::build::is_windows ? "%llu" : "%lu", res->size().value);
+                ImGui::TextUnformatted(res->uri()._uri);
+            }
+
+            if (ImGui::TableNextColumn())
+            {
+                ImGui::TextT("{:p}", res->size());
             }
 
             idx += 1;

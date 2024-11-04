@@ -18,6 +18,11 @@ namespace ice
         ice::queue::reserve(_pending_states, 16);
     }
 
+    // auto EngineStateTracker_Default::current_states() const noexcept -> ice::Span<ice::EngineStateCurrent const>
+    // {
+    //     return _current_state;
+    // }
+
     bool EngineStateTracker_Default::register_graph(
         ice::EngineStateRegisterParams params,
         ice::Span<ice::EngineStateTrigger const> triggers
@@ -152,7 +157,7 @@ namespace ice
         ice::StringID_Arg subname
     ) const noexcept -> ice::EngineState
     {
-        return current_state_internal(state_graph, ice::StringID_Invalid);
+        return current_state_internal(state_graph, subname);
     }
 
     auto EngineStateTracker_Default::update_states(

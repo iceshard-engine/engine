@@ -21,6 +21,12 @@ namespace ice::build
     //! \note Currently StringID will contain debug fields when compiled on 'Debug' or 'Develop' builds.
     static constexpr bool Constant_StringID_DebugInfoEnabled = current_config == Configuration::Debug || current_config == Configuration::Develop;
 
+    //! \brief Switch controling the default implementation used for ice::ShardID.
+    //!
+    //! \note Currently ShardID will contain debug fields when compiled on 'Debug' or 'Develop' builds.
+    //! \remark Currently unused due to limitations with ice::ShardID objects.
+    static constexpr bool Constant_ShardID_DebugInfoEnabled = current_config == Configuration::Debug || current_config == Configuration::Develop;
+
     //! \brief The seed used to generate hash values for ice::detail::ShardName.
     static constexpr uint32_t Constant_ShardName_DefaultSeed = 0x77a23ab1;
 

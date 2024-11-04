@@ -159,7 +159,7 @@ struct TestTrait : public ice::Trait
         update.world.entity_queries().initialize_query(_querye);
 
         ICE_LOG(LogSeverity::Retail, LogTag::Game, "Test Activated!");
-        timer = ice::timer::create_timer(update.clock, 0.1f);
+        timer = ice::timer::create_timer(update.clock, 100_Tms);
         co_return;
     }
 

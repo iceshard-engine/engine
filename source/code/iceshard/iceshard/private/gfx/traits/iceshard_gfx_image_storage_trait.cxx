@@ -2,18 +2,20 @@
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_gfx_image_storage_trait.hxx"
+
 #include <ice/asset_storage.hxx>
 #include <ice/config.hxx>
-#include <ice/resource.hxx>
-#include <ice/resource_tracker.hxx>
-#include <ice/render/render_device.hxx>
-#include <ice/render/render_buffer.hxx>
-#include <ice/render/render_command_buffer.hxx>
-#include <ice/world/world_updater.hxx>
-#include <ice/world/world_trait_module.hxx>
+#include <ice/devui_imgui.hxx>
 #include <ice/engine_runner.hxx>
 #include <ice/gfx/gfx_context.hxx>
+#include <ice/render/render_buffer.hxx>
+#include <ice/render/render_command_buffer.hxx>
+#include <ice/render/render_device.hxx>
+#include <ice/resource_tracker.hxx>
+#include <ice/resource.hxx>
 #include <ice/shard_container.hxx>
+#include <ice/world/world_trait_module.hxx>
+#include <ice/world/world_updater.hxx>
 
 namespace ice::gfx
 {
@@ -29,14 +31,14 @@ namespace ice::gfx
         co_await final_thread;
     }
 
-    Trait_GfxImageStorage::Trait_GfxImageStorage(ice::Allocator& alloc, ice::TraitContext& ctx) noexcept
+    Trait_GfxImageStorage::Trait_GfxImageStorage(ice::TraitContext& ctx, ice::Allocator& alloc) noexcept
         : ice::Trait{ ctx }
         , _loaded_images{ alloc }
     {
         _context.bind<&Trait_GfxImageStorage::gfx_update>(ice::gfx::ShardID_GfxFrameUpdate);
     }
 
-    auto Trait_GfxImageStorage::on_asset_released(ice::Asset const& asset) noexcept -> ice::Task<>
+    auto Trait_GfxImageStorage::on_asset_released(ice::Asset const &asset) noexcept -> ice::Task<>
     {
         GfxImageEntry* entry = ice::hashmap::try_get(_loaded_images, ice::hash(asset.name()));
         ICE_ASSERT_CORE(entry != nullptr);

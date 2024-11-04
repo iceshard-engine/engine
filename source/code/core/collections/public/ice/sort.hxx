@@ -53,6 +53,10 @@ namespace ice
     template<typename K, typename V, typename Pred>
     inline void sort(ice::Span<K> keys, ice::Span<V> values, Pred&& pred) noexcept;
 
+
+    template<typename K, typename Pred>
+    inline void sort_indices(ice::Span<K> keys, ice::Span<ice::u32> indices, Pred&& pred) noexcept;
+
     template<typename Node, typename Pred>
     inline auto sort_linked_list(Node* left_list, ice::u32 size, Pred&& pred) noexcept -> Node*;
 
@@ -141,6 +145,27 @@ namespace ice
             return i + 1;
         }
 
+        template<typename K, typename Pred>
+        inline auto qsort_partition_indices(ice::Span<K> keys, ice::Span<ice::u32>& indices, Pred&& pred, ice::i32 left, ice::i32 right) noexcept -> ice::i32
+        {
+            K* pivot = &keys[indices[right]];
+
+            ice::i32 i = left - 1;
+            ice::i32 j = left;
+
+            while (j < right)
+            {
+                if (ice::forward<Pred>(pred)(keys[indices[j]], *pivot))
+                {
+                    ++i;
+                    ice::swap(indices[i], indices[j]);
+                }
+                ++j;
+            }
+            ice::swap(indices[i + 1], indices[right]);
+            return i + 1;
+        }
+
         //! A qsort implementation with tail call optimization (partial).
         //! \note Implementation base on articles:
         //!     http://www.algolist.net/Algorithms/Sorting/Quicksort
@@ -153,6 +178,19 @@ namespace ice
                 ice::i32 const pi = qsort_partition(keys, values, ice::forward<Pred>(pred), left, right);
 
                 ice::detail::qsort(keys, values, ice::forward<Pred>(pred), left, pi - 1);
+
+                left = pi + 1;
+            }
+        }
+
+        template<typename K, typename Pred>
+        inline void qsort_indices(ice::Span<K> keys, ice::Span<ice::u32> indices, Pred&& pred, ice::i32 left, ice::i32 right) noexcept
+        {
+            while (left < right)
+            {
+                ice::i32 const pi = qsort_partition_indices(keys, indices, ice::forward<Pred>(pred), left, right);
+
+                ice::detail::qsort_indices(keys, indices, ice::forward<Pred>(pred), left, pi - 1);
 
                 left = pi + 1;
             }
@@ -179,6 +217,15 @@ namespace ice
         ice::i32 const last_index = ice::count(keys) - 1;
 
         ice::detail::qsort(keys, values, std::forward<Pred>(pred), first_index, last_index);
+    }
+
+    template<typename K, typename Pred>
+    inline void sort_indices(ice::Span<K> keys, ice::Span<ice::u32> indices, Pred&& pred) noexcept
+    {
+        ice::i32 const first_index = 0;
+        ice::i32 const last_index = ice::count(keys) - 1;
+
+        ice::detail::qsort_indices(keys, indices, std::forward<Pred>(pred), first_index, last_index);
     }
 
     template<typename Node, typename Pred>

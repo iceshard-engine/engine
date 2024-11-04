@@ -17,15 +17,23 @@ namespace ice::gfx
         ice::Asset asset;
         ice::render::Shader shader;
         bool released = false;
+
+        bool devui_loaded = false;
     };
 
     class Trait_GfxShaderStorage final
         : public ice::Trait
+        , public ice::TraitDevUI
         , public ice::AssetRequestResolver
+        , public ice::InterfaceSelectorOf<Trait_GfxShaderStorage, ice::TraitDevUI>
     {
     public: // Implementation of: ice::Trait
-        Trait_GfxShaderStorage(ice::Allocator& alloc, ice::TraitContext& ctx) noexcept;
+        Trait_GfxShaderStorage(ice::TraitContext& ctx, ice::Allocator& alloc) noexcept;
         ~Trait_GfxShaderStorage() noexcept override = default;
+
+    public: // Implementation of: ice::TraitDevUI
+        auto trait_name() const noexcept -> ice::String override { return "Gfx.ShaderStorage"; }
+        void build_content() noexcept override;
 
     public: // Implementation of: ice::AssetRequestResolver
         auto on_asset_released(ice::Asset const& asset) noexcept -> ice::Task<> override;

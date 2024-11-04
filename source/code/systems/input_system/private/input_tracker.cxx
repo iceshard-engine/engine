@@ -46,7 +46,7 @@ namespace ice::input
     ) noexcept
         : InputTracker{ }
         , _allocator{ alloc }
-        , _timer{ ice::timer::create_timer(input_clock, 0.01f) }
+        , _timer{ ice::timer::create_timer(input_clock, 10_Tms) }
         , _factories{ _allocator }
         , _devices{ _allocator }
     {
