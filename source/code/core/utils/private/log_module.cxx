@@ -23,6 +23,8 @@ namespace ice
             static constexpr ice::StringID Constant_APIName = "ice.logger"_sid;
             static constexpr ice::u32 Constant_APIVersion = 1;
 
+            RegisterLogSinkFn** reg_log_sink_fn = &ice::detail::fn_register_log_sink;
+            UnregisterLogSinkFn** unreg_log_sink_fn = &ice::detail::fn_unregister_log_sink;
             RegisterLogTagFn** reg_log_tag_fn = &ice::detail::fn_register_log_tag;
             EnableLogTagFn** ena_log_tag_fn = &ice::detail::fn_enable_log_tag;
             LogFn** log_fn = &ice::detail::log_fn;
@@ -65,6 +67,8 @@ namespace ice
         if constexpr(ice::build::is_android)
         {
             *current_api.log_fn = ice::detail::android::logcat_message;
+            *current_api.reg_log_sink_fn = ice::detail::default_register_sink_fn;
+            *current_api.unreg_log_sink_fn = ice::detail::default_unregister_sink_fn;
             *current_api.reg_log_tag_fn = ice::detail::default_register_tag_fn;
             *current_api.ena_log_tag_fn = ice::detail::default_enable_tag_fn;
             *current_api.assert_fn = ice::detail::android::logcat_assert;
@@ -72,6 +76,8 @@ namespace ice
         else if constexpr (ice::build::is_webapp)
         {
             *current_api.log_fn = ice::detail::webasm::console_message;
+            *current_api.reg_log_sink_fn = ice::detail::default_register_sink_fn;
+            *current_api.unreg_log_sink_fn = ice::detail::default_unregister_sink_fn;
             *current_api.reg_log_tag_fn = ice::detail::default_register_tag_fn;
             *current_api.ena_log_tag_fn = ice::detail::default_enable_tag_fn;
             *current_api.assert_fn = ice::detail::webasm::alert_assert;
@@ -79,6 +85,8 @@ namespace ice
         else
         {
             *current_api.log_fn = ice::detail::default_log_fn;
+            *current_api.reg_log_sink_fn = ice::detail::default_register_sink_fn;
+            *current_api.unreg_log_sink_fn = ice::detail::default_unregister_sink_fn;
             *current_api.reg_log_tag_fn = ice::detail::default_register_tag_fn;
             *current_api.ena_log_tag_fn = ice::detail::default_enable_tag_fn;
             *current_api.assert_fn = ice::detail::default_assert_fn;
@@ -94,12 +102,13 @@ namespace ice
         alloc->destroy(detail::internal_log_state);
     }
 
-    void LogModule::init(ice::Allocator& alloc, ice::ModuleNegotiatorBase const& negotiator) noexcept
+    void log_module_init(ice::Allocator &alloc, ice::ModuleNegotiatorBase const &negotiator) noexcept
     {
         detail::LogAPI new_api{ };
         if (negotiator.query_api(new_api))
         {
             detail::LogAPI const current_api{ };
+            *current_api.reg_log_sink_fn = *new_api.reg_log_sink_fn;
             *current_api.reg_log_tag_fn = *new_api.reg_log_tag_fn;
             *current_api.ena_log_tag_fn = *new_api.ena_log_tag_fn;
             *current_api.log_fn = *new_api.log_fn;
@@ -107,6 +116,23 @@ namespace ice
         }
 
         initialize_log_module(negotiator.negotiator_context, negotiator.negotiator_api);
+    }
+
+    auto log_module_register_sink(LogSinkFn fn_sink, void* userdata) noexcept -> ice::LogSinkID
+    {
+        static detail::LogAPI const current_api{ };
+        return (*current_api.reg_log_sink_fn)(fn_sink, userdata);
+    }
+
+    void log_module_unregister_sink(ice::LogSinkID sinkid) noexcept
+    {
+        static detail::LogAPI const current_api{ };
+        return (*current_api.unreg_log_sink_fn)(sinkid);
+    }
+
+    void LogModule::init(ice::Allocator& alloc, ice::ModuleNegotiatorBase const& negotiator) noexcept
+    {
+        log_module_init(alloc, negotiator);
     }
 
     bool LogModule::on_load(ice::Allocator& alloc, ice::ModuleNegotiatorBase const& negotiator) noexcept

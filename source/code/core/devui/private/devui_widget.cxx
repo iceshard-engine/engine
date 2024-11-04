@@ -1,5 +1,6 @@
 #include <ice/devui_widget.hxx>
 #include <ice/devui_frame.hxx>
+#include <ice/devui_imgui.hxx>
 
 namespace ice
 {

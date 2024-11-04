@@ -4,33 +4,35 @@
 #include "imgui_trait.hxx"
 #include "imgui_system.hxx"
 
-#include <ice/engine.hxx>
-#include <ice/engine_runner.hxx>
 #include <ice/engine_devui.hxx>
-#include <ice/engine_shards.hxx>
 #include <ice/engine_frame.hxx>
+#include <ice/engine_runner.hxx>
+#include <ice/engine_shards.hxx>
+#include <ice/engine.hxx>
 #include <ice/world/world_updater.hxx>
 
+#include <ice/gfx/gfx_context.hxx>
 #include <ice/gfx/gfx_shards.hxx>
 #include <ice/gfx/gfx_stage_registry.hxx>
-#include <ice/gfx/gfx_context.hxx>
 #include <ice/render/render_swapchain.hxx>
 
+#include <ice/input/input_event.hxx>
 #include <ice/input/input_keyboard.hxx>
 #include <ice/input/input_mouse.hxx>
-#include <ice/input/input_event.hxx>
 
 #include <ice/asset.hxx>
-#include <ice/task.hxx>
-#include <ice/task_utils.hxx>
 #include <ice/profiler.hxx>
+#include <ice/task_utils.hxx>
+#include <ice/task.hxx>
 
 namespace ice::devui
 {
 
-    ImGuiTrait::ImGuiTrait(ice::Allocator& alloc, ice::TraitContext& ctx, ImGuiSystem& system) noexcept
+    ImGuiTrait::ImGuiTrait(ice::TraitContext& ctx, ice::Allocator& alloc, ImGuiSystem& system) noexcept
         : ice::Trait{ ctx }
+        , ice::TraitDevUI{ {.category="Traits/Debug",.name="ImGUI-DevUI"} }
         , _allocator{ alloc }
+        , _system{ system }
         , _imgui_gfx_stage{ }
         , _resized{ false }
     {
@@ -159,6 +161,11 @@ namespace ice::devui
         co_return;
     }
 
+    void ImGuiTrait::build_content() noexcept
+    {
+        _system.devui_draw(_stats);
+    }
+
     auto ImGuiTrait::gfx_start(ice::gfx::GfxStateChange const& params) noexcept -> ice::Task<>
     {
         _imgui_gfx_stage = ice::make_unique<ImGuiGfxStage>(_allocator, _allocator, params.assets);
@@ -215,6 +222,8 @@ namespace ice::devui
     void ImGuiTrait::build_internal_command_list(ice::Span<ImGuiGfxStage::DrawCommand> draw_cmds) noexcept
     {
         IPT_ZONE_SCOPED;
+        _stats = {}; // reset stats
+
         ImDrawData* draw_data = ImGui::GetDrawData();
         if (draw_data == nullptr)
         {
@@ -223,6 +232,8 @@ namespace ice::devui
 
         using ice::render::Image;
         using ice::render::ResourceSet;
+
+        ice::Timestamp const start_ts = ice::clock::now();
 
         ImVec2 clip_off = draw_data->DisplayPos;         // (0,0) unless using multi-viewports
         ImVec2 clip_scale = draw_data->FramebufferScale; // (1,1) unless using retina display which are often (2,2)
@@ -238,7 +249,6 @@ namespace ice::devui
         for (int n = 0; n < draw_data->CmdListsCount; n++)
         {
             ImDrawList const* cmd_list = draw_data->CmdLists[n];
-
             for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
             {
                 ImDrawCmd const* pcmd = &cmd_list->CmdBuffer[cmd_i];
@@ -267,8 +277,13 @@ namespace ice::devui
             }
 
             vtx_buffer_offset += cmd_list->VtxBuffer.Size;
-
             idx_buffer_offset += cmd_list->IdxBuffer.Size;
+
+            _stats.draw_calls += cmd_list->CmdBuffer.Size;
+            _stats.draw_vertices += cmd_list->VtxBuffer.Size;
+            _stats.draw_indices += cmd_list->IdxBuffer.Size;
+            _stats.draw_datasize += ice::size_of<ImDrawVert> * cmd_list->VtxBuffer.Size;
+            _stats.draw_datasize += ice::size_of<ImDrawIdx> * cmd_list->IdxBuffer.Size;
         }
 
         ICE_ASSERT(
@@ -279,6 +294,8 @@ namespace ice::devui
             idx_buffer_offset * sizeof(ImDrawIdx) < (1024 * 1024 * 4),
             "ImGui index buffer to big"
         );
+
+        _stats.draw_processtime = ice::clock::elapsed(start_ts, ice::clock::now());
     }
 
 } // namespace ice::devui

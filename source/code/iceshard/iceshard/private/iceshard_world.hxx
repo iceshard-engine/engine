@@ -4,6 +4,8 @@
 #pragma once
 #include <ice/world/world.hxx>
 #include <ice/ecs/ecs_entity_operations.hxx>
+#include <ice/devui_widget.hxx>
+
 #include "iceshard_world_tasks_launcher.hxx"
 #include "iceshard_trait_context.hxx"
 
@@ -21,7 +23,8 @@ namespace ice
             ice::StringID_Arg worldid,
             ice::ecs::EntityStorage& entity_storage,
             ice::UniquePtr<ice::IceshardWorldContext> context,
-            ice::Array<ice::UniquePtr<ice::IceshardTraitContext>> traits
+            ice::Array<ice::UniquePtr<ice::IceshardTraitContext>> traits,
+            ice::detail::TraitTaskTracker* task_tracker
         ) noexcept;
         ~IceshardWorld() noexcept = default;
 
@@ -40,12 +43,19 @@ namespace ice
         auto activate(ice::WorldStateParams const& update) noexcept -> ice::Task<> override;
         auto deactivate(ice::WorldStateParams const& update) noexcept -> ice::Task<> override;
 
+        class DevUI;
+        auto devui() noexcept -> DevUI&;
+
     private:
         ice::ecs::EntityStorage& _entity_storage;
         ice::ecs::EntityOperations _entity_operations;
         ice::UniquePtr<ice::IceshardWorldContext> _context;
         ice::Array<ice::UniquePtr<ice::IceshardTraitContext>> _traits;
         ice::IceshardTasksLauncher _tasks_launcher;
+
+    private:
+        ice::UniquePtr<DevUI> _devui;
+        auto create_devui(ice::Allocator& alloc) noexcept -> ice::UniquePtr<DevUI>;
     };
 
 } // namespace ice

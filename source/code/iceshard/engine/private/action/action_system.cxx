@@ -235,7 +235,7 @@ namespace ice::action
             ActionTriggerInstance const* failure_trigger = triggers + current_stage->failure_trigger_offset + action->current_failure_trigger_idx;
             ActionTriggerInstance const* success_trigger = triggers + current_stage->success_trigger_offset + action->current_success_trigger_idx;
 
-            ice::f32 const stage_elapsed_time = ice::timeline::elapsed(action->stage_timeline);
+            ice::Tns const stage_elapsed_time = ice::timeline::elapsed(action->stage_timeline);
 
             for (ice::Shard const shard : shards)
             {

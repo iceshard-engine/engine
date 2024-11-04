@@ -6,6 +6,7 @@
 #include <ice/container_types.hxx>
 #include <ice/log_tag.hxx>
 #include <ice/log_severity.hxx>
+#include <ice/log_sink.hxx>
 #include <ice/log.hxx>
 
 #include <fmt/format.h>
@@ -28,29 +29,38 @@ namespace ice::detail
         ~LogState() noexcept;
 
         void register_tag(ice::LogTagDefinition tag_def) noexcept;
+        auto register_sink(ice::LogSinkFn fn_sink, void* userdata) noexcept -> ice::LogSinkID;
+        void unregister_sink(ice::LogSinkID sinkid) noexcept;
 
         void enable_tag(ice::LogTag tag, bool enabled) noexcept;
 
         auto tag_name(ice::LogTag tag) const noexcept -> ice::String;
         bool tag_enabled(ice::LogTag tag) const noexcept;
 
+        void flush(ice::LogSinkMessage const& message) noexcept;
+
     private:
         ice::Allocator& _allocator;
 
         ice::detail::LogTagInfo _empty_tag;
         ice::HashMap<ice::detail::LogTagInfo, ice::ContainerLogic::Complex> _tags;
+
+        struct Sink
+        {
+            ice::LogSinkFn _callback;
+            void* _userdata;
+        };
+
+        ice::Array<Sink> _sinks;
     };
 
     extern LogState* internal_log_state;
 
-    void default_register_tag_fn(
-        ice::LogTagDefinition tag_def
-    ) noexcept;
+    auto default_register_sink_fn(ice::LogSinkFn fn_sink, void* userdata) noexcept -> ice::LogSinkID;
+    void default_unregister_sink_fn(ice::LogSinkID sinkid) noexcept;
 
-    void default_enable_tag_fn(
-        ice::LogTag tag_def,
-        bool enabled
-    ) noexcept;
+    void default_register_tag_fn(ice::LogTagDefinition tag_def) noexcept;
+    void default_enable_tag_fn(ice::LogTag tag_def, bool enabled) noexcept;
 
     void default_log_fn(
         ice::LogSeverity severity,
@@ -67,13 +77,14 @@ namespace ice::detail
         ice::detail::LogLocation location
     ) noexcept;
 
-    using RegisterLogTagFn = void(
-        ice::LogTagDefinition tag_definition
-    ) noexcept;
+    using RegisterLogSinkFn = auto(ice::LogSinkFn fn_sink, void* userdata) noexcept -> ice::LogSinkID;
+    using UnregisterLogSinkFn = void(ice::LogSinkID sinkid) noexcept;
 
-    using EnableLogTagFn = void(
-        ice::LogTag tag, bool enabled
-    ) noexcept;
+    extern RegisterLogSinkFn* fn_register_log_sink;
+    extern UnregisterLogSinkFn* fn_unregister_log_sink;
+
+    using RegisterLogTagFn = void(ice::LogTagDefinition tag_definition) noexcept;
+    using EnableLogTagFn = void(ice::LogTag tag, bool enabled) noexcept;
 
     extern RegisterLogTagFn* fn_register_log_tag;
     extern EnableLogTagFn* fn_enable_log_tag;

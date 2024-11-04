@@ -4,6 +4,7 @@
 #include "iceshard_world_manager.hxx"
 #include "iceshard_trait_context.hxx"
 
+#include <ice/devui_context.hxx>
 #include <ice/engine_shards.hxx>
 #include <ice/engine_state_tracker.hxx>
 
@@ -57,6 +58,8 @@ namespace ice
         , _state_tracker{ tracker }
         , _worlds{ _allocator }
         , _pending_events{ _allocator }
+        , _devui{  }
+        , _devui_tasks{ }
     {
         ice::EngineStateRegisterParams state_params{
             .initial = ice::State_WorldCreated,
@@ -64,7 +67,13 @@ namespace ice
             .enable_subname_states = true
         };
         _state_tracker.register_graph(state_params, detail::StateTriggers_WorldState);
-    }
+
+        if (ice::devui_available())
+        {
+            // _devui_tasks = ice::make_unique<ice::TraitTasksTrackerDevUI>(_allocator, _allocator);
+            _devui = create_devui();
+        }
+   }
 
     IceshardWorldManager::~IceshardWorldManager() noexcept
     {
@@ -126,7 +135,8 @@ namespace ice
                 world_template.name,
                 world_template.entity_storage,
                 ice::move(world_context),
-                ice::move(world_traits)
+                ice::move(world_traits),
+                _devui_tasks.get()
             ),
         };
 

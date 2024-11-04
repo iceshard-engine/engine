@@ -2,13 +2,15 @@
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_gfx_shader_storage_trait.hxx"
+
 #include <ice/asset_storage.hxx>
+#include <ice/devui_imgui.hxx>
 #include <ice/engine_runner.hxx>
-#include <ice/shard_container.hxx>
-#include <ice/world/world_updater.hxx>
-#include <ice/world/world_trait_module.hxx>
 #include <ice/gfx/gfx_context.hxx>
 #include <ice/render/render_device.hxx>
+#include <ice/shard_container.hxx>
+#include <ice/world/world_trait_module.hxx>
+#include <ice/world/world_updater.hxx>
 
 namespace ice::gfx
 {
@@ -24,15 +26,43 @@ namespace ice::gfx
         co_await final_thread;
     }
 
-    Trait_GfxShaderStorage::Trait_GfxShaderStorage(ice::Allocator& alloc, ice::TraitContext& ctx) noexcept
+    Trait_GfxShaderStorage::Trait_GfxShaderStorage(ice::TraitContext& ctx, ice::Allocator& alloc) noexcept
         : ice::Trait{ ctx }
+        , ice::TraitDevUI{ {.category="Engine/Gfx", .name="Shaders"} }
         , _loaded_shaders{ alloc }
     {
         _context.bind<&Trait_GfxShaderStorage::gfx_update>(ice::gfx::ShardID_GfxFrameUpdate);
         _context.bind<&Trait_GfxShaderStorage::gfx_shutdown>(ice::gfx::ShardID_GfxShutdown);
     }
 
-    auto Trait_GfxShaderStorage::on_asset_released(ice::Asset const& asset) noexcept -> ice::Task<>
+    void Trait_GfxShaderStorage::build_content() noexcept
+    {
+        ImGui::TextT("Loaded shaders: {}", ice::hashmap::count(_loaded_shaders));
+        if (ImGui::BeginCombo("##shader-list", "Shader to preview", ImGuiComboFlags_WidthFitPreview))
+        {
+            for (GfxShaderEntry& entry : ice::hashmap::values(_loaded_shaders))
+            {
+                ice::URI const uri = entry.asset.uri();
+                ImGui::Selectable(uri.path()._data, &entry.devui_loaded);
+            }
+            ImGui::EndCombo();
+        }
+
+        for (GfxShaderEntry& entry : ice::hashmap::values(_loaded_shaders))
+        {
+            if (entry.devui_loaded)
+            {
+                if (entry.asset.available(ice::AssetState::Raw))
+                {
+                    ice::Data const rawdata = ice::wait_for_result(entry.asset.data(ice::AssetState::Raw));
+                    ImGui::TextUnformatted((char const*)rawdata.location,(char const*)rawdata.location + rawdata.size.value);
+                    ImGui::Separator();
+                }
+            }
+        }
+    }
+
+    auto Trait_GfxShaderStorage::on_asset_released(ice::Asset const &asset) noexcept -> ice::Task<>
     {
         GfxShaderEntry* entry = ice::hashmap::try_get(_loaded_shaders, ice::hash(asset.name()));
         ICE_ASSERT_CORE(entry != nullptr);
@@ -93,10 +123,13 @@ namespace ice::gfx
 
     auto Trait_GfxShaderStorage::gfx_shutdown(ice::gfx::GfxStateChange const& params) noexcept -> ice::Task<>
     {
-        for (ice::gfx::GfxShaderEntry const& entry : _loaded_shaders)
+        for (ice::gfx::GfxShaderEntry& entry : ice::hashmap::values(_loaded_shaders))
         {
             params.context.device().destroy_shader(entry.shader);
+            entry.asset.release();
         }
+
+        ice::hashmap::clear(_loaded_shaders);
         co_return;
     }
 

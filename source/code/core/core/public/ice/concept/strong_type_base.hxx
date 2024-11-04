@@ -3,6 +3,7 @@
 
 #pragma once
 #include <type_traits>
+#include <concepts>
 
 namespace ice
 {
@@ -11,8 +12,8 @@ namespace ice
     {
 
         template<typename T>
-        concept HasMemberValue = requires(T) {
-            { T::value } -> std::convertible_to<decltype(T::value)>;
+        concept HasMemberValue = requires(T t) {
+            { t.value } -> std::convertible_to<decltype(T::value)>;
         };
 
         template<typename T>

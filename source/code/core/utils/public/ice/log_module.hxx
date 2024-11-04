@@ -7,6 +7,8 @@
 namespace ice
 {
 
+    void log_module_init(ice::Allocator& alloc, ice::ModuleNegotiatorBase const& negotiator) noexcept;
+
     struct LogModule
     {
         static void init(ice::Allocator& alloc, ice::ModuleNegotiatorBase const& negotiator) noexcept;

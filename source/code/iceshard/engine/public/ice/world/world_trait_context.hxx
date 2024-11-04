@@ -11,6 +11,8 @@ namespace ice
     {
         virtual ~TraitContext() noexcept = default;
 
+        virtual void register_interface_selector(ice::InterfaceSelector* selector) noexcept = 0;
+
         virtual auto checkpoint(ice::StringID id) noexcept -> ice::TaskCheckpointGate = 0;
         virtual bool register_checkpoint(ice::StringID id, ice::TaskCheckpoint& checkpoint) noexcept = 0;
         virtual void unregister_checkpoint(ice::StringID id, ice::TaskCheckpoint& checkpoint) noexcept = 0;
@@ -22,17 +24,27 @@ namespace ice
 
         template<auto MemberPtr, typename DataType> requires (ice::is_method_member_v<decltype(MemberPtr)>)
         auto bind(ice::ShardID event = ice::Shard_Invalid.id) noexcept -> ice::Result;
+
+        template<typename T, typename... Args>
+        auto make_unique(ice::Allocator& alloc, Args&&... args) noexcept -> ice::UniquePtr<T>
+        {
+            ice::UniquePtr<T> result = ice::make_unique<T>(alloc, *this, ice::forward<Args>(args)...);
+            if constexpr (std::derived_from<T, ice::InterfaceSelector>)
+            {
+                this->register_interface_selector(result.get());
+            }
+            return result;
+        }
     };
 
     using TraitTaskFn = auto (ice::Trait::*)(ice::Shard) noexcept -> ice::Task<>;
-    using TraitIndirectTaskFn = auto (*)(ice::Trait*, ice::Shard, void*) noexcept -> ice::Task<>;
+    using TraitIndirectTaskFn = auto (*)(ice::Trait*, ice::Shard, ice::detail::TraitTaskTracker*) noexcept -> ice::Task<>;
 
     struct TraitTaskBinding
     {
         ice::ShardID trigger_event;
         ice::TraitIndirectTaskFn procedure;
         ice::TraitTaskType task_type = ice::TraitTaskType::Frame;
-        void* procedure_userdata;
     };
 
     template<auto MemberPtr> requires (ice::is_method_member_v<decltype(MemberPtr)>)
@@ -43,7 +55,6 @@ namespace ice
                 .trigger_event = event,
                 .procedure = detail::trait_method_task_wrapper<MemberPtr>,
                 .task_type = ice::TraitTaskType::Frame,
-                .procedure_userdata = nullptr,
             }
         );
     }
@@ -56,7 +67,6 @@ namespace ice
                 .trigger_event = event,
                 .procedure = detail::trait_method_task_wrapper<MemberPtr, DataType>,
                 .task_type = ice::TraitTaskType::Frame,
-                .procedure_userdata = nullptr,
             }
         );
     }

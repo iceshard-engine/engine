@@ -28,6 +28,12 @@ namespace ice
 
     using uptr = std::uintptr_t;
 
+    // Forward declaration of time-types
+    struct Ts;
+    struct Tms;
+    struct Tus;
+    struct Tns;
+
     // Note: Added these checks, because the previous definition using std::float_t resulted in f32 being a 'long double' type.
     static_assert(sizeof(f32) == 4, "We expect 'float' types to be 4 bytes.");
     static_assert(sizeof(f64) == 8, "We expect 'double' types to be 8 bytes.");

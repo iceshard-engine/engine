@@ -7,23 +7,3 @@ namespace ice
 {
 
 } // namespace ice
-
-namespace ImGui
-{
-
-    auto Detail::TempBuffer() noexcept -> char*
-    {
-        return ImGui::GetCurrentContext()->TempBuffer.Data;
-    }
-
-    auto Detail::TempBufferSize() noexcept -> size_t
-    {
-        return ImGui::GetCurrentContext()->TempBuffer.Size;
-    }
-
-    void Detail::TextEx(char const* begin, char const* end) noexcept
-    {
-        ImGui::TextEx(begin, end, ImGuiTextFlags_NoWidthForLargeClippedText);
-    }
-
-} // namespace ImGui

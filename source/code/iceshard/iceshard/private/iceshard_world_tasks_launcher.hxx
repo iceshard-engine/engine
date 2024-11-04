@@ -4,6 +4,7 @@
 #pragma once
 #include "iceshard_trait_context.hxx"
 #include <ice/world/world_trait.hxx>
+#include <ice/mem_unique_ptr.hxx>
 
 namespace ice
 {
@@ -15,7 +16,8 @@ namespace ice
     public:
         IceshardTasksLauncher(
             ice::IceshardWorldContext& world_context,
-            ice::Span<ice::UniquePtr<IceshardTraitContext>> traits
+            ice::Span<ice::UniquePtr<IceshardTraitContext>> traits,
+            ice::detail::TraitTaskTracker* task_tracker
         ) noexcept;
 
         void gather(ice::TaskContainer& out_tasks, ice::Shard shard) noexcept;
@@ -27,6 +29,7 @@ namespace ice
     private:
         ice::IceshardWorldContext& _world_context;
         ice::Span<ice::UniquePtr<IceshardTraitContext>> _traits;
+        ice::detail::TraitTaskTracker* _task_tracker;
     };
 
 } // namespace ice
