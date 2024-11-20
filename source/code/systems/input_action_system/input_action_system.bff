@@ -3,31 +3,27 @@
 
 .Project =
 [
-    .Name = 'engine'
+    .Name = 'input_action_system'
     .Kind = .Kind_StaticLib
-    .Group = 'Engine'
+    .Group = 'Systems'
 
-    .BaseDir = '$WorkspaceCodeDir$/iceshard/engine'
+    .BaseDir = '$WorkspaceCodeDir$/systems/input_action_system'
 
     .Public =
     [
         .Modules = {
-            // 'cppcoro'
+            'arctic'
         }
         .Uses = {
-            'tasks'
-            'modules'
-            'platform'
+            'utils'
             'input_system'
-            'input_action_system'
-            'render_system'
         }
     ]
 
     .Private =
     [
-        .Uses = {
-            'utils'
+        .Modules = {
+            'arctic'
         }
     ]
 ]
