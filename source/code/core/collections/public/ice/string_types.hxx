@@ -29,6 +29,7 @@ namespace ice
         constexpr BasicString(BasicString&& other) noexcept = default;
         constexpr BasicString(BasicString const& other) noexcept = default;
 
+        constexpr BasicString(int) noexcept = delete; // Don't allow '0' values to be used for construction.
         constexpr BasicString(CharType const* str_ptr) noexcept;
         constexpr BasicString(CharType const* str_beg, CharType const* str_end) noexcept;
         constexpr BasicString(CharType const* str_ptr, ice::ucount size) noexcept;

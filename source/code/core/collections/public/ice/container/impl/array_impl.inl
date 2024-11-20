@@ -395,6 +395,67 @@ namespace ice
             }
         }
 
+#if 0 // Unused for now, so not implemented
+        template<typename Type, ice::ContainerLogic Logic>
+            requires std::copy_constructible<Type>
+        inline void insert_at(ice::Array<Type, Logic>& arr, Type&& item, ice::ucount index) noexcept
+        {
+            if (arr._count == arr._capacity)
+            {
+                ice::array::grow(arr, arr._capacity + 1);
+            }
+
+            // Clamp index if we go too high
+            ICE_ASSERT_CORE(index <= arr._count);
+            // index = ice::min(index, arr._count);
+
+            if constexpr (Logic == ContainerLogic::Complex)
+            {
+                // Make space for the new element at 'index'
+                if (index < arr._count)
+                {
+                    ice::mem_move_n_to_reverse(
+                        /*dst*/arr._data + index + 1,
+                        /*src*/arr._data + index,
+                        /*count*/arr._count - index
+                    );
+                }
+
+                ice::mem_move_construct_at<Type>(
+                    Memory{ .location = arr._data + index, .size = ice::size_of<Type>, .alignment = ice::align_of<Type> },
+                    ice::forward<Type>(item)
+                );
+            }
+            else
+            {
+                arr._data[arr._count] = Type{ item };
+            }
+
+            arr._count += 1;
+        }
+
+        template<typename Type, ice::ContainerLogic Logic>
+        inline void remove_at(ice::Array<Type, Logic>& arr, ice::ucount index) noexcept
+        {
+            if (index >= arr._count) // Nothing to remove
+            {
+                return;
+            }
+
+            if constexpr (Logic == ContainerLogic::Complex)
+            {
+                // Move all elements by one
+                ice::mem_move_n_to(
+                    /*dst*/arr._data + index,
+                    /*src*/arr._data + index + 1,
+                    /*count*/arr._count - index
+                );
+            }
+
+            ice::array::pop_back(arr, 1); // pop the last element
+        }
+#endif
+
         template<typename Type, ice::ContainerLogic Logic>
         inline auto begin(ice::Array<Type, Logic>& arr) noexcept -> typename ice::Array<Type, Logic>::Iterator
         {
@@ -537,6 +598,12 @@ namespace ice
             ice::Memory const mem = ice::array::memory(arr);
             ice::memset(mem.location, value, mem.size.value);
             return mem;
+        }
+
+        template<typename Type, ice::ContainerLogic Logic>
+        inline auto meminfo(ice::Array<Type, Logic> const& arr) noexcept -> ice::meminfo
+        {
+            return ice::meminfo_of<Type> * ice::count(arr);
         }
 
     } // namespace array

@@ -70,6 +70,22 @@ namespace ice::detail
         return get_tag_name(tag_base);
     }
 
+    void default_log_stdio(
+        ice::LogSeverity severity,
+        fmt::string_view final_string
+    ) noexcept
+    {
+        IPT_ZONE_SCOPED;
+        if (severity == LogSeverity::Critical || severity == LogSeverity::Error)
+        {
+            fmt::print(stderr, "{}", final_string);
+        }
+        else
+        {
+            fmt::print(stdout, "{}", final_string);
+        }
+    }
+
     void default_log_fn(
         ice::LogSeverity severity,
         ice::LogTag tag,
@@ -130,14 +146,7 @@ namespace ice::detail
             final_buffer.push_back('\n');
         }
 
-        if (severity == LogSeverity::Critical || severity == LogSeverity::Error)
-        {
-            fmt::print(stderr, "{}", fmt_string(final_buffer.begin(), final_buffer.end()));
-        }
-        else
-        {
-            fmt::print(stdout, "{}", fmt_string(final_buffer.begin(), final_buffer.end()));
-        }
+        default_log_stdio(severity, fmt_string(final_buffer.begin(), final_buffer.end()));
 
         final_buffer.push_back('\0');
 
@@ -152,9 +161,11 @@ namespace ice::detail
             }
         );
 #endif
-
 #if ISP_WINDOWS
-        OutputDebugStringA(final_buffer.data());
+        {
+            IPT_ZONE_SCOPED_NAMED("OutputDebugStringA");
+            OutputDebugStringA(final_buffer.data());
+        }
 #endif
     }
 

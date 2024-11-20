@@ -53,6 +53,12 @@ namespace ice::array
     inline void pop_back(ice::Array<Type, Logic>& arr, ice::ucount count = 1) noexcept;
 
     template<typename Type, ice::ContainerLogic Logic>
+    inline void insert_at(ice::Array<Type, Logic>& arr, Type&& item, ice::ucount index) noexcept;
+
+    template<typename Type, ice::ContainerLogic Logic>
+    inline void remove_at(ice::Array<Type, Logic>& arr, ice::ucount index) noexcept;
+
+    template<typename Type, ice::ContainerLogic Logic>
     inline auto begin(ice::Array<Type, Logic>& arr) noexcept -> typename ice::Array<Type, Logic>::Iterator;
 
     template<typename Type, ice::ContainerLogic Logic>
@@ -122,6 +128,9 @@ namespace ice::array
 
     template<typename Type>
     inline auto memset(ice::Array<Type, ice::ContainerLogic::Trivial>& arr, ice::u8 value) noexcept -> ice::Memory;
+
+    template<typename Type, ice::ContainerLogic Logic>
+    inline auto meminfo(ice::Array<Type, Logic> const& arr) noexcept -> ice::meminfo;
 
 } // namespace ice::array
 

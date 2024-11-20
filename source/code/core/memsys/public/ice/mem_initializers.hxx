@@ -60,6 +60,20 @@ namespace ice
         {
             target_objects[idx] = ice::move(objects[idx]);
         }
+    }
+
+    template<typename T>
+    auto mem_move_n_to_reverse(T* target_objects, T* objects, ice::ucount count) noexcept -> T*
+    {
+        ICE_ASSERT_CORE(count > 0);
+
+        // Moving in reverse so we don't override data if it's on the same memory block.
+        do
+        {
+            count -= 1; // reduce by one so we can use it as the next index.
+            target_objects[count] = ice::move(objects[count]);
+        }
+        while(count > 0);
         return target_objects;
     }
 

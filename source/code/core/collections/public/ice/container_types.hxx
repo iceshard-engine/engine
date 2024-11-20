@@ -15,7 +15,7 @@ namespace ice
     //! \details Manages a memory block big enough to hold the items that it holds.
     //!
     //! \tparam Logic The logic used during memory operations for the given type.
-    //!   This value is set by the user to enforce expected behavior for stored types.
+    //!   This value is can by the user to enforce expected behavior for given types.
     template<typename Type, ice::ContainerLogic Logic = ice::Constant_DefaultContainerLogic<Type>>
     struct Array
     {

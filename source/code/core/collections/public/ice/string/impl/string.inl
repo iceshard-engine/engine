@@ -390,6 +390,14 @@ namespace ice
             };
         }
 
+        template<typename CharType>
+        constexpr auto meminfo(ice::BasicString<CharType> str) noexcept -> ice::meminfo
+        {
+            return ice::meminfo{
+                ice::meminfo_of<CharType> * ice::string::size(str)
+            };
+        }
+
     } // namespace string
 
 } // namespace ice

@@ -4,6 +4,7 @@
 #include "log_internal.hxx"
 #include <ice/container/hashmap.hxx>
 #include <ice/string/heap_string.hxx>
+#include <ice/profiler.hxx>
 
 namespace ice::detail
 {
@@ -78,6 +79,8 @@ namespace ice::detail
 
     void LogState::flush(ice::LogSinkMessage const& message) noexcept
     {
+        IPT_ZONE_SCOPED;
+
         for (Sink const& sink : _sinks)
         {
             if (sink._callback != nullptr)

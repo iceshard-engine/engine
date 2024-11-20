@@ -42,7 +42,6 @@ namespace ice
 
         ice::array::resize(_entries, ice::hashmap::count(_manager._worlds));
 
-        ImVec2 const avail = ImGui::GetContentRegionAvail();
         if (ImGui::BeginTable("##details", 2))
         {
             ImGui::TableSetupColumn("##first", ImGuiTableColumnFlags_WidthFixed, 200.f);
