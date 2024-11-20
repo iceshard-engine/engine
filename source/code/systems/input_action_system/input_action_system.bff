@@ -1,0 +1,30 @@
+/// Copyright 2021 - 2023, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
+.Project =
+[
+    .Name = 'input_action_system'
+    .Kind = .Kind_StaticLib
+    .Group = 'Systems'
+
+    .BaseDir = '$WorkspaceCodeDir$/systems/input_action_system'
+
+    .Public =
+    [
+        .Modules = {
+            'arctic'
+        }
+        .Uses = {
+            'utils'
+            'input_system'
+        }
+    ]
+
+    .Private =
+    [
+        .Modules = {
+            'arctic'
+        }
+    ]
+]
+.Projects + .Project
