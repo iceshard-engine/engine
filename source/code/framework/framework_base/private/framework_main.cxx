@@ -46,6 +46,7 @@
 
 #include <ice/input/device_event_queue.hxx>
 #include <ice/input/input_tracker.hxx>
+#include <ice/input_action_stack.hxx>
 
 #include <ice/log_module.hxx>
 #include <ice/log.hxx>
@@ -435,6 +436,7 @@ auto ice_setup(
     ice::EngineCreateInfo engine_create_info{
         .states = ice::create_state_tracker(state.alloc),
         .archetypes = ice::move(archetypes),
+        .action_stack = ice::move(ice::create_input_action_stack(alloc))
     };
     {
         ice::UniquePtr<ice::AssetCategoryArchive> asset_categories = ice::create_asset_category_archive(state.engine_alloc);
@@ -594,6 +596,9 @@ auto ice_game_frame(
     ice::array::clear(runtime.input_events);
     runtime.input_tracker->process_device_events(state.platform.core->input_events(), runtime.input_events);
     ice_process_input_events(runtime.input_events, new_frame->shards());
+
+    state.engine->actions().process_inputs(runtime.input_events);
+    state.engine->actions().publish_shards(new_frame->shards());
 
     // Push pending world events
     state.game->on_update(*state.engine, *new_frame);

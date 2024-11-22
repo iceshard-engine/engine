@@ -1,11 +1,20 @@
 #pragma once
-#include <ice/base.hxx>
+#include <ice/string_types.hxx>
 
 #include <arctic/arctic.hxx>
 #include <arctic/arctic_syntax.hxx>
+#include <arctic/arctic_syntax_visitor.hxx>
+#include <arctic/arctic_syntax_node_types.hxx>
 
 namespace ice
 {
+
+    struct ActionInputParserEvents;
+
+    bool parse_action_input_definition(
+        ice::String definition,
+        ice::ActionInputParserEvents& handler
+    ) noexcept;
 
     namespace syntax
     {
@@ -15,8 +24,8 @@ namespace ice
 
         static constexpr ice::u32 SyntaxEntityBase = static_cast<ice::u32>(SyntaxEntity::E_CallArg) + 1;
         static constexpr SyntaxEntity SyntaxEntity_Layer{ SyntaxEntityBase + 0 };
-        static constexpr SyntaxEntity SyntaxEntity_LayerInput{ SyntaxEntityBase + 1 };
-        static constexpr SyntaxEntity SyntaxEntity_LayerInputBinding{ SyntaxEntityBase + 2 };
+        static constexpr SyntaxEntity SyntaxEntity_LayerSource{ SyntaxEntityBase + 1 };
+        static constexpr SyntaxEntity SyntaxEntity_LayerSourceBinding{ SyntaxEntityBase + 2 };
         static constexpr SyntaxEntity SyntaxEntity_LayerAction{ SyntaxEntityBase + 3 };
 
         struct Layer : SyntaxNodeData
@@ -27,9 +36,9 @@ namespace ice
             arctic::String name;
         };
 
-        struct LayerInput : SyntaxNodeData
+        struct LayerSource : SyntaxNodeData
         {
-            static constexpr SyntaxEntity RepresentedSyntaxEntity = SyntaxEntity_LayerInput;
+            static constexpr SyntaxEntity RepresentedSyntaxEntity = SyntaxEntity_LayerSource;
             using SyntaxNodeData::SyntaxNodeData;
 
             arctic::Token type;
@@ -38,7 +47,7 @@ namespace ice
 
         struct LayerInputBinding : SyntaxNodeData
         {
-            static constexpr SyntaxEntity RepresentedSyntaxEntity = SyntaxEntity_LayerInputBinding;
+            static constexpr SyntaxEntity RepresentedSyntaxEntity = SyntaxEntity_LayerSourceBinding;
             using SyntaxNodeData::SyntaxNodeData;
 
             arctic::Token device;
@@ -56,6 +65,24 @@ namespace ice
 
     } // namespace syntax
 
+    using ActionInputParserEventsBase = arctic::SyntaxVisitorGroup<
+        arctic::syntax::Root,
+        ice::syntax::Layer
+    >;
+
+    struct ActionInputParserEvents : ice::ActionInputParserEventsBase
+    {
+        arctic::SyntaxNode<arctic::syntax::Root> root;
+
+        void visit(arctic::SyntaxNode<> node) noexcept override final
+        {
+            ActionInputParserEventsBase::visit(node);
+        }
+
+        void visit(arctic::SyntaxNode<arctic::syntax::Root> node) noexcept = 0;
+
+        void visit(arctic::SyntaxNode<ice::syntax::Layer> node) noexcept = 0;
+    };
     namespace grammar
     {
 
@@ -68,7 +95,7 @@ namespace ice
 
         static constexpr ice::u32 UCT_Base = static_cast<ice::u32>(TokenType::ST_Any) + 1;
         static constexpr TokenType UCT_Layer{ UCT_Base + 0 };
-        static constexpr TokenType UCT_Input{ UCT_Base + 1 };
+        static constexpr TokenType UCT_Source{ UCT_Base + 1 };
         static constexpr TokenType UCT_InputTypeButton{ UCT_Base + 2 };
         static constexpr TokenType UCT_InputTypeAxis1D{ UCT_Base + 3 };
         static constexpr TokenType UCT_InputTypeAxis2D{ UCT_Base + 4 };
@@ -111,17 +138,17 @@ namespace ice
             SyntaxRule{ UCT_InputTypeAxis3D },
         };
 
-        static constexpr SyntaxRule Rule_LayerInputRules[]{ // input <type> <name>: <binding>...
-            SyntaxRule{ UCT_Input },
-            SyntaxRule{ Rule_LayerInputTypeRules, MatchFirst, &syntax::LayerInput::type }, // TODO: Additional types
-            SyntaxRule{ TokenType::CT_Symbol, &syntax::LayerInput::name },
-            SyntaxRule{ TokenType::CT_Colon }.noadvance(),
-            SyntaxRule{ Rule_LayerInputBindingRules, MatchChild<syntax::LayerInputBinding> }.repeat(),
+        static constexpr SyntaxRule Rule_LayerSourceRules[]{ // source <type> <name>: <binding>...
+            SyntaxRule{ UCT_Source },
+            SyntaxRule{ Rule_LayerInputTypeRules, MatchFirst, &syntax::LayerSource::type }, // TODO: Additional types
+            SyntaxRule{ TokenType::CT_Symbol, &syntax::LayerSource::name },
+            SyntaxRule{ TokenType::CT_Colon }.noadvance().optional(),
+            SyntaxRule{ Rule_LayerInputBindingRules, MatchChild<syntax::LayerInputBinding> }.repeat().optional(),
             SyntaxRule{ TokenType::ST_EndOfLine }.repeat(),
         };
 
         static constexpr SyntaxRule Rule_LayerActionWhenTargetTypeRules[]{
-            SyntaxRule{ UCT_Input },
+            SyntaxRule{ UCT_Source },
             SyntaxRule{ UCT_Action },
         };
 
@@ -161,12 +188,12 @@ namespace ice
             // SyntaxRule{ Rule_LayerActionRules, MatchChild<syntax::LayerAction> }.repeat().optional(),
         };
 
-        static constexpr SyntaxRule Rule_LayerRules[]{ // layer <name>: <inputs...> <actions...>
+        static constexpr SyntaxRule Rule_LayerRules[]{ // layer <name>: <sources...> <actions...>
             SyntaxRule{ UCT_Layer },
             SyntaxRule{ TokenType::CT_Symbol, &syntax::Layer::name },
             SyntaxRule{ TokenType::CT_Colon },
             SyntaxRule{ TokenType::ST_EndOfLine },
-            SyntaxRule{ Rule_LayerInputRules, MatchChild<syntax::LayerInput> }.repeat().optional(),
+            SyntaxRule{ Rule_LayerSourceRules, MatchChild<syntax::LayerSource> }.repeat().optional(),
             SyntaxRule{ Rule_LayerActionRules, MatchChild<syntax::LayerAction> }.repeat().optional(),
         };
 

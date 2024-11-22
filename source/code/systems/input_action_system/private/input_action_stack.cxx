@@ -103,6 +103,11 @@ namespace ice
     void SimpleInputActionStack::register_layer(ice::InputActionLayer const* layer) noexcept
     {
         IPT_ZONE_SCOPED;
+        // TODO: better error handling
+        if (layer == nullptr)
+        {
+            return;
+        }
 
         ice::u64 const name_hash = ice::hash(layer->name());
         if (layer == nullptr || ice::hashmap::has(_layers, name_hash))

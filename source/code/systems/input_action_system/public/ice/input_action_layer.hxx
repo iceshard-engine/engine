@@ -42,6 +42,11 @@ namespace ice
         ice::Memory layer_data
     ) noexcept -> ice::UniquePtr<ice::InputActionLayer>;
 
+    auto parse_input_action_layer(
+        ice::Allocator& alloc,
+        ice::String definition
+    ) noexcept -> ice::UniquePtr<ice::InputActionLayer>;
+
     auto save_input_action_layer(
         ice::Allocator& alloc,
         ice::InputActionLayer const& action_layer
