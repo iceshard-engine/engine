@@ -1,6 +1,8 @@
 #include "input_action_internal_types.hxx"
+#include "input_action_dsl.hxx"
 
 #include <ice/input_action_layer.hxx>
+#include <ice/input_action_layer_builder.hxx>
 #include <ice/input_action_definitions.hxx>
 #include <ice/input_action_executor.hxx>
 #include <ice/container/array.hxx>
@@ -398,6 +400,61 @@ namespace ice
         }
 
         return ice::make_unique<ice::StandardInputActionLayer>(alloc, alloc, layer_data, params.value());
+    }
+
+    auto parse_input_action_layer(
+        ice::Allocator& alloc,
+        ice::String definition
+    ) noexcept -> ice::UniquePtr<ice::InputActionLayer>
+    {
+        struct BuilderHandler : ice::ActionInputParserEvents
+        {
+            ice::UniquePtr<ice::InputActionLayerBuilder> const _builder;
+
+            BuilderHandler(ice::UniquePtr<ice::InputActionLayerBuilder> builder)
+                : _builder{ ice::move(builder) }
+            { }
+
+
+            void visit(arctic::SyntaxNode<arctic::syntax::Root> node) noexcept override
+            {
+            }
+
+            void visit(arctic::SyntaxNode<ice::syntax::Layer> node) noexcept override
+            {
+                ICE_LOG(LogSeverity::Info, LogTag::Engine, "Layer: {}", node.data().name);
+
+                arctic::SyntaxNode<> child = node.child();
+                while(child != false)
+                {
+                    if (child.type() == ice::syntax::SyntaxEntity_LayerSource)
+                    {
+                        visit(child.to<ice::syntax::LayerSource>());
+                    }
+                    else if (child.type() == ice::syntax::SyntaxEntity_LayerAction)
+                    {
+                        visit(child.to<ice::syntax::LayerAction>());
+                    }
+                    child = child.sibling();
+                }
+            }
+
+            void visit(arctic::SyntaxNode<ice::syntax::LayerSource> node) noexcept
+            {
+                ICE_LOG(LogSeverity::Info, LogTag::Engine, "Source: {}", node.data().name);
+            }
+
+            void visit(arctic::SyntaxNode<ice::syntax::LayerAction> node) noexcept
+            {
+                ICE_LOG(LogSeverity::Info, LogTag::Engine, "Action: {}", node.data().name);
+            }
+        } handler{ice::create_input_action_layer_builder(alloc)};
+
+        if (ice::parse_action_input_definition(definition, handler))
+        {
+            return handler._builder->finalize(alloc);
+        }
+        return {};
     }
 
     auto save_input_action_layer(

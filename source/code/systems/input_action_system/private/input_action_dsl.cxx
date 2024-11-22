@@ -83,9 +83,13 @@ namespace ice
         {
             result.type = ice::grammar::UCT_InputBindingKeyboard;
         }
-        else if (word.value == "input")
+        else if (word.value == "pad")
         {
-            result.type = ice::grammar::UCT_Input;
+            result.type = ice::grammar::UCT_InputBindingPad;
+        }
+        else if (word.value == "source")
+        {
+            result.type = ice::grammar::UCT_Source;
         }
         else if (word.value == "layer")
         {
@@ -99,53 +103,35 @@ namespace ice
         return result;
     }
 
-    void parse(arctic::String script) noexcept
+    bool parse_action_input_definition(
+        ice::String definition,
+        ice::ActionInputParserEvents& handler
+    ) noexcept
     {
         arctic::WordMatcher matcher{};
         arctic::initialize_default_matcher(&matcher);
 
         arctic::Lexer lexer = arctic::create_lexer(
-            arctic::create_word_processor(script, &matcher),
+            arctic::create_word_processor(definition, &matcher),
             {.tokenizer = asil_lexer_tokenizer}
         );
 
-        AsilEvents events{};
+        AsilEvents internal_handler{};
         AsilNodeAllocator node_alloc{};
 
         arctic::SyntaxVisitor* visitors[]{
-            &events
+            &internal_handler,
+            &handler
         };
 
         arctic::SyntaxNode<> root;
         std::unique_ptr<arctic::Parser> parser = arctic::create_default_parser({ .rules = ice::grammar::Rule_GlobalRules });
         if (parser->parse(lexer, node_alloc, visitors) == true)
         {
-            root = events.root;
+            root = internal_handler.root;
         }
         arctic::shutdown_matcher(&matcher);
-    }
-
-    void parse_example() noexcept
-    {
-        parse(R"ISIA(
-layer Example:
-    input button Up: kb.W
-
-    action Move: float2
-
-
-    action Move: float3
-
-layer Example2:
-    input button Down: kb.D
-
-    action Squat: bool
-
-layer ExampleCombined:
-    input button Up: kb.W
-    input button Down: kb.D
-
-        )ISIA");
+        return root == true;
     }
 
 } // namespace ice
