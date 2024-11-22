@@ -5,6 +5,12 @@
 namespace ice
 {
 
+    struct InputAction
+    {
+        ice::Timestamp timestamp;
+        ice::vec2f value;
+    };
+
     struct InputActionSource
     {
         ice::InputActionSourceEvent event;
@@ -64,16 +70,29 @@ namespace ice
 
     static_assert(sizeof(InputActionInfo) % 4 == 0);
 
-    struct InputActionRuntime
+    struct InputActionRuntime : ice::InputAction
     {
-        ice::Timestamp activation_ts;
-        ice::vec3f action_value;
-        ice::vec3f final_value;
+        ice::vec3f raw_value;
+        ice::String name;
+
         ice::u8 state = 0;
         bool toggle_enabled = false;
         bool enabled = false;
         bool was_active = false;
         bool active = false;
+    };
+
+    static_assert(sizeof(InputActionRuntime) == 56);
+
+
+    enum class InputActionCheck : ice::u8
+    {
+        None,
+        Exists = None,
+        Enabled,
+        Disabled,
+        Active,
+        Inactive,
     };
 
     enum class InputActionSourceEvent : ice::u8
@@ -93,7 +112,7 @@ namespace ice
         Key,
         Button,
         Trigger,
-        Axis1d = Trigger,
+        Axis1d,
         Axis2d
     };
 

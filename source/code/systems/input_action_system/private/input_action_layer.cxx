@@ -120,8 +120,8 @@ namespace ice
                 {
                     src_idx += 1;
 
-                    ICE_ASSERT_CORE(source_values[src_idx] != nullptr);
-                    ice::InputActionSource& value = source_values[src_idx][ev.axis_idx];
+                    ICE_ASSERT_CORE(source_values[src.storage] != nullptr);
+                    ice::InputActionSource& value = source_values[src.storage][ev.axis_idx];
 
                     if (src.input != ev.identifier)
                     {
@@ -197,7 +197,7 @@ namespace ice
                 ice::InputActionRuntime* const runtime = ice::hashmap::try_get(actions, ice::hash(action_name));
                 if (action.behavior != InputActionBehavior::Accumulated)
                 {
-                    runtime->action_value = {};
+                    runtime->raw_value = {};
                 }
 
                 bool series_success = false;
@@ -259,7 +259,7 @@ namespace ice
                                 ICE_ASSERT_CORE(source_values[step.source.source_index] != nullptr);
                                 ice::InputActionSource& value = source_values[step.source.source_index][step.source.source_axis];
 
-                                executor.execute_step(step.id, value, runtime->action_value.v[0][step.dst_axis]);
+                                executor.execute_step(step.id, value, runtime->raw_value.v[0][step.dst_axis]);
                             }
                         }
                     }
@@ -340,16 +340,16 @@ namespace ice
                 if (runtime->was_active == false)
                 {
                     runtime->was_active = true;
-                    runtime->activation_ts = ice::clock::now();
+                    runtime->timestamp = ice::clock::now();
                 }
 
                 // Update the final value and run modifiers over it.
-                runtime->final_value = runtime->action_value;
+                runtime->value = { runtime->raw_value.x, runtime->raw_value.y };
 
                 ice::Span const mods = ice::span::subspan(_modifiers, action.mods.x, action.mods.y);
                 for (ice::InputActionModifierData const& mod : mods)
                 {
-                    executor.execute_modifier(mod.id, runtime->final_value.v[0][mod.axis], mod.param);
+                    executor.execute_modifier(mod.id, runtime->value.v[0][mod.axis], mod.param);
                 }
             }
             return false;

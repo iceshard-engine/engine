@@ -20,6 +20,7 @@ namespace ice
         , _states{ ice::move(create_info.states) }
         , _entity_archetypes{ ice::move(create_info.archetypes) }
         , _entity_storage{ _allocator, *_entity_archetypes }
+        , _inputactions{ ice::move(create_info.action_stack) }
         , _worlds{ _allocator, _entity_storage, ice::move(create_info.traits), *_states }
     {
     }

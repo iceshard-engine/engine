@@ -154,13 +154,14 @@ namespace ice
                     using enum InputActionSourceType;
                     case Key:
                     case Button:
+                    case Trigger:
                     case Axis1d: count_storage_values += 1; break;
                     case Axis2d: count_storage_values += 2; break;
                     default: ICE_ASSERT_CORE(false); break;
                 }
             }
 
-            auto find_source_index = [&strings, &final_sources](ice::String source_name) noexcept -> ice::u16
+            auto find_source_storage_index = [&strings, &final_sources](ice::String source_name) noexcept -> ice::u16
             {
                 ice::ucount idx_found = ice::ucount_max;
                 bool const found = ice::search(
@@ -177,7 +178,8 @@ namespace ice
                 );
 
                 ICE_ASSERT_CORE(found && idx_found < ice::array::count(final_sources));
-                return ice::u16(idx_found);
+                ice::u16 const source_storage_idx = final_sources[idx_found].storage;
+                return source_storage_idx;
             };
 
             // Prepare data of all actions
@@ -205,7 +207,7 @@ namespace ice
                             ice::array::push_back(final_steps,
                                 InputActionStepData{
                                     .source = {
-                                        .source_index = find_source_index(step.source),
+                                        .source_index = find_source_storage_index(step.source),
                                         .source_axis = step.axis.x
                                     },
                                     .id = step.step,
@@ -221,7 +223,7 @@ namespace ice
                     ice::array::push_back(final_conditions,
                         InputActionConditionData{
                             .source = {
-                                .source_index = find_source_index(condition.source),
+                                .source_index = find_source_storage_index(condition.source),
                                 .source_axis = ice::u8(static_cast<ice::u8>(action.presentation) - 1)
                             },
                             .id = condition.condition,
@@ -301,7 +303,9 @@ namespace ice
     auto InputActionLayerBuilder::SourceBuilder::add_key(ice::input::KeyboardKey key) noexcept -> SourceBuilder&
     {
         using ice::input::DeviceType;
+        using enum ice::InputActionSourceType;
 
+        ICE_ASSERT_CORE(_internal->type == Key || _internal->type == Button);
         ice::hashmap::set(_internal->events, ice::hash(key), input_identifier(DeviceType::Keyboard, key));
         return *this;
     }
@@ -309,7 +313,9 @@ namespace ice
     auto InputActionLayerBuilder::SourceBuilder::add_button(ice::input::MouseInput button) noexcept -> SourceBuilder&
     {
         using ice::input::DeviceType;
+        using enum ice::InputActionSourceType;
 
+        ICE_ASSERT_CORE(_internal->type == Key || _internal->type == Button);
         ice::hashmap::set(_internal->events, ice::hash(button), input_identifier(DeviceType::Mouse, button));
         return *this;
     }
@@ -317,7 +323,9 @@ namespace ice
     auto InputActionLayerBuilder::SourceBuilder::add_button(ice::input::ControllerInput button) noexcept -> SourceBuilder&
     {
         using ice::input::DeviceType;
+        using enum ice::InputActionSourceType;
 
+        ICE_ASSERT_CORE(_internal->type == Key || _internal->type == Button);
         ice::hashmap::set(_internal->events, ice::hash(button), input_identifier(DeviceType::Controller, button));
         return *this;
     }
@@ -326,7 +334,9 @@ namespace ice
     {
         using ice::input::DeviceType;
         using ice::input::MouseInput;
+        using enum ice::InputActionSourceType;
 
+        ICE_ASSERT_CORE(_internal->type == Axis2d);
         ICE_ASSERT_CORE(axis == MouseInput::PositionX);
         if (axis == MouseInput::PositionX)
         {
@@ -340,17 +350,19 @@ namespace ice
     {
         using ice::input::DeviceType;
         using ice::input::ControllerInput;
+        using enum ice::InputActionSourceType;
 
+        ICE_ASSERT_CORE(_internal->type == Axis2d);
         ICE_ASSERT_CORE(axis == ControllerInput::LeftAxisX || axis == ControllerInput::RightAxisX);
         if (axis == ControllerInput::LeftAxisX)
         {
-            ice::hashmap::set(_internal->events, ice::hash(axis), input_identifier(DeviceType::Mouse, ControllerInput::LeftAxisX));
-            ice::hashmap::set(_internal->events, ice::hash(axis), input_identifier(DeviceType::Mouse, ControllerInput::LeftAxisY));
+            ice::hashmap::set(_internal->events, ice::hash(axis), input_identifier(DeviceType::Controller, ControllerInput::LeftAxisX));
+            ice::hashmap::set(_internal->events, ice::hash(axis), input_identifier(DeviceType::Controller, ControllerInput::LeftAxisY));
         }
         else if (axis == ControllerInput::RightAxisX)
         {
-            ice::hashmap::set(_internal->events, ice::hash(axis), input_identifier(DeviceType::Mouse, ControllerInput::RightAxisX));
-            ice::hashmap::set(_internal->events, ice::hash(axis), input_identifier(DeviceType::Mouse, ControllerInput::RightAxisY));
+            ice::hashmap::set(_internal->events, ice::hash(axis), input_identifier(DeviceType::Controller, ControllerInput::RightAxisX));
+            ice::hashmap::set(_internal->events, ice::hash(axis), input_identifier(DeviceType::Controller, ControllerInput::RightAxisY));
         }
         return *this;
     }
@@ -432,7 +444,7 @@ namespace ice
         if (source[source_size - 2] == '.')
         {
             source_size -= 2;
-            read_from = source[source_size - 1] - 'x';
+            read_from = source[source_size + 1] - 'x';
             ICE_ASSERT_CORE(read_from >= 0 && read_from < 3);
         }
         if (ice::size(target_axis) == 2 && target_axis[0] == '.')
