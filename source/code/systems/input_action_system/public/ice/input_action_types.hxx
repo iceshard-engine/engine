@@ -10,6 +10,7 @@
 namespace ice
 {
 
+    enum class InputActionCheck : ice::u8;
     enum class InputActionSourceEvent : ice::u8;
     enum class InputActionSourceType : ice::u8;
     enum class InputActionBehavior : ice::u8;
@@ -36,3 +37,6 @@ namespace ice
     class InputActionExecutor;
 
 } // namespace ice
+
+template<>
+constexpr ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::InputAction const*> = ice::shard_payloadid("ice::InputAction const*");

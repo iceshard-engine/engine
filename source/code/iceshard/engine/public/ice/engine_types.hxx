@@ -4,6 +4,7 @@
 #pragma once
 #include <ice/interfaces.hxx>
 #include <ice/task_types.hxx>
+#include <ice/input_action_types.hxx>
 
 namespace ice
 {

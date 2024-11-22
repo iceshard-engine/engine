@@ -8,6 +8,7 @@
 #include <ice/asset_storage.hxx>
 #include <ice/world/world_updater.hxx>
 #include <ice/ecs/ecs_entity_index.hxx>
+#include <ice/input_action_stack.hxx>
 
 #include "iceshard_world_manager.hxx"
 
@@ -27,6 +28,7 @@ namespace ice
         auto worlds_updater() noexcept -> ice::WorldUpdater& override;
         auto entities() noexcept -> ice::ecs::EntityIndex& override;
         auto states() noexcept -> ice::EngineStateTracker& override { return *_states; }
+        auto actions() noexcept -> ice::InputActionStack& override { return *_inputactions; }
 
         void destroy() noexcept;
 
@@ -37,6 +39,7 @@ namespace ice
 
         ice::UniquePtr<ice::AssetStorage> _assets;
         ice::UniquePtr<ice::EngineStateTracker> _states;
+        ice::UniquePtr<ice::InputActionStack> _inputactions;
         ice::IceshardWorldManager _worlds;
         ice::ecs::EntityIndex _entities;
     };

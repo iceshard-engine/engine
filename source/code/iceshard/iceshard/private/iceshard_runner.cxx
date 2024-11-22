@@ -135,8 +135,9 @@ namespace ice
         {
             IPT_ZONE_SCOPED_NAMED("gather_tasks");
             ice::Shard const update_shard[]{ ice::ShardID_FrameUpdate | &frame_update };
-            world_updater.update(current_tasks, { update_shard });
+            world_updater.update(current_tasks, frame.shards());
             world_updater.update(current_tasks, previous_frame.shards());
+            world_updater.update(current_tasks, { update_shard });
         }
 
         co_await current_tasks.await_tasks_scheduled_on(_schedulers.main, _schedulers.main);

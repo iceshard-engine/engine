@@ -18,6 +18,7 @@ namespace ice
         : _allocator{ alloc }
         , _assets{ ice::move(create_info.assets) }
         , _states{ ice::move(create_info.states) }
+        , _inputactions{ ice::move(create_info.action_stack) }
         , _worlds{ _allocator, ice::move(create_info.traits), *_states }
         , _entities{ _allocator, 10'000 }
     {
