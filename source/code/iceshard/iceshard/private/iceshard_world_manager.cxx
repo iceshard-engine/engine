@@ -2,6 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_world_manager.hxx"
+#include "iceshard_world_manager_devui.hxx"
 #include "iceshard_trait_context.hxx"
 
 #include <ice/devui_context.hxx>

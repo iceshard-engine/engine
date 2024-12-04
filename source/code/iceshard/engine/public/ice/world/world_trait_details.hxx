@@ -36,6 +36,7 @@ namespace ice::detail
             if constexpr (std::is_reference_v<std::tuple_element_t<0, args_t>>)
             {
                 using ArgType = ice::clear_type_t<std::tuple_element_t<0, args_t>>*;
+                static_assert(HasShardPayloadID<ArgType>, "Can't use type without a defined ShardPayloadID");
                 ICE_ASSERT(
                     ice::Constant_ShardPayloadID<ArgType> == sh.id.payload,
                     "Shard payload ID incompatible with the argument. {} != {}",

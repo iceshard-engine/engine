@@ -1,4 +1,5 @@
 #include "iceshard_trait_context.hxx"
+#include <ice/world/world_trait.hxx>
 #include <ice/container/hashmap.hxx>
 #include <ice/engine_runner.hxx>
 

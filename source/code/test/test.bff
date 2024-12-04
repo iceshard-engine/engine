@@ -15,6 +15,7 @@
     .Private =
     [
         .Modules = {
+            'box2d'
             'imgui'
             'assimp'
         }

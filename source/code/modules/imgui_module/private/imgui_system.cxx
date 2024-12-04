@@ -2,6 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #include "imgui_system.hxx"
+#include "imgui_trait.hxx"
 #include "widgets/imgui_allocator_tree.hxx"
 
 #include <ice/assert.hxx>

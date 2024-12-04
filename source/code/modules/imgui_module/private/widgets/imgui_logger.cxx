@@ -2,6 +2,7 @@
 
 #include <ice/color.hxx>
 #include <ice/devui_imgui.hxx>
+#include <ice/log_formatters.hxx>
 #include <ice/log_severity.hxx>
 #include <ice/log_tag.hxx>
 #include <ice/math.hxx>

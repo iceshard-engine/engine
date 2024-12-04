@@ -4,6 +4,8 @@
 #pragma once
 #include <ice/native_aio.hxx>
 #include <ice/native_file.hxx>
+#include <ice/profiler.hxx>
+#include <ice/task_types.hxx>
 
 namespace ice::detail
 {

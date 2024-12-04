@@ -15,14 +15,7 @@
 namespace ice::devui
 {
 
-    struct ImGuiStats
-    {
-        ice::u32 draw_calls;
-        ice::u32 draw_vertices;
-        ice::u32 draw_indices;
-        ice::Tns draw_processtime;
-        ice::usize draw_datasize;
-    };
+    struct ImGuiStats;
 
     class ImGuiWidgetFrame final : public ice::DevUIFrame
     {
