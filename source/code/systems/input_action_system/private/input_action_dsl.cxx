@@ -1,10 +1,12 @@
 #include "input_action_dsl.hxx"
+#include "input_action_dsl_grammar.hxx"
 
 #include <arctic/arctic_lexer.hxx>
 #include <arctic/arctic_lexer_tokenizer.hxx>
 #include <arctic/arctic_parser.hxx>
 #include <arctic/arctic_syntax_node_allocator.hxx>
 #include <arctic/arctic_word_matcher.hxx>
+#include <ice/sort.hxx>
 
 namespace ice
 {
@@ -38,6 +40,42 @@ namespace ice
         }
     };
 
+    struct TokenInfo
+    {
+        arctic::String value;
+        arctic::TokenType type;
+    };
+
+    static constexpr ice::TokenInfo Constant_Tokens[]{
+        { "action", ice::grammar::UCT_Action },
+        { "active", ice::grammar::UCT_WhenActive },
+        { "and", ice::grammar::UCT_WhenAnd },
+        { "axis1d", ice::grammar::UCT_InputTypeAxis1D },
+        { "axis2d", ice::grammar::UCT_InputTypeAxis2D },
+        { "axis3d", ice::grammar::UCT_InputTypeAxis3D },
+        { "bool", ice::grammar::UCT_ActionTypeBool },
+        { "button", ice::grammar::UCT_InputTypeButton },
+        { "inactive", ice::grammar::UCT_WhenInactive },
+        { "float1", ice::grammar::UCT_ActionTypeFloat1 },
+        { "float2", ice::grammar::UCT_ActionTypeFloat2 },
+        { "float3", ice::grammar::UCT_ActionTypeFloat3 },
+        // { "gamepad", ice::grammar::UCT_InputBindingPad },
+        // { "gctrl", ice::grammar::UCT_InputBindingPad },
+        { "kb", ice::grammar::UCT_InputBindingKeyboard },
+        { "key", ice::grammar::UCT_InputBindingKeyboard },
+        // { "keyboard", ice::grammar::UCT_InputBindingKeyboard },
+        { "mouse", ice::grammar::UCT_InputBindingMouse },
+        { "mp", ice::grammar::UCT_InputBindingMouse },
+        { "gamepad", ice::grammar::UCT_InputBindingPad },
+        { "gp", ice::grammar::UCT_InputBindingPad },
+        { "layer", ice::grammar::UCT_Layer },
+        { "or", ice::grammar::UCT_WhenOr },
+        { "pressed", ice::grammar::UCT_WhenPressed },
+        { "released", ice::grammar::UCT_WhenReleased },
+        { "source", ice::grammar::UCT_Source },
+        { "when", ice::grammar::UCT_When },
+    };
+
     //! \brief A default implementation of a tokenizer for Arctic language.
     //!
     //! \param word [inout] A word to be tokenized. Update the value with the next word that was not tokenized.
@@ -55,45 +93,16 @@ namespace ice
             .type = arctic::TokenType::Invalid,
             .location = location
         };
-        if (word.value == "action")
+
+        static auto const pred = [](ice::TokenInfo const& hay, arctic::Word const& needle) noexcept
         {
-            result.type = ice::grammar::UCT_Action;
-        }
-        else if (word.value == "bool")
+            return strnicmp(hay.value.data(), needle.value.data(), hay.value.size()) == 0;
+        };
+
+        ice::ucount idx;
+        if (ice::search(ice::Span{Constant_Tokens}, word, pred, idx))
         {
-            result.type = ice::grammar::UCT_ActionTypeBool;
-        }
-        else if (word.value == "button")
-        {
-            result.type = ice::grammar::UCT_InputTypeButton;
-        }
-        else if (word.value == "float1")
-        {
-            result.type = ice::grammar::UCT_ActionTypeFloat1;
-        }
-        else if (word.value == "float2")
-        {
-            result.type = ice::grammar::UCT_ActionTypeFloat2;
-        }
-        else if (word.value == "float3")
-        {
-            result.type = ice::grammar::UCT_ActionTypeFloat3;
-        }
-        else if (word.value == "kb" || word.value == "keyboard")
-        {
-            result.type = ice::grammar::UCT_InputBindingKeyboard;
-        }
-        else if (word.value == "pad")
-        {
-            result.type = ice::grammar::UCT_InputBindingPad;
-        }
-        else if (word.value == "source")
-        {
-            result.type = ice::grammar::UCT_Source;
-        }
-        else if (word.value == "layer")
-        {
-            result.type = ice::grammar::UCT_Layer;
+            result.type = Constant_Tokens[idx].type;
         }
         else
         {

@@ -1,6 +1,6 @@
 #pragma once
 #include <ice/mem_unique_ptr.hxx>
-#include <ice/input_action_types.hxx>
+#include <ice/input_action_definitions.hxx>
 
 namespace ice
 {

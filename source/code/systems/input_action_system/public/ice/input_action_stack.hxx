@@ -3,6 +3,7 @@
 #include <ice/shard_container.hxx>
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/clock_types.hxx>
+#include <ice/expected.hxx>
 
 namespace ice
 {
