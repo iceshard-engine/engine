@@ -2,6 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #include "game.hxx"
+#include "input_actions.hxx"
 
 #include <ice/framework_module.hxx>
 
@@ -224,11 +225,16 @@ auto test_factory(ice::Allocator& alloc, ice::TraitContext& context, void*) noex
 {
     return ice::make_unique<TestTrait>(alloc, alloc, context);
 }
+auto actions_factory(ice::Allocator& alloc, ice::TraitContext& context, void*) noexcept -> UniquePtr<ice::Trait>
+{
+    return context.make_unique<ice::InputActionsTrait>(alloc, alloc);
+}
 
 bool test_reg_traits(ice::TraitArchive& arch) noexcept
 {
     arch.register_trait({ .name = "act"_sid, .fn_factory = act_factory });
     arch.register_trait({ .name = "test"_sid, .fn_factory = test_factory });
+    arch.register_trait({ .name = "actions"_sid, .fn_factory = actions_factory });
     return true;
 }
 
@@ -292,6 +298,7 @@ void TestGame::on_resume(ice::Engine& engine) noexcept
         ice::StringID traits[]{
             "act"_sid,
             "test2"_sid,
+            "actions"_sid,
             ice::devui_trait_name(),
             ice::TraitID_GfxShaderStorage
         };
