@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/resource_provider.hxx>
@@ -32,7 +32,7 @@ namespace ice
         {
             for (Resource* res_entry : _resources)
             {
-                _allocator.destroy(res_entry);
+                ice::destroy_resource_object(_allocator, res_entry);
             }
         }
 
@@ -55,6 +55,7 @@ namespace ice
         {
             ice::Resource* const resource = create_dynlib_resource_from_path(
                 _allocator,
+                *this,
                 file_path
             );
 
@@ -66,7 +67,8 @@ namespace ice
                     "Skipping duplicate dyn-lib resource: '{}'",
                     resource->origin()
                 );
-                _allocator.destroy(resource);
+
+                ice::destroy_resource_object(_allocator, resource);
             }
             else
             {
@@ -112,7 +114,7 @@ namespace ice
         }
 
         auto refresh(
-            ice::Array<ice::Resource const*>& out_changes
+            ice::Array<ice::Resource*>& out_changes
         ) noexcept -> ice::ResourceProviderResult override
         {
             if (ice::hashmap::empty(_resources))
@@ -128,9 +130,7 @@ namespace ice
         }
 
         void unload_resource(
-            ice::Allocator& alloc,
-            ice::Resource const* resource,
-            ice::Memory memory
+            ice::Resource const* resource
         ) noexcept override { }
 
         auto load_resource(

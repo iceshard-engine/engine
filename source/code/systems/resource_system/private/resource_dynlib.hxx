@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -36,6 +36,7 @@ namespace ice
 
     auto create_dynlib_resource_from_path(
         ice::Allocator& alloc,
+        ice::ResourceProvider& provider,
         ice::native_file::FilePath file_path
     ) noexcept -> ice::Resource*;
 

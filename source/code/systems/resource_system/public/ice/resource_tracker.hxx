@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -7,8 +7,8 @@
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/container_types.hxx>
 #include <ice/string/heap_string.hxx>
-#include <ice/resource_types.hxx>
 #include <ice/resource_flags.hxx>
+#include <ice/resource_handle.hxx>
 #include <ice/resource_status.hxx>
 
 #include <ice/task.hxx>
@@ -62,6 +62,10 @@ namespace ice
             ice::UniquePtr<ice::ResourceProvider> provider
         ) noexcept -> ice::ResourceProvider* = 0;
 
+        virtual auto attach_writer(
+            ice::UniquePtr<ice::ResourceWriter> provider
+        ) noexcept -> ice::ResourceWriter* = 0;
+
         //! \brief Synchronize resources with changes reported by providers.
         //!
         //! \note Should be called periodically.
@@ -70,37 +74,54 @@ namespace ice
         virtual auto find_resource(
             ice::URI const& uri,
             ice::ResourceFlags flags = ice::ResourceFlags::None
-        ) const noexcept -> ice::ResourceHandle* = 0;
+        ) const noexcept -> ice::ResourceHandle = 0;
 
         virtual auto find_resource_relative(
             ice::URI const& uri,
-            ice::ResourceHandle* resource_handle
-        ) const noexcept -> ice::ResourceHandle* = 0;
+            ice::ResourceHandle const& resource_handle
+        ) const noexcept -> ice::ResourceHandle = 0;
 
 
         virtual auto set_resource(
             ice::URI const& uri,
-            ice::ResourceHandle* resource_handle
+            ice::ResourceHandle const& resource_handle
         ) noexcept -> ice::Task<ice::ResourceResult> = 0;
 
         virtual auto load_resource(
-            ice::ResourceHandle* resource_handle
+            ice::ResourceHandle const& resource_handle
         ) noexcept -> ice::Task<ice::ResourceResult> = 0;
 
         virtual auto release_resource(
-            ice::ResourceHandle* resource_handle
+            ice::ResourceHandle const& resource_handle
         ) noexcept -> ice::Task<ice::ResourceResult> = 0;
 
         virtual auto unload_resource(
-            ice::ResourceHandle* resource_handle
+            ice::ResourceHandle const& resource_handle
         ) noexcept -> ice::Task<ice::ResourceResult> = 0;
+
+    public:
+        virtual auto create_resource(
+            ice::URI const& uri
+        ) noexcept -> ice::TaskExpected<ice::ResourceHandle> = 0;
+
+        virtual auto write_resource(
+            ice::URI const& uri,
+            ice::Data data,
+            ice::usize write_offset = 0_B
+        ) noexcept -> ice::Task<bool> = 0;
+
+        virtual auto write_resource(
+            ice::ResourceHandle const& handle,
+            ice::Data data,
+            ice::usize write_offset = 0_B
+        ) noexcept -> ice::Task<bool> = 0;
     };
 
-    auto resource_uri(ice::ResourceHandle const* handle) noexcept -> ice::URI const&;
-    auto resource_origin(ice::ResourceHandle const* handle) noexcept -> ice::String;
-    auto resource_path(ice::ResourceHandle const* handle) noexcept -> ice::String;
-    auto resource_meta(ice::ResourceHandle const* handle, ice::Data& out_metadata) noexcept -> ice::Task<ice::Result>;
-    auto get_loose_resource(ice::ResourceHandle const* handle) noexcept -> ice::LooseResource const*;
+    auto resource_uri(ice::ResourceHandle const& handle) noexcept -> ice::URI const&;
+    auto resource_origin(ice::ResourceHandle const& handle) noexcept -> ice::String;
+    auto resource_path(ice::ResourceHandle const& handle) noexcept -> ice::String;
+    auto resource_meta(ice::ResourceHandle const& handle, ice::Data& out_metadata) noexcept -> ice::Task<ice::Result>;
+    auto get_loose_resource(ice::ResourceHandle const& handle) noexcept -> ice::LooseResource const*;
 
     auto create_resource_tracker(
         ice::Allocator& alloc,

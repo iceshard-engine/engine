@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -42,11 +42,11 @@ namespace ice
         ) noexcept;
 
         auto collect(
-            ice::Array<ice::Resource const*>& out_changes
+            ice::Array<ice::Resource*>& out_changes
         ) noexcept -> ice::ucount override;
 
         auto refresh(
-            ice::Array<ice::Resource const*>& out_changes
+            ice::Array<ice::Resource*>& out_changes
         ) noexcept -> ice::ResourceProviderResult override;
 
         auto find_resource(
@@ -58,9 +58,7 @@ namespace ice
         ) const noexcept -> ice::LooseResource const* override;
 
         void unload_resource(
-            ice::Allocator& alloc,
-            ice::Resource const* /*resource*/,
-            ice::Memory memory
+            ice::Resource const* /*resource*/
         ) noexcept override;
 
         auto load_resource(

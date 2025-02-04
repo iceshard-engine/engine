@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -30,14 +30,14 @@ namespace ice
         virtual auto schemeid() const noexcept -> ice::StringID = 0;
 
         virtual auto collect(
-            ice::Array<ice::Resource const*>& out_changes
+            ice::Array<ice::Resource*>& out_changes
         ) noexcept -> ice::ucount
         {
             return 0;
         }
 
         virtual auto refresh(
-            ice::Array<ice::Resource const*>& out_changes
+            ice::Array<ice::Resource*>& out_changes
         ) noexcept -> ice::ResourceProviderResult = 0;
 
         virtual auto find_resource(
@@ -55,9 +55,7 @@ namespace ice
         }
 
         virtual void unload_resource(
-            ice::Allocator& alloc,
-            ice::Resource const* resource,
-            ice::Memory memory
+            ice::Resource const* resource
         ) noexcept = 0;
 
         virtual auto load_resource(

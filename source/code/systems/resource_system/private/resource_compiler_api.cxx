@@ -1,3 +1,6 @@
+/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include <ice/resource_compiler_api.hxx>
 #include <ice/config.hxx>
 
@@ -6,9 +9,9 @@ namespace ice::api::resource_compiler::v1
 
     bool fn_collect_sources_default(
         ice::ResourceCompilerCtx& ctx,
-        ice::ResourceHandle* resource_handle,
+        ice::ResourceHandle const& resource_handle,
         ice::ResourceTracker& resource_tracker,
-        ice::Array<ice::ResourceHandle*>& out_sources
+        ice::Array<ice::ResourceHandle>& out_sources
     ) noexcept
     {
         return true; // No additional sources are needed.
@@ -16,7 +19,7 @@ namespace ice::api::resource_compiler::v1
 
     bool fn_collect_dependencies_default(
         ice::ResourceCompilerCtx& ctx,
-        ice::ResourceHandle* resource_handle,
+        ice::ResourceHandle const& resource_handle,
         ice::ResourceTracker& resource_tracker,
         ice::Array<ice::URI>& out_dependencies
     ) noexcept
@@ -26,7 +29,7 @@ namespace ice::api::resource_compiler::v1
 
     auto fn_validate_source_default(
         ice::ResourceCompilerCtx& ctx,
-        ice::ResourceHandle* resource_handle,
+        ice::ResourceHandle const& resource_handle,
         ice::ResourceTracker& resource_tracker
     ) noexcept -> ice::Task<bool>
     {
@@ -35,9 +38,9 @@ namespace ice::api::resource_compiler::v1
 
     auto fn_compile_source_default(
         ice::ResourceCompilerCtx& ctx,
-        ice::ResourceHandle* resource_handle,
+        ice::ResourceHandle const& resource_handle,
         ice::ResourceTracker& resource_tracker,
-        ice::Span<ice::ResourceHandle* const> sources,
+        ice::Span<ice::ResourceHandle const> sources,
         ice::Span<ice::URI const> dependencies,
         ice::Allocator& result_alloc
     ) noexcept -> ice::Task<ice::ResourceCompilerResult>
@@ -53,7 +56,7 @@ namespace ice::api::resource_compiler::v1
 
     auto fn_build_metadata_default(
         ice::ResourceCompilerCtx& ctx,
-        ice::ResourceHandle* resource_handle,
+        ice::ResourceHandle const& resource_handle,
         ice::ResourceTracker& resource_tracker,
         ice::Span<ice::ResourceCompilerResult const> compiled_sources,
         ice::Span<ice::URI const> dependencies,
@@ -71,7 +74,7 @@ namespace ice::api::resource_compiler::v1
 
     auto fn_finalize_default(
         ice::ResourceCompilerCtx& ctx,
-        ice::ResourceHandle* resource_handle,
+        ice::ResourceHandle const& resource_handle,
         ice::Span<ice::ResourceCompilerResult const> compiled_sources,
         ice::Span<ice::URI const> dependencies,
         ice::Allocator& result_alloc

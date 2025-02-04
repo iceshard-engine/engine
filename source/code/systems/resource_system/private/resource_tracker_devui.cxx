@@ -1,7 +1,9 @@
-/// Copyright 2024 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
+#include "resource_internal.hxx"
 #include "resource_tracker_devui.hxx"
+
 #include <ice/devui_context.hxx>
 #include <ice/devui_frame.hxx>
 #include <ice/string/static_string.hxx>
@@ -73,15 +75,15 @@ namespace ice
             ImGui::TableHeadersRow();
 
             ice::StaticString<64> temp_str{};
-            for (ice::ResourceHandle& handle : _tracker._handles)
+            for (ice::Resource* handle : _tracker._resources)
             {
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn();
-                ImGui::TextUnformatted(ice::string::begin(handle.resource->name()), ice::string::end(handle.resource->name()));
+                ImGui::TextUnformatted(ice::string::begin(handle->name()), ice::string::end(handle->name()));
 
                 if (ImGui::TableNextColumn())
                 {
-                    detail::status_flags_string(handle.status, temp_str);
+                    detail::status_flags_string(ice::internal_status(handle), temp_str);
                     ImGui::Text(ice::string::begin(temp_str), ice::string::end(temp_str));
                 }
             }
@@ -95,10 +97,6 @@ namespace ice
         using enum ice::ResourceStatus;
 
         ice::string::clear(out_str);
-        if (ice::has_all(flags, Invalid))
-        {
-            ice::string::push_back(out_str, "Invalid | ");
-        }
         if (ice::has_all(flags, Available))
         {
             ice::string::push_back(out_str, "Available | ");
@@ -114,6 +112,10 @@ namespace ice
         if (ice::has_all(flags, Unloading))
         {
             ice::string::push_back(out_str, "Unloading | ");
+        }
+        if (flags == Invalid)
+        {
+            out_str = ice::String{ "Invalid | " };
         }
         ice::string::pop_back(out_str, 3);
     }

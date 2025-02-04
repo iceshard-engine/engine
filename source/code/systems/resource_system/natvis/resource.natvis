@@ -3,21 +3,18 @@
 
   <!-- URI Type -->
   <Type Name="ice::URI">
-    <DisplayString Condition="scheme.value == 0x0">URI {{ Invalid, path={path._data,sb} }}</DisplayString>
-    <DisplayString Condition="scheme.value == 0xB74F5545CE2CD578">URI {{ urn, path={path._data,s8b} }}</DisplayString>
-    <DisplayString Condition="scheme.value == 0xF362BE341DC0B4E2">URI {{ file, path={path._data,s8b} }}</DisplayString>
-    <DisplayString Condition="scheme.value == 0x0BB52B412BC0B2AA">URI {{ dynlib, path={path._data,s8b} }}</DisplayString>
+    <DisplayString Condition="_forced_scheme == 0">URI {{ path={_uri,sb} }}</DisplayString>
+    <DisplayString Condition="_forced_scheme == 1">URI {{ urn, path={_uri,s8b} }}</DisplayString>
+    <DisplayString Condition="_forced_scheme == 2">URI {{ file, path={_uri,s8b} }}</DisplayString>
+    <DisplayString Condition="_forced_scheme == 3">URI {{ dynlib, path={_uri,s8b} }}</DisplayString>
 
     <Expand>
-      <Synthetic Name="[scheme]">
-        <DisplayString Condition="scheme.value == 0xcd8e46dc3c773a80">Invalid</DisplayString>
-        <DisplayString Condition="scheme.value == 0xB74F5545CE2CD578">urn</DisplayString>
-        <DisplayString Condition="scheme.value == 0xF362BE341DC0B4E2">file</DisplayString>
-        <DisplayString Condition="scheme.value == 0x0BB52B412BC0B2AA">dynlib</DisplayString>
+      <Synthetic Name="[scheme]" Condition="_forced_scheme != 0">
+        <DisplayString Condition="_forced_scheme == 1">urn</DisplayString>
+        <DisplayString Condition="_forced_scheme == 2">file</DisplayString>
+        <DisplayString Condition="_forced_scheme == 3">dynlib</DisplayString>
       </Synthetic>
-      <Item Name="[path]">path._data,sb</Item>
-      <Item Condition="fragment.value.value != 0" Name="[fragment]">fragment.value.value,h</Item>
-      <Item Condition="fragment.value.value == 0" Name="[fragment]">"unused",sb</Item>
+      <Item Name="[path]">_uri,sb</Item>
     </Expand>
   </Type>
 
@@ -67,14 +64,21 @@
   </Type>
 
   <Type Name="ice::ResourceHandle">
-    <DisplayString>ResourceHandle {{ {status,en}, ref/use={refcount}/{usecount}, resource={*resource,view(Path)} }}</DisplayString>
+    <DisplayString>{*resource}</DisplayString>
     <Expand>
-      <Item Name="[status]">status</Item>
-      <Synthetic Name="[ref/use]">
-        <DisplayString>Ref = {refcount} | Use = {usecount}</DisplayString>
-      </Synthetic>
-      <Item Name="[provider]">provider</Item>
       <ExpandedItem>*resource</ExpandedItem>
+    </Expand>
+  </Type>
+
+  <Type Name="ice::ResourceInternal">
+    <DisplayString>Resource (Internal)</DisplayString>
+    <Expand>
+      <Item Name="[status]">_status</Item>
+      <Synthetic Name="[ref/req]">
+        <DisplayString>Ref = {_refcount} | Req = {_reqcount}</DisplayString>
+      </Synthetic>
+      <Item Name="[provider]">_provider</Item>
+      <Item Name="[data]">_last_data</Item>
     </Expand>
   </Type>
 
@@ -87,33 +91,32 @@
     </Expand>
   </Type>
 
-  <Type Name="ice::ResourceProvider_Win32Dlls">
-    <DisplayString>ResourceProvider (win32-filesystem) {{ resources={_resources._count} }}</DisplayString>
+  <Type Name="ice::ResourceProvider_DynLibs">
+    <DisplayString>ResourceProvider (win-dlls) {{ resources={_resources._count} }}</DisplayString>
     <Expand>
       <ExpandedItem>_resources,view(Expanded)</ExpandedItem>
     </Expand>
   </Type>
 
-  <Type Name="ice::Resource_LooseFilesWin32">
+  <Type Name="ice::LooseFilesResource">
     <DisplayString ExcludeView="Path">Resource (lose-files) {{ {_origin_name._data,s8b} }}</DisplayString>
     <DisplayString IncludeView="Path">{_origin_name._data,s8}</DisplayString>
     <Expand>
-      <Item Name="[metadata]">_metadata</Item>
-      <Item Name="[metadata_mutable]">_mutable_metadata</Item>
       <Item Name="[origin_path]">_origin_path</Item>
       <Item Name="[origin_name]">_origin_name</Item>
       <Item Name="[uri_path]">_uri_path</Item>
       <Item Name="[uri]">_uri</Item>
-      <Item Name="[extra_resources]">_extra_resources,view(Expanded)</Item>
+      <ExpandedItem>(ice::ResourceInternal*)(((char*)this)-40)</ExpandedItem>
     </Expand>
   </Type>
 
-  <Type Name="ice::Resource_DllsWin32">
+  <Type Name="ice::Resource_DynLib">
     <DisplayString ExcludeView="Path">Resource (dynlib) {{ {_origin_name._data,s8b} }}</DisplayString>
     <DisplayString IncludeView="Path">{_origin_name._data,s8}</DisplayString>
     <Expand>
       <Item Name="[origin_path]">_origin_path</Item>
       <Item Name="[uri]">_uri</Item>
+      <ExpandedItem>(ice::ResourceInternal*)(((char*)this)-40)</ExpandedItem>
     </Expand>
   </Type>
 

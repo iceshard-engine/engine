@@ -14,6 +14,16 @@
     <DisplayString ExcludeView="raw" Condition="value &gt;= 1024">{value / 1024} KiB, {value % 1024} B</DisplayString>
   </Type>
 
+  <Type Name="ice::Data">
+    <DisplayString Condition="size.value==0">Data {{ null }}</DisplayString>
+    <DisplayString>Data {{ size={size}, align={alignment,e} }}</DisplayString>
+    <Expand>
+      <Item Name="[size]">size</Item>
+      <Item Name="[align]">alignment</Item>
+      <Item Name="[location]">location</Item>
+    </Expand>
+  </Type>
+
   <!-- Native Visualization for the UniquePtr type -->
   <Type Name="ice::UniquePtr&lt;*&gt;">
     <DisplayString Condition="_ptr != nullptr">{*_ptr} - UniquePtr</DisplayString>

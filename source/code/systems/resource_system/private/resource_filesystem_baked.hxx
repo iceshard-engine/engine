@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 
@@ -62,6 +62,7 @@ namespace ice
 
     auto create_resource_from_baked_file(
         ice::Allocator& alloc,
+        ice::ResourceProvider& provider,
         ice::String uri_base,
         ice::native_file::FilePath file_path
     ) noexcept -> ice::FileSystemResource*;

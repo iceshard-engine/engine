@@ -1,10 +1,11 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/mem_data.hxx>
-#include <ice/string_types.hxx>
+#include <ice/expected.hxx>
 #include <ice/resource_types.hxx>
+#include <ice/string_types.hxx>
 #include <ice/task.hxx>
 
 namespace ice
@@ -39,5 +40,42 @@ namespace ice
             ice::Allocator& alloc
         ) const noexcept -> ice::Task<ice::Memory> = 0;
     };
+
+    auto allocate_resource_object_memory(
+        ice::Allocator& alloc,
+        ice::ResourceProvider& provider,
+        ice::usize size,
+        ice::ualign align
+    ) noexcept -> ice::Memory;
+
+    void deallocate_resource_object_memory(
+        ice::Allocator& alloc,
+        ice::Resource* pointer
+    ) noexcept;
+
+    template<typename T, typename... Args>
+    auto create_resource_object(
+        ice::Allocator& alloc,
+        ice::ResourceProvider& provider,
+        Args&&... args
+    ) noexcept -> T*
+    {
+        ice::Memory const memory = ice::allocate_resource_object_memory(alloc, provider, ice::size_of<T>, ice::align_of<T>);
+        T* result = new (memory.location) T{ ice::forward<Args>(args)... };
+        return result;
+    }
+
+    template<typename T>
+    void destroy_resource_object(
+        ice::Allocator& alloc,
+        T* object
+    ) noexcept
+    {
+        if (object != nullptr)
+        {
+            object->~T();
+            ice::deallocate_resource_object_memory(alloc, object);
+        }
+    }
 
 } // ice

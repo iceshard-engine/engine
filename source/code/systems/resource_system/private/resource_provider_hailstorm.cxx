@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "resource_aio_request.hxx"
@@ -234,7 +234,7 @@ namespace ice
     }
 
     auto HailStormResourceProvider::refresh(
-        ice::Array<ice::Resource const*>& out_changes
+        ice::Array<ice::Resource*>& out_changes
     ) noexcept -> ice::ResourceProviderResult
     {
         if (_hspack_file == false)
@@ -339,7 +339,9 @@ namespace ice
                     v1::HailstormChunk const& chunk = _pack.chunks[res.chunk];
                     ICE_ASSERT_CORE(chunk.type == 3);
 
-                    _entries[idx] = _allocator.create<ice::HailstormResourceMixed>(
+                    _entries[idx] = ice::create_resource_object<ice::HailstormResourceMixed>(
+                        _allocator,
+                        *this,
                         res_uri,
                         res, *_loaders[res.chunk]
                     );
@@ -351,7 +353,9 @@ namespace ice
                     ICE_ASSERT_CORE(data_chunk.type == 2);
                     ICE_ASSERT_CORE(meta_chunk.type == 1);
 
-                    _entries[idx] = _allocator.create<ice::HailstormResourceSplit>(
+                    _entries[idx] = ice::create_resource_object<ice::HailstormResourceSplit>(
+                        _allocator,
+                        *this,
                         res_uri,
                         res, *_loaders[res.meta_chunk], *_loaders[res.chunk]
                     );
@@ -397,9 +401,7 @@ namespace ice
     }
 
     void HailStormResourceProvider::unload_resource(
-        ice::Allocator& alloc,
-        ice::Resource const* resource,
-        ice::Memory /*memory*/
+        ice::Resource const* resource
     ) noexcept
     {
         hailstorm::HailstormResource const& hsres = static_cast<ice::HailstormResource const*>(resource)->_handle;

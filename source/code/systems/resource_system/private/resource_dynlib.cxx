@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "resource_dynlib.hxx"
@@ -40,6 +40,7 @@ namespace ice
 
     auto create_dynlib_resource_from_path(
         ice::Allocator& alloc,
+        ice::ResourceProvider& provider,
         ice::native_file::FilePath dll_path
     ) noexcept -> ice::Resource*
     {
@@ -52,7 +53,9 @@ namespace ice
 
             // Need to get the string first before moving the HeapString path.
             ice::String const utf8_origin_name = ice::path::filename(data_file_path);
-            result = alloc.create<ice::Resource_DynLib>(
+            result = ice::create_resource_object<ice::Resource_DynLib>(
+                alloc,
+                provider,
                 ice::move(data_file_path),
                 utf8_origin_name
             );
