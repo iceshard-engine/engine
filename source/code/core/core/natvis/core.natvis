@@ -12,4 +12,13 @@
     <DisplayString>StringID {{ {value} }}</DisplayString>
   </Type>
 
+  <Type Name="ice::BaseStringID&lt;1&gt;">
+    <DisplayString Condition="value.value == 0">StringID {{ Invalid }}</DisplayString>
+    <!--<DisplayString Optional="true">StringID {{ {value,view(raw)} }}</DisplayString>-->
+    <DisplayString IncludeView="raw" Condition="debug_info.name_value.consteval_flag == -1">{debug_info.name_value.value,sb}</DisplayString>
+    <DisplayString IncludeView="raw">{debug_info.name_hint,sb}</DisplayString>
+    <DisplayString Condition="debug_info.name_value.consteval_flag == -1">StringID {{ {debug_info.name_value.value,s}, cst }}</DisplayString>
+    <DisplayString>StringID {{ {debug_info.name_hint,s}, dyn }}</DisplayString>
+  </Type>
+
 </AutoVisualizer>

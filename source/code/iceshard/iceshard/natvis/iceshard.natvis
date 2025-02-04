@@ -112,4 +112,13 @@
     <Expand></Expand>
   </Type>
 
+  <!-- EngieState -->
+  <Type Name="ice::EngineState">
+    <DisplayString>EngineState {{ "{value,view(raw)}" }}</DisplayString>
+  </Type>
+
+  <Type Name="ice::EngineStateGraph">
+    <DisplayString>EngineStateGraph {{ "{value,view(raw)}" }}</DisplayString>
+  </Type>
+
 </AutoVisualizer>
