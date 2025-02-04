@@ -32,7 +32,7 @@ namespace ice
             ice::string::push_format(import_path_final, "{}.asl", import_path);
 
             // Find the resource to he loaded.
-            ice::ResourceHandle* const import_resource = _tracker.find_resource(
+            ice::ResourceHandle const import_resource = _tracker.find_resource(
                 ice::URI{ ice::Scheme_URN, { ice::String{ import_path_final } } }
             );
             if (import_resource == nullptr)

@@ -45,11 +45,11 @@ public:
     auto schemeid() const noexcept -> ice::StringID override { return ice::Scheme_File; }
 
     auto collect(
-        ice::Array<ice::Resource const*>& out_changes
+        ice::Array<ice::Resource*>& out_changes
     ) noexcept -> ice::ucount override;
 
     auto refresh(
-        ice::Array<ice::Resource const*>& out_changes
+        ice::Array<ice::Resource*>& out_changes
     ) noexcept -> ice::ResourceProviderResult override;
 
     auto find_resource(
@@ -61,9 +61,7 @@ public:
     ) const noexcept -> ice::LooseResource const* override;
 
     void unload_resource(
-        ice::Allocator& alloc,
-        ice::Resource const* resource,
-        ice::Memory memory
+        ice::Resource const* resource
     ) noexcept override;
 
     auto load_resource(

@@ -41,5 +41,5 @@ bool hscp_write_hailstorm_file(
     HSCPWriteParams const& params,
     hailstorm::v1::HailstormWriteData const& data,
     ice::ResourceTracker& tracker,
-    ice::Span<ice::ResourceHandle*> resources
+    ice::Span<ice::ResourceHandle> resources
 ) noexcept;

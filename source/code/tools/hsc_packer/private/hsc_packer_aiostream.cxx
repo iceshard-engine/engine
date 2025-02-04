@@ -38,7 +38,7 @@ struct HailstormAIOWriter
     ice::TaskScheduler& _scheduler;
 
     ice::ResourceTracker& _resource_tracker;
-    ice::Span<ice::ResourceHandle*> _resources;
+    ice::Span<ice::ResourceHandle> _resources;
 
     std::atomic_uint32_t _started_writes;
     std::atomic_uint32_t _finished_writes;
@@ -164,7 +164,7 @@ bool hscp_write_hailstorm_file(
     HSCPWriteParams const& params,
     hailstorm::v1::HailstormWriteData const& data,
     ice::ResourceTracker& tracker,
-    ice::Span<ice::ResourceHandle*> resources
+    ice::Span<ice::ResourceHandle> resources
 ) noexcept
 {
     using ice::operator""_MiB;

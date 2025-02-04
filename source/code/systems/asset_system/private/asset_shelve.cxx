@@ -73,18 +73,18 @@ namespace ice
 
     auto AssetShelve::store(
         ice::StringID_Arg name,
-        ice::ResourceHandle* resource
+        ice::ResourceHandle const& resource
     ) noexcept -> ice::AssetEntry*
     {
         ice::UniquePtr<ice::ResourceAssetData> resource_data = ice::create_asset_data_entry(
             _allocator, AssetState::Exists, resource
         );
 
+        ice::u64 const name_hash = ice::hash(name);
         if constexpr (ice::AssetEntry::HoldsDebugData)
         {
             ice::HeapString<> asset_name{ _allocator, ice::stringid_hint(name) };
 
-            ice::u64 const name_hash = ice::hash(name);
             ice::hashmap::set(
                 _asset_resources,
                 name_hash,
@@ -93,7 +93,6 @@ namespace ice
         }
         else
         {
-            ice::u64 const name_hash = ice::hash(name);
             ice::hashmap::set(
                 _asset_resources,
                 name_hash,
@@ -101,7 +100,10 @@ namespace ice
             );
         }
 
-        return select(name);
+        ice::AssetEntry** entry = ice::hashmap::try_get(_asset_resources, name_hash);
+        ICE_ASSERT_CORE(entry != nullptr);
+        ICE_ASSERT_CORE(*entry != nullptr);
+        return *entry;
     }
 
     void AssetShelve::append_request(

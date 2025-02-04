@@ -168,7 +168,7 @@ public:
         );
         resource_tracker->sync_resources();
 
-        ice::Array<ice::Resource const*> input_resources{ _allocator };
+        ice::Array<ice::Resource*> input_resources{ _allocator };
         if (file_provider->collect(input_resources) != 1)
         {
             ICE_LOG(
@@ -179,7 +179,7 @@ public:
             return 1;
         }
 
-        ice::Resource const* input_resource = input_resources[0];
+        ice::Resource const* const input_resource = input_resources[0];
         ICE_LOG_IF(
             Param_Verbose,
             ice::LogSeverity::Retail, ice::LogTag::Tool,
@@ -190,7 +190,7 @@ public:
         ice::HeapString<> uristr{ _allocator, "file://<inputs>" };
         ice::string::push_back(uristr, input_resource->uri().path());
 
-        ice::ResourceHandle* res = resource_tracker->find_resource(ice::URI{ uristr });
+        ice::ResourceHandle res = resource_tracker->find_resource(ice::URI{ uristr });
         if (res == nullptr)
         {
             ICE_LOG(
@@ -307,7 +307,7 @@ public:
                 return 1;
             }
 
-            ice::Array<ice::ResourceHandle*> sources{ _allocator };
+            ice::Array<ice::ResourceHandle> sources{ _allocator };
             if (resource_compiler->fn_collect_sources(ctx, res, *resource_tracker, sources) == false)
             {
                 ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Falied gathering sources for {}.", final_asset_name);
@@ -334,7 +334,7 @@ public:
             }
 
             ice::Array<ice::ResourceCompilerResult> results{ _allocator };
-            for (ice::ResourceHandle* source : sources)
+            for (ice::ResourceHandle source : sources)
             {
                 auto fn = [](ice::ResourceCompilerResult& out_result, ice::Task<ice::ResourceCompilerResult> task) noexcept -> ice::Task<>
                     {

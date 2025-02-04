@@ -39,13 +39,13 @@ namespace ice
 
     struct ResourceAssetData : AssetData
     {
-        ice::ResourceHandle* _resource_handle;
+        ice::ResourceHandle _resource_handle;
     };
 
-    inline auto asset_data_resource(ice::UniquePtr<ice::AssetData> const& data) noexcept -> ice::ResourceHandle*
+    inline auto asset_data_resource(ice::UniquePtr<ice::AssetData> const& data) noexcept -> ice::ResourceHandle
     {
         ice::AssetData* dataptr = data.get();
-        ice::ResourceHandle* result = nullptr;
+        ice::ResourceHandle result{};
         while(result == nullptr && dataptr != nullptr)
         {
             if (ice::has_any(dataptr->_flags, AssetDataFlags::Resource))
@@ -171,7 +171,7 @@ namespace ice
     inline auto create_asset_data_entry(
         ice::Allocator& alloc,
         ice::AssetState state,
-        ice::ResourceHandle* resource_handle
+        ice::ResourceHandle const& resource_handle
     ) noexcept -> ice::UniquePtr<ice::ResourceAssetData>
     {
         ice::ResourceAssetData* data = alloc.create<ice::ResourceAssetData>();

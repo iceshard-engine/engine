@@ -36,7 +36,7 @@ namespace ice
 
         auto store(
             ice::StringID_Arg name,
-            ice::ResourceHandle* resource_handle
+            ice::ResourceHandle const& resource_handle
         ) noexcept -> ice::AssetEntry*;
 
         void append_request(

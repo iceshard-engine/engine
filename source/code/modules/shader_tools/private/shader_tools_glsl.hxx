@@ -16,16 +16,16 @@ namespace ice::glsl
 
     auto compiler_compile_shader_source(
         ice::ResourceCompilerCtx& ctx,
-        ice::ResourceHandle* source,
+        ice::ResourceHandle const& source,
         ice::ResourceTracker& tracker,
-        ice::Span<ice::ResourceHandle* const>,
+        ice::Span<ice::ResourceHandle const>,
         ice::Span<ice::URI const>,
         ice::Allocator& alloc
     ) noexcept -> ice::Task<ice::ResourceCompilerResult>;
 
     auto compiler_build_shader_meta(
         ice::ResourceCompilerCtx& ctx,
-        ice::ResourceHandle* source,
+        ice::ResourceHandle const& source,
         ice::ResourceTracker& tracker,
         ice::Span<ice::ResourceCompilerResult const>,
         ice::Span<ice::URI const>,

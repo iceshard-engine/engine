@@ -38,10 +38,10 @@ namespace ice
             ice::AssetCategoryDefinition const& definition,
             ice::ResourceTracker& resource_tracker,
             ice::String name
-        ) noexcept -> ice::ResourceHandle*
+        ) noexcept -> ice::ResourceHandle
         {
             ice::StaticString<128> temp_name{ name };
-            ice::ResourceHandle* resource = nullptr;
+            ice::ResourceHandle resource;
 
             ice::u32 ext_idx = 0;
             ice::u32 const ext_count = ice::count(definition.resource_extensions);
@@ -66,10 +66,10 @@ namespace ice
             ice::AssetStateTransaction& transaction
         ) noexcept -> ice::Task<bool>
         {
-            ice::Array<ice::ResourceHandle*> sources{ alloc };
+            ice::Array<ice::ResourceHandle> sources{ alloc };
             ice::Array<ice::URI> dependencies{ alloc }; // Not used currently
 
-            ice::ResourceHandle* const resource = ice::asset_data_resource(transaction.asset._data);
+            ice::ResourceHandle resource = ice::asset_data_resource(transaction.asset._data);
             ice::ResourceCompilerCtx& ctx = transaction.asset._shelve->compiler_context;
 
             // Early return if sources or dependencies couldn't be collected
@@ -90,7 +90,7 @@ namespace ice
 
             static auto fn_validate = [&ctx](
                 ice::ResourceCompiler const& compiler,
-                ice::ResourceHandle* source,
+                ice::ResourceHandle const& source,
                 ice::ResourceTracker& tracker,
                 std::atomic_bool& out_result
             ) noexcept -> ice::Task<>
@@ -103,7 +103,7 @@ namespace ice
             };
 
             std::atomic_bool all_sources_valid = true;
-            for (ice::ResourceHandle* source : sources)
+            for (ice::ResourceHandle const& source : sources)
             {
                 ice::array::push_back(tasks, fn_validate(compiler, source, resource_tracker, all_sources_valid));
             }
@@ -123,9 +123,9 @@ namespace ice
 
             static auto fn_compile = [&ctx](
                 ice::ResourceCompiler const& compiler,
-                ice::ResourceHandle* source,
+                ice::ResourceHandle const& source,
                 ice::ResourceTracker& tracker,
-                ice::Span<ice::ResourceHandle* const> sources,
+                ice::Span<ice::ResourceHandle const> sources,
                 ice::Span<ice::URI const> dependencies,
                 ice::Allocator& result_alloc,
                 ice::ResourceCompilerResult& out_result
@@ -143,7 +143,7 @@ namespace ice
 
             // Create all compilation tasks...
             ice::u32 source_idx = 0;
-            for (ice::ResourceHandle* source : sources)
+            for (ice::ResourceHandle const& source : sources)
             {
                 ice::array::push_back(
                     tasks,
@@ -281,7 +281,7 @@ namespace ice
                 }
 
                 // Assing a new data entry.
-                ice::ResourceHandle* const resource_handle = ice::detail::find_resource(
+                ice::ResourceHandle const resource_handle = ice::detail::find_resource(
                     shelve->definition,
                     _info.resource_tracker,
                     name
@@ -294,19 +294,21 @@ namespace ice
         }
         else if (shelve != nullptr)
         {
-            ice::ResourceHandle* const resource_handle = ice::detail::find_resource(
+            ice::ResourceHandle const resource_handle = ice::detail::find_resource(
                 shelve->definition,
                 _info.resource_tracker,
                 name
             );
 
-            if (resource_handle)
+            if (resource_handle.valid())
             {
                 // Create a new asset entry if the handle exists
                 entry = shelve->store(
                     ice::stringid(name),
                     resource_handle
                 );
+
+                ICE_ASSERT_CORE(entry != nullptr);
 
                 ice::u32 const prev_count = entry->_refcount.fetch_add(1, std::memory_order_relaxed);
                 ICE_ASSERT(prev_count == 0, "Unexpected value!");
@@ -340,6 +342,7 @@ namespace ice
         // This object might be unused (it's only alive for the request duration)
         ice::AssetStateTrackers trackers{};
         ice::AssetStateTransaction transaction = asset.start_transaction(requested_state, trackers);
+        ICE_ASSERT(asset.valid(), "Invalid asset object");
 
         ice::Expected<ice::Data, ice::ErrorCode> result{ };
         switch (transaction.target_state)
