@@ -31,6 +31,11 @@ namespace ice
 
         ~DefaultAssetStorage() noexcept override;
 
+        auto resources() noexcept -> ice::ResourceTracker& override
+        {
+            return _info.resource_tracker;
+        }
+
         auto bind(
             ice::AssetCategory_Arg category,
             ice::String name

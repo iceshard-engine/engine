@@ -51,7 +51,7 @@ namespace ice
 
         auto find_resource(
             ice::URI const& uri
-        ) const noexcept -> ice::Resource const* override;
+        ) const noexcept -> ice::Resource* override;
 
         auto access_loose_resource(
             ice::Resource const* resource

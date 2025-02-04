@@ -41,6 +41,8 @@ namespace ice
 
         auto schemeid() const noexcept -> ice::StringID override;
 
+        auto hostname() const noexcept -> ice::String override { return _virtual_hostname; }
+
         auto collect(
             ice::Array<ice::Resource*>& out_changes
         ) noexcept -> ice::ucount override;
@@ -51,7 +53,7 @@ namespace ice
 
         auto find_resource(
             ice::URI const& uri
-        ) const noexcept -> ice::Resource const* override;
+        ) const noexcept -> ice::Resource* override;
 
         auto access_loose_resource(
             ice::Resource const* resource

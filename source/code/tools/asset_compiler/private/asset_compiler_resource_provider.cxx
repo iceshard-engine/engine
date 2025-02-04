@@ -117,7 +117,7 @@ auto AssetCompilerResourceProvider::refresh(
 
 auto AssetCompilerResourceProvider::find_resource(
     ice::URI const& uri
-) const noexcept -> ice::Resource const*
+) const noexcept -> ice::Resource*
 {
     return nullptr;
 }

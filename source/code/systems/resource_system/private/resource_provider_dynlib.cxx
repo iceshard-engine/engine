@@ -43,7 +43,7 @@ namespace ice
 
         auto find_resource(
             ice::URI const& uri
-        ) const noexcept -> ice::Resource const* override
+        ) const noexcept -> ice::Resource* override
         {
             ice::u64 const resource_hash = ice::hash(uri.path());
             return ice::hashmap::get(_resources, resource_hash, nullptr);

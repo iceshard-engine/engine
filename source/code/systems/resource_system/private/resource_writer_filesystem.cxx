@@ -81,7 +81,7 @@ namespace ice
 
     auto FileSystemResourceWriter::find_resource(
         ice::URI const& uri
-    ) const noexcept -> ice::Resource const*
+    ) const noexcept -> ice::Resource*
     {
         ICE_ASSERT(
             uri.scheme() == ice::stringid_hash(schemeid()),
@@ -179,8 +179,15 @@ namespace ice
         ice::ResourceCreationFlags flags
     ) noexcept -> ice::TaskExpected<ice::Resource*>
     {
+        if (ice::Resource* existing = find_resource(uri); existing != nullptr)
+        {
+            co_return existing;
+        }
+
         ice::ucount predicted_path_len = 0;
         ice::native_file::HeapFilePath predicted_metapath{ (ice::Allocator&)_named_allocator };
+
+        ICE_ASSERT_CORE(flags != ResourceCreationFlags::Append); // TODO
 
         // TODO: move into a utility function
         {
@@ -206,14 +213,19 @@ namespace ice
             ice::string::push_back(predicted_metapath, ISP_PATH_LITERAL(".isrm"));
         }
 
-        co_return ice::create_writable_resources_from_loose_files(
-            _named_allocator,
-            *this,
+        ice::FileSystemResource* new_resource = this->create_loose_resource(
             _base_path,
             ice::path::directory(_base_path),
             predicted_metapath,
-            ice::string::substr(predicted_metapath, predicted_path_len)
+            ice::string::substr(predicted_metapath, 0, predicted_path_len)
         );
+
+        if (register_resource(new_resource) != S_Ok)
+        {
+            ice::destroy_resource_object(_named_allocator, new_resource);
+        }
+
+        co_return new_resource;
     }
 
     auto FileSystemResourceWriter::write_resource(

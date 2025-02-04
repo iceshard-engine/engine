@@ -29,6 +29,8 @@ namespace ice
 
         virtual auto schemeid() const noexcept -> ice::StringID = 0;
 
+        virtual auto hostname() const noexcept -> ice::String { return {}; }
+
         virtual auto collect(
             ice::Array<ice::Resource*>& out_changes
         ) noexcept -> ice::ucount
@@ -42,7 +44,7 @@ namespace ice
 
         virtual auto find_resource(
             ice::URI const& uri
-        ) const noexcept -> ice::Resource const*
+        ) const noexcept -> ice::Resource*
         {
             return nullptr;
         }

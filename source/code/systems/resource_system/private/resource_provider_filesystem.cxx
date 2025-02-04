@@ -88,7 +88,7 @@ namespace ice
 
     auto FileSystemResourceProvider::find_resource(
         ice::URI const& uri
-    ) const noexcept -> ice::Resource const*
+    ) const noexcept -> ice::Resource*
     {
         ICE_ASSERT(
             uri.scheme() == ice::stringid_hash(schemeid()),
@@ -100,7 +100,7 @@ namespace ice
             return nullptr;
         }
 
-        ice::FileSystemResource const* found_resource = nullptr;
+        ice::FileSystemResource* found_resource = nullptr;
         ice::u32 const origin_size = ice::string::size(uri.path());
 
         ice::HeapString<> predicted_path{ (ice::Allocator&) _named_allocator };

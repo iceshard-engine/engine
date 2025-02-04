@@ -131,19 +131,13 @@ namespace ice
             ice::URI const& uri,
             ice::Data data,
             ice::usize write_offset = 0_B
-        ) noexcept -> ice::Task<bool> override
-        {
-            co_return false;
-        }
+        ) noexcept -> ice::Task<bool> override;
 
         auto write_resource(
             ice::ResourceHandle const& handle,
             ice::Data data,
             ice::usize write_offset = 0_B
-        ) noexcept -> ice::Task<bool> override
-        {
-            co_return false;
-        }
+        ) noexcept -> ice::Task<bool> override;
 
     public:
         class DevUI;

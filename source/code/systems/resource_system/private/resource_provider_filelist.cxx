@@ -169,14 +169,14 @@ namespace ice
 
     auto FileListResourceProvider::find_resource(
         ice::URI const& uri
-    ) const noexcept -> ice::Resource const*
+    ) const noexcept -> ice::Resource*
     {
         ICE_ASSERT(
             uri.scheme() == ice::stringid_hash(schemeid()),
             "Trying to find resource for URI that is not handled by this provider."
         );
 
-        ice::FileSystemResource const* found_resource = nullptr;
+        ice::FileSystemResource* found_resource = nullptr;
 
         ice::HeapString<> predicted_path{ (ice::Allocator&)_named_allocator };
         for (ice::FileListEntry const& file_entry : _file_paths)

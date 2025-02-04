@@ -171,7 +171,7 @@ namespace ice
         ice::ResourceHandle const& resource_handle
     ) noexcept -> ice::Task<ice::ResourceResult>
     {
-        co_return { .resource_status = ResourceStatus::Invalid };
+        co_return{ .resource_status = ResourceStatus::Invalid };
     }
 
     auto ResourceTrackerImplementation::load_resource(
@@ -266,28 +266,48 @@ namespace ice
         {
             [[maybe_unused]]
             ice::ResourceWriter* candidate_writer = it.value().get();
-            //if (ice::string::empty(resource_uri.host()) || ice::string::empty(candidate_writer->hostname()))
-            //{
-            //    if (writer == nullptr)
-            //    {
-            //        writer = candidate_writer;
-            //    }
-            //}
-            //// Or if there is a writer with the exact host-name use it instead.
-            //else if (writer->hostname() == resource_uri.host())
-            //{
-            //    writer = candidate_writer;
-            //}
+
+            // We only allow to create resources for specific writers.
+            if (candidate_writer->hostname() == resource_uri.host())
+            {
+                writer = candidate_writer;
+            }
             it = ice::multi_hashmap::find_next(_resource_writers, it);
         }
 
+        ice::Resource* resource = writer->find_resource(resource_uri);
+        if (resource == nullptr)
+        {
+            resource = co_await writer->create_resource(
+                resource_uri, ResourceCreationFlags::Overwrite
+            );
 
-        [[maybe_unused]]
-        ice::Resource const* resource = co_await writer->create_resource(
-            resource_uri, ResourceCreationFlags::Overwrite
-        );
+            // TODO: Only save the new resource if it's not yet there.
+            ice::multi_hashmap::insert(_resources, ice::hash(resource->name()), resource);
+        }
 
-        co_return E_Fail;//  writer != nullptr;
+        co_return ice::ResourceHandle{ resource };
+    }
+
+    auto ResourceTrackerImplementation::write_resource(
+        ice::URI const& uri,
+        ice::Data data,
+        ice::usize write_offset
+    ) noexcept -> ice::Task<bool>
+    {
+        ice::ResourceHandle resource = co_await create_resource(uri);
+        ice::ResourceWriter* const writer = static_cast<ice::ResourceWriter*>(ice::internal_provider(resource));
+        co_return co_await writer->write_resource(resource, data, write_offset);
+    }
+
+    auto ResourceTrackerImplementation::write_resource(
+        ice::ResourceHandle const& resource,
+        ice::Data data,
+        ice::usize write_offset
+    ) noexcept -> ice::Task<bool>
+    {
+        ice::ResourceWriter* const writer = static_cast<ice::ResourceWriter*>(ice::internal_provider(resource));
+        co_return co_await writer->write_resource(resource, data, write_offset);
     }
 
     auto ResourceTrackerImplementation::find_resource_by_urn(
@@ -327,6 +347,7 @@ namespace ice
             return {};
         }
 
+        // TODO: Remove this abomination, we only need to remove the const'ness in the 'find' functions for the resource object.
         ice::u64 const hash_resouce = ice::hash(resource->name());
         auto it = ice::multi_hashmap::find_first(_resources, hash_resouce);
         while (it != nullptr && handle == nullptr)

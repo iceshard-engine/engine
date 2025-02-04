@@ -372,7 +372,7 @@ namespace ice
 
     auto HailStormResourceProvider::find_resource(
         ice::URI const& uri
-    ) const noexcept -> ice::Resource const*
+    ) const noexcept -> ice::Resource*
     {
         u32 idx = ice::u32_max;
         auto it = ice::multi_hashmap::find_first(_entrymap, ice::hash(uri.path()));

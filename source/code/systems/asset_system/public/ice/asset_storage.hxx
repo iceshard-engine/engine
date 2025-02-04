@@ -26,6 +26,8 @@ namespace ice
     public:
         virtual ~AssetStorage() = default;
 
+        virtual auto resources() noexcept -> ice::ResourceTracker& = 0;
+
         virtual auto bind(
             ice::AssetCategory_Arg category,
             ice::String name
