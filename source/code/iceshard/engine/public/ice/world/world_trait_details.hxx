@@ -4,6 +4,7 @@
 #pragma once
 #include <ice/world/world_trait_types.hxx>
 #include <ice/assert.hxx>
+#include <ice/task.hxx>
 
 namespace ice::detail
 {

@@ -37,4 +37,4 @@ namespace ice
 } // namespace ice
 
 template<>
-inline constexpr ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::WorldStateParams const*> = ice::shard_payloadid("ice::WorldStateParams const*");
+constexpr inline ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::WorldStateParams const*> = ice::shard_payloadid("ice::WorldStateParams const*");

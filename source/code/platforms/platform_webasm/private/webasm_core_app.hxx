@@ -9,6 +9,7 @@
 #include <ice/shard_container.hxx>
 #include <ice/task_queue.hxx>
 #include <ice/task_thread.hxx>
+#include <ice/sync_manual_events.hxx>
 #include <ice/app.hxx>
 
 #include <ice/input/device_event_queue.hxx>
@@ -49,6 +50,7 @@ namespace ice::platform::webasm
     protected:
         ice::HostAllocator _allocator;
         ice::UniquePtr<WebASM_Threads> _threads;
+        ice::ManualResetEvent _wait;
 
     private:
         ice::app::Factories _factories;

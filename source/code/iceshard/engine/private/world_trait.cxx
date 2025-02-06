@@ -38,7 +38,7 @@ namespace ice
 
     void Trait::send(ice::ShardID shardid) noexcept
     {
-        _context.send({ shardid });
+        _context.send({ ice::Shard{ shardid } });
     }
 
     void Trait::send(ice::ShardID shardid, ice::Asset asset) noexcept

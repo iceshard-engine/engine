@@ -34,7 +34,7 @@ namespace ice::gfx
 } // namespace ice::gfx
 
 template<>
-inline constexpr ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::gfx::GfxFrameUpdate const*> = ice::shard_payloadid("ice::gfx::GfxFrameUpdate const*");
+constexpr inline ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::gfx::GfxFrameUpdate const*> = ice::shard_payloadid("ice::gfx::GfxFrameUpdate const*");
 
 template<>
-inline constexpr ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::gfx::GfxStateChange const*> = ice::shard_payloadid("ice::gfx::GfxStateChange const*");
+constexpr inline ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::gfx::GfxStateChange const*> = ice::shard_payloadid("ice::gfx::GfxStateChange const*");

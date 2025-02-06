@@ -66,9 +66,10 @@ namespace ice::devui
     ImGuiSystem::ImGuiSystem(ice::Allocator& alloc) noexcept
         : _allocator{ alloc, "ImGUI-System" }
         , _builtin_widgets{ alloc }
-        , _widget_manager{ _allocator }
-        , _widget_logger{ _allocator }
         , _menu_categories{ _allocator }
+        , _widget_manager{ _allocator }
+        , _widget_frame{ }
+        , _widget_logger{ _allocator }
     {
         ice::array::push_back(_builtin_widgets, create_allocator_tree_widget(_allocator));
         // ice::array::push_back(_builtin_widgets, (ice::UniquePtr<ice::DevUIWidget>) ice::make_unique<ImGuiLogger>(_allocator, _allocator));
@@ -80,6 +81,10 @@ namespace ice::devui
         {
             _widget_manager.add_widget(widget.get());
         }
+
+        // Setup default main-menu categories
+        ice::String categories[]{ "File", "Settings", "Engine", "Tools", "Help" };
+        setup_mainmenu(categories);
     }
 
     ImGuiSystem::~ImGuiSystem() noexcept
