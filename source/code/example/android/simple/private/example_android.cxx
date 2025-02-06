@@ -54,7 +54,7 @@ struct TestTrait : public ice::Trait
 
     auto activate(ice::WorldStateParams const& update) noexcept -> ice::Task<> override
     {
-        timer = ice::timer::create_timer(update.clock, 1.0f);
+        timer = ice::timer::create_timer(update.clock, 1_Ts);
         co_return;
     }
 
