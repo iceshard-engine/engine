@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "engine_state_tracker_default.hxx"
@@ -212,6 +212,9 @@ namespace ice
             }
             else
             {
+                // Output temporary shards since they might trigger other events.
+                ice::shards::push_back(out_shards, temp_shards._data);
+
                 // Clear temporary shards so we can escape the loop normally.
                 ice::shards::clear(temp_shards);
             }

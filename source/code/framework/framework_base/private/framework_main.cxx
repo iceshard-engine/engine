@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/framework_app.hxx>
@@ -563,9 +563,6 @@ auto ice_game_frame(
 {
     IPT_FRAME_MARK;
 
-    // Apply changes to entities on frame start this allows us to always start the frame with changes applied freshly.
-    co_await runtime.runner->pre_update(runtime.frame->shards());
-
     state.platform.core->refresh_events();
     ice::ShardContainer const& system_events = state.platform.core->system_events();
 
@@ -577,7 +574,12 @@ auto ice_game_frame(
     // Push system events
     ice::shards::push_back(new_frame->shards(), system_events._data);
 
-    // Update inputs
+    // Push previous frame events
+    //   Also runs other logic that should be done without interfeerence from
+    //   game systems and logic
+    co_await runtime.runner->pre_update(new_frame->shards());
+
+    // Push input events
     ice::array::clear(runtime.input_events);
     runtime.input_tracker->process_device_events(state.platform.core->input_events(), runtime.input_events);
     ice_process_input_events(runtime.input_events, new_frame->shards());

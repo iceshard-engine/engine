@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_runner.hxx"
@@ -123,9 +123,14 @@ namespace ice
     {
         IPT_ZONE_SCOPED;
         ice::TaskContainer& current_tasks = frame.tasks_container();
-        ice::EngineFrameUpdate const frame_update{
+
+        ice::TraitParams const trait_params{
             .clock = _clock,
+            .resources = _engine.assets().resources(),
             .assets = _engine.assets(),
+        };
+
+        ice::EngineFrameUpdate const frame_update{
             .frame = frame,
             .last_frame = previous_frame,
             .thread = _schedulers,
@@ -135,8 +140,9 @@ namespace ice
         {
             IPT_ZONE_SCOPED_NAMED("gather_tasks");
             ice::Shard const update_shard[]{ ice::ShardID_FrameUpdate | &frame_update };
-            world_updater.update(current_tasks, { update_shard });
-            world_updater.update(current_tasks, previous_frame.shards());
+
+            world_updater.update(current_tasks, trait_params, frame.shards());
+            world_updater.update(current_tasks, trait_params, { update_shard });
         }
 
         co_await current_tasks.await_tasks_scheduled_on(_schedulers.main, _schedulers.main);

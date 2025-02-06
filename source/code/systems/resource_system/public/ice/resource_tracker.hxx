@@ -14,7 +14,7 @@
 #include <ice/task.hxx>
 #include <ice/task_flags.hxx>
 #include <ice/task_scheduler.hxx>
-#include <ice/expected.hxx>
+#include <ice/task_expected.hxx>
 
 namespace ice
 {

@@ -20,6 +20,12 @@ namespace ice
         virtual auto activate(ice::WorldStateParams const& world_update) noexcept -> ice::Task<> { co_return; }
         virtual auto deactivate(ice::WorldStateParams const& world_update) noexcept -> ice::Task<> { co_return; }
 
+    public:
+        void send(ice::Shard shard) noexcept;
+        void send(ice::ShardID shardid) noexcept;
+        void send(ice::ShardID shardid, ice::Asset handle) noexcept;
+        void send(ice::ShardID shardid, ice::ResourceHandle handle) noexcept;
+
     protected:
         ice::TraitContext& _context;
     };

@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -12,7 +12,6 @@ namespace ice::gfx
 
     struct GfxStateChange
     {
-        ice::AssetStorage& assets;
         ice::gfx::GfxContext& context;
         ice::gfx::GfxFrameStages& stages;
         ice::gfx::GfxStageRegistry& registry;
@@ -20,8 +19,6 @@ namespace ice::gfx
 
     struct GfxFrameUpdate
     {
-        ice::Clock const& clock;
-        ice::AssetStorage& assets;
         ice::EngineFrame const& frame;
         ice::gfx::GfxContext& context;
         ice::gfx::GfxFrameStages& stages;

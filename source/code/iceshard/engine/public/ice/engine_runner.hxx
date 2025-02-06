@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -34,8 +34,6 @@ namespace ice
 
     struct EngineFrameUpdate
     {
-        ice::Clock const& clock;
-        ice::AssetStorage& assets;
         ice::EngineFrame& frame;
         ice::EngineFrame const& last_frame;
         ice::EngineSchedulers thread;

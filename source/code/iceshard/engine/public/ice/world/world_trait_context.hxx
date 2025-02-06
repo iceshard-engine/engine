@@ -16,9 +16,9 @@ namespace ice
     public:
         virtual ~TraitContext() noexcept = default;
 
-        virtual void register_interface_selector(ice::InterfaceSelector* selector) noexcept = 0;
+        virtual void send(ice::detail::TraitEvent event) noexcept = 0;
 
-        virtual auto checkpoint(ice::StringID id) noexcept -> ice::TaskCheckpointGate = 0;
+                virtual auto checkpoint(ice::StringID id) noexcept -> ice::TaskCheckpointGate = 0;
         virtual bool register_checkpoint(ice::StringID id, ice::TaskCheckpoint& checkpoint) noexcept = 0;
         virtual void unregister_checkpoint(ice::StringID id, ice::TaskCheckpoint& checkpoint) noexcept = 0;
 
@@ -29,6 +29,8 @@ namespace ice
 
         template<auto MemberPtr, typename DataType>
         auto bind(ice::ShardID event = ice::Shard_Invalid, void* userdata = nullptr) noexcept -> ice::Result;
+
+                virtual void register_interface_selector(ice::InterfaceSelector* selector) noexcept = 0;
 
         template<typename T, typename... Args>
         auto make_unique(ice::Allocator& alloc, Args&&... args) noexcept -> ice::UniquePtr<T>

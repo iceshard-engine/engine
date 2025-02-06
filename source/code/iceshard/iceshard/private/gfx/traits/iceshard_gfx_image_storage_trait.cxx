@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_gfx_image_storage_trait.hxx"
@@ -7,6 +7,7 @@
 #include <ice/config.hxx>
 #include <ice/devui_imgui.hxx>
 #include <ice/engine_runner.hxx>
+#include <ice/engine_types_mappers.hxx>
 #include <ice/gfx/gfx_context.hxx>
 #include <ice/render/render_buffer.hxx>
 #include <ice/render/render_command_buffer.hxx>
@@ -46,10 +47,13 @@ namespace ice::gfx
         co_return;
     }
 
-    auto Trait_GfxImageStorage::gfx_update(ice::gfx::GfxFrameUpdate const& params) noexcept -> ice::Task<>
+    auto Trait_GfxImageStorage::gfx_update(
+        ice::gfx::GfxFrameUpdate const& params,
+        ice::AssetStorage& assets
+    ) noexcept -> ice::Task<>
     {
         // Handle up to 4 requests at the same time each frame.
-        ice::AssetRequest* request = params.assets.aquire_request(ice::render::AssetCategory_Texture2D, AssetState::Runtime);
+        ice::AssetRequest* request = assets.aquire_request(ice::render::AssetCategory_Texture2D, AssetState::Runtime);
         while(request != nullptr)
         {
             ice::AssetState const state = request->state();

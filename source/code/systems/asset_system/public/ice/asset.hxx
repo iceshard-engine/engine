@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -39,6 +39,8 @@ namespace ice
 
     struct Asset
     {
+        ice::AssetHandle* _handle = nullptr;
+
         Asset() noexcept = default;
         explicit Asset(ice::AssetHandle* handle) noexcept;
         ~Asset() noexcept;
@@ -69,9 +71,6 @@ namespace ice
         ) const noexcept -> ice::AssetStateTransaction;
 
         void finish_transaction(ice::AssetStateTransaction& transaction) const noexcept;
-
-    private:
-        ice::AssetHandle* _handle = nullptr;
     };
 
 } // namespace ice

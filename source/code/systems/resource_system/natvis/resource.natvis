@@ -64,9 +64,9 @@
   </Type>
 
   <Type Name="ice::ResourceHandle">
-    <DisplayString>{*resource}</DisplayString>
+    <DisplayString>{*_resource}</DisplayString>
     <Expand>
-      <ExpandedItem>*resource</ExpandedItem>
+      <ExpandedItem>*_resource</ExpandedItem>
     </Expand>
   </Type>
 
@@ -100,6 +100,18 @@
 
   <Type Name="ice::LooseFilesResource">
     <DisplayString ExcludeView="Path">Resource (lose-files) {{ {_origin_name._data,s8b} }}</DisplayString>
+    <DisplayString IncludeView="Path">{_origin_name._data,s8}</DisplayString>
+    <Expand>
+      <Item Name="[origin_path]">_origin_path</Item>
+      <Item Name="[origin_name]">_origin_name</Item>
+      <Item Name="[uri_path]">_uri_path</Item>
+      <Item Name="[uri]">_uri</Item>
+      <ExpandedItem>(ice::ResourceInternal*)(((char*)this)-40)</ExpandedItem>
+    </Expand>
+  </Type>
+
+  <Type Name="ice::WritableFileResource">
+    <DisplayString ExcludeView="Path">Resource (writable) {{ {_origin_name._data,s8b} }}</DisplayString>
     <DisplayString IncludeView="Path">{_origin_name._data,s8}</DisplayString>
     <Expand>
       <Item Name="[origin_path]">_origin_path</Item>

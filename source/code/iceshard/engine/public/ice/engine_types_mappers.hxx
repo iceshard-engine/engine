@@ -36,6 +36,52 @@ struct ice::detail::ArgMapper<ice::AssetStorage&>
     static auto select(ice::TraitParams const& params, Source&&) noexcept -> ice::AssetStorage& { return params.assets; }
 };
 
+template<>
+struct ice::detail::ArgMapper<ice::Asset>
+{
+    using ShardType = ice::AssetHandle*;
+
+    static constexpr bool FromTraitParams = false;
+
+    static auto select(ice::TraitParams const&, ice::AssetHandle* handle) noexcept -> ice::Asset { return ice::Asset{ handle }; }
+};
+
+template<>
+struct ice::detail::ArgMapper<ice::ResourceHandle>
+{
+    using ShardType = ice::Resource*;
+
+    static constexpr bool FromTraitParams = false;
+
+    static auto select(ice::TraitParams const&, ice::Resource* handle) noexcept -> ice::ResourceHandle { return ice::ResourceHandle{ handle }; }
+};
+
+template<>
+struct ice::detail::ArgMapper<ice::URI>
+{
+    using ShardType = char const*;
+
+    static constexpr bool FromTraitParams = false;
+
+    static auto select(ice::TraitParams const&, char const* uri_raw) noexcept -> ice::URI
+    {
+        return ice::URI{ uri_raw };
+    }
+};
+
+template<>
+struct ice::detail::ArgMapper<ice::String>
+{
+    using ShardType = char const*;
+
+    static constexpr bool FromTraitParams = false;
+
+    static auto select(ice::TraitParams const&, char const* cstr) noexcept -> ice::String
+    {
+        return ice::String{ cstr };
+    }
+};
+
 template<ice::concepts::NamedDataType NamedType>
 struct ice::detail::ArgMapper<NamedType const&>
 {

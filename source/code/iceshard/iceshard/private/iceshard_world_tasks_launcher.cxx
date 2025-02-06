@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_world.hxx"
@@ -29,6 +29,7 @@ namespace ice
 
     void IceshardTasksLauncher::gather(
         ice::TaskContainer& task_container,
+        ice::TraitParams const& trait_params,
         ice::Shard shard
     ) noexcept
     {
@@ -43,7 +44,11 @@ namespace ice
         {
             ice::IceshardEventHandler const& handler = it.value();
 
-            *out_it = handler.event_handler(_traits[handler.trait_idx]->trait.get(), shard, _task_tracker);
+            void* const userdata = handler.procedure_userdata != nullptr
+                ? handler.procedure_userdata
+                : _traits[handler.trait_idx]->trait.get();
+
+            *out_it = handler.procedure(userdata, trait_params, shard);
 
             out_it += 1;
             it = ice::multi_hashmap::find_next(_world_context._frame_handlers, it);
@@ -52,6 +57,7 @@ namespace ice
 
     void IceshardTasksLauncher::gather(
         ice::TaskContainer& out_tasks,
+        ice::TraitParams const& trait_params,
         ice::Span<ice::Shard const> shards
     ) noexcept
     {
@@ -59,12 +65,13 @@ namespace ice
 
         for (ice::Shard shard : shards)
         {
-            this->gather(out_tasks, shard);
+            this->gather(out_tasks, trait_params, shard);
         }
     }
 
     void IceshardTasksLauncher::execute(
         ice::Array<ice::Task<>, ice::ContainerLogic::Complex>& out_tasks,
+        ice::TraitParams const& trait_params,
         ice::Shard shard
     ) noexcept
     {
@@ -75,10 +82,15 @@ namespace ice
         {
             ice::IceshardEventHandler const& handler = it.value();
 
+
+            void* const userdata = handler.procedure_userdata != nullptr
+                ? handler.procedure_userdata
+                : _traits[handler.trait_idx]->trait.get();
+
             //ICE_ASSERT(ice::array::count(out_tasks) < ice::array::capacity(out_tasks), "Maximum number of tasks suppored by default launcher reached!");
             ice::array::push_back(
                 out_tasks,
-                handler.event_handler(_traits[handler.trait_idx]->trait.get(), shard, _task_tracker)
+                handler.procedure(userdata, trait_params, shard)
             );
 
             it = ice::multi_hashmap::find_next(_world_context._frame_handlers, it);
@@ -87,15 +99,18 @@ namespace ice
     }
 
     void IceshardTasksLauncher::execute(
-        ice::Array<ice::Task<>, ice::ContainerLogic::Complex>& out_tasks,
-        ice::ShardContainer const& shards) noexcept
+        ice::Array<ice::Task<>,
+        ice::ContainerLogic::Complex>& out_tasks,
+        ice::TraitParams const& trait_params,
+        ice::ShardContainer const& shards
+    ) noexcept
     {
         IPT_ZONE_SCOPED;
 
         // Not optimal, but for now sufficient
         for (ice::Shard shard : shards)
         {
-            execute(out_tasks, shard);
+            execute(out_tasks, trait_params, shard);
         }
     }
 

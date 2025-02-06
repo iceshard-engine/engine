@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -43,12 +43,14 @@ namespace ice
 
         void update(
             ice::TaskContainer& out_tasks,
+            ice::TraitParams const& trait_params,
             ice::Span<ice::Shard const> event_shards
         ) noexcept override;
 
         void update(
             ice::StringID_Arg world_name,
             ice::TaskContainer& out_tasks,
+            ice::TraitParams const& trait_params,
             ice::Span<ice::Shard const> event_shards
         ) noexcept override;
 

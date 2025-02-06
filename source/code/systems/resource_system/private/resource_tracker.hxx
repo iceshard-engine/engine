@@ -18,6 +18,8 @@
 #include <ice/path_utils.hxx>
 #include <ice/devui_widget.hxx>
 
+#include "resource_internal.hxx"
+
 namespace ice
 {
 

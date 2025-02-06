@@ -17,6 +17,8 @@ namespace ice::detail
     template<typename Target>
     struct ArgMapper
     {
+        using ShardType = Target;
+
         static constexpr bool FromTraitParams = false;
 
         template<typename Source>
@@ -37,18 +39,11 @@ namespace ice::detail
         virtual void report_finish(ice::u32 id) noexcept = 0;
     };
 
-    template<typename T>
-    struct TraitEvent{ };
-
-    template<typename Class, typename... Args>
-    struct TraitEvent<ice::Task<>(Class::*)(Args...) noexcept>
+    struct TraitEvent : ice::Shard
     {
-        using MethodFn = ice::Task<>(Class::*)(Args...) noexcept;
-        using ArgList = std::tuple<Args..., void>;
-        using Arg0 = std::tuple_element_t<0, ArgList>;
-
-        static constexpr ice::u32 Count_Arguments = sizeof...(Args);
-
+        using FnOnExpire = void(*)(void*, ice::Shard) noexcept;
+        FnOnExpire fn_on_expire;
+        void* ud_on_expire;
     };
 
     template<typename DataType, typename Class, typename... Args>
@@ -61,6 +56,7 @@ namespace ice::detail
     {
         using ArgList = std::tuple<Args..., void>;
         using Arg0 = typename std::tuple_element_t<0, ArgList>;
+        using ShardType = typename ArgMapper<DataType>::ShardType;
 
         if constexpr (sizeof...(Args) == 0)
         {
@@ -68,7 +64,7 @@ namespace ice::detail
         }
         else
         {
-            if constexpr (std::is_reference_v<DataType> && ice::HasShardPayloadID<ice::clear_type_t<DataType>*> == false)
+            if constexpr (std::is_reference_v<ShardType> && ice::HasShardPayloadID<ice::clear_type_t<ShardType>*> == false)
             {
                 co_await (reinterpret_cast<Class*>(userdata)->*Method)(
                     ice::detail::ArgMapper<Args>::select(trait_params, trait_params)...
@@ -76,7 +72,7 @@ namespace ice::detail
             }
             else if constexpr (std::is_reference_v<DataType>)
             {
-                using ArgType = ice::clear_type_t<DataType>;
+                using ArgType = ice::clear_type_t<ShardType>;
                 ICE_ASSERT(
                     ice::Constant_ShardPayloadID<ArgType*> == shard.id.payload,
                     "Shard payload ID incompatible with the argument. {} != {}",
@@ -93,7 +89,7 @@ namespace ice::detail
             }
             else
             {
-                using ArgType = DataType;
+                using ArgType = ShardType;
                 ICE_ASSERT(
                     ice::Constant_ShardPayloadID<ArgType> == shard.id.payload,
                     "Shard payload ID incompatible with the argument. {} != {}",

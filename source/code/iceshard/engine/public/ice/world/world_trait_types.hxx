@@ -48,3 +48,9 @@ namespace ice::detail
     struct TraitContextImpl;
 
 } // namespace ice::detail
+
+template<>
+constexpr inline ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::AssetHandle*> = ice::shard_payloadid("ice::Asset");
+
+template<>
+constexpr inline ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::Resource*> = ice::shard_payloadid("ice::ResourceHandle");

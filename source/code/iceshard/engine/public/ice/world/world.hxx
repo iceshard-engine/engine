@@ -1,10 +1,10 @@
-/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/data_storage.hxx>
 #include <ice/ecs/ecs_entity_storage.hxx>
-#include <ice/engine_types.hxx>
+#include <ice/world/world_trait_types.hxx>
 #include <ice/engine_state.hxx>
 #include <ice/span.hxx>
 

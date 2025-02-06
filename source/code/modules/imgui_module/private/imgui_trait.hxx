@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -8,6 +8,7 @@
 #include <ice/asset_storage.hxx>
 #include <ice/clock.hxx>
 
+#include "imgui_system.hxx"
 #include "imgui_gfx_stage.hxx"
 
 namespace ice::devui
@@ -37,7 +38,11 @@ namespace ice::devui
         auto trait_name() const noexcept -> ice::String override { return "ImGui.DevUI"; };
 
     public: // Gfx State Events
-        auto gfx_start(ice::gfx::GfxStateChange const& params) noexcept -> ice::Task<>;
+        auto gfx_start(
+            ice::gfx::GfxStateChange const& params,
+            ice::AssetStorage& assets
+        ) noexcept -> ice::Task<>;
+
         auto gfx_shutdown(ice::gfx::GfxStateChange const& params) noexcept -> ice::Task<>;
         auto gfx_update(ice::gfx::GfxFrameUpdate const& update) noexcept -> ice::Task<>;
 

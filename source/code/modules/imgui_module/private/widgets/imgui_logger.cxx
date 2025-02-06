@@ -1,14 +1,17 @@
+/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "imgui_logger.hxx"
 
 #include <ice/color.hxx>
 #include <ice/devui_imgui.hxx>
-#include <ice/log_severity.hxx>
-#include <ice/log_tag.hxx>
+#include <ice/log.hxx>
 #include <ice/math.hxx>
 #include <ice/mem_allocator_host.hxx>
 #include <ice/sort.hxx>
 #include <ice/string/heap_string.hxx>
 #include <ice/string/static_string.hxx>
+#include <ice/string_utils.hxx>
 
 #include <rapidfuzz/distance.hpp>
 #include <rapidfuzz/fuzz.hpp>

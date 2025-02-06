@@ -8,22 +8,22 @@ namespace ice
 {
 
     ResourceHandle::ResourceHandle(ice::Resource* resource) noexcept
-        : resource{ ice::internal_aquire(resource) }
+        : _resource{ ice::internal_aquire(resource) }
     {
     }
 
     ResourceHandle::~ResourceHandle() noexcept
     {
-        ice::internal_release(resource);
+        ice::internal_release(_resource);
     }
 
     ResourceHandle::ResourceHandle(ResourceHandle&& other) noexcept
-        : resource{ ice::exchange(other.resource, nullptr) }
+        : _resource{ ice::exchange(other._resource, nullptr) }
     {
     }
 
     ResourceHandle::ResourceHandle(ResourceHandle const& other) noexcept
-        : resource{ ice::internal_aquire(other.resource) }
+        : _resource{ ice::internal_aquire(other._resource) }
     {
     }
 
@@ -31,12 +31,12 @@ namespace ice
     {
         if (this != ice::addressof(other))
         {
-            if (resource != nullptr)
+            if (_resource != nullptr)
             {
-                ice::internal_release(resource);
+                ice::internal_release(_resource);
             }
 
-            resource = ice::exchange(other.resource, nullptr);
+            _resource = ice::exchange(other._resource, nullptr);
         }
         return *this;
     }
@@ -45,12 +45,12 @@ namespace ice
     {
         if (this != ice::addressof(other))
         {
-            if (resource != nullptr)
+            if (_resource != nullptr)
             {
-                ice::internal_release(resource);
+                ice::internal_release(_resource);
             }
 
-            resource = ice::internal_aquire(other.resource);
+            _resource = ice::internal_aquire(other._resource);
         }
         return *this;
     }

@@ -7,6 +7,7 @@
 #include <ice/module_types.hxx>
 #include <ice/devui_types.hxx>
 #include <ice/string/string.hxx>
+#include <ice/span.hxx>
 
 namespace ice::api
 {

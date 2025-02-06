@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_world.hxx"
@@ -31,6 +31,12 @@ namespace ice
         _entity_operations.clear();
 
         _context->close_checkpoints();
+
+        // Sync trait events
+        for (ice::UniquePtr<ice::IceshardTraitContext>& trait : _traits)
+        {
+            trait->sync(out_shards);
+        }
 
         if (_devui != nullptr && _devui->world_operation != ice::Shard_Invalid)
         {
