@@ -26,6 +26,9 @@ namespace ice
         , _devui_widget{ }
     {
         ice::native_file::path_from_string(_base_path, base_path);
+
+        // Ensure the directory exists
+        ice::native_file::create_directory(_base_path);
     }
 
     FileSystemResourceWriter::~FileSystemResourceWriter() noexcept
@@ -36,7 +39,7 @@ namespace ice
         }
         for (WritableFileSystemResource* res_entry : _resources)
         {
-            _named_allocator.destroy(res_entry);
+            ice::destroy_resource_object(_named_allocator, res_entry);
         }
     }
 
@@ -211,6 +214,11 @@ namespace ice
             //  to have access to both paths.
             predicted_path_len = ice::string::size(predicted_metapath);
             ice::string::push_back(predicted_metapath, ISP_PATH_LITERAL(".isrm"));
+
+            // Create the final directory
+            // #TODO: Research if checking for existance improves performance.
+            bool const success = ice::native_file::create_directory(ice::path::directory(predicted_metapath));
+            ICE_ASSERT_CORE(success);
         }
 
         ice::FileSystemResource* new_resource = this->create_loose_resource(
@@ -229,12 +237,12 @@ namespace ice
     }
 
     auto FileSystemResourceWriter::write_resource(
-        ice::Resource const* resource,
+        ice::Resource* resource,
         ice::Data data,
         ice::usize write_offset
     ) noexcept -> ice::Task<bool>
     {
-        ice::WritableFileResource const* const writable = static_cast<ice::WritableFileResource const*>(resource);
+        ice::WritableFileResource* const writable = static_cast<ice::WritableFileResource*>(resource);
         ice::usize const result = co_await writable->write_data(_data_allocator, data, write_offset, {}, _aioport);
         co_return result > 0_B;
     }

@@ -22,7 +22,7 @@ namespace ice
     struct ResourceResult
     {
         ice::ResourceStatus resource_status;
-        ice::Resource const* resource;
+        ice::ResourceHandle resource;
         ice::Data data;
     };
 

@@ -221,7 +221,7 @@ namespace ice
         ice::usize write_offset,
         ice::String fragment,
         ice::native_aio::AIOPort aioport
-    ) const noexcept -> ice::TaskExpected<ice::usize>
+    ) noexcept -> ice::TaskExpected<ice::usize>
     {
         using enum ice::native_file::FileOpenFlags;
 
@@ -237,6 +237,8 @@ namespace ice
         ice::native_file::File file = ice::move(result).value();
         ice::detail::WriterAwaitable awaitable{ aioport, file, (ice::isize) write_offset, data };
         co_await awaitable;
+
+        _datasize = data.size;
         co_return data.size;
     }
 

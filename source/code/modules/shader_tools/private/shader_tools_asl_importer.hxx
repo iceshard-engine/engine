@@ -18,7 +18,7 @@ namespace ice
     {
         virtual ~ASLScriptLoader() noexcept = default;
 
-        virtual auto load_source(arctic::String import_path) noexcept -> arctic::String = 0;
+        virtual auto load_source(arctic::String import_path, ice::ResourceHandle& res) noexcept -> arctic::String = 0;
     };
 
     auto create_script_loader(
@@ -49,6 +49,7 @@ namespace ice
         {
             arctic::String path;
             ice::UniquePtr<ASLScriptFile> file;
+            ice::ResourceHandle resource;
         };
 
         ice::ASLAllocator& _allocator;

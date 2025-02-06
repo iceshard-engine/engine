@@ -33,7 +33,7 @@ namespace ice
             ice::usize write_offset,
             ice::String fragment,
             ice::native_aio::AIOPort aioport
-        ) const noexcept -> ice::TaskExpected<ice::usize> = 0;
+        ) noexcept -> ice::TaskExpected<ice::usize> = 0;
     };
 
 } // namespace ice

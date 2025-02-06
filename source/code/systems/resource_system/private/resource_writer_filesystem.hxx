@@ -82,7 +82,7 @@ namespace ice
         ) noexcept -> ice::TaskExpected<ice::Resource*> override;
 
         auto write_resource(
-            ice::Resource const* resource,
+            ice::Resource* resource,
             ice::Data data,
             ice::usize write_offset = 0_B
         ) noexcept -> ice::Task<bool> override;

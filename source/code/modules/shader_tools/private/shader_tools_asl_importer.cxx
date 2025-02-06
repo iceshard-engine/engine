@@ -23,7 +23,7 @@ namespace ice
             , _tracker{ tracker }
         { }
 
-        auto load_source(arctic::String import_path) noexcept -> arctic::String override
+        auto load_source(arctic::String import_path, ice::ResourceHandle& out_res) noexcept -> arctic::String override
         {
             IPT_ZONE_SCOPED;
 
@@ -47,6 +47,9 @@ namespace ice
             {
                 return {};
             }
+
+            // Keep the handle so the resource won't get unloaded.
+            out_res = res.resource;
 
             // Return the script contents
             return arctic::String{ (char const*)res.data.location, res.data.size.value };
@@ -158,7 +161,8 @@ namespace ice
         }
 
         // Try to access the source
-        arctic::String source = _resolver.load_source(import_path);
+        ice::ResourceHandle resource;
+        arctic::String source = _resolver.load_source(import_path, resource);
         if (source.empty())
         {
             return;
@@ -167,7 +171,8 @@ namespace ice
         // Create a new entry since it's the first time we see this import
         Entry import_entry{
             .path = import_path,
-            .file = parse_import_file(_allocator, *this, _script_visitors, source, import_alias)
+            .file = parse_import_file(_allocator, *this, _script_visitors, source, import_alias),
+            .resource = resource
         };
         if (import_entry.file == nullptr)
         {

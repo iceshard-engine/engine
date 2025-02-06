@@ -63,7 +63,7 @@ namespace ice
             ice::usize write_offset,
             ice::String fragment,
             ice::native_aio::AIOPort aioport
-        ) const noexcept -> ice::TaskExpected<ice::usize> override;
+        ) noexcept -> ice::TaskExpected<ice::usize> override;
 
     private:
         ice::Allocator& _allocator;

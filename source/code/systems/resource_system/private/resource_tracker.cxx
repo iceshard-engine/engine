@@ -3,6 +3,7 @@
 
 #include "resource_tracker.hxx"
 #include "resource_internal.hxx"
+
 #include <ice/sync_manual_events.hxx>
 
 namespace ice
@@ -101,37 +102,13 @@ namespace ice
         {
             ice::array::clear(temp_resources);
 
-            ice::ResourceProviderResult const refresh_result = provider->refresh(temp_resources);
-            if (refresh_result == ResourceProviderResult::Failure)
-            {
-                ICE_LOG(
-                    ice::LogSeverity::Warning, ice::LogTag::Engine,
-                    "Failed to refresh resource provider for scheme: {}",
-                    ice::stringid_hint(provider->schemeid())
-                );
-                continue;
-            }
+            this->sync_provider(temp_resources, *provider);
+        }
+        for (auto const& writer : _resource_writers)
+        {
+            ice::array::clear(temp_resources);
 
-            ice::ucount const new_count = ice::hashmap::count(_resources) + ice::array::count(temp_resources);
-            ICE_ASSERT(
-                new_count <= _info.predicted_resource_count,
-                "Maximum resource capacity of {} entiries reached!",
-                _info.predicted_resource_count
-            );
-
-            ice::hashmap::reserve(_resources, new_count);
-
-            // Store all resource handles
-            IPT_ZONE_SCOPED_NAMED("create_hash_entries");
-            for (ice::Resource* resource : temp_resources)
-            {
-
-                ice::multi_hashmap::insert(
-                    _resources,
-                    ice::hash(resource->name()),
-                    resource
-                );
-            }
+            this->sync_provider(temp_resources, *writer);
         }
     }
 
@@ -308,6 +285,43 @@ namespace ice
     {
         ice::ResourceWriter* const writer = static_cast<ice::ResourceWriter*>(ice::internal_provider(resource));
         co_return co_await writer->write_resource(resource, data, write_offset);
+    }
+
+    void ResourceTrackerImplementation::sync_provider(
+        ice::Array<ice::Resource*>& out_resources,
+        ice::ResourceProvider& provider
+    ) noexcept
+    {
+        ice::ResourceProviderResult const refresh_result = provider.refresh(out_resources);
+        if (refresh_result == ResourceProviderResult::Failure)
+        {
+            ICE_LOG(
+                ice::LogSeverity::Warning, ice::LogTag::Engine,
+                "Failed to refresh resource provider for scheme: {}",
+                ice::stringid_hint(provider.schemeid())
+            );
+            return;
+        }
+
+        ice::ucount const new_count = ice::hashmap::count(_resources) + ice::array::count(out_resources);
+        ICE_ASSERT(
+            new_count <= _info.predicted_resource_count,
+            "Maximum resource capacity of {} entiries reached!",
+            _info.predicted_resource_count
+        );
+
+        ice::hashmap::reserve(_resources, new_count);
+
+        // Store all resource handles
+        IPT_ZONE_SCOPED_NAMED("create_hash_entries");
+        for (ice::Resource* resource : out_resources)
+        {
+            ice::multi_hashmap::insert(
+                _resources,
+                ice::hash(resource->name()),
+                resource
+            );
+        }
     }
 
     auto ResourceTrackerImplementation::find_resource_by_urn(

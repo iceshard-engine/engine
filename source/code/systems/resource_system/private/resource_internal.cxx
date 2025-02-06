@@ -89,7 +89,10 @@ namespace ice
             if (prev_count == 1)
             {
                 // TODO: When unloading properly reset the resource status.
-                //internal->_provider.unload_resource(resource);
+                internal->_reqcount.store(0, std::memory_order_relaxed);
+                internal->_status = ice::ResourceStatus::Available;
+                internal->_last_data = {};
+                internal->_provider.unload_resource(resource);
             }
         }
     }

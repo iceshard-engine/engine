@@ -34,6 +34,11 @@ namespace ice
     {
         if (this != ice::addressof(other))
         {
+            if (_handle != nullptr)
+            {
+                this->release();
+            }
+
             _handle = ice::exchange(other._handle, nullptr);
         }
         return *this;

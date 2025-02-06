@@ -143,6 +143,11 @@ namespace ice
         class DevUI;
 
     protected:
+        void sync_provider(
+            ice::Array<ice::Resource*>& out_resources,
+            ice::ResourceProvider& provider
+        ) noexcept;
+
         auto find_resource_by_urn(
             ice::URI const& resoure_uri,
             ice::ResourceFlags flags
