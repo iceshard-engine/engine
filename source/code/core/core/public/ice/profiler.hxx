@@ -3,6 +3,7 @@
 
 #pragma once
 #include <ice/types.hxx>
+#include <ice/build/build.hxx>
 
 #if (ICE_PROFILE || ICE_DEVELOP) && !ISP_WEBAPP
 

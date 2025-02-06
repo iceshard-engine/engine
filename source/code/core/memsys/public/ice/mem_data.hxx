@@ -77,7 +77,7 @@ namespace ice
         {
             ICE_ASSERT_CORE(source.alignment >= ice::align_of<T>);
             out_value = *reinterpret_cast<T const*>(source.location);
-            source.location = &out_value + 1;
+            source.location = ice::ptr_add(source.location, ice::size_of<T>);
             source.size = ice::usize{ source.size.value - ice::size_of<T>.value };
             source.alignment = ice::align_of<T>;
             return source;
