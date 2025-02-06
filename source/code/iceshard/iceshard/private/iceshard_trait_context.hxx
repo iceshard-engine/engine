@@ -42,7 +42,7 @@ namespace ice
         IceshardTraitContext(ice::IceshardWorldContext& world_context, ice::u32 index) noexcept;
         ~IceshardTraitContext() noexcept;
 
-        void send(ice::detail::TraitEvent event) noexcept;
+        void send(ice::detail::TraitEvent event) noexcept override;
         void sync(ice::ShardContainer& out_shards) noexcept;
 
         auto checkpoint(ice::StringID id) noexcept -> ice::TaskCheckpointGate override;
