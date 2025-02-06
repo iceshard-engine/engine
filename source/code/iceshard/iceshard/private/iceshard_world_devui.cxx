@@ -16,22 +16,27 @@ namespace ice
 
     } // namespace detail
 
-    auto IceshardWorld::create_devui(ice::Allocator& alloc) noexcept -> ice::UniquePtr<IceshardWorld::DevUI>
+    auto IceshardWorld::create_devui(
+        ice::Allocator& alloc,
+        ice::IceshardWorldContext& context
+    ) noexcept -> ice::UniquePtr<IceshardWorld::DevUI>
     {
         if (ice::devui_available())
         {
-            return ice::make_unique<DevUI>(alloc, alloc, *this);
+            return ice::make_unique<DevUI>(alloc, alloc, *this, context);
         }
         return {};
     }
 
     IceshardWorld::DevUI::DevUI(
         ice::Allocator& alloc,
-        ice::IceshardWorld& world
+        ice::IceshardWorld& world,
+        ice::IceshardWorldContext& context
     ) noexcept
         : DevUIWidget{ {.category = "Engine/Worlds", .name=ice::stringid_hint(world.worldID)} }
         , _allocator{ alloc }
         , _world{ world }
+        , _context{ context }
     {
         ice::devui_register_widget(this);
     }
@@ -71,7 +76,7 @@ namespace ice
 
         if (ImGui::CollapsingHeader("Handlers"))
         {
-            IceshardWorldContext const& ctx = *_world._context;
+            IceshardWorldContext const& ctx = _context;
             ImGui::TextT("Frame handlers (count: {})", ice::hashmap::count(ctx._frame_handlers));
             if (ice::hashmap::any(ctx._frame_handlers))
             {

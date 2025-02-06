@@ -1,3 +1,6 @@
+/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include <ice/devui_context.hxx>
 #include <ice/devui_module.hxx>
 #include <ice/module_query.hxx>
@@ -7,6 +10,7 @@
 namespace ice
 {
 
+    static ice::api::devui::v1::DevUI_API::FnContextSetupMenu global_context_setup_menu = nullptr;
     static ice::api::devui::v1::DevUI_API::FnContextRegisterWidget global_context_register_widget = nullptr;
     static ice::api::devui::v1::DevUI_API::FnContextRemoveWidget global_context_remove_widget = nullptr;
     static ice::api::devui::v1::DevUI_API::FnContextTraitName global_context_trait_name = nullptr;
@@ -14,6 +18,14 @@ namespace ice
     bool devui_available() noexcept
     {
         return global_context_trait_name != nullptr && global_context_register_widget != nullptr;
+    }
+
+    void devui_setup_mainmenu(ice::Span<ice::String> categories) noexcept
+    {
+        if (global_context_setup_menu != nullptr)
+        {
+            global_context_setup_menu(categories);
+        }
     }
 
     auto devui_trait_name() noexcept -> ice::StringID
@@ -84,6 +96,7 @@ namespace ice
             api.fn_context_setup(callback, userdata);
 
             // Store some of the API pointers
+            global_context_setup_menu = api.fn_context_setup_menu;
             global_context_trait_name = api.fn_context_trait_name;
             global_context_register_widget = api.fn_context_register_widget;
             global_context_remove_widget = api.fn_context_remove_widget;

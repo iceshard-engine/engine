@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "resource_filesystem_loose.hxx"
@@ -300,6 +300,7 @@ namespace ice
 
     auto create_resources_from_loose_files(
         ice::Allocator& alloc,
+        ice::ResourceProvider& provider,
         ice::native_file::FilePath base_path,
         ice::native_file::FilePath uri_base_path,
         ice::native_file::FilePath meta_filepath,
@@ -324,7 +325,9 @@ namespace ice
             ice::String utf8_uri_path = ice::string::substr(utf8_file_path, ice::path::length(uri_base_path));
 
             IPT_ZONE_SCOPED_NAMED("stage: create_resource");
-            main_resource = alloc.create<ice::LooseFilesResource>(
+            main_resource = ice::create_resource_object<ice::LooseFilesResource>(
+                alloc,
+                provider,
                 alloc,
                 meta_size,
                 data_size,
@@ -334,64 +337,6 @@ namespace ice
             );
         }
 
-#if 0
-            IPT_ZONE_SCOPED_NAMED("stage: extra_files");
-            ice::Metadata const metadata = mutable_meta;
-            bool const has_paths = ice::meta_has_entry(metadata, "resource.extra_files.paths"_sid);
-            bool const has_names = ice::meta_has_entry(metadata, "resource.extra_files.names"_sid);
-            ICE_ASSERT(
-                (has_paths ^ has_names) == 0,
-                "If a resource defines extra files, it's only allowed to do so by providing 'unique flags' and co-related 'relative paths'."
-            );
-
-            ice::Array<ice::String> paths{ alloc };
-            ice::array::reserve(paths, 4);
-
-            ice::Array<ice::String> names{ alloc };
-            ice::array::reserve(names, 4);
-
-            if (has_paths && has_names)
-            {
-                ice::config::get_array(metadata, "resource.extra_files.paths", paths);
-                ice::config::get_array(metadata, "resource.extra_files.names", names);
-
-                ice::HeapString<> utf8_file_path{ alloc };
-
-                // Lets take a bet that we can use at least 32 more characters before growing!
-                ice::u32 const expected_extra_path_size = ice::string::size(meta_filepath) + 32;
-                ice::string::reserve(utf8_file_path, expected_extra_path_size);
-
-                // Create a wide string to try and check for extra files existing.
-                ice::native_file::HeapFilePath full_path{ alloc };
-                ice::string::reserve(full_path, ice::string::capacity(utf8_file_path));
-                full_path = meta_filepath;
-
-                // Remember the size so we can quickly resize.
-                ice::u32 const base_dir_size = ice::string::size(full_path);
-
-                for (ice::u32 idx = 0; idx < ice::array::count(paths); ++idx)
-                {
-                    ICE_ASSERT(
-                        ice::string::any(names[idx]),
-                        "Extra files need to be declared with specific names!"
-                    );
-
-                    // TODO:
-                    ice::string::resize(full_path, base_dir_size);
-                    ice::native_file::path_join_string(full_path, paths[idx]);
-                    if (ice::native_file::exists_file(full_path))
-                    {
-                        // We know the file can be opened so we save it as a extra resource.
-                        ice::native_file::path_to_string(full_path, utf8_file_path);
-                        ice::path::normalize(utf8_file_path);
-
-                        main_resource->add_named_part(ice::stringid(names[idx]), ice::move(utf8_file_path));
-                    }
-                }
-            }
-#endif
-
-        // return main_resource;
         return main_resource;
     }
 

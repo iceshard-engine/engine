@@ -61,7 +61,8 @@ namespace ice
                 }
                 if (ImGui::TableNextColumn()) // Resource
                 {
-                    ice::String const origin = ice::resource_origin(ice::asset_data_resource(entry->_data));
+                    ice::ResourceHandle const handle = ice::asset_data_resource(entry->_data);
+                    ice::String const origin = handle != nullptr ? handle->origin() : "???";
                     ImGui::TextUnformatted(ice::string::begin(origin), ice::string::end(origin));
                 }
             }

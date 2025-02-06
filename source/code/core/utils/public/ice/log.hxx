@@ -2,6 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#include <ice/profiler.hxx>
 #include <ice/string/string.hxx>
 #include <ice/log_severity.hxx>
 #include <ice/log_tag.hxx>
@@ -60,3 +61,24 @@ namespace ice::detail
             } \
         } \
     } while(false)
+
+#if IPT_ENABLED
+
+#define IPT_LOG(severity, tag, format, ...) \
+    IPT_MESSAGE(format); \
+    ICE_LOG(severity, tag, format, __VA_ARGS__)
+
+#define IPT_ZONE_LOG(severity, tag, format, ...) \
+    IPT_ZONE_SCOPED; \
+    IPT_MESSAGE(format); \
+    ICE_LOG(severity, tag, format, __VA_ARGS__)
+
+#else
+
+#define IPT_LOG(severity, tag, format, ...) \
+    ICE_LOG(severity, tag, format, __VA_ARGS__)
+
+#define IPT_ZONE_LOG(severity, tag, format, ...) \
+    ICE_LOG(severity, tag, format, __VA_ARGS__)
+
+#endif

@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -20,11 +20,31 @@ namespace ice
             ice::detail::TraitTaskTracker* task_tracker
         ) noexcept;
 
-        void gather(ice::TaskContainer& out_tasks, ice::Shard shard) noexcept;
-        void gather(ice::TaskContainer& out_tasks, ice::Span<ice::Shard const> shards) noexcept;
+        void gather(
+            ice::TaskContainer& out_tasks,
+            ice::TraitParams const& trait_params,
+            ice::Shard shard
+        ) noexcept;
 
-        void execute(ice::Array<ice::Task<>, ice::ContainerLogic::Complex>& out_tasks, ice::Shard shard) noexcept;
-        void execute(ice::Array<ice::Task<>, ice::ContainerLogic::Complex>& out_tasks, ice::ShardContainer const& shards) noexcept;
+        void gather(
+            ice::TaskContainer& out_tasks,
+            ice::TraitParams const& trait_params,
+            ice::Span<ice::Shard const> shards
+        ) noexcept;
+
+        void execute(
+            ice::Array<ice::Task<>,
+            ice::ContainerLogic::Complex>& out_tasks,
+            ice::TraitParams const& trait_params,
+            ice::Shard shard
+        ) noexcept;
+
+        void execute(
+            ice::Array<ice::Task<>,
+            ice::ContainerLogic::Complex>& out_tasks,
+            ice::TraitParams const& trait_params,
+            ice::ShardContainer const& shards
+        ) noexcept;
 
     private:
         ice::IceshardWorldContext& _world_context;

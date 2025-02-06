@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -17,6 +17,7 @@
 #include <ice/devui_widget.hxx>
 
 #include "resource_filesystem_loose.hxx"
+#include "resource_filesystem_traverser.hxx"
 
 namespace ice
 {
@@ -28,7 +29,7 @@ namespace ice
         ice::HashMap<ice::FileSystemResource*> const& resources
     ) noexcept -> ice::UniquePtr<ice::DevUIWidget>;
 
-    class FileSystemResourceProvider final : public ice::ResourceProvider
+    class FileSystemResourceProvider : public ice::ResourceProvider, public ice::FileSystemTraverserCallbacks
     {
     public:
         FileSystemResourceProvider(
@@ -43,55 +44,24 @@ namespace ice
 
         auto schemeid() const noexcept -> ice::StringID override;
 
-        void create_resource_from_file(
-            ice::native_file::FilePath base_path,
-            ice::native_file::FilePath file_path
-        ) noexcept;
-
-        struct TraverseResourceRequest;
-
-        auto traverse_async(
-            ice::native_file::HeapFilePath dir_path,
-            TraverseResourceRequest& request
-        ) noexcept -> ice::Task<>;
-
-        auto create_resource_from_file_async(
-            ice::native_file::FilePath base_path,
-            ice::native_file::HeapFilePath file_path,
-            TraverseResourceRequest& request
-        ) noexcept -> ice::Task<>;
-
-        static auto traverse_callback(
-            ice::native_file::FilePath,
-            ice::native_file::FilePath path,
-            ice::native_file::EntityType type,
-            void* userdata
-        ) noexcept -> ice::native_file::TraverseAction;
-
-        void initial_traverse() noexcept;
-
-        void initial_traverse_mt() noexcept;
-
         auto collect(
-            ice::Array<ice::Resource const*>& out_changes
+            ice::Array<ice::Resource*>& out_changes
         ) noexcept -> ice::ucount override;
 
         auto refresh(
-            ice::Array<ice::Resource const*>& out_changes
+            ice::Array<ice::Resource*>& out_changes
         ) noexcept -> ice::ResourceProviderResult override;
 
         auto find_resource(
             ice::URI const& uri
-        ) const noexcept -> ice::Resource const* override;
+        ) const noexcept -> ice::Resource* override;
 
         auto access_loose_resource(
             ice::Resource const* resource
         ) const noexcept -> ice::LooseResource const* override;
 
         void unload_resource(
-            ice::Allocator& alloc,
-            ice::Resource const* /*resource*/,
-            ice::Memory memory
+            ice::Resource const* /*resource*/
         ) noexcept override;
 
         auto load_resource(
@@ -106,6 +76,29 @@ namespace ice
 
         class DevUI;
 
+    public: // ice::FileSystemTraverserCallbacks
+        auto allocator() noexcept -> ice::Allocator& override;
+
+        auto create_baked_resource(
+            ice::native_file::FilePath filepath
+        ) noexcept -> ice::FileSystemResource* override;
+
+        auto create_loose_resource(
+            ice::native_file::FilePath base_path,
+            ice::native_file::FilePath uri_base_path,
+            ice::native_file::FilePath meta_filepath,
+            ice::native_file::FilePath data_filepath
+        ) noexcept -> ice::FileSystemResource* override;
+
+        auto register_resource(
+            ice::FileSystemResource* resource
+        ) noexcept -> ice::Result override;
+
+        void destroy_resource(
+            ice::FileSystemResource* resource
+        ) noexcept override;
+
+
     protected:
         ice::ProxyAllocator _named_allocator;
         ice::ProxyAllocator _data_allocator;
@@ -113,6 +106,8 @@ namespace ice
         ice::TaskScheduler* _scheduler;
         ice::native_aio::AIOPort _aioport;
         ice::String _virtual_hostname;
+
+        ice::FileSystemTraverser _traverser;
 
         ice::HashMap<ice::FileSystemResource*> _resources;
         ice::Array<ice::Memory> _resources_data;

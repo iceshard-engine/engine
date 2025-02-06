@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "resource_provider_filelist.hxx"
@@ -85,7 +85,7 @@ namespace ice
             ice::HeapString<> uri_base{ _named_allocator };
             ice::string::push_format(uri_base, "file://{}/", _virtual_hostname);
 
-            resource = create_resource_from_baked_file(_named_allocator, uri_base, file_path);
+            resource = create_resource_from_baked_file(_named_allocator, *this, uri_base, file_path);
         }
         else
         {
@@ -100,6 +100,7 @@ namespace ice
 
             resource = create_resources_from_loose_files(
                 _named_allocator,
+                *this,
                 base_path,
                 uribase,
                 metafile,
@@ -140,7 +141,7 @@ namespace ice
     }
 
     auto FileListResourceProvider::collect(
-        ice::Array<ice::Resource const*>& out_changes
+        ice::Array<ice::Resource*>& out_changes
     ) noexcept -> ice::ucount
     {
         IPT_ZONE_SCOPED;
@@ -154,7 +155,7 @@ namespace ice
     }
 
     auto FileListResourceProvider::refresh(
-        ice::Array<ice::Resource const*>& out_changes
+        ice::Array<ice::Resource*>& out_changes
     ) noexcept -> ice::ResourceProviderResult
     {
         IPT_ZONE_SCOPED;
@@ -168,14 +169,14 @@ namespace ice
 
     auto FileListResourceProvider::find_resource(
         ice::URI const& uri
-    ) const noexcept -> ice::Resource const*
+    ) const noexcept -> ice::Resource*
     {
         ICE_ASSERT(
             uri.scheme() == ice::stringid_hash(schemeid()),
             "Trying to find resource for URI that is not handled by this provider."
         );
 
-        ice::FileSystemResource const* found_resource = nullptr;
+        ice::FileSystemResource* found_resource = nullptr;
 
         ice::HeapString<> predicted_path{ (ice::Allocator&)_named_allocator };
         for (ice::FileListEntry const& file_entry : _file_paths)
@@ -201,9 +202,7 @@ namespace ice
     }
 
     void FileListResourceProvider::unload_resource(
-        ice::Allocator& alloc,
-        ice::Resource const* resource,
-        ice::Memory memory
+        ice::Resource const* resource
     ) noexcept
     {
         ice::FileSystemResource const* const filesys_res = static_cast<ice::FileSystemResource const*>(resource);

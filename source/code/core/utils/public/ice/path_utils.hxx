@@ -12,6 +12,9 @@ namespace ice::path
     //! \return true If the path is absolute.
     bool is_absolute(ice::String path) noexcept;
 
+    //! \return true If the path is just the root part. (ex. 'C:/' or '/')
+    bool is_absolute_root(ice::String path) noexcept;
+
     //! \return The lenght of the path.
     auto length(ice::String path) noexcept -> ice::ucount;
 
@@ -55,6 +58,7 @@ namespace ice::path
     // Wider character implementations
 
     bool is_absolute(ice::WString path) noexcept;
+    bool is_absolute_root(ice::WString path) noexcept;
     auto length(ice::WString path) noexcept -> ice::ucount;
     auto extension(ice::WString path) noexcept -> ice::WString;
     auto filename(ice::WString path) noexcept -> ice::WString;

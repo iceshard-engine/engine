@@ -41,6 +41,22 @@ namespace ice::path
         }
 
         template<typename CharType>
+        constexpr bool is_absolute_root(ice::BasicString<CharType> path) noexcept
+        {
+            if constexpr (ice::build::is_windows)
+            {
+                // Only support single-letter drives
+                return ice::string::size(path) == 3
+                    && path[1] == Separators_Drive<CharType>[0]
+                    && ice::string::find_first_of(Separators_Directory<CharType>, path[2]) != ice::String_NPos;
+            }
+            else
+            {
+                return ice::string::size(path) == 1 && ice::string::front(path) == Separators_Directory<CharType>[1];
+            }
+        }
+
+        template<typename CharType>
         constexpr auto extension(ice::BasicString<CharType> str) noexcept -> ice::BasicString<CharType>
         {
             auto const separator_pos = ice::string::find_last_of(str, Separators_Dot<CharType>);
@@ -66,7 +82,21 @@ namespace ice::path
         constexpr auto directory(ice::BasicString<CharType> str) noexcept -> ice::BasicString<CharType>
         {
             auto const separator_pos = ice::string::find_last_of(str, Separators_Directory<CharType>);
-            return ice::string::substr(str, separator_pos == ice::String_NPos ? ice::string::size(str) : 0, separator_pos);
+            if (separator_pos == ice::String_NPos)
+            {
+                return ice::string::substr(str, ice::string::size(str), separator_pos);
+            }
+
+            if constexpr (ice::build::is_windows)
+            {
+                if (separator_pos > 0 && str[separator_pos - 1] == ':')
+                {
+                    // Keep the separator so we end up with C:/
+                    return ice::string::substr(str, 0, separator_pos + 1);
+                }
+            }
+
+            return ice::string::substr(str, 0, separator_pos);
         }
 
         template<typename CharType>
@@ -231,6 +261,7 @@ namespace ice::path
     } // namespace detail
 
     bool is_absolute(ice::String path) noexcept { return detail::is_absolute(path); }
+    bool is_absolute_root(ice::String path) noexcept { return detail::is_absolute_root(path); }
     auto length(ice::String path) noexcept -> ice::ucount { return ice::string::size(path); }
     auto extension(ice::String path) noexcept -> ice::String { return detail::extension(path); }
     auto filename(ice::String path) noexcept -> ice::String { return detail::filename(path); }
@@ -242,6 +273,7 @@ namespace ice::path
     auto replace_extension(ice::HeapString<>& path, ice::String extension) noexcept -> ice::String { return detail::replace_extension(path, extension); }
 
     bool is_absolute(ice::WString path) noexcept { return detail::is_absolute(path); }
+    bool is_absolute_root(ice::WString path) noexcept { return detail::is_absolute_root(path); }
     auto length(ice::WString path) noexcept -> ice::ucount { return ice::string::size(path); }
     auto extension(ice::WString path) noexcept -> ice::WString { return detail::extension(path); }
     auto filename(ice::WString path) noexcept -> ice::WString { return detail::filename(path); }

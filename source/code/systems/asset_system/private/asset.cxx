@@ -34,6 +34,11 @@ namespace ice
     {
         if (this != ice::addressof(other))
         {
+            if (_handle != nullptr)
+            {
+                this->release();
+            }
+
             _handle = ice::exchange(other._handle, nullptr);
         }
         return *this;
@@ -41,8 +46,9 @@ namespace ice
 
     auto Asset::uri() const noexcept -> ice::URI
     {
-        ice::ResourceHandle const* resource = ice::asset_data_resource(_handle->_data);
-        return ice::resource_uri(resource);
+        ice::ResourceHandle resource = ice::asset_data_resource(_handle->_data);
+        ICE_ASSERT_CORE(resource.valid());
+        return resource->uri();
     }
 
     auto Asset::name() const noexcept -> ice::StringID_Arg

@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 
@@ -111,6 +111,7 @@ namespace ice
 
     auto create_resources_from_loose_files(
         ice::Allocator& alloc,
+        ice::ResourceProvider& provider,
         ice::native_file::FilePath base_path,
         ice::native_file::FilePath uri_base_path,
         ice::native_file::FilePath meta_file,

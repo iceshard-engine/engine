@@ -69,7 +69,7 @@ auto select_chunk_loose_resource(
 }
 
 auto read_resource_size(
-    ice::ResourceHandle const* resource_handle,
+    ice::ResourceHandle const& resource_handle,
     hailstorm::Data& out_data,
     std::atomic_uint32_t& out_processed
 ) noexcept -> ice::Task<>
@@ -206,7 +206,7 @@ public:
         ice::ResourceProvider* provider = tracker->attach_provider(ice::move(fsprov));
         tracker->sync_resources();
 
-        ice::Array<ice::Resource const*> resources{ _allocator };
+        ice::Array<ice::Resource*> resources{ _allocator };
         if (provider->collect(resources) == 0)
         {
             HSCP_ERROR("No files where found in the included directories.");
@@ -259,7 +259,7 @@ public:
         ice::ResourceProvider* provider = tracker->attach_provider(ice::move(fsprov));
         tracker->sync_resources();
 
-        ice::Array<ice::Resource const*> resources{ _allocator };
+        ice::Array<ice::Resource*> resources{ _allocator };
         if (provider->collect(resources) == 0)
         {
             HSCP_ERROR("No files where found in the included directories.");
@@ -271,13 +271,13 @@ public:
 
     auto create_package(
         ice::ResourceTracker& tracker,
-        ice::Span<ice::Resource const* const> resources
+        ice::Span<ice::Resource* const> resources
     ) noexcept -> ice::i32
     {
         ice::Array<hailstorm::Data> resource_data{ _allocator };
         ice::Array<hailstorm::Data> resource_metas{ _allocator };
         ice::Array<ice::u32> resource_metamap{ _allocator };
-        ice::Array<ice::ResourceHandle*> resource_handles{ _allocator };
+        ice::Array<ice::ResourceHandle> resource_handles{ _allocator };
         ice::Array<std::string_view> resource_paths{ _allocator };
 
         ice::array::resize(resource_data, ice::count(resources));
@@ -293,7 +293,7 @@ public:
 
         std::atomic_uint32_t res_count = 0;
         ice::u32 res_idx = 0;
-        for (ice::Resource const* resource : resources)
+        for (ice::Resource* resource : resources)
         {
             if (resource != nullptr)
             {

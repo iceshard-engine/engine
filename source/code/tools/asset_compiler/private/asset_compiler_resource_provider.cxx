@@ -98,14 +98,14 @@ AssetCompilerResourceProvider::~AssetCompilerResourceProvider() noexcept
 }
 
 auto AssetCompilerResourceProvider::collect(
-    ice::Array<ice::Resource const*>& out_changes
+    ice::Array<ice::Resource*>& out_changes
 ) noexcept -> ice::ucount
 {
     return 0;
 }
 
 auto AssetCompilerResourceProvider::refresh(
-    ice::Array<ice::Resource const*>& out_changes
+    ice::Array<ice::Resource*>& out_changes
 ) noexcept -> ice::ResourceProviderResult
 {
     for (AssetCompilerResource* res : _resources)
@@ -117,7 +117,7 @@ auto AssetCompilerResourceProvider::refresh(
 
 auto AssetCompilerResourceProvider::find_resource(
     ice::URI const& uri
-) const noexcept -> ice::Resource const*
+) const noexcept -> ice::Resource*
 {
     return nullptr;
 }
@@ -130,12 +130,11 @@ auto AssetCompilerResourceProvider::access_loose_resource(
 }
 
 void AssetCompilerResourceProvider::unload_resource(
-    ice::Allocator& alloc,
-    ice::Resource const* resource,
-    ice::Memory memory
+    ice::Resource const* resource
 ) noexcept
 {
-    alloc.deallocate(memory);
+    AssetCompilerResource const* ac_resource = dynamic_cast<AssetCompilerResource const*>(resource);
+    _allocator.deallocate(ice::exchange(_data[ac_resource->idx], {}));
 }
 
 auto AssetCompilerResourceProvider::load_resource(

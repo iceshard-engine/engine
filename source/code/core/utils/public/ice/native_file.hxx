@@ -132,6 +132,10 @@ namespace ice::native_file
         void* userdata
     ) noexcept;
 
+    bool create_directory(
+        ice::native_file::FilePath path
+    ) noexcept;
+
     void path_from_string(
         ice::native_file::HeapFilePath& out_filepath,
         ice::String path_string

@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -41,36 +41,36 @@ namespace ice
 
         using FnCollectResourceSources = bool(*)(
             ice::ResourceCompilerCtx& ctx,
-            ice::ResourceHandle* resource_handle,
+            ice::ResourceHandle const& resource_handle,
             ice::ResourceTracker& resource_tracker,
-            ice::Array<ice::ResourceHandle*>& out_sources
-        ) noexcept;
+            ice::Array<ice::ResourceHandle>& out_sources
+            ) noexcept;
 
         using FnCollectResourceDependencies = bool(*)(
             ice::ResourceCompilerCtx& ctx,
-            ice::ResourceHandle* resource_handle,
+            ice::ResourceHandle const& resource_handle,
             ice::ResourceTracker& resource_tracker,
             ice::Array<ice::URI>& out_dependencies
         ) noexcept;
 
         using FnValidateResourceSource = auto(*)(
             ice::ResourceCompilerCtx& ctx,
-            ice::ResourceHandle* resource_handle,
+            ice::ResourceHandle const& resource_handle,
             ice::ResourceTracker& resource_tracker
         ) noexcept -> ice::Task<bool>;
 
         using FnCompileResourceSource = auto(*)(
             ice::ResourceCompilerCtx& ctx,
-            ice::ResourceHandle* resource_handle,
+            ice::ResourceHandle const& resource_handle,
             ice::ResourceTracker& resource_tracker,
-            ice::Span<ice::ResourceHandle* const> sources,
+            ice::Span<ice::ResourceHandle const> sources,
             ice::Span<ice::URI const> dependencies,
             ice::Allocator& result_alloc
         ) noexcept -> ice::Task<ice::ResourceCompilerResult>;
 
         using FnBuildResourceMetadata = auto(*)(
             ice::ResourceCompilerCtx& ctx,
-            ice::ResourceHandle* resource_handle,
+            ice::ResourceHandle const& resource_handle,
             ice::ResourceTracker& resource_tracker,
             ice::Span<ice::ResourceCompilerResult const> compiled_sources,
             ice::Span<ice::URI const> dependencies,
@@ -79,7 +79,7 @@ namespace ice
 
         using FnFinalizeResource = auto(*)(
             ice::ResourceCompilerCtx& ctx,
-            ice::ResourceHandle* resource_handle,
+            ice::ResourceHandle const& resource_handle,
             ice::Span<ice::ResourceCompilerResult const> compiled_sources,
             ice::Span<ice::URI const> dependencies,
             ice::Allocator& result_alloc
@@ -91,36 +91,36 @@ namespace ice
 
         bool fn_collect_sources_default(
             ice::ResourceCompilerCtx& ctx,
-            ice::ResourceHandle* resource_handle,
+            ice::ResourceHandle const& resource_handle,
             ice::ResourceTracker& resource_tracker,
-            ice::Array<ice::ResourceHandle*>& out_sources
+            ice::Array<ice::ResourceHandle>& out_sources
         ) noexcept;
 
         bool fn_collect_dependencies_default(
             ice::ResourceCompilerCtx& ctx,
-            ice::ResourceHandle* resource_handle,
+            ice::ResourceHandle const& resource_handle,
             ice::ResourceTracker& resource_tracker,
             ice::Array<ice::URI>& out_dependencies
         ) noexcept;
 
         auto fn_validate_source_default(
             ice::ResourceCompilerCtx& ctx,
-            ice::ResourceHandle* resource_handle,
+            ice::ResourceHandle const& resource_handle,
             ice::ResourceTracker& resource_tracker
         ) noexcept -> ice::Task<bool>;
 
         auto fn_compile_source_default(
             ice::ResourceCompilerCtx& ctx,
-            ice::ResourceHandle* resource_handle,
+            ice::ResourceHandle const& resource_handle,
             ice::ResourceTracker& resource_tracker,
-            ice::Span<ice::ResourceHandle* const> sources,
+            ice::Span<ice::ResourceHandle const> sources,
             ice::Span<ice::URI const> dependencies,
             ice::Allocator& result_alloc
         ) noexcept -> ice::Task<ice::ResourceCompilerResult>;
 
         auto fn_build_metadata_default(
             ice::ResourceCompilerCtx& ctx,
-            ice::ResourceHandle* resource_handle,
+            ice::ResourceHandle const& resource_handle,
             ice::ResourceTracker& resource_tracker,
             ice::Span<ice::ResourceCompilerResult const> compiled_sources,
             ice::Span<ice::URI const> dependencies,
@@ -129,7 +129,7 @@ namespace ice
 
         auto fn_finalize_default(
             ice::ResourceCompilerCtx& ctx,
-            ice::ResourceHandle* resource_handle,
+            ice::ResourceHandle const& resource_handle,
             ice::Span<ice::ResourceCompilerResult const> compiled_sources,
             ice::Span<ice::URI const> dependencies,
             ice::Allocator& result_alloc

@@ -1,22 +1,28 @@
+/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
+#include <ice/clock.hxx>
 #include <ice/shard.hxx>
 #include <ice/expected.hxx>
 #include <ice/engine_types.hxx>
 
+
 namespace ice
 {
 
-    enum class TraitTaskType : ice::u8
+    struct World;
+    struct WorldAssembly;
+    struct WorldStateParams;
+    struct WorldUpdater;
+
+    struct WorldStateParams
     {
-        Frame,
-        Runner,
+        ice::Clock const& clock;
+        ice::AssetStorage& assets;
+        ice::Engine& engine;
+        ice::EngineSchedulers thread;
+        ice::World& world;
     };
 
 } // namespace ice
-
-namespace ice::detail
-{
-
-    struct TraitContextImpl;
-
-} // namespace ice::detail

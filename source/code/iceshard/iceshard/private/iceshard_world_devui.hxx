@@ -14,7 +14,8 @@ namespace ice
     public:
         DevUI(
             ice::Allocator& alloc,
-            ice::IceshardWorld& world
+            ice::IceshardWorld& world,
+            ice::IceshardWorldContext& context
         ) noexcept;
 
         void build_content() noexcept override;
@@ -23,6 +24,7 @@ namespace ice
     private:
         ice::Allocator& _allocator;
         ice::IceshardWorld& _world;
+        ice::IceshardWorldContext& _context;
     };
 
 } // namespace ice

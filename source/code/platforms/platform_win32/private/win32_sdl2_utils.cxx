@@ -74,7 +74,7 @@ namespace ice::platform::win32::sdl2
         case SDL_SCANCODE_GRAVE: return KeyboardKey::BackQuote;
 
         case SDL_SCANCODE_DELETE: return KeyboardKey::Delete;
-        case SDL_SCANCODE_CAPSLOCK: return KeyboardKey::CapsLock;
+        //case SDL_SCANCODE_CAPSLOCK: return KeyboardKey::CapsLock;
 
         case SDL_SCANCODE_UP: return KeyboardKey::Up;
         case SDL_SCANCODE_DOWN: return KeyboardKey::Down;

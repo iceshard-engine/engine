@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -15,7 +15,7 @@ namespace ice
     class Resource;
     class ResourceProvider;
     class ResourceTracker;
-    class ResourceTracker;
+    class ResourceWriter;
     class LooseResource;
 
     enum class ResourceFlags : ice::u32;

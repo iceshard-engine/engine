@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -165,21 +165,19 @@ namespace ice
         auto schemeid() const noexcept -> ice::StringID override;
 
         auto refresh(
-            ice::Array<ice::Resource const*>& out_changes
+            ice::Array<ice::Resource*>& out_changes
         ) noexcept -> ice::ResourceProviderResult override;
 
         auto find_resource(
             ice::URI const& uri
-        ) const noexcept -> ice::Resource const* override;
+        ) const noexcept -> ice::Resource* override;
 
         auto access_loose_resource(
             ice::Resource const* resource
         ) const noexcept -> ice::LooseResource const* override;
 
         void unload_resource(
-            ice::Allocator& alloc,
-            ice::Resource const* resource,
-            ice::Memory /*memory*/
+            ice::Resource const* resource
         ) noexcept override;
 
         auto load_resource(

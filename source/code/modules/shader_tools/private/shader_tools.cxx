@@ -70,9 +70,9 @@ namespace ice
 
     auto compiler_compile_shader_source(
         ice::ResourceCompilerCtx& resctx,
-        ice::ResourceHandle* source,
+        ice::ResourceHandle const& source,
         ice::ResourceTracker& tracker,
-        ice::Span<ice::ResourceHandle* const> resources,
+        ice::Span<ice::ResourceHandle const> resources,
         ice::Span<ice::URI const> uris,
         ice::Allocator& alloc
     ) noexcept -> ice::Task<ice::ResourceCompilerResult>
@@ -96,7 +96,7 @@ namespace ice
 
     auto compiler_build_shader_meta(
         ice::ResourceCompilerCtx& resctx,
-        ice::ResourceHandle* source,
+        ice::ResourceHandle const& source,
         ice::ResourceTracker& tracker,
         ice::Span<ice::ResourceCompilerResult const> resources,
         ice::Span<ice::URI const> uris,

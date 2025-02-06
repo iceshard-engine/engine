@@ -56,6 +56,8 @@ namespace ice
             CoroutineType _coroutine;
             bool _continue_on_error;
 
+            inline AwaitableBase(CoroutineType coro, bool continue_on_error) noexcept;
+
             inline bool await_ready() const noexcept;
             inline auto await_suspend(
                 CoroutineType awaiting_coroutine
@@ -68,6 +70,16 @@ namespace ice
     private:
         CoroutineType _coroutine;
     };
+
+    template<typename Result, typename ErrorType>
+    inline TaskExpected<Result, ErrorType>::AwaitableBase::AwaitableBase(
+        CoroutineType coro,
+        bool continue_on_error
+    ) noexcept
+        : _coroutine{ coro }
+        , _continue_on_error{ continue_on_error }
+    {
+    }
 
     template<typename Result, typename ErrorType>
     inline bool TaskExpected<Result, ErrorType>::AwaitableBase::await_ready() const noexcept
@@ -139,6 +151,8 @@ namespace ice
     {
         struct TaskAwaitable : AwaitableBase
         {
+            using AwaitableBase::AwaitableBase;
+
             auto await_ready() const noexcept
             {
                 // Never continue if it was cancelled or failed already
@@ -200,6 +214,8 @@ namespace ice
     {
         struct TaskAwaitable : AwaitableBase
         {
+            using AwaitableBase::AwaitableBase;
+
             auto await_resume() const noexcept -> decltype(auto)
             {
                 ICE_ASSERT(
@@ -214,7 +230,7 @@ namespace ice
             }
         };
 
-        return TaskAwaitable{ _coroutine };
+        return TaskAwaitable{ _coroutine, false };
     }
 
     template<typename Result, typename ErrorType>
@@ -222,6 +238,8 @@ namespace ice
     {
         struct TaskAwaitable : AwaitableBase
         {
+            using AwaitableBase::AwaitableBase;
+
             auto await_resume() const noexcept -> decltype(auto)
             {
                 ICE_ASSERT(
@@ -236,7 +254,7 @@ namespace ice
             }
         };
 
-        return TaskAwaitable{ ice::move(_coroutine) };
+        return TaskAwaitable{ ice::move(_coroutine), false };
     }
 
     template<typename Result, typename ErrorType>

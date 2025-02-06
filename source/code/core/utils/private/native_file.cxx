@@ -431,6 +431,52 @@ namespace ice::native_file
         return traverse_directories_internal(dirpath, dirpath, callback, userdata);
     }
 
+    bool create_directory_internal(
+        ice::native_file::HeapFilePath& dirpath
+    ) noexcept
+    {
+        // If zero, we failed, check why.
+        if (CreateDirectory(ice::string::begin(dirpath), NULL) == 0)
+        {
+            // Try the next path before retrying this path.
+            if (GetLastError() == ERROR_PATH_NOT_FOUND)
+            {
+                // Remove the top-most the directory explicitly.
+                ice::ucount const dirslash = ice::string::find_last_of(ice::WString{ dirpath }, ice::WString{ L"\\/" });
+                if (dirslash == ice::String_NPos)
+                {
+                    return false;
+                }
+
+                // Insert the new '0' to shorten the path for the Windows API.
+                dirpath[dirslash] = '\0';
+                if (create_directory_internal(dirpath) == false)
+                {
+                    return false;
+                }
+
+                // 'Restore' the original path. (we assume it was normalized for iceshard)
+                dirpath[dirslash] = '/';
+
+                // Try again to create the directory
+                return CreateDirectory(ice::string::begin(dirpath), NULL) != 0;
+            }
+            // else it's either 'ERROR_ALREADY_EXISTS' so we continue.
+        }
+        return true;
+    }
+
+    bool create_directory(
+        ice::native_file::FilePath path
+    ) noexcept
+    {
+        ice::StackAllocator_1024 temp_alloc;
+        // We need to make a local string version, because the windows API does only accept zero-terimanated strings.
+        //   However IceShard uses string views, which might result in strings being "longer" than intended.
+        ice::native_file::HeapFilePath actual_path{ temp_alloc, path };
+        return create_directory_internal(actual_path);
+    }
+
     void path_from_string(
         ice::native_file::HeapFilePath& out_filepath,
         ice::String path_string

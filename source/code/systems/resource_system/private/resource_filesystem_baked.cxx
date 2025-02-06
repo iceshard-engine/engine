@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "resource_filesystem_baked.hxx"
@@ -170,6 +170,7 @@ namespace ice
 
     auto create_resource_from_baked_file(
         ice::Allocator& alloc,
+        ice::ResourceProvider& provider,
         ice::String uri_base,
         ice::native_file::FilePath file_path
     ) noexcept -> ice::FileSystemResource*
@@ -218,7 +219,15 @@ namespace ice
         );
         ICE_ASSERT_CORE(read >= 0_B);
 
-        return alloc.create<BakedFileResource>(alloc, header, ice::move(utf8_file_path), ice::move(utf8_uri), metadata);
+        return ice::create_resource_object<BakedFileResource>(
+            alloc,
+            provider,
+            alloc,
+            header,
+            ice::move(utf8_file_path),
+            ice::move(utf8_uri),
+            metadata
+        );
     }
 
 } // namespace ice

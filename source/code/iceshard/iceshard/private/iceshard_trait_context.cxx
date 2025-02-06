@@ -1,12 +1,17 @@
+/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "iceshard_trait_context.hxx"
+
+#include <ice/world/world_trait.hxx>
 #include <ice/container/hashmap.hxx>
 #include <ice/engine_runner.hxx>
 
 namespace ice
 {
 
-    IceshardWorldContext::IceshardWorldContext(ice::Allocator& alloc) noexcept
-        : _allocator{ alloc }
+    IceshardWorldContext::IceshardWorldContext(ice::Allocator& alloc, ice::StringID_Arg worldid) noexcept
+        : _allocator{ alloc, ice::stringid_hint(worldid) }
         , _always_reached_checkpoint{ true }
         , _checkpoints{ alloc }
         , _frame_handlers{ alloc }
@@ -28,11 +33,41 @@ namespace ice
         : _trait_index{ trait_idx }
         , _world_context{ world_context }
         , _interface_selector{ nullptr }
+        , _events{ world_context._allocator }
+        , _events_expired{ world_context._allocator }
     {
     }
 
     IceshardTraitContext::~IceshardTraitContext() noexcept
     {
+    }
+
+    void IceshardTraitContext::send(ice::detail::TraitEvent event) noexcept
+    {
+        ice::array::push_back(_events, event);
+    }
+
+    void IceshardTraitContext::sync(ice::ShardContainer& out_shards) noexcept
+    {
+        // Cleanup all expired events first
+        for (ice::detail::TraitEvent const& ev : _events_expired)
+        {
+            if (ev.fn_on_expire != nullptr)
+            {
+                ev.fn_on_expire(ev.ud_on_expire, ev);
+            }
+        }
+
+        // Copy all current events into the _expired events list.
+        //   We use copy+clean so we don't allocate one of the arrays every time.
+        _events_expired = _events;
+        ice::array::clear(_events);
+
+        // Push shards into the out container. (ice::detail::TraitEvent decays into ice::Shard)
+        for (ice::Shard shard : _events_expired)
+        {
+            ice::shards::push_back(out_shards, shard);
+        }
     }
 
     void IceshardTraitContext::register_interface_selector(ice::InterfaceSelector* selector) noexcept
@@ -82,7 +117,8 @@ namespace ice
             ice::IceshardEventHandler{
                 .event_id = trigger_event,
                 .trait_idx = _trait_index,
-                .event_handler = binding.procedure,
+                .procedure = binding.procedure,
+                .procedure_userdata = binding.procedure_userdata
             }
         );
 

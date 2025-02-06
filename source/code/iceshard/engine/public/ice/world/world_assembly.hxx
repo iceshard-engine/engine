@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -6,7 +6,7 @@
 #include <ice/stringid.hxx>
 #include <ice/ecs/ecs_types.hxx>
 #include <ice/world/world_trait_archive.hxx>
-#include <ice/container/array.hxx>
+#include <ice/shard_container.hxx>
 
 namespace ice
 {

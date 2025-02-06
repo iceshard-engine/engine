@@ -1,14 +1,15 @@
-/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "imgui_trait.hxx"
 #include "imgui_system.hxx"
 
+#include <ice/engine.hxx>
 #include <ice/engine_devui.hxx>
 #include <ice/engine_frame.hxx>
 #include <ice/engine_runner.hxx>
 #include <ice/engine_shards.hxx>
-#include <ice/engine.hxx>
+#include <ice/engine_types_mappers.hxx>
 #include <ice/world/world_updater.hxx>
 
 #include <ice/gfx/gfx_context.hxx>
@@ -31,7 +32,7 @@ namespace ice::devui
     ImGuiTrait::ImGuiTrait(ice::TraitContext& ctx, ice::Allocator& alloc, ImGuiSystem& system) noexcept
         : ice::Trait{ ctx }
         , ice::TraitDevUI{ {.category="Traits/Debug",.name="ImGUI-DevUI"} }
-        , _allocator{ alloc }
+        , _allocator{ alloc, "trait:devui-imgui" }
         , _system{ system }
         , _imgui_gfx_stage{ }
         , _resized{ false }
@@ -166,9 +167,12 @@ namespace ice::devui
         _system.devui_draw(_stats);
     }
 
-    auto ImGuiTrait::gfx_start(ice::gfx::GfxStateChange const& params) noexcept -> ice::Task<>
+    auto ImGuiTrait::gfx_start(
+        ice::gfx::GfxStateChange const& params,
+        ice::AssetStorage& assets
+    ) noexcept -> ice::Task<>
     {
-        _imgui_gfx_stage = ice::make_unique<ImGuiGfxStage>(_allocator, _allocator, params.assets);
+        _imgui_gfx_stage = ice::make_unique<ImGuiGfxStage>(_allocator, _allocator, assets);
         params.registry.register_stage("iceshard.devui"_sid, _imgui_gfx_stage.get());
 
         ice::vec2u const size = params.context.swapchain().extent();

@@ -400,7 +400,7 @@ namespace ice
         auto load_shader_source(
             ice::Allocator& alloc,
             ice::ResourceTracker& tracker,
-            ice::ResourceHandle* source,
+            ice::ResourceHandle const& source,
             ice::render::ShaderStageFlags shader_stage,
             ice::HeapString<>& out_result,
             ice::HeapString<>& out_entry_point
@@ -441,9 +441,9 @@ namespace ice
 
         auto compiler_compile_shader_source(
             ice::ResourceCompilerCtx& ctx,
-            ice::ResourceHandle* source,
+            ice::ResourceHandle const& source,
             ice::ResourceTracker& tracker,
-            ice::Span<ice::ResourceHandle* const>,
+            ice::Span<ice::ResourceHandle const>,
             ice::Span<ice::URI const>,
             ice::Allocator& alloc
         ) noexcept -> ice::Task<ice::ResourceCompilerResult>

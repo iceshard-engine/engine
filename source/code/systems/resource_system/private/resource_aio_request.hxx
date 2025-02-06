@@ -1,9 +1,11 @@
-/// Copyright 2024 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/native_aio.hxx>
 #include <ice/native_file.hxx>
+#include <ice/task_types.hxx>
+#include <ice/profiler.hxx>
 
 namespace ice::detail
 {

@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "imgui_system.hxx"
@@ -68,6 +68,7 @@ namespace ice::devui
         , _builtin_widgets{ alloc }
         , _widget_manager{ _allocator }
         , _widget_logger{ _allocator }
+        , _menu_categories{ _allocator }
     {
         ice::array::push_back(_builtin_widgets, create_allocator_tree_widget(_allocator));
         // ice::array::push_back(_builtin_widgets, (ice::UniquePtr<ice::DevUIWidget>) ice::make_unique<ImGuiLogger>(_allocator, _allocator));
@@ -83,6 +84,14 @@ namespace ice::devui
 
     ImGuiSystem::~ImGuiSystem() noexcept
     {
+    }
+
+    void ImGuiSystem::setup_mainmenu(ice::Span<ice::String> categories) noexcept
+    {
+        for (ice::String category : categories)
+        {
+            ice::array::push_back(_menu_categories, ice::HeapString<>{ _allocator, category });
+        }
     }
 
     void ImGuiSystem::register_widget(ice::DevUIWidget* widget) noexcept
@@ -105,21 +114,13 @@ namespace ice::devui
             return;
         }
 
-        ice::String categories[]{
-            "File",
-            "Settings",
-            "Engine",
-            "Tools",
-            "Help"
-        };
-
         static bool show_demo = false;
 
         ImGui::NewFrame();
         {
             if (ImGui::BeginMainMenuBar())
             {
-                for (ice::String category : categories)
+                for (ice::String category : _menu_categories)
                 {
                     if (ImGui::BeginMenu(ice::string::begin(category)))
                     {
@@ -147,6 +148,8 @@ namespace ice::devui
             {
                 ImGui::ShowDemoWindow(&show_demo);
             }
+
+            ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 
             for (ImGuiDevUIWidget& runtime : _widget_manager.widgets())
             {

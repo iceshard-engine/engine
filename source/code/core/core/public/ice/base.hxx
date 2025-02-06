@@ -120,6 +120,9 @@ namespace ice
     template<typename Member>
     using member_result_type_t = typename member_info<Member>::result_type;
 
+    template<typename Member, ice::ucount Idx>
+    using member_arg_type_t = std::tuple_element_t<Idx, typename member_info<Member>::argument_types>;
+
     template<typename Member>
     constexpr bool is_method_member_v = member_info<Member>::member_type == 1;
 

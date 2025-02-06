@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -38,6 +38,8 @@ namespace ice::devui
         ImGuiSystem(ice::Allocator& alloc) noexcept;
         ~ImGuiSystem() noexcept override;
 
+        void setup_mainmenu(ice::Span<ice::String> categories) noexcept;
+
         void register_widget(ice::DevUIWidget* widget) noexcept;
         void unregister_widget(ice::DevUIWidget* widget) noexcept;
 
@@ -52,6 +54,7 @@ namespace ice::devui
     private:
         ice::ProxyAllocator _allocator;
         ice::Array<ice::UniquePtr<ice::DevUIWidget>> _builtin_widgets;
+        ice::Array<ice::HeapString<>> _menu_categories;
 
         ice::devui::ImGuiDevUIManager _widget_manager;
         ice::devui::ImGuiWidgetFrame _widget_frame;

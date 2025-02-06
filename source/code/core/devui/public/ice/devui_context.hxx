@@ -1,7 +1,12 @@
+/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/devui_types.hxx>
 #include <ice/module_types.hxx>
 #include <ice/mem_unique_ptr.hxx>
+#include <ice/string/string.hxx>
+#include <ice/span.hxx>
 
 namespace ice
 {
@@ -23,6 +28,8 @@ namespace ice
     };
 
     bool devui_available() noexcept;
+
+    void devui_setup_mainmenu(ice::Span<ice::String> categories) noexcept;
 
     auto devui_trait_name() noexcept -> ice::StringID;
 

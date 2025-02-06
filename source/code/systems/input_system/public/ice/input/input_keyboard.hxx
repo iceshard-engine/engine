@@ -103,7 +103,7 @@ namespace ice::input
         KeyZ,
 
         Delete,
-        CapsLock,
+        //CapsLock,
 
         KeyF1,
         KeyF2,
@@ -185,7 +185,7 @@ namespace ice::input
         CapsLock = 0x0200,
         Mode = 0x0400,
 
-        Reserved = 0x0800,
+        // Reserved = 0x0800,
     };
 
 

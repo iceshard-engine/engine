@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -30,7 +30,10 @@ namespace ice::gfx
         auto on_asset_released(ice::Asset const& asset) noexcept -> ice::Task<> override;
 
     public: // Task methods
-        auto gfx_update(ice::gfx::GfxFrameUpdate const& update) noexcept -> ice::Task<>;
+        auto gfx_update(
+            ice::gfx::GfxFrameUpdate const& update,
+            ice::AssetStorage& assets
+        ) noexcept -> ice::Task<>;
 
     private:
         ice::HashMap<GfxImageEntry> _loaded_images;

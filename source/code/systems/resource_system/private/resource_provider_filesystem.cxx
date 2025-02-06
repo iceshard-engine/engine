@@ -1,8 +1,9 @@
-/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "resource_provider_filesystem.hxx"
 #include "resource_provider_hailstorm.hxx"
+#include "resource_filesystem_baked.hxx"
 
 namespace ice
 {
@@ -20,6 +21,7 @@ namespace ice
         , _scheduler{ scheduler }
         , _aioport{ aioport }
         , _virtual_hostname{ virtual_hostname }
+        , _traverser{ *this }
         , _resources{ _named_allocator }
         , _resources_data{ _data_allocator }
         , _devui_widget{ create_filesystem_provider_devui(_named_allocator, _resources) }
@@ -39,9 +41,9 @@ namespace ice
         {
             _data_allocator.deallocate(res_data);
         }
-        for (FileSystemResource* res_entry : _resources)
+        for (ice::FileSystemResource* res_entry : _resources)
         {
-            _named_allocator.destroy(res_entry);
+            ice::destroy_resource_object(_named_allocator, res_entry);
         }
     }
 
@@ -50,211 +52,8 @@ namespace ice
         return ice::Scheme_File;
     }
 
-    void FileSystemResourceProvider::create_resource_from_file(
-        ice::native_file::FilePath base_path,
-        ice::native_file::FilePath file_path
-    ) noexcept
-    {
-        // Early out for metadata files.
-        if (ice::path::extension(file_path) == ISP_PATH_LITERAL(".isrm"))
-        {
-            return;
-        }
-
-        ice::StackAllocator_1024 temp_alloc;
-        ice::native_file::FilePath const uribase = ice::path::directory(base_path);
-        ice::native_file::FilePath const datafile = file_path;
-        ice::native_file::HeapFilePath metafile{ temp_alloc };
-        ice::string::reserve(metafile, 512);
-        ice::string::push_back(metafile, file_path);
-        ice::string::push_back(metafile, ISP_PATH_LITERAL(".isrm"));
-
-        ice::FileSystemResource* const resource = create_resources_from_loose_files(
-            _named_allocator,
-            base_path,
-            uribase,
-            metafile,
-            datafile
-        );
-
-        if (resource != nullptr)
-        {
-            resource->data_index = ice::array::count(_resources_data);
-            ice::array::push_back(_resources_data, ice::Memory{});
-
-            ice::u64 const hash = ice::hash(resource->origin());
-            ICE_ASSERT(
-                ice::hashmap::has(_resources, hash) == false,
-                "A resource cannot be a explicit resource AND part of another resource."
-            );
-
-            ice::hashmap::set(
-                _resources,
-                hash,
-                resource
-            );
-        }
-    }
-
-    struct FileSystemResourceProvider::TraverseResourceRequest
-    {
-        FileSystemResourceProvider& self;
-        ice::native_file::FilePath base_path;
-        std::atomic_uint32_t& remaining;
-        ice::TaskScheduler* worker_thread;
-        ice::TaskScheduler* final_thread;
-    };
-
-    auto FileSystemResourceProvider::traverse_async(
-        ice::native_file::HeapFilePath dir_path,
-        TraverseResourceRequest& request
-    ) noexcept -> ice::Task<>
-    {
-        IPT_ZONE_SCOPED;
-        ice::native_file::traverse_directories(dir_path, traverse_callback, &request);
-        request.remaining -= 1;
-        co_return;
-    }
-
-    auto FileSystemResourceProvider::create_resource_from_file_async(
-        ice::native_file::FilePath base_path,
-        ice::native_file::HeapFilePath file_path,
-        TraverseResourceRequest& request
-    ) noexcept -> ice::Task<>
-    {
-        // Early out for metadata files.
-        if (ice::path::extension(file_path) == ISP_PATH_LITERAL(".isrm"))
-        {
-            request.remaining -= 1;
-            co_return;
-        }
-
-        ice::StackAllocator_1024 temp_alloc;
-        ice::native_file::FilePath const uribase = ice::path::directory(base_path);
-        ice::native_file::FilePath const datafile = file_path;
-        ice::native_file::HeapFilePath metafile{ temp_alloc };
-        ice::string::reserve(metafile, 512);
-        ice::string::push_back(metafile, file_path);
-        ice::string::push_back(metafile, ISP_PATH_LITERAL(".isrm"));
-
-        ice::FileSystemResource* const resource = create_resources_from_loose_files(
-            _named_allocator,
-            base_path,
-            uribase,
-            metafile,
-            datafile
-        );
-
-        co_await *request.final_thread;
-
-        resource->data_index = ice::array::count(_resources_data);
-        ice::array::push_back(_resources_data, ice::Memory{});
-
-        if (resource != nullptr)
-        {
-
-            ice::u64 const hash = ice::hash(resource->origin());
-            ICE_ASSERT(
-                ice::hashmap::has(_resources, hash) == false,
-                "A resource cannot be a explicit resource AND part of another resource."
-            );
-
-            ice::hashmap::set(
-                _resources,
-                hash,
-                resource
-            );
-        }
-
-        request.remaining -= 1;
-    }
-
-    auto FileSystemResourceProvider::traverse_callback(
-        ice::native_file::FilePath,
-        ice::native_file::FilePath path,
-        ice::native_file::EntityType type,
-        void* userdata
-    ) noexcept -> ice::native_file::TraverseAction
-    {
-        TraverseResourceRequest* request = reinterpret_cast<TraverseResourceRequest*>(userdata);
-        if (type == ice::native_file::EntityType::File)
-        {
-            if (request->worker_thread != nullptr)
-            {
-                request->remaining += 1;
-                ice::Allocator& alloc = request->self._named_allocator;
-                ice::schedule_task(
-                    request->self.create_resource_from_file_async(request->base_path, { alloc, path }, *request),
-                    *request->worker_thread
-                );
-            }
-            else
-            {
-                request->self.create_resource_from_file(request->base_path, path);
-            }
-        }
-        else if (type == ice::native_file::EntityType::Directory && request->worker_thread != nullptr)
-        {
-            request->remaining += 1;
-
-            ice::Allocator& alloc = request->self._named_allocator;
-            ice::schedule_task(
-                request->self.traverse_async({ alloc, path }, *request),
-                *request->worker_thread
-            );
-
-            // Since we now run sub-directories as separate tasks, we skip them here
-            return ice::native_file::TraverseAction::SkipSubDir;
-        }
-
-        // Continue in synchronous scenario
-        return ice::native_file::TraverseAction::Continue;
-    }
-
-    void FileSystemResourceProvider::initial_traverse() noexcept
-    {
-        ice::Array<TraverseResourceRequest, ContainerLogic::Complex> requests{ _named_allocator };
-        ice::array::reserve(requests, ice::array::count(_base_paths));
-
-        [[maybe_unused]]
-        std::atomic_uint32_t remaining = 0;
-        for (ice::native_file::FilePath base_path : _base_paths)
-        {
-            ice::array::push_back(requests, { *this, base_path, remaining, nullptr, nullptr });
-            ice::native_file::traverse_directories(
-                base_path, traverse_callback, &ice::array::back(requests)
-            );
-        }
-    }
-
-    void FileSystemResourceProvider::initial_traverse_mt() noexcept
-    {
-        ice::TaskQueue local_queue{ };
-        ice::TaskScheduler local_sched{ local_queue };
-
-        ice::Array<TraverseResourceRequest, ContainerLogic::Complex> requests{ _named_allocator };
-        ice::array::reserve(requests, ice::array::count(_base_paths));
-
-        std::atomic_uint32_t remaining = 0;
-
-        // Traverse directories synchronously but create resources asynchronously.
-        for (ice::native_file::FilePath base_path : _base_paths)
-        {
-            ice::array::push_back(requests, { *this, base_path, remaining, _scheduler, &local_sched });
-            ice::native_file::traverse_directories(
-                base_path, traverse_callback, &ice::array::back(requests)
-            );
-        }
-
-        // Process all awaiting tasks
-        while (remaining > 0)
-        {
-            local_queue.process_all();
-        }
-    }
-
     auto FileSystemResourceProvider::collect(
-        ice::Array<ice::Resource const*>& out_changes
+        ice::Array<ice::Resource*>& out_changes
     ) noexcept -> ice::ucount
     {
         IPT_ZONE_SCOPED;
@@ -268,7 +67,7 @@ namespace ice
     }
 
     auto FileSystemResourceProvider::refresh(
-        ice::Array<ice::Resource const*>& out_changes
+        ice::Array<ice::Resource*>& out_changes
     ) noexcept -> ice::ResourceProviderResult
     {
         IPT_ZONE_SCOPED;
@@ -276,11 +75,11 @@ namespace ice
         {
             if (_scheduler == nullptr)
             {
-                initial_traverse();
+                _traverser.initial_traverse(_base_paths);
             }
             else // if (_scheduler != nullptr)
             {
-                initial_traverse_mt();
+                _traverser.initial_traverse_mt(_base_paths, *_scheduler);
             }
             collect(out_changes);
         }
@@ -289,7 +88,7 @@ namespace ice
 
     auto FileSystemResourceProvider::find_resource(
         ice::URI const& uri
-    ) const noexcept -> ice::Resource const*
+    ) const noexcept -> ice::Resource*
     {
         ICE_ASSERT(
             uri.scheme() == ice::stringid_hash(schemeid()),
@@ -301,7 +100,7 @@ namespace ice
             return nullptr;
         }
 
-        ice::FileSystemResource const* found_resource = nullptr;
+        ice::FileSystemResource* found_resource = nullptr;
         ice::u32 const origin_size = ice::string::size(uri.path());
 
         ice::HeapString<> predicted_path{ (ice::Allocator&) _named_allocator };
@@ -339,9 +138,7 @@ namespace ice
     }
 
     void FileSystemResourceProvider::unload_resource(
-        ice::Allocator&,
-        ice::Resource const* resource,
-        ice::Memory
+        ice::Resource const* resource
     ) noexcept
     {
         ice::FileSystemResource const* const filesys_res = static_cast<ice::FileSystemResource const*>(resource);
@@ -392,6 +189,78 @@ namespace ice
             return nullptr;
         }
     }
+
+#pragma region Implementation of: FileSystemTraverser
+
+    auto FileSystemResourceProvider::allocator() noexcept -> ice::Allocator&
+    {
+        return _named_allocator;
+    }
+
+    auto FileSystemResourceProvider::create_baked_resource(
+        ice::native_file::FilePath filepath
+    ) noexcept -> ice::FileSystemResource*
+    {
+        if constexpr (false)
+        {
+            ice::HeapString<> uri_base{ _named_allocator };
+            ice::string::push_format(uri_base, "file://{}/", _virtual_hostname);
+
+            create_resource_from_baked_file(_named_allocator, *this, uri_base, filepath);
+        }
+        else
+        {
+            return nullptr;
+        }
+    }
+
+    auto FileSystemResourceProvider::create_loose_resource(
+        ice::native_file::FilePath base_path,
+        ice::native_file::FilePath uri_base_path,
+        ice::native_file::FilePath meta_filepath,
+        ice::native_file::FilePath data_filepath
+    ) noexcept -> ice::FileSystemResource*
+    {
+        return ice::create_resources_from_loose_files(
+            _named_allocator,
+            *this,
+            base_path,
+            uri_base_path,
+            meta_filepath,
+            data_filepath
+        );
+    }
+
+    auto FileSystemResourceProvider::register_resource(
+        ice::FileSystemResource* resource
+    ) noexcept -> ice::Result
+    {
+        resource->data_index = ice::array::count(_resources_data);
+        ice::array::push_back(_resources_data, ice::Memory{});
+
+        ice::u64 const hash = ice::hash(resource->origin());
+        ICE_ASSERT(
+            ice::hashmap::has(_resources, hash) == false,
+            "A resource cannot be a explicit resource AND part of another resource."
+        );
+
+        ice::hashmap::set(
+            _resources,
+            hash,
+            resource
+        );
+
+        return S_Ok;
+    }
+
+    void FileSystemResourceProvider::destroy_resource(
+        ice::FileSystemResource* resource
+    ) noexcept
+    {
+        ice::destroy_resource_object(_named_allocator, resource);
+    }
+
+#pragma endregion
 
 } // namespace ice
 

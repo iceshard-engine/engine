@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -22,6 +22,18 @@ namespace ice
         ) const noexcept -> ice::TaskExpected<ice::Data> = 0;
 
         ice::u32 data_index;
+    };
+
+    class WritableFileSystemResource : public ice::FileSystemResource
+    {
+    public:
+        virtual auto write_data(
+            ice::Allocator& alloc,
+            ice::Data data,
+            ice::usize write_offset,
+            ice::String fragment,
+            ice::native_aio::AIOPort aioport
+        ) noexcept -> ice::TaskExpected<ice::usize> = 0;
     };
 
 } // namespace ice

@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "resource_provider_custom.hxx"
@@ -18,7 +18,7 @@ namespace ice
     {
         for (FileSystemResource* res_entry : _resources)
         {
-            _allocator.destroy(res_entry);
+            ice::destroy_resource_object(_allocator, res_entry);
         }
     }
 
@@ -48,6 +48,7 @@ namespace ice
 
         ice::FileSystemResource* const resource = create_resources_from_loose_files(
             _allocator,
+            *this,
             base_path,
             uribase,
             metafile,
@@ -56,7 +57,6 @@ namespace ice
 
         if (resource != nullptr)
         {
-
             ice::u64 const hash = ice::hash(resource->origin());
             ICE_ASSERT(
                 ice::hashmap::has(_resources, hash) == false,
@@ -72,7 +72,7 @@ namespace ice
     }
 
     auto CustomResourceProvider::collect(
-        ice::Array<ice::Resource const*>& out_changes
+        ice::Array<ice::Resource*>& out_changes
     ) noexcept -> ice::ucount
     {
         IPT_ZONE_SCOPED;
@@ -86,7 +86,7 @@ namespace ice
     }
 
     auto CustomResourceProvider::refresh(
-        ice::Array<ice::Resource const*>& out_changes
+        ice::Array<ice::Resource*>& out_changes
     ) noexcept -> ice::ResourceProviderResult
     {
         IPT_ZONE_SCOPED;
@@ -99,7 +99,7 @@ namespace ice
 
     auto CustomResourceProvider::find_resource(
         ice::URI const& uri
-    ) const noexcept -> ice::Resource const*
+    ) const noexcept -> ice::Resource*
     {
         ICE_ASSERT(
             uri.scheme() == ice::stringid_hash(schemeid()),
@@ -112,16 +112,14 @@ namespace ice
         ice::Resource const* resource
     ) const noexcept -> ice::LooseResource const*
     {
+        ICE_ASSERT_CORE(false); // TODO: Check if this should be here.
         return static_cast<ice::LooseFilesResource const*>(resource);
     }
 
     void CustomResourceProvider::unload_resource(
-        ice::Allocator& alloc,
-        ice::Resource const* /*resource*/,
-        ice::Memory memory
+        ice::Resource const* /*resource*/
     ) noexcept
     {
-        alloc.deallocate(memory);
     }
 
     auto CustomResourceProvider::load_resource(
