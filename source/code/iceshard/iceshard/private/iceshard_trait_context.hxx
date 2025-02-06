@@ -1,3 +1,6 @@
+/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/interfaces.hxx>
 #include <ice/mem_unique_ptr.hxx>
@@ -10,7 +13,8 @@ namespace ice
     {
         ice::ShardID event_id;
         ice::u32 trait_idx;
-        ice::TraitIndirectTaskFn event_handler;
+        ice::TraitIndirectTaskFn procedure;
+        void* procedure_userdata;
     };
 
     struct IceshardWorldContext

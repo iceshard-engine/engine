@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -11,8 +11,9 @@
 namespace ice
 {
 
-    struct TraitArchive
+    class TraitArchive
     {
+    public:
         virtual ~TraitArchive() noexcept = default;
 
         virtual void register_trait(ice::TraitDescriptor const& trait_descriptor) noexcept = 0;

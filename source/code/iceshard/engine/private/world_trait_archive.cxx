@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/world/world_trait_archive.hxx>
@@ -31,7 +31,8 @@ namespace ice
                 can_register == false, LogSeverity::Warning, LogTag::Engine,
                 "Register function for trait {} returned unsuccessful.", descriptor.name
             );
-            if (can_register)
+            // TODO: Allow registering with priority instead of first in
+            if (can_register && ice::hashmap::has(_traits, ice::hash(descriptor.name)) == false)
             {
                 ice::hashmap::set(_traits, ice::hash(descriptor.name), ice::move(descriptor));
             }

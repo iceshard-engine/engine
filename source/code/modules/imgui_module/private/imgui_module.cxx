@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "imgui_system.hxx"
@@ -69,6 +69,14 @@ namespace ice::devui
         return "devui.world-trait.imgui"_sid;
     }
 
+    void imgui_setup_mainmenu(ice::Span<ice::String> categories) noexcept
+    {
+        if (global_ImGuiContext != nullptr)
+        {
+            global_ImGuiContext->setup_mainmenu(categories);
+        }
+    }
+
     void imgui_register_widget(ice::DevUIWidget* widget) noexcept
     {
         ICE_LOG_IF(
@@ -102,6 +110,7 @@ namespace ice::devui
             api.fn_create_context = imgui_create_context;
             api.fn_destry_context = imgui_destroy_context;
             api.fn_context_setup = imgui_context_setup;
+            api.fn_context_setup_menu = imgui_setup_mainmenu;
             api.fn_context_register_widget = imgui_register_widget;
             api.fn_context_remove_widget = imgui_remove_widget;
             api.fn_context_trait_name = imgui_trait_name;

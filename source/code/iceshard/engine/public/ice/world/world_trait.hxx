@@ -1,20 +1,19 @@
-/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/devui_widget.hxx>
-#include <ice/engine_types.hxx>
-#include <ice/mem_unique_ptr.hxx>
-#include <ice/shard_container.hxx>
-#include <ice/span.hxx>
-#include <ice/task.hxx>
+#include <ice/world/world_trait_types.hxx>
 #include <ice/world/world_trait_context.hxx>
+#include <ice/shard_container.hxx>
+#include <ice/mem_unique_ptr.hxx>
+#include <ice/devui_widget.hxx>
 
 namespace ice
 {
 
-    struct Trait
+    class Trait
     {
+    public:
         Trait(ice::TraitContext& context) noexcept;
         virtual ~Trait() noexcept = default;
 

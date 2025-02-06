@@ -1,14 +1,19 @@
+/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
-#include <ice/task_checkpoint.hxx>
 #include <ice/world/world_trait_details.hxx>
+#include <ice/task_checkpoint.hxx>
+#include <ice/task.hxx>
 
 namespace ice
 {
 
     static constexpr ice::ErrorCode E_TraitContextNotInitialized{ "E.1100:Worlds:World trait context was not initialized!" };
 
-    struct TraitContext
+    class TraitContext
     {
+    public:
         virtual ~TraitContext() noexcept = default;
 
         virtual void register_interface_selector(ice::InterfaceSelector* selector) noexcept = 0;
@@ -19,11 +24,11 @@ namespace ice
 
         virtual auto bind(ice::TraitTaskBinding const& binding) noexcept -> ice::Result = 0;
 
-        template<auto MemberPtr> requires (ice::is_method_member_v<decltype(MemberPtr)>)
-        auto bind(ice::ShardID event = ice::Shard_Invalid.id) noexcept -> ice::Result;
+        template<auto MemberPtr>
+        auto bind(ice::ShardID event = ice::Shard_Invalid, void* userdata = nullptr) noexcept -> ice::Result;
 
-        template<auto MemberPtr, typename DataType> requires (ice::is_method_member_v<decltype(MemberPtr)>)
-        auto bind(ice::ShardID event = ice::Shard_Invalid.id) noexcept -> ice::Result;
+        template<auto MemberPtr, typename DataType>
+        auto bind(ice::ShardID event = ice::Shard_Invalid, void* userdata = nullptr) noexcept -> ice::Result;
 
         template<typename T, typename... Args>
         auto make_unique(ice::Allocator& alloc, Args&&... args) noexcept -> ice::UniquePtr<T>
@@ -37,36 +42,41 @@ namespace ice
         }
     };
 
-    using TraitTaskFn = auto (ice::Trait::*)(ice::Shard) noexcept -> ice::Task<>;
-    using TraitIndirectTaskFn = auto (*)(ice::Trait*, ice::Shard, ice::detail::TraitTaskTracker*) noexcept -> ice::Task<>;
-
-    struct TraitTaskBinding
+    template<auto MemberPtr>
+    auto TraitContext::bind(ice::ShardID event, void* userdata) noexcept -> ice::Result
     {
-        ice::ShardID trigger_event;
-        ice::TraitIndirectTaskFn procedure;
-        ice::TraitTaskType task_type = ice::TraitTaskType::Frame;
-    };
+        using MemberType = decltype(MemberPtr);
 
-    template<auto MemberPtr> requires (ice::is_method_member_v<decltype(MemberPtr)>)
-    auto TraitContext::bind(ice::ShardID event) noexcept -> ice::Result
-    {
-        return this->bind(
-            TraitTaskBinding{
-                .trigger_event = event,
-                .procedure = detail::trait_method_task_wrapper<MemberPtr>,
-                .task_type = ice::TraitTaskType::Frame,
-            }
-        );
+        if constexpr (ice::member_info<MemberType>::argument_count > 0)
+        {
+            return this->bind(
+                TraitTaskBinding{
+                    .trigger_event = event,
+                    .procedure = ice::detail::trait_method_task<MemberPtr, ice::member_arg_type_t<MemberType, 0>>,
+                    .procedure_userdata = userdata,
+                }
+            );
+        }
+        else
+        {
+            return this->bind(
+                TraitTaskBinding{
+                    .trigger_event = event,
+                    .procedure = ice::detail::trait_method_task<MemberPtr, void>,
+                    .procedure_userdata = userdata,
+                }
+            );
+        }
     }
 
-    template<auto MemberPtr, typename DataType> requires (ice::is_method_member_v<decltype(MemberPtr)>)
-    auto TraitContext::bind(ice::ShardID event) noexcept -> ice::Result
+    template<auto MemberPtr, typename DataType>
+    auto TraitContext::bind(ice::ShardID event, void* userdata) noexcept -> ice::Result
     {
         return this->bind(
             TraitTaskBinding{
                 .trigger_event = event,
-                .procedure = detail::trait_method_task_wrapper<MemberPtr, DataType>,
-                .task_type = ice::TraitTaskType::Frame,
+                .procedure = ice::detail::trait_method_task<MemberPtr, DataType>,
+                .procedure_userdata = userdata,
             }
         );
     }

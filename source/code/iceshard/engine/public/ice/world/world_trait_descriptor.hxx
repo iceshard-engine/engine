@@ -1,11 +1,8 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/span.hxx>
-#include <ice/stringid.hxx>
-#include <ice/mem_unique_ptr.hxx>
-#include <ice/world/world_types.hxx>
+#include <ice/world/world_trait_types.hxx>
 
 namespace ice
 {

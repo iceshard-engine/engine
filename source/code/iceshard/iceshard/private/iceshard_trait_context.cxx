@@ -1,3 +1,6 @@
+/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "iceshard_trait_context.hxx"
 #include <ice/container/hashmap.hxx>
 #include <ice/engine_runner.hxx>
@@ -82,7 +85,8 @@ namespace ice
             ice::IceshardEventHandler{
                 .event_id = trigger_event,
                 .trait_idx = _trait_index,
-                .event_handler = binding.procedure,
+                .procedure = binding.procedure,
+                .procedure_userdata = binding.procedure_userdata
             }
         );
 
