@@ -102,7 +102,9 @@ namespace ice
             world_template.name
         );
 
-        ice::UniquePtr<ice::IceshardWorldContext> world_context = ice::make_unique<ice::IceshardWorldContext>(_allocator, _allocator);
+        ice::UniquePtr<ice::IceshardWorldContext> world_context = ice::make_unique<ice::IceshardWorldContext>(
+            _allocator, _allocator, world_template.name
+        );
         ice::Array<ice::UniquePtr<ice::IceshardTraitContext>, ice::ContainerLogic::Complex> world_traits{ _allocator };
         for (ice::StringID_Arg traitid : world_template.traits)
         {
@@ -115,9 +117,9 @@ namespace ice
             if (desc != nullptr)
             {
                 ice::UniquePtr<ice::IceshardTraitContext> trait_context = ice::make_unique<ice::IceshardTraitContext>(
-                    _allocator, *world_context.get(), ice::array::count(world_traits)
+                    world_context->_allocator, *world_context.get(), ice::array::count(world_traits)
                 );
-                ice::UniquePtr<ice::Trait> trait = desc->fn_factory(_allocator, *trait_context.get(), desc->fn_factory_userdata);
+                ice::UniquePtr<ice::Trait> trait = desc->fn_factory(world_context->_allocator, *trait_context.get(), desc->fn_factory_userdata);
                 if (trait != nullptr)
                 {
                     trait_context->trait = ice::move(trait);
@@ -129,17 +131,16 @@ namespace ice
         _state_tracker.register_subname(world_template.name);
         //_state_tracker.initialize_subname_state(ice::StateGraph_WorldState, world_template.name);
 
-        Entry world_entry{
-            .world = ice::make_unique<ice::IceshardWorld>(
-                _allocator,
-                _allocator,
-                world_template.name,
-                world_template.entity_storage,
-                ice::move(world_context),
-                ice::move(world_traits),
-                _devui_tasks.get()
-            ),
-        };
+        Entry world_entry{ .context = ice::move(world_context) };
+        world_entry.world = ice::make_unique<ice::IceshardWorld>(
+            _allocator,
+            world_entry.context->_allocator,
+            world_template.name,
+            world_template.entity_storage,
+            *world_entry.context,
+            ice::move(world_traits),
+            _devui_tasks.get()
+        );
 
         // Add a new pending event
         ice::shards::push_back(
@@ -205,6 +206,7 @@ namespace ice
     {
         for (Entry& world_entry : ice::hashmap::values(_worlds))
         {
+            world_entry.context->close_checkpoints();
             world_entry.world->pre_update(out_shards);
         }
     }

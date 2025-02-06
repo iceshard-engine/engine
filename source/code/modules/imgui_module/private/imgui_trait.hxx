@@ -50,7 +50,7 @@ namespace ice::devui
         void build_internal_command_list(ice::Span<ImGuiGfxStage::DrawCommand> draw_cmds) noexcept;
 
     private:
-        ice::Allocator& _allocator;
+        ice::ProxyAllocator _allocator;
         ice::devui::ImGuiSystem& _system;
         ice::devui::ImGuiStats _stats;
         ice::UniquePtr<ImGuiGfxStage> _imgui_gfx_stage;

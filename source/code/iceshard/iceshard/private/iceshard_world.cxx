@@ -11,17 +11,17 @@ namespace ice
         ice::Allocator& alloc,
         ice::StringID_Arg worldid,
         ice::ecs::EntityStorage& entity_storage,
-        ice::UniquePtr<ice::IceshardWorldContext> context,
+        ice::IceshardWorldContext& context,
         ice::Array<ice::UniquePtr<ice::IceshardTraitContext>> traits,
         ice::detail::TraitTaskTracker* task_tracker
     ) noexcept
         : worldID{ worldid }
+        , _allocator{ alloc, "world-data" }
         , _entity_storage{ entity_storage }
-        , _entity_operations{ alloc, 16 }
-        , _context{ ice::move(context) }
+        , _entity_operations{ _allocator, 16 }
         , _traits{ ice::move(traits) }
-        , _tasks_launcher{ *_context, ice::array::slice(_traits), task_tracker }
-        , _devui{ create_devui(alloc) }
+        , _tasks_launcher{ context, ice::array::slice(_traits), task_tracker }
+        , _devui{ create_devui(_allocator, context) }
     {
     }
 
@@ -29,8 +29,6 @@ namespace ice
     {
         _entity_storage.execute_operations(_entity_operations, out_shards);
         _entity_operations.clear();
-
-        _context->close_checkpoints();
 
         // Sync trait events
         for (ice::UniquePtr<ice::IceshardTraitContext>& trait : _traits)

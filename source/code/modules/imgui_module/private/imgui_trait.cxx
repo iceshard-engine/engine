@@ -32,7 +32,7 @@ namespace ice::devui
     ImGuiTrait::ImGuiTrait(ice::TraitContext& ctx, ice::Allocator& alloc, ImGuiSystem& system) noexcept
         : ice::Trait{ ctx }
         , ice::TraitDevUI{ {.category="Traits/Debug",.name="ImGUI-DevUI"} }
-        , _allocator{ alloc }
+        , _allocator{ alloc, "trait:devui-imgui" }
         , _system{ system }
         , _imgui_gfx_stage{ }
         , _resized{ false }

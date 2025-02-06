@@ -20,11 +20,11 @@ namespace ice
 
     struct IceshardWorldContext
     {
-        IceshardWorldContext(ice::Allocator& alloc) noexcept;
+        IceshardWorldContext(ice::Allocator& alloc, ice::StringID_Arg worldid) noexcept;
 
         void close_checkpoints() noexcept;
 
-        ice::Allocator& _allocator;
+        ice::ProxyAllocator _allocator;
         ice::TaskCheckpoint _always_reached_checkpoint;
         ice::HashMap<ice::TaskCheckpoint*> _checkpoints;
         ice::HashMap<ice::IceshardEventHandler> _frame_handlers;

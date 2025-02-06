@@ -71,6 +71,7 @@ namespace ice
 
         struct Entry
         {
+            ice::UniquePtr<ice::IceshardWorldContext> context;
             ice::UniquePtr<ice::IceshardWorld> world;
             bool is_active;
         };

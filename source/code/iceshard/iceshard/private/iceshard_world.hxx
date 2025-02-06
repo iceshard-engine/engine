@@ -22,7 +22,7 @@ namespace ice
             ice::Allocator& alloc,
             ice::StringID_Arg worldid,
             ice::ecs::EntityStorage& entity_storage,
-            ice::UniquePtr<ice::IceshardWorldContext> context,
+            ice::IceshardWorldContext& context,
             ice::Array<ice::UniquePtr<ice::IceshardTraitContext>> traits,
             ice::detail::TraitTaskTracker* task_tracker
         ) noexcept;
@@ -47,15 +47,18 @@ namespace ice
         auto devui() noexcept -> DevUI&;
 
     private:
+        ice::ProxyAllocator _allocator;
         ice::ecs::EntityStorage& _entity_storage;
         ice::ecs::EntityOperations _entity_operations;
-        ice::UniquePtr<ice::IceshardWorldContext> _context;
         ice::Array<ice::UniquePtr<ice::IceshardTraitContext>> _traits;
         ice::IceshardTasksLauncher _tasks_launcher;
 
     private:
         ice::UniquePtr<DevUI> _devui;
-        auto create_devui(ice::Allocator& alloc) noexcept -> ice::UniquePtr<DevUI>;
+        auto create_devui(
+            ice::Allocator& alloc,
+            ice::IceshardWorldContext& context
+        ) noexcept -> ice::UniquePtr<DevUI>;
     };
 
 } // namespace ice

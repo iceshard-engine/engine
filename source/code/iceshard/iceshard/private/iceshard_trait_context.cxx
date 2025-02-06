@@ -10,8 +10,8 @@
 namespace ice
 {
 
-    IceshardWorldContext::IceshardWorldContext(ice::Allocator& alloc) noexcept
-        : _allocator{ alloc }
+    IceshardWorldContext::IceshardWorldContext(ice::Allocator& alloc, ice::StringID_Arg worldid) noexcept
+        : _allocator{ alloc, ice::stringid_hint(worldid) }
         , _always_reached_checkpoint{ true }
         , _checkpoints{ alloc }
         , _frame_handlers{ alloc }
