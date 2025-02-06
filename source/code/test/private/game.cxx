@@ -290,6 +290,15 @@ void TestGame::on_setup(ice::framework::State const& state) noexcept
     _archetype_index->register_archetype(TestTrait::Archetype_TestArchetype);
 
     _entity_storage = ice::make_unique<ice::ecs::EntityStorage>(_allocator, _allocator, *_archetype_index);
+
+    ice::String categories[]{
+        "File",
+        "Settings",
+        "Engine",
+        "Tools",
+        "Help"
+    };
+    ice::devui_setup_mainmenu(categories);
 }
 
 void TestGame::on_shutdown(ice::framework::State const& state) noexcept

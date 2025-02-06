@@ -503,7 +503,7 @@ namespace ice::native_aio
         ice::ucount num_completed = 0;
         while(limits.events_max > num_completed)
         {
-            ice::native_aio::AIORequest const* request;
+            ice::native_aio::AIORequest const* request = nullptr;
 
             // TODO: Allow different requests
             bool const iocompleted = aio_file_await_request(port, limits, request, bytes);
