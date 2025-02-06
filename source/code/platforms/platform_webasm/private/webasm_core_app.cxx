@@ -32,6 +32,7 @@ namespace ice::platform::webasm
         _runtime.reset();
         _state.reset();
         _config.reset();
+        _wait.reset();
     }
 
     void WebAsmCoreApp::initialize(ice::Span<ice::Shard const> params) noexcept
@@ -105,6 +106,7 @@ namespace ice::platform::webasm
         else if (_initstage == 3)
         {
             _threads->queue_gfx.process_all();
+            _wait.set(); // Allow the 'main' thread to run since we finished drawing.
         }
         else if (_initstage == 4) // OnSuspend
         {
@@ -138,6 +140,11 @@ namespace ice::platform::webasm
                 ICE_ASSERT_CORE(res == ice::app::S_ApplicationUpdate);
             }
         }
+
+        // Before a new frame can be processed wait for drawing to finish.
+        //  ensure the browser does not spend 100% on this single thread.
+        _wait.wait();
+        _wait.reset();
     }
 
     auto WebAsmCoreApp::native_webapp_thread(void* userdata, ice::TaskQueue& queue) noexcept -> ice::u32
