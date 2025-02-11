@@ -10,26 +10,7 @@
 namespace ice
 {
 
-    struct IceshardEventHandler
-    {
-        ice::ShardID event_id;
-        ice::u32 trait_idx;
-        ice::TraitIndirectTaskFn procedure;
-        void* procedure_userdata;
-    };
-
-    struct IceshardWorldContext
-    {
-        IceshardWorldContext(ice::Allocator& alloc, ice::StringID_Arg worldid) noexcept;
-
-        void close_checkpoints() noexcept;
-
-        ice::ProxyAllocator _allocator;
-        ice::TaskCheckpoint _always_reached_checkpoint;
-        ice::HashMap<ice::TaskCheckpoint*> _checkpoints;
-        ice::HashMap<ice::IceshardEventHandler> _frame_handlers;
-        ice::HashMap<ice::IceshardEventHandler> _runner_handlers;
-    };
+    class IceshardWorldContext;
 
     class IceshardTraitContext : public ice::TraitContext, public ice::InterfaceSelector
     {
@@ -41,6 +22,8 @@ namespace ice
 
         IceshardTraitContext(ice::IceshardWorldContext& world_context, ice::u32 index) noexcept;
         ~IceshardTraitContext() noexcept;
+
+        auto world() noexcept -> ice::World& override;
 
         void send(ice::detail::TraitEvent event) noexcept override;
         void sync(ice::ShardContainer& out_shards) noexcept;

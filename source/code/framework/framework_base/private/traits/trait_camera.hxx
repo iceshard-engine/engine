@@ -5,72 +5,56 @@
 #include <ice/game_camera.hxx>
 #include <ice/render/render_declarations.hxx>
 #include <ice/container/array.hxx>
+#include <ice/ecs/ecs_query.hxx>
 
 namespace ice
 {
 
-    struct TraitCameraRenderData
-    {
-        ice::mat4x4 view;
-        ice::mat4x4 projection;
-    };
+    using QueryCameras = ice::ecs::QueryDefinition<
+        ice::ecs::EntityHandle,
+        ice::Camera const&,
+        ice::CameraOrtho const*,
+        ice::CameraPerspective const*
+    >;
 
     struct TraitCameraData
     {
         ice::StringID camera_name;
-        ice::TraitCameraRenderData render_data;
+        ice::CameraData render_data;
     };
 
-#if 0
-    class IceWorldTrait_RenderCamera : public ice::gfx::GfxTrait
+    class IceWorldTrait_RenderCamera : public ice::Trait
     {
     public:
-        IceWorldTrait_RenderCamera(ice::Allocator& alloc) noexcept;
+        static auto trait_descriptor() noexcept -> ice::TraitDescriptor const&;
 
-        void on_activate(
-            ice::Engine& engine,
-            ice::EngineRunner& runner,
-            ice::WorldPortal& portal
-        ) noexcept override;
+        IceWorldTrait_RenderCamera(
+            ice::Allocator& alloc,
+            ice::TraitContext& context
+        ) noexcept;
 
-        void on_deactivate(
-            ice::Engine& engine,
-            ice::EngineRunner& runner,
-            ice::WorldPortal& portal
-        ) noexcept override;
+        auto activate(
+            ice::WorldStateParams const& params
+        ) noexcept -> ice::Task<> override;
 
-        void on_update(
-            ice::EngineFrame& frame,
-            ice::EngineRunner& runner,
-            ice::WorldPortal& portal
-        ) noexcept override;
+        auto deactivate(
+            ice::WorldStateParams const& params
+        ) noexcept -> ice::Task<> override;
 
-        void gfx_update(
-            ice::EngineFrame const& engine_frame,
-            ice::gfx::GfxFrame& gfx_frame,
-            ice::gfx::GfxContext& gfx_ctx
-        ) noexcept override;
-
-        void gfx_setup(
-            ice::gfx::GfxFrame& gfx_frame,
-            ice::gfx::GfxContext& gfx_ctx
-        ) noexcept override;
-
-        void gfx_cleanup(
-            ice::gfx::GfxFrame& gfx_frame,
-            ice::gfx::GfxContext& gfx_ctx
-        ) noexcept override;
+    protected:
+        auto on_update(
+            ice::EngineFrameUpdate const& params
+        ) noexcept -> ice::Task<>;
 
     protected:
         auto task_update_cameras(
-            ice::EngineFrame& frame,
-            ice::EngineRunner& runner,
-            ice::WorldPortal& portal
+            ice::EngineFrame& frame
         ) noexcept -> ice::Task<>;
 
     private:
-        ice::Array<ice::render::Buffer> _camera_buffers;
+        ice::ecs::Query<ice::QueryCameras> _query_cameras;
+        ice::Array<ice::TraitCameraData> _cameras;
+        ice::TaskCheckpoint _ready;
     };
-#endif
 
 } // namespace ice

@@ -2,6 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#include <ice/ecs/ecs_types.hxx>
 #include <ice/world/world_trait_types.hxx>
 #include <ice/world/world_trait_context.hxx>
 #include <ice/shard_container.hxx>
@@ -23,8 +24,12 @@ namespace ice
     public:
         void send(ice::Shard shard) noexcept;
         void send(ice::ShardID shardid) noexcept;
+        void send(ice::ShardID shardid, ice::String value) noexcept;
         void send(ice::ShardID shardid, ice::Asset handle) noexcept;
         void send(ice::ShardID shardid, ice::ResourceHandle handle) noexcept;
+
+        auto entity_operations() noexcept -> ice::ecs::EntityOperations&;
+        auto entity_queries() noexcept -> ice::ecs::QueryProvider&;
 
     protected:
         ice::TraitContext& _context;

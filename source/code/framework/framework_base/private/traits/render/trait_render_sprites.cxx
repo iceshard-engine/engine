@@ -484,7 +484,7 @@ namespace ice
                 .uniform_buffer = ResourceBufferInfo{
                     .buffer = _render_camera_buffer,
                     .offset = 0,
-                    .size = sizeof(ice::TraitCameraRenderData)
+                    .size = sizeof(ice::CameraData)
                 }
             },
             ResourceUpdateInfo

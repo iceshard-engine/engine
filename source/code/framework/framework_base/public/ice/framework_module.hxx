@@ -8,10 +8,12 @@
 namespace ice::framework
 {
 
-    struct FrameworkModule
+    class FrameworkModule : public ice::Module<FrameworkModule>
     {
-        static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiatorBase const& negotiator) noexcept;
-        static void on_unload(ice::Allocator& alloc) noexcept;
+    public:
+        static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiatorTagged<FrameworkModule> const& negotiator) noexcept;
+
+        IS_WORKAROUND_MODULE_INITIALIZATION(FrameworkModule);
     };
 
 } // namespace ice::framework

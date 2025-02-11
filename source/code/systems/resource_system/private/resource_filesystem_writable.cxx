@@ -163,27 +163,28 @@ namespace ice
 
     auto WritableFileResource::load_data(
         ice::Allocator& alloc,
-        ice::Memory& memory,
+        ice::Memory& out_memory,
         ice::String fragment,
         ice::native_aio::AIOPort aioport
     ) const noexcept -> ice::TaskExpected<ice::Data>
     {
+        ice::Memory result = out_memory;
         ICE_ASSERT(
-            memory.location == nullptr || memory.size >= (_datasize + _metasize),
+            result.location == nullptr || result.size >= (_datasize + _metasize),
             "Allocated memory is not large enough to store resource data and metadata!"
         );
 
         ice::usize const metaoffset = ice::align_to(_datasize, ice::ualign::b_8).value;
-        if (memory.location == nullptr)
+        if (result.location == nullptr)
         {
-            memory = alloc.allocate(metaoffset + _metasize);
+            result = alloc.allocate(metaoffset + _metasize);
 
-            ice::Memory targetmem = memory;
+            ice::Memory targetmem = result;
             if (aioport != nullptr)
             {
                 targetmem.size = _datasize;
                 co_await detail::async_file_load(alloc, targetmem, aioport, _origin_path, false);
-                targetmem = ice::ptr_add(memory, metaoffset);
+                targetmem = ice::ptr_add(result, metaoffset);
                 targetmem.size = _metasize;
                 co_await detail::async_file_load(alloc, targetmem, aioport, _origin_path, true);
             }
@@ -191,19 +192,21 @@ namespace ice
             {
                 targetmem.size = _datasize;
                 detail::sync_file_load(alloc, targetmem, _origin_path, false);
-                targetmem = ice::ptr_add(memory, metaoffset);
+                targetmem = ice::ptr_add(result, metaoffset);
                 targetmem.size = _metasize;
                 detail::sync_file_load(alloc, targetmem, _origin_path, true);
             }
         }
 
+        out_memory = result;
+
         if (fragment == "meta")
         {
-            co_return Data{ ice::ptr_add(memory.location, metaoffset), _metasize, ice::ualign::b_8 };
+            co_return Data{ ice::ptr_add(result.location, metaoffset), _metasize, ice::ualign::b_8 };
         }
         else
         {
-            co_return Data{ memory.location, _datasize, ice::ualign::b_default };
+            co_return Data{ result.location, _datasize, ice::ualign::b_default };
         }
     }
 

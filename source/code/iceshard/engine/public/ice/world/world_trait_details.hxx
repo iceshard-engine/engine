@@ -3,11 +3,22 @@
 
 #pragma once
 #include <ice/world/world_trait_types.hxx>
+#include <ice/mem_unique_ptr.hxx>
 #include <ice/assert.hxx>
 #include <ice/task.hxx>
 
 namespace ice::detail
 {
+
+    template<typename Trait>
+    inline auto default_trait_factory(
+        ice::Allocator& alloc,
+        ice::TraitContext& context,
+        void* userdata
+    ) noexcept -> ice::UniquePtr<ice::Trait>
+    {
+        return ice::make_unique<Trait>(alloc, alloc, context);
+    }
 
     template<typename R, typename T = R>
     auto map_task_arg(T value) noexcept -> R

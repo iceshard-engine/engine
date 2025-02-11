@@ -18,6 +18,7 @@ namespace ice
     Asset::Asset(ice::AssetHandle* handle) noexcept
         : _handle{ handle }
     {
+        _handle->_refcount.fetch_add(1, std::memory_order_relaxed);
     }
 
     Asset::~Asset() noexcept
@@ -30,6 +31,12 @@ namespace ice
     {
     }
 
+    Asset::Asset(Asset const& other) noexcept
+        : _handle{ other._handle }
+    {
+        other._handle->_refcount.fetch_add(1, std::memory_order_relaxed);
+    }
+
     auto Asset::operator=(Asset&& other) noexcept -> ice::Asset&
     {
         if (this != ice::addressof(other))
@@ -40,6 +47,25 @@ namespace ice
             }
 
             _handle = ice::exchange(other._handle, nullptr);
+        }
+        return *this;
+    }
+
+    auto Asset::operator=(Asset const& other) noexcept -> ice::Asset&
+    {
+        if (this != ice::addressof(other))
+        {
+            if (_handle != nullptr)
+            {
+                this->release();
+            }
+
+            _handle = other._handle;
+
+            if (_handle != nullptr)
+            {
+                _handle->_refcount.fetch_add(1, std::memory_order_relaxed);
+            }
         }
         return *this;
     }
@@ -104,6 +130,11 @@ namespace ice
     auto Asset::data(ice::AssetState state) noexcept -> ice::Task<ice::Data>
     {
         co_return co_await _handle->_shelve->storage.request(*this, state);
+    }
+
+    auto Asset::resource() const noexcept -> ice::Resource const*
+    {
+        return ice::asset_data_resource(_handle->_data);
     }
 
     auto Asset::operator[](ice::AssetState state) noexcept -> ice::Task<ice::Data>

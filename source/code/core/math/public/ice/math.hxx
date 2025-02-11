@@ -15,6 +15,7 @@
 #include <ice/math/translate.hxx>
 #include <ice/math/scale.hxx>
 #include <ice/math/rotate.hxx>
+#include <ice/math/decompose.hxx>
 #include <ice/shard.hxx>
 
 namespace ice

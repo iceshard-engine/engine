@@ -13,6 +13,8 @@ namespace ice::math
 
     constexpr auto scale(mat<4, 4, f32> left, vec<3, f32> right) noexcept -> mat<4, 4, f32>;
 
+    constexpr auto scale(mat<4, 4, f32> const& matrix) noexcept -> vec<3, f32>;
+
 
     constexpr auto scale(vec<3, f32> v) noexcept -> mat<4, 4, f32>
     {
@@ -27,6 +29,15 @@ namespace ice::math
         temp.v[2][2] = right.v[0][2];
         temp.v[3][3] = 1.f;
         return mul(left, temp);
+    }
+
+    constexpr auto scale(mat<4, 4, f32> const& matrix) noexcept -> vec<3, f32>
+    {
+        return {
+            length(vec{matrix.v[0]}),
+            length(vec{matrix.v[1]}),
+            length(vec{matrix.v[2]})
+        };
     }
 
 } // namespace ice::math

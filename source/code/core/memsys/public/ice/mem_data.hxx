@@ -47,6 +47,16 @@ namespace ice
         };
     }
 
+    inline auto ptr_add(ice::Data mem, ice::usize offset) noexcept -> ice::Data
+    {
+        ICE_ASSERT_CORE(mem.size >= offset);
+        return Data{
+            .location = ice::ptr_add(mem.location, offset),
+            .size = {mem.size.value - offset.value},
+            .alignment = mem.alignment
+        };
+    }
+
     namespace data
     {
 
@@ -79,6 +89,18 @@ namespace ice
             out_value = *reinterpret_cast<T const*>(source.location);
             source.location = ice::ptr_add(source.location, ice::size_of<T>);
             source.size = ice::usize{ source.size.value - ice::size_of<T>.value };
+            source.alignment = ice::align_of<T>;
+            return source;
+        }
+
+        template<typename T, ice::ucount Size>
+            requires (std::is_trivially_copyable_v<T> && !std::is_pointer_v<T>)
+        inline auto read_raw_array(ice::Data source, T(&out_array)[Size]) noexcept -> ice::Data
+        {
+            ICE_ASSERT_CORE(source.alignment >= ice::align_of<T>);
+            ice::memcpy(out_array, source.location, sizeof(T) * Size);
+            source.location = ice::ptr_add(source.location, ice::size_of<T> * Size);
+            source.size = ice::usize{ source.size.value - ice::size_of<T>.value * Size };
             source.alignment = ice::align_of<T>;
             return source;
         }

@@ -1,6 +1,7 @@
 /// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
+#include "iceshard_world.hxx"
 #include "iceshard_trait_context.hxx"
 
 #include <ice/world/world_trait.hxx>
@@ -10,22 +11,6 @@
 namespace ice
 {
 
-    IceshardWorldContext::IceshardWorldContext(ice::Allocator& alloc, ice::StringID_Arg worldid) noexcept
-        : _allocator{ alloc, ice::stringid_hint(worldid) }
-        , _always_reached_checkpoint{ true }
-        , _checkpoints{ alloc }
-        , _frame_handlers{ alloc }
-        , _runner_handlers{ alloc }
-    { }
-
-    void IceshardWorldContext::close_checkpoints() noexcept
-    {
-        for (ice::TaskCheckpoint* checkpoint : _checkpoints)
-        {
-            checkpoint->close();
-        }
-    }
-
     IceshardTraitContext::IceshardTraitContext(
         ice::IceshardWorldContext& world_context,
         ice::u32 trait_idx
@@ -33,13 +18,18 @@ namespace ice
         : _trait_index{ trait_idx }
         , _world_context{ world_context }
         , _interface_selector{ nullptr }
-        , _events{ world_context._allocator }
-        , _events_expired{ world_context._allocator }
+        , _events{ world_context.allocator() }
+        , _events_expired{ world_context.allocator() }
     {
     }
 
     IceshardTraitContext::~IceshardTraitContext() noexcept
     {
+    }
+
+    auto IceshardTraitContext::world() noexcept -> ice::World&
+    {
+        return _world_context.world();
     }
 
     void IceshardTraitContext::send(ice::detail::TraitEvent event) noexcept

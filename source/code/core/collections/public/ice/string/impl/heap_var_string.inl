@@ -1,26 +1,11 @@
 /// Copyright 2024 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
-
 namespace ice
 {
 
     namespace string::detail
     {
-
-        inline auto write_varstring_size(void* data, ice::ucount size) noexcept -> ice::ucount
-        {
-            ice::ucount bytes = 0;
-            ice::u8* var_byte = reinterpret_cast<ice::u8*>(data);
-            while(size > 0x7f)
-            {
-                var_byte[bytes] = (size & 0x7f) | 0x80;
-                size >>= 7;
-                bytes += 1;
-            }
-            var_byte[bytes] = size & 0x7f;
-            return bytes + 1;
-        }
 
         inline auto allocate_varstring_exact(ice::Allocator& alloc, ice::ucount size, ice::ucount& out_size_bytes) noexcept -> char*
         {
@@ -67,6 +52,19 @@ namespace ice
     }
 
     template<typename CharType>
+    inline HeapVarString<CharType>::HeapVarString(ice::HeapVarString<CharType>&& other) noexcept
+        : _allocator{ other._allocator }
+        , _data{ ice::exchange(other._data, nullptr) }
+    {
+    }
+
+    template<typename CharType>
+    inline HeapVarString<CharType>::HeapVarString(ice::HeapVarString<CharType> const& other) noexcept
+        : HeapVarString{ other._allocator, ice::String{ other } }
+    {
+    }
+
+    template<typename CharType>
     inline HeapVarString<CharType>::~HeapVarString() noexcept
     {
         if (_data != nullptr)
@@ -88,6 +86,24 @@ namespace ice
     }
 
     template<typename CharType>
+    inline bool operator==(ice::HeapVarString<CharType> const& left, CharType const* right) noexcept
+    {
+        return ice::BasicString<CharType>{ left } == ice::BasicString<CharType>{ right };
+    }
+
+    template<typename CharType>
+    inline bool operator==(ice::HeapVarString<CharType> const& left, ice::BasicString<CharType> right) noexcept
+    {
+        return ice::BasicString<CharType>{ left } == right;
+    }
+
+    template<typename CharType>
+    inline bool operator==(ice::BasicString<CharType> left, ice::HeapVarString<CharType> const& right) noexcept
+    {
+        return left == ice::BasicString<CharType>{ right };
+    }
+
+    template<typename CharType>
     inline HeapVarString<CharType>::operator ice::BasicString<CharType>() const noexcept
     {
         ice::ucount bytes = 0;
@@ -102,5 +118,59 @@ namespace ice
         }
     }
 
+    template<typename CharType>
+    inline HeapVarString<CharType>::operator ice::VarStringBase<CharType>() const noexcept
+    {
+        return _data;
+    }
+
+    namespace string
+    {
+
+        template<typename CharType>
+        inline void clear(ice::HeapVarString<CharType>& str) noexcept
+        {
+            str._allocator->deallocate(ice::exchange(str._data, nullptr));
+        }
+
+        template<typename CharType>
+        inline auto begin(ice::HeapVarString<CharType>& str) noexcept -> typename ice::HeapVarString<CharType>::Iterator
+        {
+            return ice::string::detail::data_varstring(str._data);
+        }
+
+        template<typename CharType>
+        inline auto end(ice::HeapVarString<CharType>& str) noexcept -> typename ice::HeapVarString<CharType>::Iterator
+        {
+            ice::ucount bytes;
+            ice::ucount const size = ice::string::detail::read_varstring_size(str._data, bytes);
+            return str._data + bytes + size;
+        }
+
+        template<typename CharType>
+        auto deserialize(ice::HeapVarString<CharType>& str, ice::Data data) noexcept -> ice::Data
+        {
+            ICE_ASSERT_CORE(data.size >= 2_B); // 1 byte for size + 1 for a single character
+            ice::string::clear(str); // Clear the current contents
+
+            ice::ucount bytes;
+            ice::ucount const size = ice::string::detail::read_varstring_size(
+                reinterpret_cast<char const*>(data.location), bytes
+            );
+            if (size > 0)
+            {
+                char* const new_str = ice::string::detail::allocate_varstring_exact(*str._allocator, size, bytes);
+                if (new_str != nullptr)
+                {
+                    ice::memcpy(new_str + bytes, ice::ptr_add(data.location, ice::usize{ bytes }), size);
+                    new_str[bytes + size] = '\0';
+                }
+                str._data = new_str; // Assign the new allocated data
+            }
+
+            return ice::ptr_add(data, { bytes + size });
+        }
+
+    } // namespace string
 
 } // namespace ice

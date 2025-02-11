@@ -20,16 +20,19 @@ namespace ice
 
         Expected(ErrorType error) noexcept
             : _state{ 2u }
+            , _error{ error }
         {
-            ICE_ASSERT_CORE(error == false); // Errors should not be successes.
-            _error = error;
+            if constexpr (std::is_same_v<ice::ErrorCode, ErrorType>)
+            {
+                ICE_ASSERT_CORE(error == false);
+            }
         }
 
         template<typename OtherValue> requires (std::is_convertible_v<OtherValue, Value>)
         Expected(OtherValue&& value) noexcept
             : _state{ 1u }
+            , _value{ ice::forward<OtherValue>(value) }
         {
-            new (ice::addressof(_value)) Value { ice::forward<Value>(value) };
         }
 
         Expected(Expected&& other) noexcept requires (std::is_nothrow_move_constructible_v<Value>)
@@ -37,7 +40,7 @@ namespace ice
         {
             if (_state == 1u) // Already checking our state
             {
-                new (ice::addressof(_value)) Value { ice::move(other).value() };
+                new (ice::addressof(_value)) Value { ice::forward(other)._value };
             }
             else
             {
@@ -50,7 +53,7 @@ namespace ice
         {
             if (std::exchange(_state, ice::u8(1u)) == 1u)
             {
-                reinterpret_cast<Value*>(ice::addressof(_value))->~Value();
+                _value.~Value();
             }
 
             new (ice::addressof(_value)) Value { ice::forward<OtherValue>(value) };
@@ -61,7 +64,7 @@ namespace ice
         {
             if (std::exchange(_state, ice::u8(2u)) == 1u)
             {
-                reinterpret_cast<Value*>(ice::addressof(_value))->~Value();
+                _value.~Value();
             }
 
             ICE_ASSERT_CORE(error == false); // Errors should not be successes.
@@ -73,14 +76,24 @@ namespace ice
         {
             if (ice::addressof(other) != this)
             {
-                _state = other._state;
-                if (_state == 1u) // Already checking our state
+                if (_state == 1u && other._state == 1u) // Already checking our state
                 {
-                    this->value() = ice::move(other.value());
+                    _value = ice::move(other._value);
+                }
+                else if (other._state == 1u)
+                {
+                    _state = 1u;
+                    new (ice::addressof(_value)) Value{ ice::move(other._value) };
                 }
                 else
                 {
+                    if (_state == 1u)
+                    {
+                        _value.~Value();
+                    }
+
                     _error = other._error;
+                    _state = 2u;
                 }
             }
             return *this;
@@ -90,7 +103,7 @@ namespace ice
         {
             if (_state == 1u)
             {
-                reinterpret_cast<Value*>(ice::addressof(_value))->~Value();
+                _value.~Value();
             }
         }
 
@@ -98,16 +111,11 @@ namespace ice
         bool succeeded() const noexcept { return _state == 1; }
         bool failed() const noexcept { return _state == 2; }
 
-        auto value() const & noexcept -> Value const&
+        template<typename Self>
+        auto value(this Self&& self) noexcept -> auto&&
         {
-            ICE_ASSERT_CORE(_state == 1u);
-            return *reinterpret_cast<Value const*>(ice::addressof(_value));
-        }
-
-        auto value() && noexcept -> Value&&
-        {
-            ICE_ASSERT_CORE(_state == 1u);
-            return ice::move(*reinterpret_cast<Value*>(ice::addressof(_value)));
+            ICE_ASSERT_CORE(self._state == 1u);
+            return ice::forward<Self>(self)._value;
         }
 
         auto error() const noexcept -> ErrorType
@@ -126,19 +134,15 @@ namespace ice
             return _state == 1u;
         }
 
-#if 0
-        inline operator Value const&() const noexcept
-            requires (std::is_same_v<Value, bool> == false)
-        {
-            return value();
-        }
-#endif
+        inline operator Value&() & noexcept { return this->value(); }
+        inline operator Value&&() && noexcept { return ice::move(*this).value(); }
+        inline operator Value() const noexcept { return this->value(); }
 
     private:
         union
         {
-            alignas(Value) char _value[sizeof(Value)];
             ErrorType _error;
+            Value _value;
         };
 
         ice::u8 _state;

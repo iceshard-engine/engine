@@ -28,8 +28,20 @@
         .Requires = { 'Monolythic' }
         .Kind = .Kind_ObjectList
     ]
+    .Rule_Win32Editor =
+    [
+        .Name = 'EditorPlugins'
+        .Requires = { 'Windows' }
+        .Private =
+        [
+            .Modules = {
+                'imguizmo'
+            }
+        ]
+    ]
     .Rules = {
         .Rule_Monolythic
+        .Rule_Win32Editor
     }
 ]
 .Projects + .Project

@@ -8,8 +8,9 @@
 #include <ice/mem_data.hxx>
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/resource_types.hxx>
+#include <ice/task.hxx>
+#include <ice/task_expected.hxx>
 #include <ice/task_flags.hxx>
-#include <ice/task_types.hxx>
 
 namespace ice
 {

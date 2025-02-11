@@ -22,6 +22,10 @@ namespace ice::math
             : v{ { value } }
         { }
 
+        constexpr mat(T const(&array)[1]) noexcept
+            : v{ { array[0] }}
+        { }
+
         union
         {
             T v[count_columns][count_rows];
@@ -42,6 +46,10 @@ namespace ice::math
 
         explicit constexpr mat(T value) noexcept
             : v{ { value, value } }
+        { }
+
+        constexpr mat(T const(&array)[2]) noexcept
+            : v{ { array[0], array[1] } }
         { }
 
         constexpr mat(T x, T y) noexcept
@@ -78,6 +86,14 @@ namespace ice::math
             : v{ { value, value, value } }
         { }
 
+        constexpr mat(T const(&array)[3]) noexcept
+            : v{ { array[0], array[1], array[2] } }
+        { }
+
+        //constexpr mat(T const(&array)[4]) noexcept
+        //    : v{ { array[0] / array[3], array[1] / array[3], array[2] / array[3] } }
+        //{ }
+
         constexpr mat(T x, T y, T z) noexcept
             : v{ { x, y, z } }
         { }
@@ -85,6 +101,15 @@ namespace ice::math
         template<typename U> requires(std::convertible_to<U, T>)
         constexpr explicit mat(mat<3, 1, U> other) noexcept
             : v{ { static_cast<T>(other.x), static_cast<T>(other.y), static_cast<T>(other.z) } }
+        { }
+
+        template<typename U> requires(std::convertible_to<U, T>)
+            constexpr explicit mat(mat<4, 1, U> other) noexcept
+            : v{ {
+                static_cast<T>(other.x) / static_cast<T>(other.w),
+                static_cast<T>(other.y) / static_cast<T>(other.w),
+                static_cast<T>(other.z) / static_cast<T>(other.w)
+            } }
         { }
 
         union
@@ -112,6 +137,10 @@ namespace ice::math
             : v{ { value, value, value, value } }
         { }
 
+        constexpr mat(T const(&array)[4]) noexcept
+            : v{ { array[0], array[1], array[2], array[3] } }
+        { }
+
         constexpr mat(T x, T y, T z, T w) noexcept
             : v{ { x, y, z, w } }
         { }
@@ -131,6 +160,9 @@ namespace ice::math
         };
     };
 
+    // Deduction guide for vectors
+    template<u32 Size, typename T>
+    mat(T(&)[Size]) -> mat<Size, 1, T>;
 
     template<u32 Size, typename T>
     using vec = mat<Size, 1, T>;
@@ -146,9 +178,12 @@ namespace ice::math
     using vec3f = vec<3, f32>;
     using vec3u = vec<3, u32>;
     using vec3i = vec<3, i32>;
+    using vec3deg = vec<3, deg>;
+    using vec3rad = vec<3, rad>;
 
     using vec4f = vec<4, f32>;
     using vec4u = vec<4, u32>;
     using vec4i = vec<4, i32>;
+
 
 } // namespace ice::math
