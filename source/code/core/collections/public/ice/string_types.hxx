@@ -4,6 +4,7 @@
 #pragma once
 #include <ice/mem_data.hxx>
 #include <ice/mem_allocator.hxx>
+#include <ice/mem_utils.hxx>
 #include <ice/container_logic.hxx>
 #include <ice/stringid.hxx>
 
@@ -42,7 +43,6 @@ namespace ice
         constexpr auto operator[](ice::ucount index) const noexcept -> CharType const&;
 
         constexpr bool operator==(BasicString other) const noexcept;
-        constexpr bool operator!=(BasicString other) const noexcept;
 
         constexpr operator std::basic_string_view<CharType>() const noexcept;
     };
@@ -189,6 +189,7 @@ namespace ice
         inline auto operator[](ice::ucount idx) const noexcept -> CharType const&;
 
         inline operator ice::BasicString<CharType>() const noexcept;
+        inline operator ice::VarStringBase<CharType>() const noexcept;
     };
 
     static_assert(ice::TrivialContainerLogicAllowed<ice::String>);

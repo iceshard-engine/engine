@@ -37,6 +37,7 @@ namespace ice::gfx
 
     public: // Implementation of: ice::AssetRequestResolver
         auto on_asset_released(ice::Asset const& asset) noexcept -> ice::Task<> override;
+        auto on_asset_loaded(ice::Asset asset) noexcept -> ice::Task<>;
 
     public: // Task methods
         auto gfx_update(

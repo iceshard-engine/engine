@@ -4,11 +4,13 @@
 #pragma once
 #include <ice/resource.hxx>
 #include <ice/sync_manual_events.hxx>
+#include <ice/container/linked_queue.hxx>
+#include <ice/task_transaction.hxx>
 
 namespace ice
 {
 
-    class ResourceInternal final
+    class ResourceInternal final : public ice::TaskTransactionTracker
     {
     public:
         ResourceInternal(
@@ -22,7 +24,6 @@ namespace ice
     public:
         ice::ResourceProvider& _provider;
         std::atomic<ice::u16> _refcount;
-        std::atomic<ice::i16> _reqcount;
         ice::ResourceStatus _status;
         ice::Data _last_data;
     };

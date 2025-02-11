@@ -103,10 +103,7 @@ namespace ice
         ice::coroutine_handle<> awaiting_coroutine
     ) const noexcept -> ice::coroutine_handle<>
     {
-        if (_continue_on_error)
-        {
-            _coroutine.promise()._error_continuation = awaiting_coroutine; // Allows us to control if the coroutine should continue after failure.
-        }
+        _coroutine.promise()._error_continuation = awaiting_coroutine; // Allows us to control if the coroutine should continue after failure.
         _coroutine.promise().set_continuation(awaiting_coroutine);
         return _coroutine;
     }
@@ -225,7 +222,7 @@ namespace ice
 
                 if constexpr (std::is_same_v<ValueType, void> == false)
                 {
-                    return this->_coroutine.promise().result();
+                    return this->_coroutine.promise().expected();
                 }
             }
         };
@@ -249,7 +246,7 @@ namespace ice
 
                 if constexpr (std::is_same_v<ValueType, void> == false)
                 {
-                    return ice::move(this->_coroutine.promise().result());
+                    return this->_coroutine.promise().expected_moved();
                 }
             }
         };

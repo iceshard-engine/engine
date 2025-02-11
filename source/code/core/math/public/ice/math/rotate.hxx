@@ -13,6 +13,8 @@ namespace ice::math
 
     inline auto rotate(mat<4, 4, f32> left, rad rad, vec<3, f32> v) noexcept -> mat<4, 4, f32>;
 
+    inline auto rotation(mat<4, 4, f32> const& matrix) noexcept -> vec<3, rad>;
+
 
     inline auto rotate(rad rad, vec<3, f32> v) noexcept -> mat<4, 4, f32>
     {
@@ -45,6 +47,23 @@ namespace ice::math
         rm.v[2][1] = cos1_vec.v[0][1] * axis.v[0][2] - sinv * axis.v[0][0];
         rm.v[2][2] = cosv + cos1_vec.v[0][2] * axis.v[0][2];
         return mul(left, rm);
+    }
+
+    inline auto rotation(mat<4, 4, f32> const& matrix) noexcept -> vec<3, rad>
+    {
+        rad const x = ice::math::atan2({
+            matrix.v[1][2],
+            matrix.v[2][2]
+        });
+        rad const y = ice::math::atan2({
+            -matrix.v[0][2],
+            ice::math::sqrt(matrix.v[1][2] * matrix.v[1][2] + matrix.v[2][2] * matrix.v[2][2])
+        });
+        rad const z = ice::math::atan2({
+            matrix.v[0][1],
+            matrix.v[0][0]
+        });
+        return { x, y, z };
     }
 
 } // namespace ice::math

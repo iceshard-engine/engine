@@ -48,18 +48,6 @@ namespace ice::string
     template<typename CharType>
     inline void pop_back(ice::HeapVarString<CharType>& str, ice::ucount count = 1) noexcept;
 
-    template<typename CharType>
-    inline auto begin(ice::HeapVarString<CharType>& str) noexcept -> typename ice::HeapVarString<CharType>::Iterator;
-
-    template<typename CharType>
-    inline auto end(ice::HeapVarString<CharType>& str) noexcept -> typename ice::HeapVarString<CharType>::Iterator;
-
-    template<typename CharType>
-    inline auto rbegin(ice::HeapVarString<CharType>& str) noexcept -> typename ice::HeapVarString<CharType>::ReverseIterator;
-
-    template<typename CharType>
-    inline auto rend(ice::HeapVarString<CharType>& str) noexcept -> typename ice::HeapVarString<CharType>::ReverseIterator;
-
 
     inline auto size(ice::string::VarStringType auto const& str) noexcept -> ice::ucount;
 
@@ -113,6 +101,8 @@ namespace ice::string
     //! \note The 'size' member contains the 'capacity' of the heap string.
     template<typename CharType>
     inline auto extract_memory(ice::VarStringBase<CharType>& str) noexcept -> ice::Memory;
+
+    inline auto serialize(ice::string::VarStringType auto const& str, ice::Memory target) noexcept -> ice::Memory;
 
 } // namespace ice::string
 

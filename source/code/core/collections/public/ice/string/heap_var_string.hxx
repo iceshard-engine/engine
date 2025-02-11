@@ -8,6 +8,23 @@
 namespace ice::string
 {
 
+    template<typename CharType>
+    inline void clear(ice::HeapVarString<CharType>& str) noexcept;
+
+    template<typename CharType>
+    inline auto begin(ice::HeapVarString<CharType>& str) noexcept -> typename ice::HeapVarString<CharType>::Iterator;
+
+    template<typename CharType>
+    inline auto end(ice::HeapVarString<CharType>& str) noexcept -> typename ice::HeapVarString<CharType>::Iterator;
+
+    template<typename CharType>
+    inline auto rbegin(ice::HeapVarString<CharType>& str) noexcept -> typename ice::HeapVarString<CharType>::ReverseIterator;
+
+    template<typename CharType>
+    inline auto rend(ice::HeapVarString<CharType>& str) noexcept -> typename ice::HeapVarString<CharType>::ReverseIterator;
+
+    template<typename CharType>
+    inline auto deserialize(ice::HeapVarString<CharType>& str, ice::Data data) noexcept -> ice::Data;
 
 } // namespace ice::string
 

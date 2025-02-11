@@ -14,7 +14,6 @@ namespace ice
     ) noexcept
         : _provider{ provider }
         , _refcount{ 0 }
-        , _reqcount{ 0 }
         , _status{ ResourceStatus::Available }
         , _last_data{ }
     {
@@ -89,7 +88,6 @@ namespace ice
             if (prev_count == 1)
             {
                 // TODO: When unloading properly reset the resource status.
-                internal->_reqcount.store(0, std::memory_order_relaxed);
                 internal->_status = ice::ResourceStatus::Available;
                 internal->_last_data = {};
                 internal->_provider.unload_resource(resource);

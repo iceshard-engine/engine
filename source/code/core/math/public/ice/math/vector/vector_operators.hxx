@@ -41,9 +41,23 @@ namespace ice::math
     }
 
     template<u32 Size, typename T, typename U>
+    constexpr auto operator+=(vec<Size, T>& left, vec<Size, U> right) noexcept -> vec<Size, T>&
+    {
+        left = ice::math::add(left, right);
+        return left;
+    }
+
+    template<u32 Size, typename T, typename U>
     constexpr auto operator-(vec<Size, T> left, vec<Size, U> right) noexcept -> vec<Size, T>
     {
         return ice::math::sub(left, right);
+    }
+
+    template<u32 Size, typename T, typename U>
+    constexpr auto operator-=(vec<Size, T>& left, vec<Size, U> right) noexcept -> vec<Size, T>&
+    {
+        left = ice::math::sub(left, right);
+        return left;
     }
 
     template<u32 Size, typename T, typename U>

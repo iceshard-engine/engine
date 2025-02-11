@@ -1,6 +1,7 @@
 /// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
+#include <ice/world/world.hxx>
 #include <ice/world/world_trait.hxx>
 #include <ice/shard.hxx>
 
@@ -41,6 +42,11 @@ namespace ice
         _context.send({ ice::Shard{ shardid } });
     }
 
+    void Trait::send(ice::ShardID shardid, ice::String value) noexcept
+    {
+        this->send(shardid | ice::string::begin(value));
+    }
+
     void Trait::send(ice::ShardID shardid, ice::Asset asset) noexcept
     {
         // We extract the pointer from the handle leaving it 'unreleased'
@@ -55,6 +61,16 @@ namespace ice
         //   preserving the ref-count until the trait expires the resource.
         ice::Resource* resource = ice::exchange(handle._resource, nullptr);
         _context.send({ shardid | resource, detail::on_expire_resource });
+    }
+
+    auto Trait::entity_operations() noexcept -> ice::ecs::EntityOperations&
+    {
+        return _context.world().entity_operations();
+    }
+
+    auto Trait::entity_queries() noexcept -> ice::ecs::QueryProvider&
+    {
+        return _context.world().entity_queries();
     }
 
 } // namespace ice

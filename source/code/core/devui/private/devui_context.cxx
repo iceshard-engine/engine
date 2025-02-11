@@ -7,6 +7,10 @@
 #include <ice/log.hxx>
 #include <imgui/imgui.h>
 
+#if ISP_WINDOWS
+#include <imguizmo/ImGuizmo.h>
+#endif
+
 namespace ice
 {
 
@@ -76,10 +80,18 @@ namespace ice
         if (context_name == "devui-context/imgui"_sid)
         {
             ICE_ASSERT_CORE(ImGui::GetCurrentContext() == nullptr || ImGui::GetCurrentContext() == params.native_context);
+            // TODO: Try to move it away from here
             ImGui::SetAllocatorFunctions(params.fn_alloc, params.fn_dealloc, params.alloc_userdata);
             ImGui::SetCurrentContext((ImGuiContext*)params.native_context);
             return true;
         }
+#if ISP_WINDOWS
+        else if (context_name == "devui-context/imguizmo"_sid)
+        {
+            ImGuizmo::SetImGuizmoContext((ImGuizmo::ImGuizmoContext*)params.native_context);
+            return true;
+        }
+#endif
         return false;
     }
 

@@ -47,8 +47,8 @@ namespace ice
 
         Asset(Asset&& other) noexcept;
         auto operator=(Asset&& other) noexcept -> ice::Asset&;
-        Asset(Asset const&) noexcept = delete;
-        auto operator=(Asset const&) noexcept -> ice::Asset& = delete;
+        Asset(Asset const&) noexcept;
+        auto operator=(Asset const&) noexcept -> ice::Asset&;
 
         bool valid() const noexcept;
         bool empty() const noexcept;
@@ -61,6 +61,8 @@ namespace ice
         bool available(ice::AssetState state) const noexcept;
         auto preload(ice::AssetState state) noexcept -> ice::Task<>;
         auto data(ice::AssetState state) noexcept -> ice::Task<ice::Data>;
+
+        auto resource() const noexcept -> ice::Resource const*;
 
         auto operator[](ice::AssetState state) noexcept -> ice::Task<ice::Data>;
 

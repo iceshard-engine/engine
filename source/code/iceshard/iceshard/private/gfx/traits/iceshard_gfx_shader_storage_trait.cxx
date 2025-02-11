@@ -9,6 +9,7 @@
 #include <ice/engine_types_mappers.hxx>
 #include <ice/gfx/gfx_context.hxx>
 #include <ice/render/render_device.hxx>
+#include <ice/resource.hxx>
 #include <ice/shard_container.hxx>
 #include <ice/world/world_trait_module.hxx>
 #include <ice/world/world_updater.hxx>
@@ -34,6 +35,7 @@ namespace ice::gfx
     {
         _context.bind<&Trait_GfxShaderStorage::gfx_update>(ice::gfx::ShardID_GfxFrameUpdate);
         _context.bind<&Trait_GfxShaderStorage::gfx_shutdown>(ice::gfx::ShardID_GfxShutdown);
+        _context.bind<&Trait_GfxShaderStorage::on_asset_loaded>("iceshard:shaders-internal:loaded`ice::Asset"_shardid);
     }
 
     void Trait_GfxShaderStorage::build_content() noexcept
@@ -68,6 +70,12 @@ namespace ice::gfx
         GfxShaderEntry* entry = ice::hashmap::try_get(_loaded_shaders, ice::hash(asset.name()));
         ICE_ASSERT_CORE(entry != nullptr);
         entry->released = true; // Mark as released
+        co_return;
+    }
+
+    auto Trait_GfxShaderStorage::on_asset_loaded(ice::Asset asset) noexcept -> ice::Task<>
+    {
+        ICE_LOG(LogSeverity::Info, LogTag::Game, "ShaderStorage - Loaded shader: {}", asset.resource()->name());
         co_return;
     }
 
@@ -106,14 +114,13 @@ namespace ice::gfx
                 co_return;
             }
 
-            ICE_LOG(LogSeverity::Info, LogTag::Game, "ShaderStorage - Loaded shader: {}", request->asset_name());
-
             // Allocates a handle for it... (TODO: Rework?)
             ice::Memory const result = request->allocate(ice::size_of<ice::render::Shader>);
             *reinterpret_cast<Shader*>(result.location) = shader;
 
             // Reslove the request (will resume all awaiting tasks)
             ice::Asset asset = request->resolve({ .resolver = this, .result = AssetRequestResult::Success, .memory = result });
+            send("iceshard:shaders-internal:loaded"_shardid, asset);
 
             // Save the shader handle
             ice::hashmap::set(_loaded_shaders, shader_hash, { .asset = ice::move(asset), .shader = shader, });

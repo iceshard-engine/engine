@@ -10,6 +10,10 @@
 #include <ice/devui_module.hxx>
 #include <ice/world/world_trait_module.hxx>
 
+#if ISP_WINDOWS
+#include <imguizmo/ImGuizmo.h>
+#endif
+
 namespace ice::devui
 {
 
@@ -52,16 +56,23 @@ namespace ice::devui
 
     void imgui_context_setup(ice::api::DevUI_API::FnContextSetupCallback cb, void* userdata) noexcept
     {
-        DevUIContextSetupParams const params{
+        DevUIContextSetupParams setup_params{
             .native_context = ImGui::GetCurrentContext(),
             .fn_alloc = imgui_memalloc,
             .fn_dealloc = imgui_memfree,
             .alloc_userdata = global_ImGuiAllocator
         };
-        if (cb("devui-context/imgui"_sid, params, userdata) == false)
+        if (cb("devui-context/imgui"_sid, setup_params, userdata) == false)
         {
             ICE_LOG(LogSeverity::Warning, LogTag::System, "Failed to initialize 'ImGui' context on module!");
         }
+#if ISP_WINDOWS
+        setup_params.native_context = ImGuizmo::GetImGuizmoContext();
+        if (cb("devui-context/imguizmo"_sid, setup_params, userdata) == false)
+        {
+            ICE_LOG(LogSeverity::Warning, LogTag::System, "Failed to initialize 'ImGuizmo' context on module!");
+        }
+#endif
     }
 
     constexpr auto imgui_trait_name() noexcept -> ice::StringID
@@ -123,6 +134,9 @@ namespace ice::devui
 
             ImGui::SetAllocatorFunctions(imgui_memalloc, imgui_memfree, global_ImGuiAllocator);
             ImGui::CreateContext();
+#if ISP_WINDOWS
+            ImGuizmo::Initialize();
+#endif
 
             ice::LogModule::init(alloc, negotiator);
             return negotiator.register_api(v1_devui_system);
@@ -130,6 +144,9 @@ namespace ice::devui
 
         static void on_unload(ice::Allocator& alloc) noexcept
         {
+#if ISP_WINDOWS
+            ImGuizmo::Shutdown();
+#endif
             ImGui::DestroyContext();
 
             alloc.destroy(global_ImGuiAllocator);

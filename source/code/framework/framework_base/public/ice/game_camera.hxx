@@ -9,6 +9,8 @@
 namespace ice
 {
 
+    static constexpr ice::StringID TraitID_CameraManager = "iceshard/trait/camera-manager"_sid;
+
     struct Camera
     {
         static constexpr ice::StringID Identifier = "ice.component.camera-lookat"_sid;
@@ -34,6 +36,12 @@ namespace ice
         ice::rad field_of_view;
         ice::f32 aspect_ration;
         ice::vec2f near_far;
+    };
+
+    struct CameraData
+    {
+        ice::mat4x4 view;
+        ice::mat4x4 projection;
     };
 
 } // namespace ice

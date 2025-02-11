@@ -155,14 +155,16 @@ namespace ice
         ice::ResourceHandle const& resource_handle
     ) noexcept -> ice::Task<ice::ResourceResult>
     {
-        ice::ResourceLoadContext load_context{ .resource = resource_handle };
-        if (co_await load_context)
+        ice::TaskTransaction transaction;
+        ice::ResourceLoadTransaction load_transaction{ resource_handle, transaction };
+        if (co_await load_transaction == E_ResourceLoadNeeded)
         {
             ice::internal_set_status(resource_handle, ResourceStatus::Loading);
 
             ice::Expected<ice::Data, ice::ErrorCode> const result
                 = co_await ice::internal_provider(resource_handle)->load_resource(resource_handle, {});
 
+            ice::ResourceStatus new_status = ResourceStatus::Invalid;
             if (result.failed())
             {
                 ICE_LOG(
@@ -171,21 +173,16 @@ namespace ice
                     ice::resource_origin(resource_handle),
                     result.error()
                 );
-
-                ice::internal_set_status(resource_handle, ResourceStatus::Invalid);
             }
             else
             {
                 ice::internal_set_data(resource_handle, result.value());
-                ice::internal_set_status(resource_handle, ResourceStatus::Loaded);
+                new_status = ResourceStatus::Loaded;
             }
-
-            // Ensure resource_handle changes are visible after this point
-            std::atomic_thread_fence(std::memory_order_release);
 
             // Process all awaiting load contexts.
             // TODO: Schedule all of them instead?
-            load_context.process_all();
+            load_transaction.finalize(new_status);
         }
         else
         {

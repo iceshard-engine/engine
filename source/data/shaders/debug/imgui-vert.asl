@@ -1,4 +1,4 @@
-import shaders/debug/imgui
+import "shaders/debug/imgui"
 
 struct Camera
 {

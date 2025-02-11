@@ -67,6 +67,7 @@ namespace ice::ecs
     }
 
     template<ice::ecs::QueryType... Types>
+    [[nodiscard]]
     auto QueryProvider::create_query(
         ice::Allocator& alloc,
         ice::ecs::QueryDefinition<Types...> const&
