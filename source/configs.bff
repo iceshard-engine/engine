@@ -70,7 +70,7 @@
         '-Wunguarded-availability'
         '-Werror=unguarded-availability'
         '-Wno-switch'
-        '-std=c++2b'
+        '-std=c++23'
     }
     .Defines = {
         '__ANDROID_UNAVAILABLE_SYMBOLS_ARE_WEAK__'
@@ -90,7 +90,7 @@
         // We use [[deprecated]] to keep track of some old API usage without the need to fix them asap.
         '-Wno-error=deprecated-declarations'
         '-Wno-switch'
-        '-std=c++20'
+        '-std=c++23'
     }
 ]
 
@@ -196,7 +196,7 @@
         '-Wno-unused-const-variable'
         '-Wno-unused-private-field'
         '-Wno-switch'
-        '-std=c++20'
+        '-std=c++23'
         // Requires options for multithreading
         '-pthread'
         '-sSHARED_MEMORY=1'
