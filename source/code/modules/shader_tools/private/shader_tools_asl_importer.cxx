@@ -140,7 +140,7 @@ namespace ice
     {
         IPT_ZONE_SCOPED;
 
-        arctic::String const import_path = node.data().path;
+        arctic::String const import_path = node.data().path.substr(1, node.data().path.length() - 2);
         arctic::String const import_alias = node.data().alias;
         ice::u64 const hash_import_path = detail::arc_hash(import_path);
         ice::u64 const hash_import_alias = detail::arc_hash(import_alias);

@@ -29,7 +29,7 @@ namespace ice::framework
 {
 
 #if 0
-    bool game_register_traits(ice::WorldTraitArchive& archive) noexcept
+    bool game_register_traits(ice::TraitArchive& archive) noexcept
     {
         register_trait_render_gfx(archive);
         register_trait_render_clear(archive);
@@ -67,18 +67,25 @@ namespace ice::framework
     }
 #endif
 
-    bool FrameworkModule::on_load(
-        ice::Allocator& alloc,
-        ice::ModuleNegotiatorBase const& negotiator
-    ) noexcept
+
+    bool framework_register_traits(ice::TraitArchive& archive) noexcept
     {
+        archive.register_trait(ice::IceWorldTrait_RenderCamera::trait_descriptor());
         return true;
     }
 
-    void FrameworkModule::on_unload(
-        ice::Allocator& alloc
+    void v1_framework_traits_api(ice::detail::world_traits::TraitsModuleAPI& api) noexcept
+    {
+        api.register_traits_fn = framework_register_traits;
+    }
+
+    bool FrameworkModule::on_load(
+        ice::Allocator& alloc,
+        ice::ModuleNegotiatorTagged<FrameworkModule> const& negotiator
     ) noexcept
     {
+        negotiator.register_api(v1_framework_traits_api);
+        return false;
     }
 
 } // namespace ice::framework

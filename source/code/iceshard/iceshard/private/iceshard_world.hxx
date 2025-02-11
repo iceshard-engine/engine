@@ -7,6 +7,7 @@
 #include <ice/devui_widget.hxx>
 
 #include "iceshard_world_tasks_launcher.hxx"
+#include "iceshard_world_context.hxx"
 #include "iceshard_trait_context.hxx"
 
 namespace ice

@@ -1,4 +1,4 @@
-import shaders/common
+import "shaders/common"
 
 #[shader_stage=vertex]
 struct VertexIn

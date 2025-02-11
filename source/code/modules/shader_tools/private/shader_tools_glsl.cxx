@@ -464,7 +464,7 @@ namespace ice
                 alloc, tracker, source, shader_stage, transpiled_result, entry_point
             );
 
-            if (result.valid() == false)
+            if (result.failed())
             {
                 ICE_LOG(LogSeverity::Error, LogTag::System, "Failed to load shader '{}' with error '{}'", path, result.error());
                 co_return{ };

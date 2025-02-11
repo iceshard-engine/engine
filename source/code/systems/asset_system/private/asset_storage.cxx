@@ -163,6 +163,14 @@ namespace ice
             // ... and wait for them to finish
             co_await ice::await_tasks(tasks);
 
+            for (ice::ResourceCompilerResult const& result : compiled_sources)
+            {
+                if (result.result.location == nullptr)
+                {
+                    co_return ice::E_Fail;
+                }
+            }
+
             // Build the metadata
             ice::ConfigBuilder meta{ alloc };
             if (ice::wait_for_result(compiler.fn_build_metadata(ctx, resource, resource_tracker, compiled_sources, dependencies, meta)))
@@ -270,8 +278,8 @@ namespace ice
             result = Asset{ entry };
 
             // We need to ensure the previous count was higher else the asset might be released already
-            ice::u32 const prev_count = entry->_refcount.fetch_add(1, std::memory_order_relaxed);
-            if (prev_count == 0)
+            ice::u32 const curr_count = entry->_refcount.load(std::memory_order_relaxed);
+            if (curr_count == 1)
             {
                 // Only keep metadata data
                 while (entry->_data != nullptr)
@@ -310,8 +318,8 @@ namespace ice
 
                 ICE_ASSERT_CORE(entry != nullptr);
 
-                ice::u32 const prev_count = entry->_refcount.fetch_add(1, std::memory_order_relaxed);
-                ICE_ASSERT(prev_count == 0, "Unexpected value!");
+                //ice::u32 const prev_count = entry->_refcount.fetch_add(1, std::memory_order_relaxed);
+                //ICE_ASSERT(prev_count == 0, "Unexpected value!");
 
                 result = Asset{ entry };
             }
@@ -361,9 +369,10 @@ namespace ice
             break;
         }
 
-        asset.finish_transaction(transaction);
+        ice::Asset temp{ ice::addressof(transaction.asset) };
+        temp.finish_transaction(transaction);
 
-        if (result.valid() == false)
+        if (result.failed())
         {
             ICE_LOG(LogSeverity::Error, LogTag::Asset, "Requesting asset data failed with {}", result.error());
             co_return {};

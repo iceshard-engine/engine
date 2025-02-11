@@ -657,6 +657,12 @@ auto ice_update(
     {
         runtime.is_exiting = true;
 
+        // Wait for the previous rendering frame to finish
+        if (runtime.previous->wait.is_set() == false)
+        {
+            return ice::app::S_ApplicationUpdate;
+        }
+
         bool render_enabled_frame = false;
         runtime.render_stage.process_one(&render_enabled_frame);
 

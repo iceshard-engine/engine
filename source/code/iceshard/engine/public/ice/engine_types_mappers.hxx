@@ -9,32 +9,26 @@
 #include <ice/gfx/gfx_shards.hxx>
 #include <ice/world/world_trait_types.hxx>
 
-template<>
-struct ice::detail::ArgMapper<ice::Clock const&>
-{
-    static constexpr bool FromTraitParams = true;
+// TraitParams based objects.
 
-    template<typename Source>
-    static auto select(ice::TraitParams const& params, Source&&) noexcept -> ice::Clock const& { return params.clock; }
-};
+#define TRAIT_PARAMS_MAPPER(type, access) \
+    template<> \
+    struct ice::detail::ArgMapper<type> \
+    { \
+        static constexpr bool FromTraitParams = true; \
+        template<typename Source> \
+        static auto select(ice::TraitParams const& params, Source&&) noexcept -> type \
+        { \
+            return access; \
+        } \
+    }
 
-template<>
-struct ice::detail::ArgMapper<ice::ResourceTracker&>
-{
-    static constexpr bool FromTraitParams = true;
+TRAIT_PARAMS_MAPPER(ice::Clock const&, params.clock);
+TRAIT_PARAMS_MAPPER(ice::ResourceTracker&, params.resources);
+TRAIT_PARAMS_MAPPER(ice::AssetStorage&, params.assets);
 
-    template<typename Source>
-    static auto select(ice::TraitParams const& params, Source&&) noexcept -> ice::ResourceTracker& { return params.resources; }
-};
 
-template<>
-struct ice::detail::ArgMapper<ice::AssetStorage&>
-{
-    static constexpr bool FromTraitParams = true;
-
-    template<typename Source>
-    static auto select(ice::TraitParams const& params, Source&&) noexcept -> ice::AssetStorage& { return params.assets; }
-};
+// Handling of custom types in trait methods.
 
 template<>
 struct ice::detail::ArgMapper<ice::Asset>

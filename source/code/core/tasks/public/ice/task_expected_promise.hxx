@@ -104,6 +104,31 @@ namespace ice
             new (&_value) Result{ std::move(value) };
         }
 
+        inline auto expected() noexcept -> ice::Expected<Result, ErrorType>
+        {
+            if (this->_info->has_any(TaskState::Succeeded))
+            {
+                return *reinterpret_cast<Result*>(_value);
+            }
+            else
+            {
+                return _error_value;
+            }
+        }
+
+        // TODO: Cleanup-this-mess
+        inline auto expected_moved() noexcept -> ice::Expected<Result, ErrorType>
+        {
+            if (this->_info->has_any(TaskState::Succeeded))
+            {
+                return ice::move(*reinterpret_cast<Result*>(_value));
+            }
+            else
+            {
+                return _error_value;
+            }
+        }
+
         inline auto result() noexcept -> Result&
         {
             ICE_ASSERT_CORE(this->_info->has_any(TaskState::Succeeded));

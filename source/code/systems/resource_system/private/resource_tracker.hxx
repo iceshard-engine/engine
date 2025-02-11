@@ -23,55 +23,99 @@
 namespace ice
 {
 
-    struct ResourceLoadContext : ice::TaskAwaitableBase
+    static constexpr ice::ErrorCode E_ResourceLoadNeeded{ "E.4300:Resources:Resource needs loading." };
+
+    struct ResourceLoadTransaction : ice::TaskAwaitableBase
     {
         ice::ResourceHandle const& resource;
-        ice::AtomicLinkedQueue<ice::TaskAwaitableBase> request_queue = {};
-        ice::u16 request_load = 0;
+        ice::TaskTransaction& transaction;
+        ice::u32 awaiter_index;
+
+        ResourceLoadTransaction(ice::ResourceHandle const& handle, ice::TaskTransaction& transaction) noexcept
+            : ice::TaskAwaitableBase{ }
+            , resource{ handle }
+            , transaction{ internal_ptr(resource)->start_transaction(transaction) }
+            , awaiter_index{ ice::u32_max }
+        {
+        }
+
+        ~ResourceLoadTransaction() noexcept
+        {
+            internal_ptr(resource)->finish_transaction(transaction);
+        }
 
         inline bool await_ready() noexcept
         {
-            request_load = internal_ptr(resource)->_reqcount.fetch_add(1, std::memory_order_relaxed);
-            return request_load <= 0 || internal_status(resource) == ResourceStatus::Loaded;
+            ResourceStatus const status = internal_status(resource);
+            // If loaded of load failed we return immediately because nothing else can be done.
+            if (status == ResourceStatus::Loaded || status == ResourceStatus::Invalid)
+            {
+                return true;
+            }
+
+            awaiter_index = transaction.awaiters.fetch_add(1, std::memory_order_relaxed);
+            return awaiter_index == 0;
         }
 
         inline bool await_suspend(std::coroutine_handle<> coro) noexcept
         {
-            // If count is below 0 then we are already "loaded" and can just continue
-            if (internal_ptr(resource)->_reqcount.fetch_add(1, std::memory_order_relaxed) < 0)
+            std::atomic_thread_fence(std::memory_order_acquire);
+
+            // Check if the status is now updated
+            ResourceStatus const status = internal_status(resource);
+
+            // Another check after we are added as an awaiter to see if maybe the transaction already finished.
+            if (status == ResourceStatus::Loaded || status == ResourceStatus::Invalid)
             {
+                transaction.awaiters.fetch_sub(1, std::memory_order_relaxed);
+                awaiter_index = ice::u32_max;
                 return false;
             }
 
-            // Else queue this load request and suspend
-            ice::linked_queue::push(request_queue, this);
+            _coro = coro;
+            ice::linked_queue::push(transaction.queue, this);
             return true;
         }
 
-        inline bool await_resume() const noexcept// -> ice::Data
+        inline auto await_resume() const noexcept -> ice::Expected<ice::Data>
         {
-            return request_load == 0;
-            // We will get a pointer to the loaded data in the result part.
-            // return *reinterpret_cast<ice::Data const*>(result.ptr);
+            std::atomic_thread_fence(std::memory_order_acquire);
+
+            // Check if the status is now updated
+            ResourceStatus const status = internal_status(resource);
+
+            if (awaiter_index == 0 && status == ResourceStatus::Available)
+            {
+                return E_ResourceLoadNeeded;
+            }
+
+            return internal_data(resource);
         }
 
-        inline void process_all() noexcept
+        inline void finalize(ice::ResourceStatus status) noexcept
         {
-            // We get the number of queued requests and set int min as a replacement indicating that everything after
-            //  this operation should just continue normally.
-            ice::i32 const requests_awaiting = internal_ptr(resource)->_reqcount.exchange(ice::i16_min, std::memory_order_relaxed);
-            ice::i32 requests_processed = 1;
+            ice::internal_set_status(resource, status);
+
+            // Ensure resource changes are visible after this point
+            std::atomic_thread_fence(std::memory_order_release);
+
+            ice::u32 awaiting = transaction.awaiters.load(std::memory_order_relaxed);
 
             // Loop as long as we did not reach the number of requests awaiting processing.
-            while(requests_processed < requests_awaiting)
+            ice::u32 requests_processed = 1; // Includes "us"
+            while(requests_processed < awaiting)
             {
-                for (ice::TaskAwaitableBase* awaitable : ice::linked_queue::consume(request_queue))
+                for (ice::TaskAwaitableBase* awaitable : ice::linked_queue::consume(transaction.queue))
                 {
                     // Resume to coroutine
                     awaitable->_coro.resume();
                     requests_processed += 1;
                 }
+
+                awaiting = transaction.awaiters.load(std::memory_order_relaxed);
             }
+
+            transaction.awaiters.store(0, std::memory_order_relaxed);
         }
     };
 

@@ -643,7 +643,14 @@ namespace ice::render::vk
             shader_stage.flags = 0;
             shader_stage.stage = native_enum_value(info.shaders[stage_idx].stage);
             shader_stage.module = native_handle(info.shaders[stage_idx].shader);
-            shader_stage.pName = ice::string::begin(info.shaders[stage_idx].entry_point);
+            if (ice::string::any(info.shaders[stage_idx].entry_point))
+            {
+                shader_stage.pName = ice::string::begin(info.shaders[stage_idx].entry_point);
+            }
+            else
+            {
+                shader_stage.pName = nullptr;
+            }
         }
 
         struct StateEntry

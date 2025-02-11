@@ -8,6 +8,10 @@
 #include <ice/devui_imgui.hxx>
 #include <ice/string/static_string.hxx>
 
+#if ISP_WINDOWS
+#include <imguizmo/ImGuizmo.h>
+#endif
+
 namespace ice::devui
 {
 
@@ -93,6 +97,7 @@ namespace ice::devui
 
     void ImGuiSystem::setup_mainmenu(ice::Span<ice::String> categories) noexcept
     {
+        ice::array::clear(_menu_categories);
         for (ice::String category : categories)
         {
             ice::array::push_back(_menu_categories, ice::HeapString<>{ _allocator, category });
@@ -122,6 +127,11 @@ namespace ice::devui
         static bool show_demo = false;
 
         ImGui::NewFrame();
+#       if ISP_WINDOWS
+        ImGuizmo::BeginFrame();
+        ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
+#       endif
+
         {
             if (ImGui::BeginMainMenuBar())
             {

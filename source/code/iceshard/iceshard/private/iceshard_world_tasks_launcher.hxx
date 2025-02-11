@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include "iceshard_trait_context.hxx"
+#include "iceshard_world_context.hxx"
 #include <ice/world/world_trait.hxx>
 #include <ice/mem_unique_ptr.hxx>
 

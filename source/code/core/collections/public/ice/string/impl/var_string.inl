@@ -55,6 +55,20 @@ namespace ice
             return data + bytes;
         }
 
+        inline auto write_varstring_size(void* data, ice::ucount size) noexcept -> ice::ucount
+        {
+            ice::ucount bytes = 0;
+            ice::u8* var_byte = reinterpret_cast<ice::u8*>(data);
+            while (size > 0x7f)
+            {
+                var_byte[bytes] = (size & 0x7f) | 0x80;
+                size >>= 7;
+                bytes += 1;
+            }
+            var_byte[bytes] = size & 0x7f;
+            return bytes + 1;
+        }
+
     } // namespace detail
 
     template<typename CharType>
@@ -107,10 +121,7 @@ namespace ice
         template<ice::string::VarStringType StringType>
         inline auto begin(StringType const& str) noexcept -> typename StringType::ConstIterator
         {
-            ice::ucount bytes = 0;
-            [[maybe_unused]]
-            ice::ucount const size = ice::string::detail::read_varstring_size(str._data, bytes);
-            return str._data + bytes;
+            return ice::string::detail::data_varstring(str._data);
         }
 
         template<ice::string::VarStringType StringType>
@@ -131,6 +142,24 @@ namespace ice
                 .size = { size + bytes },
                 .alignment = ice::ualign::b_1
             };
+        }
+
+        auto serialize(ice::string::VarStringType auto const& str, ice::Memory target) noexcept -> ice::Memory
+        {
+            ice::ucount const size = ice::string::size(str);
+            ICE_ASSERT_CORE(
+                ice::string::detail::calc_varstring_required_size(size) <= target.size.value
+            );
+
+            ice::ucount const sizebytes = ice::string::detail::write_varstring_size(target.location, size);
+            target.location = ice::ptr_add(target.location, ice::usize{ sizebytes });
+            target.size.value -= sizebytes;
+
+            ice::memcpy(target.location, str._data + sizebytes, size);
+            target.location = ice::ptr_add(target.location, ice::usize{ size });
+            target.size.value -= size;
+            target.alignment = ice::ualign::b_1;
+            return target;
         }
 
     } // namespace string
