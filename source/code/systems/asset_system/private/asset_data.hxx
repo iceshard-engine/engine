@@ -119,6 +119,7 @@ namespace ice
         ice::ResourceAssetData* resdata = static_cast<ice::ResourceAssetData*>(data.get());
         ICE_ASSERT_CORE(resdata->_state == AssetState::Exists);
 
+        ICE_LOG(LogSeverity::Debug, LogTag::System, "Loading from URI: {}", resdata->_resource_handle->uri()._uri);
         co_return co_await tracker.load_resource(resdata->_resource_handle);
     }
 
