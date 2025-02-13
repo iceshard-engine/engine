@@ -3,6 +3,7 @@
 
 #pragma once
 #include <ice/container/array.hxx>
+#include <ice/ecs/ecs_data_block.hxx>
 #include <ice/ecs/ecs_query_definition.hxx>
 
 namespace ice::ecs
@@ -28,6 +29,11 @@ namespace ice::ecs
             ice::Allocator& alloc,
             ice::ecs::QueryDefinition<Types...> const& = { }
         ) const noexcept -> ice::ecs::Query<ice::ecs::QueryDefinition<Types...>>;
+
+        virtual auto resolve_entities(
+            ice::Span<ice::ecs::Entity const> requested,
+            ice::Span<ice::ecs::EntityHandle> resolved
+        ) const noexcept -> ice::ucount = 0;
 
     protected:
         virtual void query_internal(

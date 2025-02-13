@@ -2,6 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #include <ice/ecs/ecs_entity_operations.hxx>
+#include <ice/ecs/ecs_query_provider.hxx>
 #include <ice/assert.hxx>
 
 namespace ice::ecs
@@ -440,6 +441,30 @@ namespace ice::ecs
         operation->notify_entity_changes = false;
         operation->component_data = nullptr;
         operation->component_data_size = 0;
+    }
+
+    void queue_batch_remove_entities(
+        ice::ecs::EntityOperations& entity_operations,
+        ice::ecs::QueryProvider const& query_provider,
+        ice::Span<ice::ecs::Entity const> entities
+    ) noexcept
+    {
+        if (ice::span::empty(entities))
+        {
+            return;
+        }
+
+        void* handle_loc;
+        EntityOperation* operation = entity_operations.new_storage_operation(ice::meminfo_of<ice::ecs::EntityHandle> * ice::count(entities), handle_loc);
+        operation->archetype = ice::ecs::Archetype::Invalid;
+        operation->entities = reinterpret_cast<ice::ecs::EntityHandle*>(handle_loc);
+        operation->entity_count = ice::count(entities);
+        operation->notify_entity_changes = false;
+        operation->component_data = nullptr;
+        operation->component_data_size = 0;
+
+        // Resolve the entities to be removed.
+        query_provider.resolve_entities(entities, { operation->entities, operation->entity_count });
     }
 
 } // namespace ice::ecs

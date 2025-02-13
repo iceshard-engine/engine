@@ -63,6 +63,11 @@ namespace ice
         _context.send({ shardid | resource, detail::on_expire_resource });
     }
 
+    auto Trait::entities() noexcept -> ice::ecs::EntityIndex&
+    {
+        return _context.world().entities();
+    }
+
     auto Trait::entity_operations() noexcept -> ice::ecs::EntityOperations&
     {
         return _context.world().entity_operations();

@@ -4,6 +4,7 @@
 #pragma once
 #include <ice/span.hxx>
 #include <ice/string_types.hxx>
+#include <ice/ecs/ecs_types.hxx>
 #include <ice/engine_types.hxx>
 #include <ice/resource_types.hxx>
 #include <ice/module_register.hxx>
@@ -27,6 +28,7 @@ namespace ice::framework
     {
         ice::ModuleRegister& modules;
         ice::ResourceTracker& resources;
+        ice::ecs::ArchetypeIndex& archetypes;
     };
 
     class Game

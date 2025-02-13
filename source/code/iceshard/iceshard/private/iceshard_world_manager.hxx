@@ -22,6 +22,7 @@ namespace ice
     public:
         IceshardWorldManager(
             ice::Allocator& alloc,
+            ice::ecs::EntityIndex& entities,
             ice::UniquePtr<ice::TraitArchive> trait_archive,
             ice::EngineStateTracker& state_tracker
         ) noexcept;
@@ -66,6 +67,7 @@ namespace ice
 
     private:
         ice::ProxyAllocator _allocator;
+        ice::ecs::EntityIndex& _entities;
         ice::UniquePtr<ice::TraitArchive> const _trait_archive;
         ice::EngineStateTracker& _state_tracker;
 
