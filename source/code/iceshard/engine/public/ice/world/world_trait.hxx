@@ -22,11 +22,17 @@ namespace ice
         virtual auto deactivate(ice::WorldStateParams const& world_update) noexcept -> ice::Task<> { co_return; }
 
     public:
-        void send(ice::Shard shard) noexcept;
-        void send(ice::ShardID shardid) noexcept;
-        void send(ice::ShardID shardid, ice::String value) noexcept;
-        void send(ice::ShardID shardid, ice::Asset handle) noexcept;
-        void send(ice::ShardID shardid, ice::ResourceHandle handle) noexcept;
+        static constexpr ice::TraitTaskType Logic = ice::TraitTaskType::Logic;
+        static constexpr ice::TraitTaskType Graphics = ice::TraitTaskType::Graphics;
+        static constexpr ice::TraitTaskType Render = ice::TraitTaskType::Render;
+
+        using SendMode = ice::TraitSendMode;
+
+        void send(ice::Shard shard, SendMode = SendMode::Default) noexcept;
+        void send(ice::ShardID shardid, SendMode = SendMode::Default) noexcept;
+        void send(ice::ShardID shardid, ice::String value, SendMode = SendMode::Default) noexcept;
+        void send(ice::ShardID shardid, ice::Asset handle, SendMode = SendMode::Default) noexcept;
+        void send(ice::ShardID shardid, ice::ResourceHandle handle, SendMode = SendMode::Default) noexcept;
 
         auto entities() noexcept -> ice::ecs::EntityIndex&;
         auto entity_operations() noexcept -> ice::ecs::EntityOperations&;

@@ -26,11 +26,17 @@ namespace ice
 
         virtual auto bind(ice::TraitTaskBinding const& binding) noexcept -> ice::Result = 0;
 
-        template<auto MemberPtr>
-        auto bind(ice::ShardID event = ice::Shard_Invalid, void* userdata = nullptr) noexcept -> ice::Result;
+        template<auto MemberPtr, ice::TraitTaskType = TraitTaskType::Logic>
+        auto bind(
+            ice::ShardID event = ice::Shard_Invalid,
+            void* userdata = nullptr
+        ) noexcept -> ice::Result;
 
-        template<auto MemberPtr, typename DataType>
-        auto bind(ice::ShardID event = ice::Shard_Invalid, void* userdata = nullptr) noexcept -> ice::Result;
+        template<auto MemberPtr, typename DataType, ice::TraitTaskType = TraitTaskType::Logic>
+        auto bind(
+            ice::ShardID event = ice::Shard_Invalid,
+            void* userdata = nullptr
+        ) noexcept -> ice::Result;
 
         virtual void register_interface_selector(ice::InterfaceSelector* selector) noexcept = 0;
 
@@ -46,42 +52,38 @@ namespace ice
         }
     };
 
-    template<auto MemberPtr>
-    auto TraitContext::bind(ice::ShardID event, void* userdata) noexcept -> ice::Result
+    template<auto MemberPtr, ice::TraitTaskType TaskType>
+    auto TraitContext::bind(
+        ice::ShardID event,
+        void* userdata
+    ) noexcept -> ice::Result
     {
         using MemberType = decltype(MemberPtr);
 
         if constexpr (ice::member_info<MemberType>::argument_count > 0)
         {
-            return this->bind(
-                TraitTaskBinding{
-                    .trigger_event = event,
-                    .procedure = ice::detail::trait_method_task<MemberPtr, ice::member_arg_type_t<MemberType, 0>>,
-                    .procedure_userdata = userdata,
-                }
+            return bind(
+                ice::detail::trait_task_binding<MemberPtr, TaskType, ice::member_arg_type_t<MemberType, 0>>(
+                    event, userdata
+                )
             );
         }
         else
         {
-            return this->bind(
-                TraitTaskBinding{
-                    .trigger_event = event,
-                    .procedure = ice::detail::trait_method_task<MemberPtr, void>,
-                    .procedure_userdata = userdata,
-                }
+            return bind(
+                ice::detail::trait_task_binding<MemberPtr, TaskType, void>(event, userdata)
             );
         }
     }
 
-    template<auto MemberPtr, typename DataType>
-    auto TraitContext::bind(ice::ShardID event, void* userdata) noexcept -> ice::Result
+    template<auto MemberPtr, typename DataType, ice::TraitTaskType TaskType>
+    auto TraitContext::bind(
+        ice::ShardID event,
+        void* userdata
+    ) noexcept -> ice::Result
     {
-        return this->bind(
-            TraitTaskBinding{
-                .trigger_event = event,
-                .procedure = ice::detail::trait_method_task<MemberPtr, DataType>,
-                .procedure_userdata = userdata,
-            }
+        return bind(
+            ice::detail::trait_task_binding<MemberPtr, TaskType, DataType>(event, userdata)
         );
     }
 

@@ -7,7 +7,11 @@ namespace ice
         : _allocator{ alloc, ice::stringid_hint(worldid) }
         , _always_reached_checkpoint{ true }
         , _checkpoints{ alloc }
-        , _frame_handlers{ alloc }
+        , _frame_handlers{
+            ice::HashMap<ice::IceshardEventHandler>{ alloc },
+            ice::HashMap<ice::IceshardEventHandler>{ alloc },
+            ice::HashMap<ice::IceshardEventHandler>{ alloc }
+        }
         , _runner_handlers{ alloc }
     {
     }

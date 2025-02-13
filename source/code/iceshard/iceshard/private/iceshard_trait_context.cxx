@@ -7,9 +7,21 @@
 #include <ice/world/world_trait.hxx>
 #include <ice/container/hashmap.hxx>
 #include <ice/engine_runner.hxx>
+#include <ice/sort.hxx>
 
 namespace ice
 {
+
+    namespace detail
+    {
+        bool is_same_event(
+            ice::detail::TraitEvent const& left,
+            ice::detail::TraitEvent const& right
+        ) noexcept
+        {
+            return left.id == right.id;
+        }
+    }
 
     IceshardTraitContext::IceshardTraitContext(
         ice::IceshardWorldContext& world_context,
@@ -34,7 +46,15 @@ namespace ice
 
     void IceshardTraitContext::send(ice::detail::TraitEvent event) noexcept
     {
-        ice::array::push_back(_events, event);
+        ice::ucount idx = 0;
+        if (event.mode == TraitSendMode::Replace && ice::search(ice::Span{ _events }, event, detail::is_same_event, idx))
+        {
+            _events[idx] = event;
+        }
+        else
+        {
+            ice::array::push_back(_events, event);
+        }
     }
 
     void IceshardTraitContext::sync(ice::ShardContainer& out_shards) noexcept
@@ -101,12 +121,15 @@ namespace ice
             binding.trigger_event, ice::ShardID_FrameUpdate
         );
 
+        ICE_ASSERT_CORE(binding.task_type > TraitTaskType::Invalid);
+        ICE_ASSERT_CORE(binding.task_type <= TraitTaskType::Render);
+
         ice::multi_hashmap::insert(
-            binding.task_type == TraitTaskType::Frame ? _world_context._frame_handlers : _world_context._runner_handlers,
+            _world_context._frame_handlers[ice::u32(binding.task_type) - 1],
             ice::hash(trigger_event),
             ice::IceshardEventHandler{
-                .event_id = trigger_event,
                 .trait_idx = _trait_index,
+                .event_id = trigger_event,
                 .procedure = binding.procedure,
                 .procedure_userdata = binding.procedure_userdata
             }

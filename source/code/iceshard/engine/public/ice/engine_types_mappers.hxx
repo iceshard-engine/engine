@@ -2,6 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#include <ice/engine_params.hxx>
 #include <ice/engine_runner.hxx>
 #include <ice/engine_frame.hxx>
 #include <ice/gfx/gfx_runner.hxx>
@@ -9,24 +10,116 @@
 #include <ice/gfx/gfx_shards.hxx>
 #include <ice/world/world_trait_types.hxx>
 
+namespace ice
+{
+
+    struct LogicTaskParams;
+    struct GfxTaskParams;
+    struct RenderTaskParams;
+
+} // namespace ice
+
 // TraitParams based objects.
 
-#define TRAIT_PARAMS_MAPPER(type, access) \
-    template<> \
-    struct ice::detail::ArgMapper<type> \
-    { \
-        static constexpr bool FromTraitParams = true; \
-        template<typename Source> \
-        static auto select(ice::TraitParams const& params, Source&&) noexcept -> type \
-        { \
-            return access; \
-        } \
+template<>
+struct ice::detail::ArgMapper<ice::Clock const&>
+{
+    using ShardType = ice::Clock const&;
+
+    template<typename Source>
+    static auto select(ice::LogicTaskParams const& params, Source&&) noexcept -> ice::Clock const&
+    {
+        return params.clock;
     }
+    template<typename Source>
+    static auto select(ice::GfxTaskParams const& params, Source&&) noexcept -> ice::Clock const&
+    {
+        return params.clock;
+    }
+    template<typename Source>
+    static auto select(ice::RenderTaskParams const& params, Source&&) noexcept -> ice::Clock const&
+    {
+        return params.clock;
+    }
+};
 
-TRAIT_PARAMS_MAPPER(ice::Clock const&, params.clock);
-TRAIT_PARAMS_MAPPER(ice::ResourceTracker&, params.resources);
-TRAIT_PARAMS_MAPPER(ice::AssetStorage&, params.assets);
+template<>
+struct ice::detail::ArgMapper<ice::ResourceTracker&>
+{
+    using ShardType = ice::ResourceTracker&;
 
+    template<typename Source>
+    static auto select(ice::LogicTaskParams const& params, Source&&) noexcept -> ice::ResourceTracker&
+    {
+        return params.resources;
+    }
+    template<typename Source>
+    static auto select(ice::GfxTaskParams const& params, Source&&) noexcept -> ice::ResourceTracker&
+    {
+        return params.resources;
+    }
+    template<typename Source>
+    static auto select(ice::RenderTaskParams const& params, Source&&) noexcept -> ice::ResourceTracker&
+    {
+        return params.resources;
+    }
+};
+
+template<>
+struct ice::detail::ArgMapper<ice::AssetStorage&>
+{
+    using ShardType = ice::AssetStorage&;
+
+    template<typename Source>
+    static auto select(ice::LogicTaskParams const& params, Source&&) noexcept -> ice::AssetStorage&
+    {
+        return params.assets;
+    }
+    template<typename Source>
+    static auto select(ice::GfxTaskParams const& params, Source&&) noexcept -> ice::AssetStorage&
+    {
+        return params.assets;
+    }
+    template<typename Source>
+    static auto select(ice::RenderTaskParams const& params, Source&&) noexcept -> ice::AssetStorage&
+    {
+        return params.assets;
+    }
+};
+
+template<>
+struct ice::detail::ArgMapper<ice::TaskScheduler>
+{
+    using ShardType = ice::TaskScheduler;
+
+    template<typename Source>
+    static auto select(ice::LogicTaskParams const& params, Source&&) noexcept -> ice::TaskScheduler
+    {
+        return params.scheduler;
+    }
+    template<typename Source>
+    static auto select(ice::GfxTaskParams const& params, Source&&) noexcept -> ice::TaskScheduler
+    {
+        return params.scheduler;
+    }
+    template<typename Source>
+    static auto select(ice::RenderTaskParams const& params, Source&&) noexcept -> ice::TaskScheduler
+    {
+        return params.scheduler;
+    }
+};
+
+template<>
+struct ice::detail::ArgMapper<ice::gfx::GfxContext&>
+{
+    using ShardType = ice::gfx::GfxContext&;
+
+    template<typename Source>
+    static auto select(ice::GfxTaskParams const& params, Source&&) noexcept -> ice::gfx::GfxContext&
+    {
+        return params.gfx;
+    }
+};
 
 // Handling of custom types in trait methods.
 
@@ -35,9 +128,8 @@ struct ice::detail::ArgMapper<ice::Asset>
 {
     using ShardType = ice::AssetHandle*;
 
-    static constexpr bool FromTraitParams = false;
-
-    static auto select(ice::TraitParams const&, ice::AssetHandle* handle) noexcept -> ice::Asset { return ice::Asset{ handle }; }
+    template<typename ParamsType>
+    static auto select(ParamsType const&, ice::AssetHandle* handle) noexcept -> ice::Asset { return ice::Asset{ handle }; }
 };
 
 template<>
@@ -45,9 +137,8 @@ struct ice::detail::ArgMapper<ice::ResourceHandle>
 {
     using ShardType = ice::Resource*;
 
-    static constexpr bool FromTraitParams = false;
-
-    static auto select(ice::TraitParams const&, ice::Resource* handle) noexcept -> ice::ResourceHandle { return ice::ResourceHandle{ handle }; }
+    template<typename ParamsType>
+    static auto select(ParamsType const&, ice::Resource* handle) noexcept -> ice::ResourceHandle { return ice::ResourceHandle{ handle }; }
 };
 
 template<>
@@ -55,9 +146,8 @@ struct ice::detail::ArgMapper<ice::URI>
 {
     using ShardType = char const*;
 
-    static constexpr bool FromTraitParams = false;
-
-    static auto select(ice::TraitParams const&, char const* uri_raw) noexcept -> ice::URI
+    template<typename ParamsType>
+    static auto select(ParamsType const&, char const* uri_raw) noexcept -> ice::URI
     {
         return ice::URI{ uri_raw };
     }
@@ -68,9 +158,8 @@ struct ice::detail::ArgMapper<ice::String>
 {
     using ShardType = char const*;
 
-    static constexpr bool FromTraitParams = false;
-
-    static auto select(ice::TraitParams const&, char const* cstr) noexcept -> ice::String
+    template<typename ParamsType>
+    static auto select(ParamsType const&, char const* cstr) noexcept -> ice::String
     {
         return ice::String{ cstr };
     }
@@ -79,7 +168,8 @@ struct ice::detail::ArgMapper<ice::String>
 template<ice::concepts::NamedDataType NamedType>
 struct ice::detail::ArgMapper<NamedType const&>
 {
-    static auto select(ice::TraitParams const&, ice::gfx::GfxFrameUpdate const& params) noexcept -> NamedType const&
+    template<typename ParamsType>
+    static auto select(ParamsType const&, ice::gfx::GfxFrameUpdate const& params) noexcept -> NamedType const&
     {
         return params.frame.data().read<NamedType>(NamedType::Identifier);
     }
@@ -88,7 +178,8 @@ struct ice::detail::ArgMapper<NamedType const&>
 template<ice::concepts::NamedDataType NamedType>
 struct ice::detail::ArgMapper<ice::Span<NamedType const>>
 {
-    static auto select(ice::TraitParams const&, ice::gfx::GfxFrameUpdate const& params) noexcept -> ice::Span<NamedType const>
+    template<typename ParamsType>
+    static auto select(ParamsType const&, ice::gfx::GfxFrameUpdate const& params) noexcept -> ice::Span<NamedType const>
     {
         return params.frame.data().read<ice::Span<NamedType const> const>(NamedType::Identifier);
     }

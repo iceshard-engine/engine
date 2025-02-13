@@ -20,29 +20,6 @@ namespace ice::detail
         return ice::make_unique<Trait>(alloc, alloc, context);
     }
 
-    template<typename R, typename T = R>
-    auto map_task_arg(T value) noexcept -> R
-    {
-        return static_cast<R>(value);
-    }
-
-    template<typename Target>
-    struct ArgMapper
-    {
-        using ShardType = Target;
-
-        static constexpr bool FromTraitParams = false;
-
-        template<typename Source>
-        static auto select(
-            ice::TraitParams const&,
-            Source&& source
-        ) noexcept -> Target
-        {
-            return ice::detail::map_task_arg<Target, decltype(source)>(source);
-        }
-    };
-
     struct TraitTaskTracker
     {
         virtual ~TraitTaskTracker() noexcept = default;
@@ -56,13 +33,14 @@ namespace ice::detail
         using FnOnExpire = void(*)(void*, ice::Shard) noexcept;
         FnOnExpire fn_on_expire;
         void* ud_on_expire;
+        ice::TraitSendMode mode;
     };
 
-    template<typename DataType, typename Class, typename... Args>
+    template<typename ParamsType, typename DataType, typename Class, typename... Args>
     static auto trait_method_task_wrapper(
         ice::Task<>(Class::*Method)(Args...) noexcept,
         void* userdata,
-        ice::TraitParams const& trait_params,
+        ParamsType const& trait_params,
         ice::Shard shard
     ) noexcept -> ice::Task<>
     {
@@ -121,14 +99,45 @@ namespace ice::detail
         co_return;
     }
 
-    template<auto Method, typename DataType>
+    template<auto Method, typename ParamsType, typename DataType>
     static auto trait_method_task(
         void* userdata,
-        ice::TraitParams const& trait_params,
+        ice::EngineParamsBase const& params,
         ice::Shard shard
     ) noexcept -> ice::Task<>
     {
-        co_await trait_method_task_wrapper<DataType>(Method, userdata, trait_params, shard);
+        ParamsType const& task_params = static_cast<ParamsType const&>(params);
+        co_await trait_method_task_wrapper<ParamsType, DataType>(Method, userdata, task_params, shard);
+    }
+
+    template<auto MemberPtr, ice::TraitTaskType TaskType, typename DataType>
+    auto trait_task_binding(
+        ice::ShardID event,
+        void* userdata
+    ) noexcept -> ice::TraitTaskBinding
+    {
+        ice::TraitTaskBinding result{
+            .task_type = TaskType,
+            .trigger_event = event,
+            .procedure_userdata = userdata,
+        };
+        if constexpr (TaskType == TraitTaskType::Logic)
+        {
+            result.procedure = ice::detail::trait_method_task<MemberPtr, LogicTaskParams, DataType>;
+        }
+        else if constexpr (TaskType == TraitTaskType::Graphics)
+        {
+            result.procedure = ice::detail::trait_method_task<MemberPtr, GfxTaskParams, DataType>;
+        }
+        else if constexpr (TaskType == TraitTaskType::Render)
+        {
+            result.procedure = ice::detail::trait_method_task<MemberPtr, RenderTaskParams, DataType>;
+        }
+        else
+        {
+            ICE_ASSERT(false, "Unrecognized task type!");
+        }
+        return result;
     }
 
 } // namespace ice::detail

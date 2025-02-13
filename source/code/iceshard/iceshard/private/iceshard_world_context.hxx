@@ -13,8 +13,8 @@ namespace ice
 
     struct IceshardEventHandler
     {
-        ice::ShardID event_id;
         ice::u32 trait_idx;
+        ice::ShardID event_id;
         ice::TraitIndirectTaskFn procedure;
         void* procedure_userdata;
     };
@@ -43,7 +43,8 @@ namespace ice
     public:
         ice::TaskCheckpoint _always_reached_checkpoint;
         ice::HashMap<ice::TaskCheckpoint*> _checkpoints;
-        ice::HashMap<ice::IceshardEventHandler> _frame_handlers;
+
+        ice::HashMap<ice::IceshardEventHandler> _frame_handlers[3];
         ice::HashMap<ice::IceshardEventHandler> _runner_handlers;
     };
 
