@@ -388,17 +388,19 @@ namespace ice::gfx
 
         if (has_work)
         {
-            {
-                IPT_ZONE_SCOPED_NAMED("gfx_gpu_work");
-                queue->submit_command_buffers({ &command_buffer, 1 }, &fence);
-                fence.wait(100'000'000);
-            }
+            IPT_ZONE_SCOPED_NAMED("gfx_gpu_work");
 
-            IPT_ZONE_SCOPED_NAMED("gfx_present");
-            _context.present(_swapchain.current_image_index());
-            return true;
+            // TODO: Fix and use semaphores to synchronize queue workd done and presentation.
+            queue->submit_command_buffers({ &command_buffer, 1 }, &fence);
+            fence.wait(100'000'000);
         }
-        return false;
+        return has_work;
+    }
+
+    void IceshardGfxGraphRuntime::present() noexcept
+    {
+        IPT_ZONE_SCOPED_NAMED("gfx_present");
+        _context.present(_swapchain.current_image_index());
     }
 
     bool IceshardGfxGraphRuntime::execute_pass(

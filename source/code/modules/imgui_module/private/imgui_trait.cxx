@@ -38,9 +38,9 @@ namespace ice::devui
         , _resized{ false }
     {
         _context.bind<&ImGuiTrait::update>();
-        _context.bind<&ImGuiTrait::gfx_start>(ice::gfx::ShardID_GfxStartup);
-        _context.bind<&ImGuiTrait::gfx_shutdown>(ice::gfx::ShardID_GfxShutdown);
-        _context.bind<&ImGuiTrait::gfx_update>(ice::gfx::ShardID_GfxFrameUpdate);
+        _context.bind<&ImGuiTrait::gfx_start, Render>(ice::gfx::ShardID_GfxStartup);
+        _context.bind<&ImGuiTrait::gfx_shutdown, Render>(ice::gfx::ShardID_GfxShutdown);
+        _context.bind<&ImGuiTrait::gfx_update, Render>(ice::gfx::ShardID_GfxFrameUpdate);
         _context.bind<&ImGuiTrait::on_window_resized>(ice::platform::ShardID_WindowResized);
     }
 

@@ -214,7 +214,7 @@ namespace ice
 
     void IceshardWorldManager::update(
         ice::TaskContainer& out_tasks,
-        ice::TraitParams const& trait_params,
+        ice::EngineParamsBase const& params,
         ice::Span<ice::Shard const> event_shards
     ) noexcept
     {
@@ -222,7 +222,7 @@ namespace ice
         {
             if (world_entry.is_active)
             {
-                world_entry.world->task_launcher().gather(out_tasks, trait_params, event_shards);
+                world_entry.world->task_launcher().gather(out_tasks, params, event_shards);
             }
         }
     }
@@ -230,14 +230,14 @@ namespace ice
     void IceshardWorldManager::update(
         ice::StringID_Arg world_name,
         ice::TaskContainer& out_tasks,
-        ice::TraitParams const& trait_params,
+        ice::EngineParamsBase const& params,
         ice::Span<ice::Shard const> event_shards
     ) noexcept
     {
         Entry const* const entry = ice::hashmap::try_get(_worlds, ice::hash(world_name));
         if (entry != nullptr && entry->is_active)
         {
-            entry->world->task_launcher().gather(out_tasks, trait_params, event_shards);
+            entry->world->task_launcher().gather(out_tasks, params, event_shards);
         }
     }
 

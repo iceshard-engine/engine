@@ -4,24 +4,24 @@
 #include "iceshard_gfx_runner.hxx"
 #include "iceshard_runner.hxx"
 #include "gfx/iceshard_gfx_device.hxx"
-#include <ice/gfx/gfx_stage.hxx>
-#include <ice/render/render_fence.hxx>
-#include <ice/render/render_pass.hxx>
-#include <ice/gfx/gfx_queue.hxx>
-#include <ice/gfx/gfx_graph_runtime.hxx>
-#include <ice/engine_state_tracker.hxx>
+
+#include <ice/container/hashmap.hxx>
+#include <ice/engine_frame.hxx>
+#include <ice/engine_params.hxx>
+#include <ice/engine_shards.hxx>
 #include <ice/engine_state_definition.hxx>
-
-#include <ice/task.hxx>
-#include <ice/task_utils.hxx>
-
+#include <ice/engine_state_tracker.hxx>
+#include <ice/gfx/gfx_graph_runtime.hxx>
+#include <ice/gfx/gfx_queue.hxx>
+#include <ice/gfx/gfx_stage.hxx>
 #include <ice/mem_allocator_stack.hxx>
-#include <ice/world/world_updater.hxx>
 #include <ice/module_register.hxx>
 #include <ice/profiler.hxx>
-#include <ice/engine_shards.hxx>
-#include <ice/engine_frame.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/render/render_fence.hxx>
+#include <ice/render/render_pass.hxx>
+#include <ice/task.hxx>
+#include <ice/task_utils.hxx>
+#include <ice/world/world_updater.hxx>
 
 namespace ice
 {
@@ -135,9 +135,30 @@ namespace ice::gfx
         _rendergraph = ice::move(rendergraph);
     }
 
-    void IceshardGfxRunner::update() noexcept
+    auto IceshardGfxRunner::update_data(
+        ice::EngineFrame& frame,
+        ice::Clock const& clock
+    ) noexcept -> ice::Task<>
     {
+        IPT_ZONE_SCOPED;
+        ice::TaskContainer& current_tasks = frame.tasks_container();
 
+        GfxTaskParams const task_params{
+            TraitTaskType::Graphics,
+            clock,
+            _engine.assets().resources(),
+            _engine.assets(),
+            _scheduler,
+            *_context
+        };
+
+        ice::WorldUpdater& world_updater = _engine.worlds_updater();
+        {
+            IPT_ZONE_SCOPED_NAMED("gather_tasks");
+            world_updater.update(current_tasks, task_params, frame.shards());
+        }
+
+        co_await current_tasks.await_tasks_scheduled_on(_scheduler, _scheduler);
     }
 
     auto IceshardGfxRunner::draw_frame(
@@ -149,11 +170,13 @@ namespace ice::gfx
 
         //IPT_ZONE_SCOPED;
         IPT_FRAME_MARK_NAMED("Graphics");
-        TraitParams trait_params{
+        RenderTaskParams task_params{
             .clock = clock,
             .resources = _engine.assets().resources(),
             .assets = _engine.assets(),
+            .scheduler = _scheduler,
         };
+        task_params.task_type = TraitTaskType::Render;
 
         GfxFrameStages gpu_stages{
             .scheduler = _scheduler,
@@ -168,7 +191,7 @@ namespace ice::gfx
         };
 
         ice::Shard shards[]{ ice::gfx::ShardID_GfxFrameUpdate | &gfx_update };
-        _engine.worlds_updater().update(_gfx_tasks, trait_params, { shards });
+        _engine.worlds_updater().update(_gfx_tasks, task_params, { shards });
 
         //TODO: Currently the container should be "dead" after it's await scheduled on
         {
@@ -225,7 +248,7 @@ namespace ice::gfx
 
         if (_rendergraph->execute(frame, *_present_fence))
         {
-            _present_fence->wait(10'000'000);
+            _rendergraph->present();
         }
 
         co_await ice::await_scheduled_queue(_queue_end, _scheduler);
@@ -249,11 +272,13 @@ namespace ice::gfx
     ) noexcept
     {
         IPT_ZONE_SCOPED;
-        TraitParams trait_params{
+        RenderTaskParams task_params{
             .clock = {},
             .resources = _engine.assets().resources(),
             .assets = _engine.assets(),
+            .scheduler = _scheduler,
         };
+        task_params.task_type = TraitTaskType::Render;
 
         ice::gfx::GfxFrameStages gpu_stages{
             .scheduler = _scheduler,
@@ -280,7 +305,7 @@ namespace ice::gfx
             shards[0] = ice::shard(ice::gfx::ShardID_GfxStartup, &params);
 
             ice::ScopedTaskContainer tasks{ _alloc };
-            _engine.worlds_updater().update(world_name, tasks, trait_params, shards);
+            _engine.worlds_updater().update(world_name, tasks, task_params, shards);
 
             ice::wait_for(tasks.await_tasks_scheduled_on(_scheduler, _scheduler));
         }
@@ -290,7 +315,7 @@ namespace ice::gfx
             {
                 shards[0] = ice::shard(ice::gfx::ShardID_GfxShutdown, &params);
 
-                _engine.worlds_updater().update(world_name, tasks, trait_params, shards);
+                _engine.worlds_updater().update(world_name, tasks, task_params, shards);
             }
 
             auto const gpu_graph_task = [](

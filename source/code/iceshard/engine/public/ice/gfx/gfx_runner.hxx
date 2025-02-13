@@ -26,6 +26,11 @@ namespace ice::gfx
         //! \brief Sets a rendergraph to used for execution each frame.
         virtual void update_rendergraph(ice::UniquePtr<ice::gfx::GfxGraphRuntime> rendergraph) noexcept = 0;
 
+        virtual auto update_data(
+            ice::EngineFrame& frame,
+            ice::Clock const& clock
+        ) noexcept -> ice::Task<> = 0;
+
         //! \brief Creates a new draw task for the currently associated render graph.
         virtual auto draw_frame(
             ice::EngineFrame const& frame,

@@ -77,21 +77,25 @@ namespace ice
         if (ImGui::CollapsingHeader("Handlers"))
         {
             IceshardWorldContext const& ctx = _context;
-            ImGui::TextT("Frame handlers (count: {})", ice::hashmap::count(ctx._frame_handlers));
-            if (ice::hashmap::any(ctx._frame_handlers))
-            {
-                detail::devui_handlers_table(ice::hashmap::values(ctx._frame_handlers), _world._traits);
-            }
-            else
-            {
-                ImGui::Separator();
-            }
 
-            ImGui::TextT("Runner handlers (count: {})", ice::hashmap::count(ctx._runner_handlers));
-            if (ice::hashmap::any(ctx._runner_handlers))
-            {
-                detail::devui_handlers_table(ice::hashmap::values(ctx._runner_handlers), _world._traits);
-            }
+            static auto make_handler_list = [this](ice::String handler_type, auto const& hashmap) noexcept
+                {
+                    ImGui::TextT("{} handlers (count: {})", handler_type, ice::hashmap::count(hashmap));
+                    if (ice::hashmap::any(hashmap))
+                    {
+                        detail::devui_handlers_table(ice::hashmap::values(hashmap), _world._traits);
+                    }
+                    else
+                    {
+                        ImGui::Separator();
+                    }
+                };
+
+            make_handler_list("Logic", ctx._frame_handlers[0]);
+            make_handler_list("Graphics", ctx._frame_handlers[1]);
+            make_handler_list("Render", ctx._frame_handlers[2]);
+
+            make_handler_list("Runner", ctx._runner_handlers);
         }
     }
 

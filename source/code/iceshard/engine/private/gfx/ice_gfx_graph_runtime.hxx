@@ -91,6 +91,8 @@ namespace ice::gfx
             ice::render::RenderFence& fence
         ) noexcept override;
 
+        void present() noexcept override;
+
     private:
         bool execute_pass(
             ice::EngineFrame const& frame,

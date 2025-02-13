@@ -39,6 +39,9 @@ namespace ice::gfx
             ice::EngineFrame const& frame,
             ice::render::RenderFence& fence
         ) noexcept = 0;
+
+        //! \brief Presents the image.
+        virtual void present() noexcept = 0;
     };
 
     auto create_graph_runtime(

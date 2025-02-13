@@ -48,7 +48,10 @@ namespace ice::gfx
 
         void update_rendergraph(ice::UniquePtr<ice::gfx::GfxGraphRuntime> rendergraph) noexcept override;
 
-        void update() noexcept;
+        auto update_data(
+            ice::EngineFrame& frame,
+            ice::Clock const& clock
+        ) noexcept -> ice::Task<> override;
 
         auto draw_frame(
             ice::EngineFrame const& frame,

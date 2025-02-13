@@ -498,6 +498,7 @@ auto ice_resume(
             .schedulers = {
                 .main = runtime.main_scheduler,
                 .tasks = state.platform.threads->threadpool(),
+                .gfx = state.platform.threads->graphics()
             }
         };
 
@@ -597,8 +598,9 @@ auto ice_game_frame(
     // Push state events
     state.engine->states().update_states(runtime.frame->shards(), new_frame->shards());
 
-    // Await logic update
+    // Await logic and gfx data updates
     co_await runtime.runner->update_frame(*new_frame, *runtime.frame);
+    co_await runtime.gfx_runner->update_data(*runtime.frame, runtime.clock);
 
     // Await render stage
     bool const can_render = co_await render_stage;
