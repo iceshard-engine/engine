@@ -52,10 +52,12 @@ namespace ice
 
     IceshardWorldManager::IceshardWorldManager(
         ice::Allocator& alloc,
+        ice::ecs::EntityIndex& entities,
         ice::UniquePtr<ice::TraitArchive> trait_archive,
         ice::EngineStateTracker& tracker
     ) noexcept
         : _allocator{ alloc, "World Manager" }
+        , _entities{ entities }
         , _trait_archive{ ice::move(trait_archive) }
         , _state_tracker{ tracker }
         , _worlds{ _allocator }
@@ -134,6 +136,7 @@ namespace ice
 
         IceshardWorld* world = world_context->create_world(
             world_template,
+            _entities,
             ice::move(world_traits),
             _devui_tasks.get()
         );
@@ -211,7 +214,7 @@ namespace ice
 
     void IceshardWorldManager::update(
         ice::TaskContainer& out_tasks,
-        ice::TraitParams const& trait_params,
+        ice::EngineParamsBase const& params,
         ice::Span<ice::Shard const> event_shards
     ) noexcept
     {
@@ -219,7 +222,7 @@ namespace ice
         {
             if (world_entry.is_active)
             {
-                world_entry.world->task_launcher().gather(out_tasks, trait_params, event_shards);
+                world_entry.world->task_launcher().gather(out_tasks, params, event_shards);
             }
         }
     }
@@ -227,14 +230,14 @@ namespace ice
     void IceshardWorldManager::update(
         ice::StringID_Arg world_name,
         ice::TaskContainer& out_tasks,
-        ice::TraitParams const& trait_params,
+        ice::EngineParamsBase const& params,
         ice::Span<ice::Shard const> event_shards
     ) noexcept
     {
         Entry const* const entry = ice::hashmap::try_get(_worlds, ice::hash(world_name));
         if (entry != nullptr && entry->is_active)
         {
-            entry->world->task_launcher().gather(out_tasks, trait_params, event_shards);
+            entry->world->task_launcher().gather(out_tasks, params, event_shards);
         }
     }
 

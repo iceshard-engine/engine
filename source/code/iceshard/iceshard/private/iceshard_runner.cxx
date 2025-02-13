@@ -9,6 +9,7 @@
 #include <ice/mem_allocator_stack.hxx>
 #include <ice/engine_state_tracker.hxx>
 #include <ice/engine_module.hxx>
+#include <ice/engine_params.hxx>
 #include <ice/engine_shards.hxx>
 #include <ice/engine_devui.hxx>
 #include <ice/task_utils.hxx>
@@ -124,11 +125,13 @@ namespace ice
         IPT_ZONE_SCOPED;
         ice::TaskContainer& current_tasks = frame.tasks_container();
 
-        ice::TraitParams const trait_params{
+        ice::LogicTaskParams task_params{
             .clock = _clock,
             .resources = _engine.assets().resources(),
             .assets = _engine.assets(),
+            .scheduler = _schedulers.main,
         };
+        task_params.task_type = TraitTaskType::Logic;
 
         ice::EngineFrameUpdate const frame_update{
             .frame = frame,
@@ -141,8 +144,8 @@ namespace ice
             IPT_ZONE_SCOPED_NAMED("gather_tasks");
             ice::Shard const update_shard[]{ ice::ShardID_FrameUpdate | &frame_update };
 
-            world_updater.update(current_tasks, trait_params, frame.shards());
-            world_updater.update(current_tasks, trait_params, { update_shard });
+            world_updater.update(current_tasks, task_params, frame.shards());
+            world_updater.update(current_tasks, task_params, { update_shard });
         }
 
         co_await current_tasks.await_tasks_scheduled_on(_schedulers.main, _schedulers.main);

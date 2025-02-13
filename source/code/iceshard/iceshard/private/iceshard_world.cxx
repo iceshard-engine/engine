@@ -10,6 +10,7 @@ namespace ice
     IceshardWorld::IceshardWorld(
         ice::Allocator& alloc,
         ice::StringID_Arg worldid,
+        ice::ecs::EntityIndex& entities,
         ice::ecs::EntityStorage& entity_storage,
         ice::IceshardWorldContext& context,
         ice::Array<ice::UniquePtr<ice::IceshardTraitContext>> traits,
@@ -17,6 +18,7 @@ namespace ice
     ) noexcept
         : worldID{ worldid }
         , _allocator{ alloc, "world-data" }
+        , _entities{ entities }
         , _entity_storage{ entity_storage }
         , _entity_operations{ _allocator, 16 }
         , _traits{ ice::move(traits) }

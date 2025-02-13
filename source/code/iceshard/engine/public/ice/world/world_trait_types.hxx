@@ -3,6 +3,8 @@
 
 #pragma once
 #include <ice/task_types.hxx>
+#include <ice/ecs/ecs_types.hxx>
+#include <ice/engine_params.hxx>
 #include <ice/world/world_types.hxx>
 
 namespace ice
@@ -14,27 +16,20 @@ namespace ice
     class TraitDevUI;
 
     struct TraitDescriptor;
-    struct TraitParams;
     struct TraitTaskBinding;
 
-    enum class TraitTaskType : ice::u8
+    enum class TraitSendMode : ice::u8
     {
-        Frame,
-        Runner,
+        Add,
+        Replace,
+        Default = Add
     };
 
-    using TraitIndirectTaskFn = auto (*)(void*, ice::TraitParams const&, ice::Shard) noexcept -> ice::Task<>;
-
-    struct TraitParams
-    {
-        ice::Clock const& clock;
-        ice::ResourceTracker& resources;
-        ice::AssetStorage& assets;
-    };
+    using TraitIndirectTaskFn = auto (*)(void*, ice::EngineParamsBase const&, ice::Shard) noexcept -> ice::Task<>;
 
     struct TraitTaskBinding
     {
-        ice::TraitTaskType task_type = ice::TraitTaskType::Frame;
+        ice::TraitTaskType task_type = ice::TraitTaskType::Logic;
         ice::ShardID trigger_event;
         ice::TraitIndirectTaskFn procedure;
         void* procedure_userdata;
@@ -46,6 +41,27 @@ namespace ice::detail
 {
 
     struct TraitContextImpl;
+
+    template<typename R, typename T = R>
+    auto map_task_arg(T value) noexcept -> R
+    {
+        return static_cast<R>(value);
+    }
+
+    template<typename Target>
+    struct ArgMapper
+    {
+        using ShardType = Target;
+
+        template<typename ContextParams, typename Source>
+        static auto select(
+            ContextParams const& params,
+            Source&& source
+        ) noexcept -> Target
+        {
+            return ice::detail::map_task_arg<Target, decltype(source)>(source);
+        }
+    };
 
 } // namespace ice::detail
 

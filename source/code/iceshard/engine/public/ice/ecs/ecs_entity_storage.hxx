@@ -7,6 +7,7 @@
 #include <ice/ecs/ecs_archetype.hxx>
 #include <ice/ecs/ecs_query.hxx>
 #include <ice/ecs/ecs_query_provider.hxx>
+#include <ice/mem_allocator_proxy.hxx>
 
 namespace ice::ecs
 {
@@ -25,10 +26,17 @@ namespace ice::ecs
 
         ~EntityStorage() noexcept;
 
+        void update_archetypes() noexcept;
+
         void execute_operations(
             ice::ecs::EntityOperations const& operations,
             ice::ShardContainer& out_shards
         ) noexcept;
+
+        auto resolve_entities(
+            ice::Span<ice::ecs::Entity const> requested,
+            ice::Span<ice::ecs::EntityHandle> resolved
+        ) const noexcept -> ice::ucount override;
 
     protected:
         void query_internal(
@@ -39,9 +47,10 @@ namespace ice::ecs
         ) const noexcept override;
 
     private:
-        ice::Allocator& _allocator;
+        ice::ProxyAllocator _allocator;
         ice::ecs::ArchetypeIndex const& _archetype_index;
 
+        ice::HashMap<ice::ecs::EntityHandle> _entities;
         ice::HashMap<ice::ecs::QueryAccessTracker*> _access_trackers;
         ice::Array<ice::ecs::DataBlock> _head_blocks;
         ice::Array<ice::ecs::DataBlock*> _data_blocks;

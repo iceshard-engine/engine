@@ -5,6 +5,7 @@
 #include <ice/ecs/ecs_entity.hxx>
 #include <ice/ecs/ecs_component.hxx>
 #include <ice/ecs/ecs_query_type.hxx>
+#include <ice/ecs/ecs_archetype.hxx>
 #include <ice/container_types.hxx>
 #include <ice/task_generator.hxx>
 

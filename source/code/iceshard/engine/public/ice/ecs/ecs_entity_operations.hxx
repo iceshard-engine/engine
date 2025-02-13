@@ -122,6 +122,12 @@ namespace ice::ecs
         ice::Span<ice::ecs::EntityHandle const> entities
     ) noexcept;
 
+    void queue_batch_remove_entities(
+        ice::ecs::EntityOperations& entity_operations,
+        ice::ecs::QueryProvider const& query_provider,
+        ice::Span<ice::ecs::Entity const> entities
+    ) noexcept;
+
 
     template<ice::ecs::Component... Components>
     void queue_set_archetype_with_data(

@@ -22,27 +22,27 @@ namespace ice
 
         void gather(
             ice::TaskContainer& out_tasks,
-            ice::TraitParams const& trait_params,
+            ice::EngineParamsBase const& params,
             ice::Shard shard
         ) noexcept;
 
         void gather(
             ice::TaskContainer& out_tasks,
-            ice::TraitParams const& trait_params,
+            ice::EngineParamsBase const& params,
             ice::Span<ice::Shard const> shards
         ) noexcept;
 
         void execute(
             ice::Array<ice::Task<>,
             ice::ContainerLogic::Complex>& out_tasks,
-            ice::TraitParams const& trait_params,
+            ice::EngineParamsBase const& params,
             ice::Shard shard
         ) noexcept;
 
         void execute(
             ice::Array<ice::Task<>,
             ice::ContainerLogic::Complex>& out_tasks,
-            ice::TraitParams const& trait_params,
+            ice::EngineParamsBase const& params,
             ice::ShardContainer const& shards
         ) noexcept;
 

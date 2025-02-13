@@ -14,10 +14,12 @@ namespace ice
     public:
         SimpleTraitArchive(
             ice::Allocator& alloc,
+            ice::ecs::ArchetypeIndex& archetypes,
             ice::EngineStateTracker& states
         ) noexcept
             : _allocator{ alloc }
             , _traits{ alloc }
+            , _archetypes{ archetypes }
             , _states{ states }
         {
         }
@@ -34,6 +36,11 @@ namespace ice
             // TODO: Allow registering with priority instead of first in
             if (can_register && ice::hashmap::has(_traits, ice::hash(descriptor.name)) == false)
             {
+                if (descriptor.fn_arch_register != nullptr)
+                {
+                    descriptor.fn_arch_register(_archetypes);
+                }
+
                 ice::hashmap::set(_traits, ice::hash(descriptor.name), ice::move(descriptor));
             }
         }
@@ -46,15 +53,17 @@ namespace ice
     private:
         ice::Allocator& _allocator;
         ice::HashMap<ice::TraitDescriptor> _traits;
+        ice::ecs::ArchetypeIndex& _archetypes;
         ice::EngineStateTracker& _states;
     };
 
     auto create_default_trait_archive(
         ice::Allocator& alloc,
+        ice::ecs::ArchetypeIndex& archetypes,
         ice::EngineStateTracker& states
     ) noexcept -> ice::UniquePtr<ice::TraitArchive>
     {
-        return ice::make_unique<ice::SimpleTraitArchive>(alloc, alloc, states);
+        return ice::make_unique<ice::SimpleTraitArchive>(alloc, alloc, archetypes, states);
     }
 
 } // namespace ice

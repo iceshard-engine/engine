@@ -32,35 +32,40 @@ namespace ice
     {
     }
 
-    void Trait::send(ice::Shard shard) noexcept
+    void Trait::send(ice::Shard shard, SendMode mode) noexcept
     {
-        _context.send({ shard });
+        _context.send({ shard, {}, {}, mode });
     }
 
-    void Trait::send(ice::ShardID shardid) noexcept
+    void Trait::send(ice::ShardID shardid, SendMode mode) noexcept
     {
-        _context.send({ ice::Shard{ shardid } });
+        _context.send({ ice::Shard{ shardid }, {}, {}, mode });
     }
 
-    void Trait::send(ice::ShardID shardid, ice::String value) noexcept
+    void Trait::send(ice::ShardID shardid, ice::String value, SendMode mode) noexcept
     {
-        this->send(shardid | ice::string::begin(value));
+        this->send(shardid | ice::string::begin(value), mode);
     }
 
-    void Trait::send(ice::ShardID shardid, ice::Asset asset) noexcept
+    void Trait::send(ice::ShardID shardid, ice::Asset asset, SendMode mode) noexcept
     {
         // We extract the pointer from the handle leaving it 'unreleased'
         //   preserving the ref-count until the trait expires the asset.
         ice::AssetHandle* handle = ice::exchange(asset._handle, nullptr);
-        _context.send({ shardid | handle, detail::on_expire_asset });
+        _context.send({ shardid | handle, detail::on_expire_asset, nullptr, mode });
     }
 
-    void Trait::send(ice::ShardID shardid, ice::ResourceHandle handle) noexcept
+    void Trait::send(ice::ShardID shardid, ice::ResourceHandle handle, SendMode mode) noexcept
     {
         // We extract the pointer from the handle leaving it 'unreleased'
         //   preserving the ref-count until the trait expires the resource.
         ice::Resource* resource = ice::exchange(handle._resource, nullptr);
-        _context.send({ shardid | resource, detail::on_expire_resource });
+        _context.send({ shardid | resource, detail::on_expire_resource, nullptr, mode });
+    }
+
+    auto Trait::entities() noexcept -> ice::ecs::EntityIndex&
+    {
+        return _context.world().entities();
     }
 
     auto Trait::entity_operations() noexcept -> ice::ecs::EntityOperations&

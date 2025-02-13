@@ -23,6 +23,7 @@ namespace ice
 
     auto create_default_trait_archive(
         ice::Allocator& alloc,
+        ice::ecs::ArchetypeIndex& archetypes,
         ice::EngineStateTracker& states
     ) noexcept -> ice::UniquePtr<ice::TraitArchive>;
 

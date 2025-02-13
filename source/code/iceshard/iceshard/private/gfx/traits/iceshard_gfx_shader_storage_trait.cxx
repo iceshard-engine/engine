@@ -33,8 +33,8 @@ namespace ice::gfx
         , ice::TraitDevUI{ {.category="Engine/Gfx", .name="Shaders"} }
         , _loaded_shaders{ alloc }
     {
-        _context.bind<&Trait_GfxShaderStorage::gfx_update>(ice::gfx::ShardID_GfxFrameUpdate);
-        _context.bind<&Trait_GfxShaderStorage::gfx_shutdown>(ice::gfx::ShardID_GfxShutdown);
+        _context.bind<&Trait_GfxShaderStorage::gfx_update, Render>(ice::gfx::ShardID_GfxFrameUpdate);
+        _context.bind<&Trait_GfxShaderStorage::gfx_shutdown, Render>(ice::gfx::ShardID_GfxShutdown);
         _context.bind<&Trait_GfxShaderStorage::on_asset_loaded>("iceshard:shaders-internal:loaded`ice::Asset"_shardid);
     }
 

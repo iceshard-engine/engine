@@ -22,14 +22,14 @@ namespace ice
 
         virtual void update(
             ice::TaskContainer& out_tasks,
-            ice::TraitParams const& trait_params,
+            ice::EngineParamsBase const& params,
             ice::Span<ice::Shard const> event_shards
         ) noexcept = 0;
 
         virtual void update(
             ice::StringID_Arg world_name,
             ice::TaskContainer& out_tasks,
-            ice::TraitParams const& trait_params,
+            ice::EngineParamsBase const& params,
             ice::Span<ice::Shard const> event_shards
         ) noexcept = 0;
     };
