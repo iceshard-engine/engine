@@ -37,8 +37,8 @@ namespace ice
 
         ice::UniquePtr<ice::AssetStorage> _assets;
         ice::UniquePtr<ice::EngineStateTracker> _states;
-        ice::IceshardWorldManager _worlds;
         ice::ecs::EntityIndex _entities;
+        ice::IceshardWorldManager _worlds;
     };
 
 } // namespace ice

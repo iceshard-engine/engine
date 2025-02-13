@@ -14,6 +14,7 @@ namespace ice
 
     auto IceshardWorldContext::create_world(
         ice::WorldTemplate const& world_template,
+        ice::ecs::EntityIndex& entities,
         ice::Array<ice::UniquePtr<ice::IceshardTraitContext>> traits,
         ice::detail::TraitTaskTracker* task_tracker
     ) noexcept -> ice::IceshardWorld*
@@ -22,6 +23,7 @@ namespace ice
             _allocator,
             _allocator,
             world_template.name,
+            entities,
             world_template.entity_storage,
             *this,
             ice::move(traits),

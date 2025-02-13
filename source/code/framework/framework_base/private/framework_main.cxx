@@ -23,6 +23,7 @@
 #include <ice/gfx/gfx_graph_runtime.hxx>
 
 #include <ice/render/render_module.hxx>
+#include <ice/ecs/ecs_archetype_index.hxx>
 #include <ice/engine.hxx>
 #include <ice/engine_runner.hxx>
 #include <ice/engine_module.hxx>
@@ -115,6 +116,9 @@ struct ice::app::State
     ice::UniquePtr<ice::render::RenderDriver> renderer;
     ice::render::RenderSurface* render_surface; // TODO: Make into a UniquePtr
 
+    ice::ecs::ArchetypeIndex archetypes;
+
+
     struct ResourceProviders
     {
         ice::UniquePtr<ice::ResourceProvider> filesys;
@@ -141,6 +145,7 @@ struct ice::app::State
         , engine_alloc{ alloc, "Engine" }
         , resources{ }
         , game{ ice::framework::create_game(gamework_alloc) }
+        , archetypes{ alloc }
         , modules{ ice::create_default_module_register(modules_alloc, true) }
         , render_surface{ }
         , providers{ }
@@ -413,6 +418,7 @@ auto ice_setup(
     ice::framework::State const framework_state{
         .modules = *state.modules,
         .resources = *state.resources,
+        .archetypes = state.archetypes,
     };
     state.game->on_setup(framework_state);
 
@@ -441,7 +447,7 @@ auto ice_setup(
     }
 
     {
-        engine_create_info.traits = ice::create_default_trait_archive(state.engine_alloc, *engine_create_info.states);
+        engine_create_info.traits = ice::create_default_trait_archive(state.engine_alloc, state.archetypes, *engine_create_info.states);
         ice::load_trait_descriptions(state.engine_alloc, *state.modules, *engine_create_info.traits);
     }
 
@@ -772,6 +778,7 @@ auto ice_shutdown(
     ice::framework::State const framework_state{
         .modules = *state.modules,
         .resources = *state.resources,
+        .archetypes = state.archetypes,
     };
     state.game->on_shutdown(framework_state);
 

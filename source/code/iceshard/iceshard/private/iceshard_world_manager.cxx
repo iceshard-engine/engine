@@ -52,10 +52,12 @@ namespace ice
 
     IceshardWorldManager::IceshardWorldManager(
         ice::Allocator& alloc,
+        ice::ecs::EntityIndex& entities,
         ice::UniquePtr<ice::TraitArchive> trait_archive,
         ice::EngineStateTracker& tracker
     ) noexcept
         : _allocator{ alloc, "World Manager" }
+        , _entities{ entities }
         , _trait_archive{ ice::move(trait_archive) }
         , _state_tracker{ tracker }
         , _worlds{ _allocator }
@@ -134,6 +136,7 @@ namespace ice
 
         IceshardWorld* world = world_context->create_world(
             world_template,
+            _entities,
             ice::move(world_traits),
             _devui_tasks.get()
         );

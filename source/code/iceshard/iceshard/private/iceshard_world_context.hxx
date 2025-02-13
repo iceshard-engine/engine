@@ -29,6 +29,7 @@ namespace ice
 
         auto create_world(
             ice::WorldTemplate const& world_template,
+            ice::ecs::EntityIndex& entitites,
             ice::Array<ice::UniquePtr<ice::IceshardTraitContext>> traits,
             ice::detail::TraitTaskTracker* task_tracker
         ) noexcept -> ice::IceshardWorld*;

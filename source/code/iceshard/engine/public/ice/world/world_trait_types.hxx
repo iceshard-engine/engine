@@ -3,6 +3,7 @@
 
 #pragma once
 #include <ice/task_types.hxx>
+#include <ice/ecs/ecs_types.hxx>
 #include <ice/world/world_types.hxx>
 
 namespace ice

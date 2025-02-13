@@ -1,11 +1,12 @@
 /// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
-#include <ice/ecs/ecs_entity_storage.hxx>
-#include <ice/ecs/ecs_entity_operations.hxx>
-#include <ice/ecs/ecs_archetype_index.hxx>
-#include <ice/container/hashmap.hxx>
 #include <ice/assert.hxx>
+#include <ice/container/hashmap.hxx>
+#include <ice/ecs/ecs_archetype_index.hxx>
+#include <ice/ecs/ecs_entity_operations.hxx>
+#include <ice/ecs/ecs_entity_storage.hxx>
+#include <ice/mem_allocator_stack.hxx>
 #include <ice/profiler.hxx>
 
 namespace ice::ecs
@@ -56,6 +57,18 @@ namespace ice::ecs
                 entity_count
             );
         }
+
+        void track_entities(
+            ice::HashMap<ice::ecs::EntityHandle>& tracked,
+            ice::Span<ice::ecs::EntityHandle const> updated
+        ) noexcept;
+
+        void notify_changes(
+            ice::ShardContainer& out_shards,
+            ice::ShardID notification_shard,
+            ice::Span<ice::ecs::EntityHandle const> updated,
+            ice::ecs::EntityOperation const& operation
+        ) noexcept;
 
         void store_entities_with_data(
             ice::Span<ice::ecs::EntityHandle const> src_entities,
@@ -291,6 +304,7 @@ namespace ice::ecs
             ice::ecs::EntityOperation const& operation,
             ice::Span<ice::ecs::EntityHandle const> entities_to_remove,
             ice::Span<ice::ecs::DataBlock*> data_blocks,
+            ice::HashMap<ice::ecs::EntityHandle>& tracked,
             ice::ShardContainer& out_shards
         ) noexcept
         {
@@ -307,12 +321,6 @@ namespace ice::ecs
             {
                 EntityHandleInfo handle_info = ice::ecs::entity_handle_info(*it);
                 EntitySlotInfo const slot_info = ice::ecs::entity_slot_info(handle_info.slot);
-
-                // Append notification if necessary
-                if (operation.notify_entity_changes)
-                {
-                    ice::shards::push_back(out_shards,ice::ecs::Shard_EntityDestroyed | *it);
-                }
 
                 // Find the archetype info if it changed (Users are encouraged to avoid this)
                 ArchetypeInstance const temp_archetype[1]{ ArchetypeInstance{ slot_info.archetype } };
@@ -358,12 +366,6 @@ namespace ice::ecs
                     it += 1; // Get the next entity and check if we can already handle it
 
                     EntitySlotInfo const next_slot_info = ice::ecs::entity_slot_info(ice::ecs::entity_handle_info(*it).slot);
-
-                    // Append notification if necessary
-                    if (operation.notify_entity_changes)
-                    {
-                        ice::shards::push_back(out_shards,ice::ecs::Shard_EntityDestroyed | *it);
-                    }
 
                     // Increase count if we found the next entity
                     if ((slot_info.index + span_size) == next_slot_info.index)
@@ -425,14 +427,9 @@ namespace ice::ecs
                         dst_data_details /* dst data block */
                     );
 
-                    // TODO: Notify about handle changes
-                    if (operation.notify_entity_changes)
-                    {
-                        for (ice::ecs::EntityHandle handle : moved_entities)
-                        {
-                            ice::shards::push_back(out_shards, ice::ecs::Shard_EntityHandleChanged | handle);
-                        }
-                    }
+                    // Need to track the moved entities and notify for changes if necessary
+                    track_entities(tracked, moved_entities);
+                    notify_changes(out_shards, Shard_EntityHandleChanged, moved_entities, operation);
                 }
 
                 // Remove entity count from the block we moved from (we can just forget the data existed)
@@ -441,58 +438,62 @@ namespace ice::ecs
             } while(it != end);
         }
 
+        void track_entities(
+            ice::HashMap<ice::ecs::EntityHandle>& tracked,
+            ice::Span<ice::ecs::EntityHandle const> updated
+        ) noexcept
+        {
+            for (ice::ecs::EntityHandle updated_handle : updated)
+            {
+                ice::ecs::EntityHandleInfo const info = ice::ecs::entity_handle_info(updated_handle);
+                ice::hashmap::set(tracked, ice::hash(info.entity), updated_handle);
+            }
+        }
+
+        void forget_entities(
+            ice::HashMap<ice::ecs::EntityHandle>& tracked,
+            ice::Span<ice::ecs::EntityHandle const> removed
+        ) noexcept
+        {
+            for (ice::ecs::EntityHandle updated_handle : removed)
+            {
+                ice::ecs::EntityHandleInfo const info = ice::ecs::entity_handle_info(updated_handle);
+                ice::hashmap::remove(tracked, ice::hash(info.entity));
+            }
+        }
+
+        void notify_changes(
+            ice::ShardContainer& out_shards,
+            ice::ShardID notification_shard,
+            ice::Span<ice::ecs::EntityHandle const> updated,
+            ice::ecs::EntityOperation const& operation
+        ) noexcept
+        {
+            if (operation.notify_entity_changes == false)
+            {
+                return;
+            }
+
+            for (ice::ecs::EntityHandle updated_handle : updated)
+            {
+                ice::shards::push_back(out_shards, notification_shard | updated_handle);
+            }
+        }
+
     } // namespace detail
 
     EntityStorage::EntityStorage(
         ice::Allocator& alloc,
         ice::ecs::ArchetypeIndex const& archetype_index
     ) noexcept
-        : _allocator{ alloc }
+        : _allocator{ alloc, "ecs :: entity-storage" }
         , _archetype_index{ archetype_index }
         , _access_trackers{ _allocator }
+        , _entities{ _allocator }
         , _head_blocks{ _allocator }
         , _data_blocks{ _allocator }
     {
-        ice::u32 const archetype_count = _archetype_index.registered_archetype_count();
-
-        ice::array::resize(_head_blocks, archetype_count);
-        ice::array::resize(_data_blocks, archetype_count);
-
-        // Setup the empty head blocks.
-        //  This approach gives two benefits:
-        //  1. Queries are returning valid pointers for head blocks, that can be skipped if no entity was ever allocate
-        //  2. We dont have any allocation overhead for archetypes that exist bur where never used, or are used rarely.
-        for (ice::u32 idx = 0; idx < archetype_count; ++idx)
-        {
-            DataBlock* head_block = ice::addressof(_head_blocks[idx]);
-            head_block->block_data = nullptr;
-            head_block->block_data_size = 0_B;
-            head_block->block_entity_count = 0;
-            head_block->block_entity_count_max = 0;
-            head_block->next = nullptr;
-
-            _data_blocks[idx] = head_block;
-
-            if (idx == 0)
-            {
-                continue;
-            }
-
-            // Go over each archetype component and create non-existent trackers
-            ice::ecs::ArchetypeInstanceInfo const* info = nullptr;
-            _archetype_index.fetch_archetype_instance_info_by_index(idx, info);
-            ICE_ASSERT_CORE(info != nullptr);
-
-            for (ice::StringID component_id : info->component_identifiers)
-            {
-                ice::ecs::QueryAccessTracker* tracker = ice::hashmap::get(_access_trackers, ice::hash(component_id), nullptr);
-                if (tracker == nullptr)
-                {
-                    tracker = _allocator.create<ice::ecs::QueryAccessTracker>();
-                    ice::hashmap::set(_access_trackers, ice::hash(component_id), tracker);
-                }
-            }
-        }
+        ice::array::reserve(_head_blocks, 100); // 100 archetypes should suffice for now
     }
 
     EntityStorage::~EntityStorage() noexcept
@@ -527,6 +528,55 @@ namespace ice::ecs
         }
     }
 
+    void EntityStorage::update_archetypes() noexcept
+    {
+        ice::u32 const existing_count = ice::count(_head_blocks);
+        ice::u32 const archetype_count = _archetype_index.registered_archetype_count();
+        if (existing_count >= archetype_count)
+        {
+            return; // Don't remove archetype headblocks because queries might still reference them.
+        }
+
+        ice::array::resize(_head_blocks, archetype_count);
+        ice::array::resize(_data_blocks, archetype_count);
+
+        // Setup the empty head blocks for new archetypes.
+        //  This approach gives two benefits:
+        //  1. Queries are returning valid pointers for head blocks, that can be skipped if no entity was ever allocate
+        //  2. We dont have any allocation overhead for archetypes that exist bur where never used, or are used rarely.
+        for (ice::u32 idx = existing_count; idx < archetype_count; ++idx)
+        {
+            DataBlock* head_block = ice::addressof(_head_blocks[idx]);
+            head_block->block_data = nullptr;
+            head_block->block_data_size = 0_B;
+            head_block->block_entity_count = 0;
+            head_block->block_entity_count_max = 0;
+            head_block->next = nullptr;
+
+            _data_blocks[idx] = head_block;
+
+            if (idx == 0)
+            {
+                continue;
+            }
+
+            // Go over each archetype component and create non-existent trackers
+            ice::ecs::ArchetypeInstanceInfo const* info = nullptr;
+            _archetype_index.fetch_archetype_instance_info_by_index(idx, info);
+            ICE_ASSERT_CORE(info != nullptr);
+
+            for (ice::StringID component_id : info->component_identifiers)
+            {
+                ice::ecs::QueryAccessTracker* tracker = ice::hashmap::get(_access_trackers, ice::hash(component_id), nullptr);
+                if (tracker == nullptr)
+                {
+                    tracker = _allocator.create<ice::ecs::QueryAccessTracker>();
+                    ice::hashmap::set(_access_trackers, ice::hash(component_id), tracker);
+                }
+            }
+        }
+    }
+
     void EntityStorage::execute_operations(
         ice::ecs::EntityOperations const& operations,
         ice::ShardContainer& out_shards
@@ -536,7 +586,7 @@ namespace ice::ecs
         // [Done] Set Archetype: {EntityHandle[*], DstArchetype, ComponentData[*]} // add
         // [Done] Rep Archetype: {EntityHandle[1], DstArchetype, <implicit: SrcArchetype>, ComponentData[*]} // change
         // [Done] Set Component: {EntityHandle[1], None, ComponentData[*]} // update data
-        // [Done] Set Component: {EntityHandle[1], None} // remove
+        // [Done] Set Component: {EntityHandle[*], None} // remove
 
         // Ensure all queries are finished
         for (ice::ecs::QueryAccessTracker* tracker : ice::hashmap::values(_access_trackers))
@@ -622,7 +672,10 @@ namespace ice::ecs
 
             if (provided_component_info != nullptr)
             {
-                provided_data_details.block_data = ice::ptr_add(operation.component_data, ice::size_of<EntityOperations::ComponentInfo>);
+                provided_data_details.block_data = ice::ptr_add(
+                    operation.component_data,
+                    ice::size_of<EntityOperations::ComponentInfo>
+                );
             }
 
             // We have a valid destination archetype...
@@ -702,19 +755,14 @@ namespace ice::ecs
                                 );
                             }
 
-                            if (operation.notify_entity_changes)
-                            {
-                                ice::Span<ice::ecs::EntityHandle const> updated_entities = ice::ecs::detail::get_entity_array(
-                                    dst_component_info,
-                                    dst_data_details,
-                                    entities_stored
-                                );
+                            ice::Span<ice::ecs::EntityHandle const> updated_entities = ice::ecs::detail::get_entity_array(
+                                dst_component_info,
+                                dst_data_details,
+                                entities_stored
+                            );
 
-                                for (ice::ecs::EntityHandle updated_handle : updated_entities)
-                                {
-                                    ice::shards::push_back(out_shards, ice::shard(ice::ecs::Shard_EntityCreated.id, updated_handle));
-                                }
-                            }
+                            ice::ecs::detail::track_entities(_entities, updated_entities);
+                            ice::ecs::detail::notify_changes(out_shards, Shard_EntityCreated, updated_entities, operation);
                         }
                         else
                         {
@@ -772,16 +820,17 @@ namespace ice::ecs
                                 dst_data_details /* dst data block */
                             );
 
-                            if (operation.notify_entity_changes)
                             {
                                 ice::Span<ice::ecs::EntityHandle const> updated_entities = ice::ecs::detail::get_entity_array(
                                     dst_component_info,
                                     dst_data_details,
                                     entities_stored
                                 );
-
                                 ICE_ASSERT(ice::count(updated_entities) == 0, "");
-                                ice::shards::push_back(out_shards, ice::shard(ice::ecs::Shard_EntityArchetypeChanged.id, updated_entities[0]));
+
+                                // Already replaces the old entity entry, so it's is now clear.
+                                ice::ecs::detail::track_entities(_entities, updated_entities);
+                                ice::ecs::detail::notify_changes(out_shards, Shard_EntityArchetypeChanged, updated_entities, operation);
                             }
 
                             // 2. Apply the new provided data if any.
@@ -822,17 +871,15 @@ namespace ice::ecs
                                     dst_data_details /* dst data block */
                                 );
 
-                                if (operation.notify_entity_changes)
-                                {
-                                    ice::Span<ice::ecs::EntityHandle const> updated_entities = ice::ecs::detail::get_entity_array(
-                                        src_component_info,
-                                        dst_data_details,
-                                        entities_stored
-                                    );
+                                ice::Span<ice::ecs::EntityHandle const> updated_entities = ice::ecs::detail::get_entity_array(
+                                    src_component_info,
+                                    dst_data_details,
+                                    entities_stored
+                                );
 
-                                    ICE_ASSERT(ice::count(updated_entities) == 1, "");
-                                    ice::shards::push_back(out_shards, ice::shard(ice::ecs::Shard_EntityHandleChanged.id, updated_entities[0]));
-                                }
+                                // This updates the entities that got moved...
+                                ice::ecs::detail::track_entities(_entities, updated_entities);
+                                ice::ecs::detail::notify_changes(out_shards, Shard_EntityHandleChanged, updated_entities, operation);
                             }
 
                             // Remove entity count from the block we moved from (we can just forget the data existed)
@@ -903,7 +950,7 @@ namespace ice::ecs
                     .block_data = data_block_it->block_data,
                 };
 
-                // Entered when we only want to update the components not the archetype
+                // Entered ONLY when want to update the components not the archetype
                 if (provided_component_info != nullptr)
                 {
                     // #todo get rid of this simplification at some point? But is it really requied?
@@ -927,75 +974,50 @@ namespace ice::ecs
 
                     ice::Span<ice::ecs::EntityHandle const> entities = ice::ecs::detail::get_entity_array(
                         src_component_info,
-                        detail::OperationDetails{ .block_offset = 0, .block_data = data_block_it->block_data },
-                        data_block_it->block_entity_count
+                        detail::OperationDetails{ .block_data = operation.entities },
+                        operation.entity_count
                     );
+
+                    // We can forget and notify before the operation because these will be invalidated anyway.
+                    ice::ecs::detail::forget_entities(_entities, entities);
+                    ice::ecs::detail::notify_changes(out_shards, Shard_EntityDestroyed, entities, operation);
 
                     ice::ecs::detail::batch_remove_entities(
                         _archetype_index,
                         operation,
                         entities,
                         _data_blocks,
+                        _entities,
                         out_shards
                     );
-
-                    // ice::ecs::EntityHandle const destroyed_entities[1]{
-                    //     entities[dst_data_details.block_offset]
-                    // };
-
-                    // if (operation.notify_entity_changes)
-                    // {
-                    //     ice::shards::push_back(out_shards, ice::shard(ice::ecs::Shard_EntityDestroyed.id, destroyed_entities[0]));
-                    // }
-
-                    // if (data_block_it->block_entity_count > 2 && (data_block_it->block_entity_count - 1) != src_data_details.block_offset)
-                    // {
-                    //     src_data_details.block_offset = data_block_it->block_entity_count - 1; // Get the last entity
-
-                    //     ice::ecs::EntityHandle const move_entities[1]{
-                    //         entities[src_data_details.block_offset]
-                    //     };
-
-                    //     EntitySlotInfo const move_slot{
-                    //         .archetype = src_instance_idx,
-                    //         .block = slot_info.block,
-                    //         .index = slot_info.index
-                    //     };
-
-                    //     ice::ecs::detail::store_entities_with_data(
-                    //         move_entities,
-                    //         move_slot,
-                    //         src_component_info,
-                    //         src_component_info,
-                    //         src_data_details, /* src data block */
-                    //         dst_data_details /* dst data block */
-                    //     );
-
-                    //     if (operation.notify_entity_changes)
-                    //     {
-                    //         ice::shards::push_back(
-                    //             out_shards,
-                    //             ice::shard(
-                    //                 ice::ecs::Shard_EntityHandleChanged.id,
-                    //                 entities[dst_data_details.block_offset]
-                    //             )
-                    //         );
-                    //     }
-                    // }
-
-                    // // Remove entity count from the block we moved from (we can just forget the data existed)
-                    // data_block_it->block_entity_count -= 1;
                 }
             }
             else
             {
                 ICE_LOG(
                     ice::LogSeverity::Warning, ice::LogTag::Engine,
-                    "Operation is is not valid for given entitity. The entity cannot be found in this storage."
+                    "Trying to execute invalid operation for {} entities. Please check if the operation was properly defined.",
+                    operation.entity_count
                 );
 
             }
         }
+    }
+
+    auto EntityStorage::resolve_entities(
+        ice::Span<ice::ecs::Entity const> requested,
+        ice::Span<ice::ecs::EntityHandle> resolved
+    ) const noexcept -> ice::ucount
+    {
+        ice::u32 idx = 0;
+        ice::ucount valid = 0;
+        for (ice::ecs::Entity entity : requested)
+        {
+            resolved[idx] = ice::hashmap::get(_entities, ice::hash(entity), EntityHandle::Invalid);
+            valid += ice::u32(resolved[idx] != EntityHandle::Invalid);
+            idx += 1;
+        }
+        return valid;
     }
 
     void EntityStorage::query_internal(
@@ -1006,7 +1028,9 @@ namespace ice::ecs
     ) const noexcept
     {
         IPT_ZONE_SCOPED;
-        ice::Array<ice::ecs::Archetype> archetypes{ _allocator };
+        ice::StackAllocator<512_B> archetypes_alloc{};
+        ice::Array<ice::ecs::Archetype> archetypes{ archetypes_alloc };
+        ice::array::reserve(archetypes, ice::mem_max_capacity<ice::ecs::Archetype>(archetypes_alloc.Constant_InternalCapacity));
         _archetype_index.find_archetypes(query_info, archetypes);
 
         ice::u32 const archetype_count = ice::count(archetypes);

@@ -28,6 +28,7 @@ namespace ice
         void send(ice::ShardID shardid, ice::Asset handle) noexcept;
         void send(ice::ShardID shardid, ice::ResourceHandle handle) noexcept;
 
+        auto entities() noexcept -> ice::ecs::EntityIndex&;
         auto entity_operations() noexcept -> ice::ecs::EntityOperations&;
         auto entity_queries() noexcept -> ice::ecs::QueryProvider&;
 

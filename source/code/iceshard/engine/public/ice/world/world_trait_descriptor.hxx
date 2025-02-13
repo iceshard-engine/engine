@@ -10,6 +10,7 @@ namespace ice
     using TraitFactoryFn = auto(ice::Allocator& alloc, ice::TraitContext& ctx, void* userdata) noexcept -> ice::UniquePtr<ice::Trait>;
     using TraitTypeRegisterFn = bool(ice::Allocator& alloc, ice::EngineStateTracker& engine) noexcept;
     using TraitTypeUnregisterFn = void(ice::Allocator& alloc) noexcept;
+    using TraitArchRegisterFn = void(ice::ecs::ArchetypeIndex& archetypes) noexcept;
 
     struct TraitDescriptor
     {
@@ -17,6 +18,7 @@ namespace ice
         ice::TraitFactoryFn* fn_factory;
         ice::TraitTypeRegisterFn* fn_register;
         ice::TraitTypeUnregisterFn* fn_unregister;
+        ice::TraitArchRegisterFn* fn_arch_register;
         ice::Span<ice::StringID const> required_dependencies;
         ice::Span<ice::StringID const> optional_dependencies;
         void* fn_factory_userdata = nullptr;
