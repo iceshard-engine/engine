@@ -33,6 +33,7 @@ namespace ice
     using ASLShaderVisitors = arctic::SyntaxVisitorGroup<
         arctic::syntax::Struct,
         arctic::syntax::Function,
+        arctic::syntax::Variable,
         arctic::syntax::ContextBlock
     >;
 

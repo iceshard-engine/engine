@@ -87,6 +87,10 @@ namespace ice
             {
                 wgsl_native_sampleTexture(node, _allocator);
             }
+            else
+            {
+                return ASLPatcher::visit(node);
+            }
         }
         else
         {

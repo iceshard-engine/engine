@@ -113,26 +113,58 @@ namespace ice
             }
         }
 
+        void generate_variable(
+            ice::HeapString<>& result,
+            ice::HashMap<arctic::String> const& subs,
+            syntax::Function const& func,
+            syntax::FunctionArg const& arg,
+            syntax::Type const& ret,
+            SyntaxNode<syntax::Variable> varnode
+        ) noexcept
+        {
+            IPT_ZONE_SCOPED;
+
+            syntax::Variable const& var = varnode.data();
+            SyntaxNode typenode = varnode.child<syntax::Type>();
+            ICE_ASSERT_CORE(typenode);
+
+            syntax::Type const& type = typenode.data();
+            ice::string::push_format(result, "var {}: {}", var.name.value, type.name.value);
+
+            if (SyntaxNode assignnode = typenode.sibling<syntax::Operator>(); assignnode)
+            {
+                ice::string::push_back(result, " = ");
+
+                generate_expression(result, subs, func, arg, ret, assignnode.child());
+            }
+        }
+
         auto generate_function(
             ice::HeapString<>& result,
             ice::HashMap<arctic::String> const& subs,
             syntax::Function const& func,
             syntax::FunctionArg const& arg,
             syntax::Type const& ret,
-            SyntaxNode<> exp
+            SyntaxNode<> fnentry
         ) noexcept
         {
             IPT_ZONE_SCOPED;
 
-            // arctic::String const fn_name = func.name.value;
-            while (exp)
+            while (fnentry)
             {
                 ice::string::push_back(result, "    ");
 
-                generate_expression(result, subs, func, arg, ret, exp.child());
-
-                ice::string::push_back(result, ";\n");
-                exp = exp.sibling<syntax::Expression>();
+                if (SyntaxNode var = fnentry.to<syntax::Variable>(); var)
+                {
+                    generate_variable(result, subs, func, arg, ret, var);
+                    ice::string::push_back(result, ";\n");
+                }
+                else if (SyntaxNode exp = fnentry.to<syntax::Expression>(); exp)
+                {
+                    generate_expression(result, subs, func, arg, ret, exp.child());
+                    ice::string::push_back(result, ";\n");
+                }
+                fnentry = fnentry.sibling<>();
             }
         }
 
@@ -262,7 +294,7 @@ namespace ice
             );
             ice::string::push_format(result, "    var out: {};\n", shader._outputs.data().name.value);
             ice::hashmap::set(subs, detail::arc_hash(shader._mainfunc.data().name.value), arctic::String{ "out" });
-            generate_function(result, subs, shader._mainfunc.data(), arg.data(), ret.data(), body.child<syntax::Expression>());
+            generate_function(result, subs, shader._mainfunc.data(), arg.data(), ret.data(), body.child());
             ice::string::push_back(result, "    return out;\n");
             ice::string::push_back(result, "}\n");
             return result;
@@ -383,7 +415,9 @@ namespace ice
                 alloc, tracker, source, shader_stage, transpiled_result, entry_point
             );
 
-            if (result.valid() == false)
+            ICE_LOG(LogSeverity::Debug, LogTag::System, "WGSL: {}", transpiled_result);
+
+            if (result.failed())
             {
                 ICE_LOG(LogSeverity::Error, LogTag::System, "Failed to load shader '{}' with error '{}'", path, result.error());
                 co_return { };

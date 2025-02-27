@@ -146,6 +146,10 @@ namespace ice
         ice::array::push_back(_functions, node);
     }
 
+    void ASLShader::visit(arctic::SyntaxNode<arctic::syntax::Variable> node) noexcept
+    {
+    }
+
     void ASLShader::visit(arctic::SyntaxNode<arctic::syntax::ContextBlock> node) noexcept
     {
         IPT_ZONE_SCOPED;
