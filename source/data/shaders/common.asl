@@ -1,3 +1,4 @@
+
 #[glsl:type="vec2"]
 #[wgsl:type="vec2<f32>"]
 def Vec1f native
