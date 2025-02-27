@@ -471,6 +471,11 @@ namespace ice::render::webgpu
         ice::render::Buffer buffer
     ) noexcept
     {
+        if (buffer == Buffer::Invalid)
+        {
+            return;
+        }
+
         WebGPUBuffer* native = WebGPUBuffer::native(buffer);
         wgpuBufferRelease(native->wgpu_buffer);
         _allocator.destroy(native);

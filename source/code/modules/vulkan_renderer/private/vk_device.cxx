@@ -883,6 +883,11 @@ namespace ice::render::vk
         ice::render::Buffer buffer
     ) noexcept
     {
+        if (buffer == Buffer::Invalid)
+        {
+            return;
+        }
+
         VulkanBuffer* const buffer_ptr = reinterpret_cast<VulkanBuffer*>(static_cast<ice::uptr>(buffer));
         vmaDestroyBuffer(_vma_allocator, buffer_ptr->vk_buffer, buffer_ptr->vma_allocation);
         _allocator.destroy(buffer_ptr);
