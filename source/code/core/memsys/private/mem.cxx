@@ -103,4 +103,10 @@ namespace ice
         return memory;
     }
 
+    auto memset(ice::Memory memory, ice::u8 value) noexcept -> ice::Memory
+    {
+        std::memset(memory.location, value, memory.size.value);
+        return memory;
+    }
+
 } // namespace ice

@@ -171,7 +171,7 @@ namespace ice
 
     template<typename T, typename... Args>
     concept MakeUniqueConstructorAvailable = requires(Args&&... args) {
-        { new T(std::forward<Args>(args)...) } -> std::convertible_to<T*>;
+        { new T{ std::forward<Args>(args)... } } -> std::convertible_to<T*>;
     };
 
     template<typename T, typename... Args>

@@ -107,6 +107,7 @@ namespace ice
             {
                 BaseStringID<true> result{
                     .value = { .value = hash_result.h[0] },
+                    .debug_info = {.name_value = {.consteval_flag = '\0'}}
                 };
 
                 size_t const cstr_size = value.size();

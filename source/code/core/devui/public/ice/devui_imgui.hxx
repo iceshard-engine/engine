@@ -29,6 +29,11 @@ namespace ImGui
         return ImU32{ ice::u32(color.a) << 24 | ice::u32(color.b) << 16 | ice::u32(color.g) << 8 | ice::u32(color.r) };
     }
 
+    constexpr auto ToVec2(ice::vec4f pos) noexcept -> ImVec2
+    {
+        return { pos.x, pos.y };
+    }
+
     template<typename... Args>
     inline void TextT(fmt::format_string<Args...> format, Args&&... args) noexcept
     {

@@ -41,6 +41,7 @@ namespace ice
         constexpr operator ice::Span<Type const>() const noexcept { return { _data, _count }; }
     };
 
+    template<typename T, ice::ucount Size> Span(T(&)[Size]) noexcept -> Span<T>;
     template<typename T> Span(ice::Span<T>&&) noexcept -> Span<T>;
     template<typename T> Span(ice::Span<T> const&) noexcept -> Span<T>;
     template<typename T, ContainerLogic Logic, template<typename, ContainerLogic> typename Container> Span(Container<T, Logic> const&) noexcept -> Span<T>;
