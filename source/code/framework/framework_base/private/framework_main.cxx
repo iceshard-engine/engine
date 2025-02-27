@@ -145,9 +145,9 @@ struct ice::app::State
         , engine_alloc{ alloc, "Engine" }
         , resources{ }
         , game{ ice::framework::create_game(gamework_alloc) }
-        , archetypes{ alloc }
         , modules{ ice::create_default_module_register(modules_alloc, true) }
         , render_surface{ }
+        , archetypes{ alloc }
         , providers{ }
         , platform{ .core = nullptr }
     {
