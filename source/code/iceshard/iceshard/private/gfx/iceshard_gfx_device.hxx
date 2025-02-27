@@ -30,7 +30,7 @@ namespace ice::gfx
         ~IceGfxDevice() noexcept override;
 
         auto device() noexcept -> ice::render::RenderDevice& override;
-        auto swapchain() noexcept -> ice::render::RenderSwapchain const& override;
+        auto swapchain() const noexcept -> ice::render::RenderSwapchain const& override;
 
         void recreate_swapchain() noexcept override;
 

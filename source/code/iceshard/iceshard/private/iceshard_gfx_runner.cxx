@@ -140,11 +140,11 @@ namespace ice::gfx
         ice::Clock const& clock
     ) noexcept -> ice::Task<>
     {
-        IPT_ZONE_SCOPED;
+        //IPT_ZONE_SCOPED;
         ice::TaskContainer& current_tasks = frame.tasks_container();
 
         GfxTaskParams const task_params{
-            TraitTaskType::Graphics,
+            { TraitTaskType::Graphics },
             clock,
             _engine.assets().resources(),
             _engine.assets(),
@@ -152,10 +152,18 @@ namespace ice::gfx
             *_context
         };
 
+        GfxFrameUpdate const gfx_update{
+            .frame = frame,
+            .context = *_context,
+        };
+
         ice::WorldUpdater& world_updater = _engine.worlds_updater();
         {
+            ice::Shard shards[]{ ice::gfx::ShardID_GfxFrameUpdate | &gfx_update };
+
             IPT_ZONE_SCOPED_NAMED("gather_tasks");
             world_updater.update(current_tasks, task_params, frame.shards());
+            world_updater.update(current_tasks, task_params, { shards });
         }
 
         co_await current_tasks.await_tasks_scheduled_on(_scheduler, _scheduler);
@@ -175,6 +183,7 @@ namespace ice::gfx
             .resources = _engine.assets().resources(),
             .assets = _engine.assets(),
             .scheduler = _scheduler,
+            .gfx = *_context
         };
         task_params.task_type = TraitTaskType::Render;
 
@@ -184,13 +193,13 @@ namespace ice::gfx
             .frame_end = { _queue_end }
         };
 
-        GfxFrameUpdate const gfx_update{
+        RenderFrameUpdate const gfx_update{
             .frame = frame,
             .context = *_context,
             .stages = gpu_stages,
         };
 
-        ice::Shard shards[]{ ice::gfx::ShardID_GfxFrameUpdate | &gfx_update };
+        ice::Shard shards[]{ ice::gfx::ShardID_RenderFrameUpdate | &gfx_update };
         _engine.worlds_updater().update(_gfx_tasks, task_params, { shards });
 
         //TODO: Currently the container should be "dead" after it's await scheduled on
@@ -277,6 +286,7 @@ namespace ice::gfx
             .resources = _engine.assets().resources(),
             .assets = _engine.assets(),
             .scheduler = _scheduler,
+            .gfx = *_context
         };
         task_params.task_type = TraitTaskType::Render;
 
@@ -287,7 +297,6 @@ namespace ice::gfx
         };
 
         ice::gfx::GfxStateChange const params{
-            .context = *_context,
             .stages = gpu_stages,
             .registry = *_stages
         };

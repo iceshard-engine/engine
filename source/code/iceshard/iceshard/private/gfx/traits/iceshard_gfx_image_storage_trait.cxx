@@ -36,7 +36,7 @@ namespace ice::gfx
         : ice::Trait{ ctx }
         , _loaded_images{ alloc }
     {
-        _context.bind<&Trait_GfxImageStorage::gfx_update>(ice::gfx::ShardID_GfxFrameUpdate);
+        _context.bind<&Trait_GfxImageStorage::gfx_update>(ice::gfx::ShardID_RenderFrameUpdate);
     }
 
     auto Trait_GfxImageStorage::on_asset_released(ice::Asset const &asset) noexcept -> ice::Task<>
@@ -48,7 +48,7 @@ namespace ice::gfx
     }
 
     auto Trait_GfxImageStorage::gfx_update(
-        ice::gfx::GfxFrameUpdate const& params,
+        ice::gfx::RenderFrameUpdate const& params,
         ice::AssetStorage& assets
     ) noexcept -> ice::Task<>
     {

@@ -40,11 +40,12 @@ namespace ice::devui
     public: // Gfx State Events
         auto gfx_start(
             ice::gfx::GfxStateChange const& params,
+            ice::gfx::GfxContext& ctx,
             ice::AssetStorage& assets
         ) noexcept -> ice::Task<>;
 
         auto gfx_shutdown(ice::gfx::GfxStateChange const& params) noexcept -> ice::Task<>;
-        auto gfx_update(ice::gfx::GfxFrameUpdate const& update) noexcept -> ice::Task<>;
+        auto gfx_update(ice::gfx::RenderFrameUpdate const& update) noexcept -> ice::Task<>;
 
     private:
         void build_internal_command_list(ice::Span<ImGuiGfxStage::DrawCommand> draw_cmds) noexcept;

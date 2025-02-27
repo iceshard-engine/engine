@@ -11,7 +11,7 @@ namespace ice::gfx
 
     struct GfxContext;
     struct GfxFrameStages;
-    struct GfxFrameUpdate;
+    struct RenderFrameUpdate;
     struct GfxGraph;
     struct GfxGraphRuntime;
     struct GfxQueueDefinition;

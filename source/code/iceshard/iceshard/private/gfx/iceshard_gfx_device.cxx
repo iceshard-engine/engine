@@ -81,7 +81,7 @@ namespace ice::gfx
         return *_render_device;
     }
 
-    auto IceGfxDevice::swapchain() noexcept -> ice::render::RenderSwapchain const&
+    auto IceGfxDevice::swapchain() const noexcept -> ice::render::RenderSwapchain const&
     {
         return *_render_swapchain;
     }

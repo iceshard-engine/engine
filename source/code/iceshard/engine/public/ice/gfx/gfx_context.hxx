@@ -21,7 +21,7 @@ namespace ice::gfx
 
         //! \returns Swapchain object currently in use.
         //! \note The object may be recreated in certain events, so it's not advised to hold a reference to it.
-        virtual auto swapchain() noexcept -> ice::render::RenderSwapchain const& = 0;
+        virtual auto swapchain() const noexcept -> ice::render::RenderSwapchain const& = 0;
 
         //! \brief Recreates the swapchain object using the current render surface properties.
         //! \note This should only be called after all GPU was finished and before submitting new work.

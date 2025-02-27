@@ -2,6 +2,7 @@
 #include <ice/gfx/gfx_runner.hxx>
 #include <ice/gfx/gfx_context.hxx>
 #include <ice/gfx/gfx_stage_registry.hxx>
+#include <ice/gfx/gfx_utils.hxx>
 #include <ice/render/render_swapchain.hxx>
 #include <ice/render/render_pass.hxx>
 #include <ice/render/render_pipeline.hxx>
@@ -15,42 +16,6 @@
 
 namespace ice::devui
 {
-
-    namespace detail
-    {
-
-        auto load_imgui_shader(
-            ice::AssetStorage& assets,
-            ice::String name,
-            ice::render::PipelineProgramInfo& out_shader
-        ) noexcept -> ice::Task<ice::Result>
-        {
-            ice::Asset asset = assets.bind(ice::render::AssetCategory_Shader, name);
-            ice::Data shader_data = co_await asset[AssetState::Runtime];
-
-            ice::Data metadata;
-            if (co_await asset.metadata(metadata) == S_Ok)
-            {
-                ice::Config const meta = ice::config::from_data(metadata);
-                ice::i32 shader_stage;
-                if (ice::config::get(meta, "ice.shader.stage", shader_stage) == E_Fail)
-                {
-                    co_return E_Fail;
-                }
-
-                if (ice::config::get(meta, "ice.shader.entry_point", out_shader.entry_point) == E_Fail)
-                {
-                    co_return E_Fail;
-                }
-
-                out_shader.stage = static_cast<ice::render::ShaderStageFlags>(shader_stage);
-            }
-
-            out_shader.shader = *reinterpret_cast<ice::render::Shader const*>(shader_data.location);
-            co_return S_Success;
-        }
-
-    } // namespace detail
 
     ImGuiGfxStage::ImGuiGfxStage(ice::Allocator& alloc, ice::AssetStorage& assets) noexcept
         : draw_commands{ alloc }
@@ -93,8 +58,8 @@ namespace ice::devui
 
         _font_texture = device.create_image(font_info, { });
 
-        ice::Result r_vert = co_await detail::load_imgui_shader(_assets, "shaders/debug/imgui-vert", _shaders[0]);
-        ice::Result r_frag = co_await detail::load_imgui_shader(_assets, "shaders/debug/imgui-frag", _shaders[1]);
+        ice::Expected r_vert = co_await ice::gfx::load_shader_program("shaders/debug/imgui-vert", _assets);
+        ice::Expected r_frag = co_await ice::gfx::load_shader_program("shaders/debug/imgui-frag", _assets);
         ICE_ASSERT_CORE(r_vert && r_frag);
 
         co_await scheduler;
@@ -248,10 +213,11 @@ namespace ice::devui
             },
         };
 
+        PipelineProgramInfo shaders[]{ r_vert, r_frag };
         PipelineInfo pipeline_info{
             .layout = _pipeline_layout,
             .renderpass = renderpass,
-            .shaders = _shaders,
+            .shaders = shaders,
             .vertex_bindings = bindings,
             .cull_mode = CullMode::Disabled,
             .front_face = FrontFace::CounterClockWise,

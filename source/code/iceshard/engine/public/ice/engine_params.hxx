@@ -47,6 +47,7 @@ namespace ice
         ice::ResourceTracker& resources;
         ice::AssetStorage& assets;
         ice::TaskScheduler& scheduler;
+        ice::gfx::GfxContext& gfx;
     };
 
 } // namespace ice

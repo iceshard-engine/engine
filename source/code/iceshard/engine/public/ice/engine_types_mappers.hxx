@@ -119,6 +119,28 @@ struct ice::detail::ArgMapper<ice::gfx::GfxContext&>
     {
         return params.gfx;
     }
+    template<typename Source>
+    static auto select(ice::RenderTaskParams const& params, Source&&) noexcept -> ice::gfx::GfxContext&
+    {
+        return params.gfx;
+    }
+};
+
+template<>
+struct ice::detail::ArgMapper<ice::render::RenderDevice&>
+{
+    using ShardType = ice::render::RenderDevice&;
+
+    template<typename Source>
+    static auto select(ice::GfxTaskParams const& params, Source&&) noexcept -> ice::render::RenderDevice&
+    {
+        return params.gfx.device();
+    }
+    template<typename Source>
+    static auto select(ice::RenderTaskParams const& params, Source&&) noexcept -> ice::render::RenderDevice&
+    {
+        return params.gfx.device();
+    }
 };
 
 // Handling of custom types in trait methods.
@@ -169,7 +191,7 @@ template<ice::concepts::NamedDataType NamedType>
 struct ice::detail::ArgMapper<NamedType const&>
 {
     template<typename ParamsType>
-    static auto select(ParamsType const&, ice::gfx::GfxFrameUpdate const& params) noexcept -> NamedType const&
+    static auto select(ParamsType const&, ice::gfx::RenderFrameUpdate const& params) noexcept -> NamedType const&
     {
         return params.frame.data().read<NamedType>(NamedType::Identifier);
     }
@@ -179,7 +201,7 @@ template<ice::concepts::NamedDataType NamedType>
 struct ice::detail::ArgMapper<ice::Span<NamedType const>>
 {
     template<typename ParamsType>
-    static auto select(ParamsType const&, ice::gfx::GfxFrameUpdate const& params) noexcept -> ice::Span<NamedType const>
+    static auto select(ParamsType const&, ice::gfx::RenderFrameUpdate const& params) noexcept -> ice::Span<NamedType const>
     {
         return params.frame.data().read<ice::Span<NamedType const> const>(NamedType::Identifier);
     }
@@ -212,6 +234,14 @@ inline auto ice::detail::map_task_arg<ice::EngineSchedulers>(
 }
 
 template<>
+inline auto ice::detail::map_task_arg<ice::EngineFrame&>(
+    ice::EngineFrameUpdate const& params
+) noexcept -> ice::EngineFrame&
+{
+    return params.frame;
+}
+
+template<>
 inline auto ice::detail::map_task_arg<ice::DataStorage&>(
     ice::EngineFrameUpdate const& params
 ) noexcept -> ice::DataStorage&
@@ -228,62 +258,34 @@ struct ice::detail::ArgMapper<NamedType&>
     }
 };
 
-// ice::gfx::GfxFrameUpdate
+template<>
+inline auto ice::detail::map_task_arg<ice::DataStorage&>(
+    ice::gfx::GfxFrameUpdate const& params
+) noexcept -> ice::DataStorage&
+{
+    return params.context.data();
+}
 
 template<>
-inline auto ice::detail::map_task_arg<ice::gfx::GfxContext&>(
-    ice::gfx::GfxFrameUpdate const& params
-) noexcept -> ice::gfx::GfxContext&
+inline auto ice::detail::map_task_arg<ice::render::RenderDevice&>(
+    ice::gfx::RenderFrameUpdate const& params
+) noexcept -> ice::render::RenderDevice&
 {
-    return params.context;
+    return params.context.device();
+}
+
+template<>
+inline auto ice::detail::map_task_arg<ice::DataStorage&>(
+    ice::gfx::RenderFrameUpdate const& params
+) noexcept -> ice::DataStorage&
+{
+    return params.context.data();
 }
 
 template<>
 inline auto ice::detail::map_task_arg<ice::gfx::GfxFrameStages&>(
-    ice::gfx::GfxFrameUpdate const& params
+    ice::gfx::RenderFrameUpdate const& params
 ) noexcept -> ice::gfx::GfxFrameStages&
 {
     return params.stages;
-}
-
-template<>
-inline auto ice::detail::map_task_arg<ice::render::RenderDevice&>(
-    ice::gfx::GfxFrameUpdate const& params
-) noexcept -> ice::render::RenderDevice&
-{
-    return params.context.device();
-}
-
-template<>
-inline auto ice::detail::map_task_arg<ice::DataStorage&>(
-    ice::gfx::GfxFrameUpdate const& params
-) noexcept -> ice::DataStorage&
-{
-    return params.context.data();
-}
-
-// ice::gfx::GfxStateChange
-
-template<>
-inline auto ice::detail::map_task_arg<ice::gfx::GfxContext&>(
-    ice::gfx::GfxStateChange const& params
-) noexcept -> ice::gfx::GfxContext&
-{
-    return params.context;
-}
-
-template<>
-inline auto ice::detail::map_task_arg<ice::render::RenderDevice&>(
-    ice::gfx::GfxStateChange const& params
-) noexcept -> ice::render::RenderDevice&
-{
-    return params.context.device();
-}
-
-template<>
-inline auto ice::detail::map_task_arg<ice::DataStorage&>(
-    ice::gfx::GfxStateChange const& params
-) noexcept -> ice::DataStorage&
-{
-    return params.context.data();
 }
