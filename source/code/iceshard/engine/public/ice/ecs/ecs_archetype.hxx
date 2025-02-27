@@ -27,12 +27,13 @@ namespace ice::ecs
     {
         static constexpr ice::u32 Const_ComponentCount = sizeof...(Components) + 1;
 
+        ice::String name;
         ice::ecs::Archetype identifier;
         std::array<ice::StringID, Const_ComponentCount> component_identifiers;
         std::array<ice::u32, Const_ComponentCount> component_sizes;
         std::array<ice::u32, Const_ComponentCount> component_alignments;
 
-        constexpr inline ArchetypeDefinition() noexcept;
+        constexpr inline ArchetypeDefinition(ice::String name = {}) noexcept;
 
         constexpr inline operator ice::ecs::Archetype() const noexcept;
     };
@@ -47,6 +48,7 @@ namespace ice::ecs
 
     struct ArchetypeInfo
     {
+        ice::String name;
         ice::ecs::Archetype identifier;
         ice::Span<ice::StringID const> component_identifiers;
         ice::Span<ice::u32 const> component_sizes;
@@ -150,8 +152,9 @@ namespace ice::ecs
 
 
     template<ice::ecs::Component... Components>
-    constexpr inline ArchetypeDefinition<Components...>::ArchetypeDefinition() noexcept
-        : component_identifiers{ ice::ecs::Constant_ComponentIdentifier<ice::ecs::EntityHandle> }
+    constexpr inline ArchetypeDefinition<Components...>::ArchetypeDefinition(ice::String name) noexcept
+        : name{ name }
+        , component_identifiers{ ice::ecs::Constant_ComponentIdentifier<ice::ecs::EntityHandle> }
         , component_sizes{ ice::ecs::Constant_ComponentSize<ice::ecs::EntityHandle> }
         , component_alignments{ ice::ecs::Constant_ComponentAlignment<ice::ecs::EntityHandle> }
     {
@@ -177,7 +180,8 @@ namespace ice::ecs
     constexpr inline ArchetypeInfo::ArchetypeInfo(
         ice::ecs::ArchetypeDefinition<Components...> const& archetype_info
     ) noexcept
-        : identifier{ archetype_info.identifier }
+        : name{ archetype_info.name }
+        , identifier{ archetype_info.identifier }
         , component_identifiers{ ice::span::from_std_const(archetype_info.component_identifiers) }
         , component_sizes{ ice::span::from_std_const(archetype_info.component_sizes) }
         , component_alignments{ ice::span::from_std_const(archetype_info.component_alignments) }

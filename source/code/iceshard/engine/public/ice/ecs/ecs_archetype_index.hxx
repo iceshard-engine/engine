@@ -30,6 +30,10 @@ namespace ice::ecs
             ice::ecs::DataBlockPool* data_block_pool = nullptr
         ) noexcept -> ice::ecs::Archetype;
 
+        auto find_archetype_by_name(
+            ice::String name
+        ) const noexcept -> ice::ecs::Archetype;
+
         void find_archetypes(
             ice::Span<ice::ecs::detail::QueryTypeInfo const> query_info,
             ice::Array<ice::ecs::Archetype>& out_archetypes
@@ -66,6 +70,7 @@ namespace ice::ecs
         ice::ecs::DataBlockPool _default_block_pool;
 
         ice::HashMap<ice::u32> _archetype_index;
+        ice::HashMap<ice::u32> _archetype_names_index;
 
         struct ArchetypeDataHeader;
         ice::Array<ArchetypeDataHeader*> _archetype_data;

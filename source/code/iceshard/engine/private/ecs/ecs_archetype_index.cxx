@@ -7,7 +7,6 @@
 #include <ice/assert.hxx>
 #include <ice/log.hxx>
 
-// #TODO: Remove?
 #include <numeric>
 
 namespace ice::ecs
@@ -84,12 +83,15 @@ namespace ice::ecs
 
     struct ArchetypeIndex::ArchetypeDataHeader
     {
+        ice::String archetype_name;
         ice::ecs::Archetype archetype_identifier;
         ice::ecs::ArchetypeInstanceInfo archetype_info;
         ice::ecs::DataBlockPool* block_pool;
 
         static auto calculate_meminfo(
+            ice::String name,
             ice::ecs::BasicArchetypeInfo auto info,
+            ice::usize& offset_name_out,
             ice::usize& offset_ids_out,
             ice::usize& offset_values_out
         ) noexcept -> ice::meminfo
@@ -97,15 +99,16 @@ namespace ice::ecs
             ice::ucount const component_count = ice::span::count(info.component_identifiers);
 
             ice::meminfo result = ice::meminfo_of<ArchetypeDataHeader>;
+            offset_name_out = result += ice::meminfo_of<ice::utf8> * (ice::string::size(name) + 1);
             offset_ids_out = result += ice::meminfo_of<ice::StringID> * component_count;
             offset_values_out = result += ice::meminfo_of<ice::ucount> * component_count * 3; // 3 = size, alignment, offset
             return result;
         }
 
-        static auto calculate_meminfo(ice::ecs::BasicArchetypeInfo auto info) noexcept -> ice::usize
+        static auto calculate_meminfo(ice::String name, ice::ecs::BasicArchetypeInfo auto info) noexcept -> ice::usize
         {
             ice::usize temp;
-            return calculate_meminfo(info, temp, temp).size;
+            return calculate_meminfo(name, info, temp, temp, temp).size;
         }
     };
 
@@ -115,6 +118,7 @@ namespace ice::ecs
         : _allocator{ alloc }
         , _default_block_pool{ _allocator }
         , _archetype_index{ _allocator }
+        , _archetype_names_index{ _allocator }
         , _archetype_data{ _allocator }
     {
         ice::array::reserve(_archetype_data, ice::ecs::Constant_MaxArchetypeCount);
@@ -125,7 +129,7 @@ namespace ice::ecs
     {
         for (ArchetypeDataHeader* header : ice::array::slice(_archetype_data, 1))
         {
-            ice::usize size = ArchetypeDataHeader::calculate_meminfo(header->archetype_info);
+            ice::usize const size = ArchetypeDataHeader::calculate_meminfo(header->archetype_name, header->archetype_info);
             _allocator.deallocate(
                 Memory{
                     .location = header,
@@ -168,10 +172,13 @@ namespace ice::ecs
             "You cannot register an archetype with no component types!"
         );
 
+        ice::usize offset_name;
         ice::usize offset_ids;
         ice::usize offset_values;
         ice::meminfo const header_meminfo = ArchetypeDataHeader::calculate_meminfo(
+            archetype_info.name,
             archetype_info,
+            offset_name,
             offset_ids,
             offset_values
         );
@@ -181,6 +188,7 @@ namespace ice::ecs
         ice::Memory const result = _allocator.allocate(header_meminfo);
         ArchetypeDataHeader* const data_header = reinterpret_cast<ArchetypeDataHeader*>(result.location);
 
+        ice::Memory mem_archetype_name = ice::ptr_add(result, offset_name);
         ice::Memory mem_component_data = ice::ptr_add(result, offset_ids);
         ice::Memory mem_component_data_end = ice::ptr_add(result, header_meminfo.size);
 
@@ -191,6 +199,10 @@ namespace ice::ecs
         ice::u32* component_offsets = nullptr;
 
         {
+            // Copy archetype name
+            ice::memset(mem_archetype_name, 0);
+            ice::memcpy(mem_archetype_name, ice::string::data_view(archetype_info.name));
+
             // Copy the component idnetifiers
             ice::memcpy(mem_component_data, ice::span::data_view(archetype_info.component_identifiers));
             component_identifiers = reinterpret_cast<ice::StringID const*>(mem_component_data.location);
@@ -217,6 +229,7 @@ namespace ice::ecs
             );
         }
 
+        data_header->archetype_name = ice::String{ (char const*) mem_archetype_name.location, ice::size(archetype_info.name) };
         data_header->archetype_identifier = archetype_info.identifier;
         data_header->archetype_info.component_identifiers = ice::Span<ice::StringID const>{ component_identifiers, component_count };
         data_header->archetype_info.component_sizes = ice::Span<ice::u32 const>{ component_sizes, component_count };
@@ -281,7 +294,27 @@ namespace ice::ecs
         ice::array::push_back(_archetype_data, data_header);
         ice::hashmap::set(_archetype_index, ice::hash(archetype_info.identifier), archetype_index);
 
+        // Save the 'index' for the given name
+        if (ice::string::any(data_header->archetype_name))
+        {
+            ice::hashmap::set(_archetype_names_index, ice::hash(data_header->archetype_name), archetype_index);
+        }
+
         return archetype_info.identifier;
+    }
+
+    auto ArchetypeIndex::find_archetype_by_name(
+        ice::String name
+    ) const noexcept -> ice::ecs::Archetype
+    {
+        ice::u32 const instance_count = ice::array::count(_archetype_data);
+        ice::u32 const instance_idx = ice::hashmap::get(_archetype_names_index, ice::hash(name), ice::u32_max);
+        if (instance_idx >= instance_count)
+        {
+            return Archetype::Invalid;
+        }
+
+        return _archetype_data[instance_idx]->archetype_identifier;
     }
 
     void ArchetypeIndex::find_archetypes(

@@ -33,6 +33,10 @@ namespace ice::ecs
             ice::ShardContainer& out_shards
         ) noexcept;
 
+        auto find_archetype(
+            ice::String name
+        ) const noexcept -> ice::ecs::Archetype override;
+
         auto resolve_entities(
             ice::Span<ice::ecs::Entity const> requested,
             ice::Span<ice::ecs::EntityHandle> resolved

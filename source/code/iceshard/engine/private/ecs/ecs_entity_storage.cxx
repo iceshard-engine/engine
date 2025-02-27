@@ -488,8 +488,8 @@ namespace ice::ecs
     ) noexcept
         : _allocator{ alloc, "ecs :: entity-storage" }
         , _archetype_index{ archetype_index }
-        , _access_trackers{ _allocator }
         , _entities{ _allocator }
+        , _access_trackers{ _allocator }
         , _head_blocks{ _allocator }
         , _data_blocks{ _allocator }
     {
@@ -1002,6 +1002,13 @@ namespace ice::ecs
 
             }
         }
+    }
+
+    auto EntityStorage::find_archetype(
+        ice::String name
+    ) const noexcept -> ice::ecs::Archetype
+    {
+        return _archetype_index.find_archetype_by_name(name);
     }
 
     auto EntityStorage::resolve_entities(

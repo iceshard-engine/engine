@@ -30,6 +30,10 @@ namespace ice::ecs
             ice::ecs::QueryDefinition<Types...> const& = { }
         ) const noexcept -> ice::ecs::Query<ice::ecs::QueryDefinition<Types...>>;
 
+        virtual auto find_archetype(
+            ice::String name
+        ) const noexcept -> ice::ecs::Archetype = 0;
+
         virtual auto resolve_entities(
             ice::Span<ice::ecs::Entity const> requested,
             ice::Span<ice::ecs::EntityHandle> resolved

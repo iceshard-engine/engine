@@ -294,7 +294,7 @@ namespace ice::ecs
 
         update_spans_helper(std::make_index_sequence<component_count>{});
 
-        operation->archetype = HelperArchetype;
+        operation->archetype = archetype;
         operation->entities = entities_ptr;
         operation->entity_count = entity_count;
         operation->notify_entity_changes = false;

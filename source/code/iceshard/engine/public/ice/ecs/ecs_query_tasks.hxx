@@ -45,6 +45,12 @@ namespace ice::ecs
             ice::ecs::detail::internal_query_release_access_counters(*_query);
         }
 
+        inline operator ice::ecs::Query<ice::ecs::QueryDefinition<QueryComponents...>> const&() const noexcept
+        {
+            ICE_ASSERT_CORE(_query != nullptr);
+            return *_query;
+        }
+
         inline operator bool() const noexcept
         {
             return _query != nullptr && ice::ecs::query::entity_count(*_query) > 0;
@@ -72,5 +78,19 @@ namespace ice::ecs
     {
         return ice::ecs::QueryAwaitable<Definition>{ query, scheduler.schedule()._queue };
     }
+
+    namespace query
+    {
+
+        template<ice::ecs::QueryType... QueryComponents>
+        inline auto for_each_entity(
+            ice::ecs::QueryExecutionScope<ice::ecs::QueryDefinition<QueryComponents...>> const& query_scope
+        ) noexcept -> ice::Generator<ice::ecs::detail::QueryEntityTupleResult<QueryComponents...>>
+        {
+            ICE_ASSERT_CORE(query_scope);
+            return ice::ecs::query::for_each_entity(*query_scope._query);
+        }
+
+    } // namespace query
 
 } // namespace ice::ecs

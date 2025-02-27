@@ -23,6 +23,24 @@ namespace ice::ecs
         template<typename Definition>
         inline auto entity_count(ice::ecs::Query<Definition> const& query) noexcept -> ice::u32;
 
+        //template<ice::ecs::QueryType... QueryComponents>
+        //inline auto entity_data(
+        //    ice::ecs::Query<ice::ecs::QueryDefinition<QueryComponents...>> const& query,
+        //    ice::ecs::Entity entity
+        //) noexcept -> ice::ecs::detail::QueryEntityTupleResult<QueryComponents...>;
+
+        template<ice::ecs::QueryType... QueryComponents>
+        inline auto entity_data(
+            ice::ecs::Query<ice::ecs::QueryDefinition<QueryComponents...>> const& query,
+            ice::ecs::EntityHandle handle
+        ) noexcept -> ice::ecs::detail::QueryEntityTupleResult<QueryComponents...>;
+
+        template<ice::ecs::QueryType... QueryComponents>
+        inline auto entity_data(
+            ice::ecs::Query<ice::ecs::QueryDefinition<QueryComponents...>> const& query,
+            ice::ecs::EntitySlot slot
+        ) noexcept -> ice::ecs::detail::QueryEntityTupleResult<QueryComponents...>;
+
         template<typename Definition>
         inline auto for_each_block(
             ice::ecs::Query<Definition> const& query,
@@ -136,6 +154,73 @@ namespace ice::ecs
                 }
             }
             return result;
+        }
+
+        template<ice::ecs::QueryType... QueryComponents>
+        inline auto entity_data(
+            ice::ecs::Query<ice::ecs::QueryDefinition<QueryComponents...>> const& query,
+            ice::ecs::EntitySlot slot
+        ) noexcept -> ice::ecs::detail::QueryEntityTupleResult<QueryComponents...>
+        {
+            static constexpr ice::ucount component_count = sizeof...(QueryComponents);
+            ice::ecs::EntitySlotInfo const slotinfo = ice::ecs::entity_slot_info(slot);
+
+            ice::u32 arch_idx = 0;
+            ice::ecs::ArchetypeInstanceInfo const* arch = nullptr;
+            ice::ecs::DataBlock const* block = nullptr;
+
+            ice::u32 const arch_count = ice::count(query.archetype_instances);
+            for (; arch_idx < arch_count; ++arch_idx)
+            {
+                arch = query.archetype_instances[arch_idx];
+                if (arch->archetype_instance == ice::ecs::ArchetypeInstance{ slotinfo.archetype })
+                {
+                    // Find the specific block
+                    ice::u32 slot_block = slotinfo.block;
+                    block = query.archetype_data_blocks[arch_idx];
+                    while (slot_block > 0 && block != nullptr)
+                    {
+                        block = block->next;
+                        slot_block -= 1;
+                    }
+                    break;
+                }
+            }
+
+            ICE_ASSERT_CORE(arch != nullptr && block != nullptr);
+
+            void* helper_pointer_array[component_count]{ nullptr };
+            ice::Span<ice::u32 const> argument_idx_map = ice::array::slice(query.archetype_argument_idx_map, arch_idx * component_count, component_count);
+
+            for (ice::u32 arg_idx = 0; arg_idx < component_count; ++arg_idx)
+            {
+                if (argument_idx_map[arg_idx] == ice::u32_max)
+                {
+                    helper_pointer_array[arg_idx] = nullptr;
+                }
+                else
+                {
+                    ice::u32 const cmp_idx = argument_idx_map[arg_idx];
+
+                    helper_pointer_array[arg_idx] = ice::ptr_add(
+                        block->block_data,
+                        { arch->component_offsets[cmp_idx] }
+                    );
+                }
+            }
+
+            return ice::ecs::detail::create_entity_tuple<QueryComponents...>(slotinfo.index, helper_pointer_array);
+        }
+
+        template<ice::ecs::QueryType... QueryComponents>
+        inline auto entity_data(
+            ice::ecs::Query<ice::ecs::QueryDefinition<QueryComponents...>> const& query,
+            ice::ecs::EntityHandle handle
+        ) noexcept -> ice::ecs::detail::QueryEntityTupleResult<QueryComponents...>
+        {
+            return ice::ecs::query::entity_data(
+                query, ice::ecs::entity_handle_info(handle).slot
+            );
         }
 
 
