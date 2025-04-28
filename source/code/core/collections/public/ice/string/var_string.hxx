@@ -106,6 +106,14 @@ namespace ice::string
 
 } // namespace ice::string
 
+namespace ice::data
+{
+
+    template<typename CharType = char>
+    inline auto read_varstring(ice::Data data, ice::VarStringBase<CharType>& out_str) noexcept -> ice::Data;
+
+} // namespace ice::data
+
 namespace ice
 {
 

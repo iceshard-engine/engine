@@ -43,7 +43,29 @@
     </Expand>
   </Type>
 
-  <!-- Native Visualization for the core::StringView<> type -->
+  <!-- Native Visualization for the ice::VarString types -->
+  <Type Name="ice::HeapVarString&lt;*&gt;">
+    <DisplayString>HeapVarString {{ { varstr_text(_data),[varstr_size(_data)]s8 } }}</DisplayString>
+    <StringView>varstr_text(_data),s8</StringView>
+    <Expand>
+      <Item Name="[size_bytes]">varstr_bytes(_data)</Item>
+      <Item Name="[size]">varstr_size(_data)</Item>
+      <Item Name="[value]">varstr_text(_data),[varstr_size(_data)]s8b</Item>
+      <Item Name="[allocator]">*_allocator</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="ice::VarStringBase&lt;*&gt;">
+    <DisplayString>VarString {{ { varstr_text(_data),[varstr_size(_data)]s8 } }}</DisplayString>
+    <StringView>varstr_text(_data),s8</StringView>
+    <Expand>
+      <Item Name="[size_bytes]">varstr_bytes(_data)</Item>
+      <Item Name="[size]">varstr_size(_data)</Item>
+      <Item Name="[value]">varstr_text(_data),[varstr_size(_data)]s8b</Item>
+    </Expand>
+  </Type>
+
+  <!-- Native Visualization for the ice::String types -->
   <Type Name="ice::BasicString&lt;*&gt;">
     <DisplayString>String {{ { _data,[_size]s8 } }}</DisplayString>
     <StringView>_data,[_size]s8</StringView>
@@ -60,5 +82,42 @@
       <Item Name="[value]">_data,[_size]sub</Item>
     </Expand>
   </Type>
+
+  <!-- Helper Intrinsics -->
+  <Intrinsic Name="varstr_size3" Expression="next ? (*str &amp; 0x7f) : 0">
+    <Parameter Name="str" Type="const char*" />
+    <Parameter Name="next" Type="int" />
+  </Intrinsic>
+  <Intrinsic Name="varstr_size2" Expression="next ? (*str &amp; 0x7f) + varstr_size3(str + 1, *str &amp; 0x80) : 0">
+    <Parameter Name="str" Type="const char*" />
+    <Parameter Name="next" Type="int" />
+  </Intrinsic>
+  <Intrinsic Name="varstr_size1" Expression="next ? (*str &amp; 0x7f) + varstr_size2(str + 1, *str &amp; 0x80) : 0">
+    <Parameter Name="str" Type="const char*" />
+    <Parameter Name="next" Type="int" />
+  </Intrinsic>
+  <Intrinsic Name="varstr_size" Expression="(*str &amp; 0x7f) + varstr_size1(str + 1, *str &amp; 0x80)">
+    <Parameter Name="str" Type="const char*" />
+  </Intrinsic>
+
+  <Intrinsic Name="varstr_bytes3" Expression="next ? 1 : 0">
+    <Parameter Name="str" Type="const char*" />
+    <Parameter Name="next" Type="int" />
+  </Intrinsic>
+  <Intrinsic Name="varstr_bytes2" Expression="next ? 1 + varstr_size3(str + 1, *str &amp; 0x80) : 0">
+    <Parameter Name="str" Type="const char*" />
+    <Parameter Name="next" Type="int" />
+  </Intrinsic>
+  <Intrinsic Name="varstr_bytes1" Expression="next ? 1 + varstr_size2(str + 1, *str &amp; 0x80) : 0">
+    <Parameter Name="str" Type="const char*" />
+    <Parameter Name="next" Type="int" />
+  </Intrinsic>
+  <Intrinsic Name="varstr_bytes" Expression="1 + varstr_size1(str + 1, *str &amp; 0x80)">
+    <Parameter Name="str" Type="const char*" />
+  </Intrinsic>
+
+  <Intrinsic Name="varstr_text" Expression="str+varstr_bytes(str)">
+    <Parameter Name="str" Type="const char*" />
+  </Intrinsic>
 
 </AutoVisualizer>
