@@ -86,7 +86,17 @@ void hailstorm_print_chunkinfo(
 
             if (Param_ShowCustomValues)
             {
-                HSCR_INFO(LogTag_InfoChunks, "  app-custom: {}", chunk.app_custom_value);
+                HSCR_INFO(
+                    LogTag_InfoChunks,
+                    "  app-custom: {}{}.{}{}{}.{}{}",
+                    chunk.app_custom_value[0],
+                    chunk.app_custom_value[1],
+                    chunk.app_custom_value[2],
+                    chunk.app_custom_value[3],
+                    chunk.app_custom_value[4],
+                    chunk.app_custom_value[5],
+                    chunk.app_custom_value[6]
+                );
             }
         }
     }

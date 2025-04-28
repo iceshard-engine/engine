@@ -9,7 +9,7 @@ cli11/2.4.1@iceshard/stable
 fmt/10.0.0@iceshard/stable
 tracy/0.11.1@iceshard/stable
 imgui/1.90@iceshard/docking
-hailstorm/0.2.0@iceshard/stable
+hailstorm/0.3.0@iceshard/stable
 # chipmunk2d/7.0.3+@iceshard/stable
 arctic/0.2.1@iceshard/stable
 
