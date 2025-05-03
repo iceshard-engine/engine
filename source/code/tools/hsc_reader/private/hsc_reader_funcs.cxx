@@ -37,8 +37,15 @@ void hailstorm_print_headerinfo(
 {
     if (header.header_version == Constant_HailstormHeaderVersion_0 && Param_HideHeader == false)
     {
+        char const version_chars[]{
+            (Constant_HailstormHeaderVersion_0 & 0xff00'0000) >> 24,
+            (Constant_HailstormHeaderVersion_0 & 0x00ff'0000) >> 16,
+            (Constant_HailstormHeaderVersion_0 & 0x0000'ff00) >> 8,
+            (Constant_HailstormHeaderVersion_0 & 0x0000'00ff) >> 0,
+        };
+
         HSCR_INFO(LogTag_InfoHeader, "Base-Header");
-        HSCR_INFO(LogTag_InfoHeader, "- version: {:X}", Constant_HailstormHeaderVersion_0);
+        HSCR_INFO(LogTag_InfoHeader, "- version: {}", version_chars);
         HSCR_INFO(LogTag_InfoHeader, "- size: {:p}", ice::usize{ header.header_size });
         HSCR_INFO(LogTag_InfoHeader, "Pack-Header");
         HSCR_INFO(LogTag_InfoHeader, "  version: {}.{}.{}", header.version[0], header.version[1], header.version[2]);
@@ -76,27 +83,14 @@ void hailstorm_print_chunkinfo(
             HSCR_INFO(LogTag_InfoChunks, "Chunk ({})", range.start++);
             HSCR_INFO(LogTag_InfoChunks, "  offset: {:i}", ice::usize{ chunk.offset });
             HSCR_INFO(LogTag_InfoChunks, "  size: {:p}", ice::usize{ chunk.size });
-            HSCR_INFO(LogTag_InfoChunks, "  size-origin: {:p}", ice::usize{ chunk.size_origin });
             HSCR_INFO(LogTag_InfoChunks, "  alignment: {}", ice::u32(chunk.align));
-            HSCR_INFO(LogTag_InfoChunks, "  flag-encrypted: {}", Constant_YesNo[chunk.is_encrypted]);
-            HSCR_INFO(LogTag_InfoChunks, "  flag-compressed: {}", Constant_YesNo[chunk.is_compressed]);
             HSCR_INFO(LogTag_InfoChunks, "  type: {} ({})", chunk.type, Constant_TypeName[chunk.type]);
             HSCR_INFO(LogTag_InfoChunks, "  persistance: {} ({})", chunk.persistance, Constant_Persistance[chunk.persistance]);
             HSCR_INFO(LogTag_InfoChunks, "  count-entries: {}", chunk.count_entries);
 
             if (Param_ShowCustomValues)
             {
-                HSCR_INFO(
-                    LogTag_InfoChunks,
-                    "  app-custom: {}{}.{}{}{}.{}{}",
-                    chunk.app_custom_value[0],
-                    chunk.app_custom_value[1],
-                    chunk.app_custom_value[2],
-                    chunk.app_custom_value[3],
-                    chunk.app_custom_value[4],
-                    chunk.app_custom_value[5],
-                    chunk.app_custom_value[6]
-                );
+                HSCR_INFO(LogTag_InfoChunks, "  app-custom: {}", chunk.app_custom_value);
             }
         }
     }
@@ -106,6 +100,8 @@ void hailstorm_print_resourceinfo(hailstorm::HailstormData const& data) noexcept
 {
     if (data.header.header_version == Constant_HailstormHeaderVersion_0)
     {
+        static constexpr ice::String Constant_CompressionTypes[]{ "ZLib", "Zstd", "QOI", "QOA" };
+
         ParamRange range =  Param_ShowResources.value;
         for (hailstorm::HailstormResource const& res : data.resources.subspan(range.start, std::min<size_t>(range.count, data.resources.size() - range.start)))
         {
@@ -119,6 +115,29 @@ void hailstorm_print_resourceinfo(hailstorm::HailstormData const& data) noexcept
             HSCR_INFO(LogTag_InfoResources, "  meta-chunk: {}", res.meta_chunk);
             HSCR_INFO(LogTag_InfoResources, "  meta-offset: {}", res.meta_offset);
             HSCR_INFO(LogTag_InfoResources, "  meta-size: {:p}", ice::usize{ res.meta_size });
+
+            if (res.compression_type == 0)
+            {
+                HSCR_INFO(LogTag_InfoResources, "  compression: None");
+            }
+            else if (res.compression_type >= 16)
+            {
+                HSCR_INFO(LogTag_InfoResources, "  compression: App-Specific");
+                HSCR_INFO(LogTag_InfoResources, "  compression-level: {}", res.compression_level);
+                HSCR_INFO(LogTag_InfoResources, "  compression-param: {}", res.compression_param);
+            }
+            else if (res.compression_type > 4)
+            {
+                HSCR_INFO(LogTag_InfoResources, "  compression: {} <unexpected-value>", res.compression_type);
+                HSCR_INFO(LogTag_InfoResources, "  compression-level: {}", res.compression_level);
+                HSCR_INFO(LogTag_InfoResources, "  compression-param: {}", res.compression_param);
+            }
+            else
+            {
+                HSCR_INFO(LogTag_InfoResources, "  compression: {}", Constant_CompressionTypes[res.compression_type]);
+                HSCR_INFO(LogTag_InfoResources, "  compression-level: {}", res.compression_level);
+                HSCR_INFO(LogTag_InfoResources, "  compression-param: {}", res.compression_param);
+            }
         }
     }
 }
