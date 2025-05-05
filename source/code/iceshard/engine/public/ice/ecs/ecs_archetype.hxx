@@ -154,9 +154,9 @@ namespace ice::ecs
     template<ice::ecs::Component... Components>
     constexpr inline ArchetypeDefinition<Components...>::ArchetypeDefinition(ice::String name) noexcept
         : name{ name }
-        , component_identifiers{ ice::ecs::Constant_ComponentIdentifier<ice::ecs::EntityHandle> }
-        , component_sizes{ ice::ecs::Constant_ComponentSize<ice::ecs::EntityHandle> }
-        , component_alignments{ ice::ecs::Constant_ComponentAlignment<ice::ecs::EntityHandle> }
+        , component_identifiers{ ice::ecs::Constant_ComponentIdentifier<ice::ecs::Entity> }
+        , component_sizes{ ice::ecs::Constant_ComponentSize<ice::ecs::Entity> }
+        , component_alignments{ ice::ecs::Constant_ComponentAlignment<ice::ecs::Entity> }
     {
         auto const& sorted_components = ice::ecs::detail::SortedArchetypeInfo<Components...>::Const_Components;
 
@@ -215,7 +215,7 @@ namespace ice::ecs
         static_assert(Validation_Archetype_1.component_identifiers.size() == 3);
         static_assert(Validation_Archetype_2.component_identifiers.size() == 3);
 
-        static_assert(Validation_Archetype_1.component_identifiers[0] == ice::ecs::Constant_ComponentIdentifier<ice::ecs::EntityHandle>);
+        static_assert(Validation_Archetype_1.component_identifiers[0] == ice::ecs::Constant_ComponentIdentifier<ice::ecs::Entity>);
         static_assert(Validation_Archetype_1.component_identifiers[1] == ice::ecs::Constant_ComponentIdentifier<ice::ecs::static_validation::ValidationComponent_0x10>);
         static_assert(Validation_Archetype_1.component_identifiers[2] == ice::ecs::Constant_ComponentIdentifier<ice::ecs::static_validation::ValidationComponent_0x20>);
 

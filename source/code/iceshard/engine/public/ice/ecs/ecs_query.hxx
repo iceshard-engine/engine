@@ -151,7 +151,7 @@ namespace ice::ecs
         ) noexcept -> ice::ecs::detail::QueryEntityTupleResult<QueryComponents...>
         {
             static constexpr ice::ucount component_count = sizeof...(QueryComponents);
-            ice::ecs::EntitySlotInfo slotinfo;
+            ice::ecs::EntityDataSlot slotinfo;
             query.provider->query_data_slots({ &entity, 1 }, { &slotinfo, 1 });
 
             ice::u32 arch_idx = 0;

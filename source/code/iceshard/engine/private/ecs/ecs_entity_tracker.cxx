@@ -9,6 +9,7 @@
 namespace ice::ecs
 {
 
+#if 0
     EntityTracker::EntityTracker(ice::Allocator& alloc) noexcept
         : _allocator{ alloc }
         , _tracked_entities{ _allocator }
@@ -103,7 +104,6 @@ namespace ice::ecs
             }
         }
     }
-
-
+#endif
 
 } // namespace ice::ecs

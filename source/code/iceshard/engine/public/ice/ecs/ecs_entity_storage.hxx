@@ -43,7 +43,7 @@ namespace ice::ecs
 
         auto query_data_slots(
             ice::Span<ice::ecs::Entity const> requested,
-            ice::Span<ice::ecs::EntitySlotInfo> out_data_slots
+            ice::Span<ice::ecs::EntityDataSlot> out_data_slots
         ) const noexcept -> ice::ucount override;
 
     protected:
@@ -62,7 +62,7 @@ namespace ice::ecs
         ice::HashMap<ice::ecs::QueryAccessTracker*> _access_trackers;
         ice::Array<ice::ecs::DataBlock> _head_blocks;
         ice::Array<ice::ecs::DataBlock*> _data_blocks;
-        ice::Array<ice::ecs::EntitySlotInfo> _data_slots;
+        ice::Array<ice::ecs::EntityDataSlot> _data_slots;
     };
 
 } // namespace ice::ecs

@@ -8,15 +8,15 @@ namespace ice::ecs
     {
 
         template<typename T>
-        concept QueryType = ice::ecs::IsEntityHandle<T>
+        concept QueryType = ice::ecs::IsEntity<T>
             || (ice::ecs::Component<T> && !ice::ecs::ComponentTag<T> && (std::is_reference_v<T> || std::is_pointer_v<T>));
 
         template<QueryType T>
-        constexpr bool Constant_QueryTypeIsWritable = ice::ecs::IsEntityHandle<T> == false
+        constexpr bool Constant_QueryTypeIsWritable = ice::ecs::IsEntity<T> == false
             && std::is_const_v<ice::clear_type_t<T>> == false;
 
         template<QueryType T>
-        constexpr bool Constant_QueryTypeIsOptional = ice::ecs::IsEntityHandle<T> == false
+        constexpr bool Constant_QueryTypeIsOptional = ice::ecs::IsEntity<T> == false
             && std::is_pointer_v<T>;
 
         struct QueryTypeInfo

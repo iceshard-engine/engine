@@ -88,7 +88,7 @@ namespace ice
     ) noexcept -> ice::Task<>
     {
         auto const& query_cameras = query<
-            ice::ecs::EntityHandle,
+            ice::ecs::Entity,
             ice::Camera const&,
             ice::CameraOrtho const*,
             ice::CameraPerspective const*

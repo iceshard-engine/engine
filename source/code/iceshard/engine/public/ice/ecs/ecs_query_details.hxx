@@ -26,7 +26,7 @@ namespace ice::ecs::detail
         static constexpr ice::StaticArray<ice::ecs::detail::QueryTypeInfo, 1 + sizeof...(Components)> const Constant_Requirements =
             constexpr_sort_array(
                 UnsortedQueryRequirements<First, Components...>::Constant_Requirements,
-                static_cast<ice::u32>(std::is_same_v<First, ice::ecs::EntityHandle>)
+                static_cast<ice::u32>(std::is_same_v<First, ice::ecs::Entity>)
             );
     };
 
@@ -79,22 +79,22 @@ namespace ice::ecs::detail
     };
 
     template<>
-    struct QueryIteratorArgument<ice::ecs::EntityHandle>
+    struct QueryIteratorArgument<ice::ecs::Entity>
     {
-        using BlockIteratorArg = ice::ecs::EntityHandle const*;
-        using EntityIteratorArg = ice::ecs::EntityHandle;
+        using BlockIteratorArg = ice::ecs::Entity const*;
+        using EntityIteratorArg = ice::ecs::Entity;
 
         static auto block_array(void* array_ptrs)
         {
             return reinterpret_cast<BlockIteratorArg>(array_ptrs);
         }
 
-        static auto select_entity(BlockIteratorArg block_ptr, ice::u32 idx) noexcept -> ice::ecs::EntityHandle
+        static auto select_entity(BlockIteratorArg block_ptr, ice::u32 idx) noexcept -> ice::ecs::Entity
         {
             return *(block_ptr + idx);
         }
 
-        static auto select_entity_ptr(BlockIteratorArg block_ptr, ice::u32 idx) noexcept -> ice::ecs::EntityHandle const*
+        static auto select_entity_ptr(BlockIteratorArg block_ptr, ice::u32 idx) noexcept -> ice::ecs::Entity const*
         {
             return block_ptr + idx;
         }

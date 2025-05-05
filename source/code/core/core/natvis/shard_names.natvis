@@ -64,7 +64,6 @@
                 <DisplayString Condition="id.payload.value == 1866927059">ice::UpdateUIResource const*</DisplayString>
                 <DisplayString Condition="id.payload.value == 4102468881">ice::WorldStateParams const*</DisplayString>
                 <DisplayString Condition="id.payload.value == 1007979527">ice::ecs::Entity</DisplayString>
-                <DisplayString Condition="id.payload.value == 1224035327">ice::ecs::EntityHandle</DisplayString>
                 <DisplayString Condition="id.payload.value == 2759705139">ice::f32</DisplayString>
                 <DisplayString Condition="id.payload.value == 3318286190">ice::f64</DisplayString>
                 <DisplayString Condition="id.payload.value == 2336974670">ice::gfx::GfxFrameUpdate const*</DisplayString>
@@ -92,7 +91,6 @@
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 1866927059">*(ice::UpdateUIResource const**)&amp;payload.value</Item>
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 4102468881">*(ice::WorldStateParams const**)&amp;payload.value</Item>
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 1007979527">*(ice::ecs::Entity*)&amp;payload.value</Item>
-            <Item Name="[payload]" Optional="true" Condition="id.payload.value == 1224035327">*(ice::ecs::EntityHandle*)&amp;payload.value</Item>
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 2759705139">*(ice::f32*)&amp;payload.value</Item>
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 3318286190">*(ice::f64*)&amp;payload.value</Item>
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 2336974670">*(ice::gfx::GfxFrameUpdate const**)&amp;payload.value</Item>

@@ -47,17 +47,6 @@ namespace ice::ecs
     namespace detail
     {
 
-        auto make_empty_entity_handle(
-            ice::ecs::Entity entity
-        ) noexcept -> ice::ecs::EntityHandle
-        {
-            ice::ecs::EntityHandleInfo const info{
-                    .entity = entity,
-                    .slot = ice::ecs::EntitySlot::Invalid
-            };
-            return std::bit_cast<ice::ecs::EntityHandle>(info);
-        }
-
         auto allocate_operation_nodes(
             ice::Allocator& alloc,
             ice::u32 count
@@ -336,7 +325,7 @@ namespace ice::ecs
         ice::ucount const entity_count = ice::count(entities);
         ice::ucount const component_count = ice::count(component_info.names);
 
-        ice::meminfo additional_data_size = ice::meminfo_of<ice::ecs::EntityHandle> * entity_count;
+        ice::meminfo additional_data_size = ice::meminfo_of<ice::ecs::Entity> * entity_count;
         additional_data_size += ice::meminfo_of<ice::ecs::EntityOperations::ComponentInfo>;
         additional_data_size += ice::meminfo_of<ice::StringID const> * component_count;
         additional_data_size += ice::meminfo_of<ice::u32 const> * component_count;

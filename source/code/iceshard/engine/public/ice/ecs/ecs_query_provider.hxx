@@ -36,7 +36,7 @@ namespace ice::ecs
 
         virtual auto query_data_slots(
             ice::Span<ice::ecs::Entity const> requested,
-            ice::Span<ice::ecs::EntitySlotInfo> out_data_slots
+            ice::Span<ice::ecs::EntityDataSlot> out_data_slots
         ) const noexcept -> ice::ucount = 0;
 
     protected:

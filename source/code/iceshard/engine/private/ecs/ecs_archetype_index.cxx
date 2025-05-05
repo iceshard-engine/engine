@@ -237,13 +237,6 @@ namespace ice::ecs
         data_header->archetype_info.component_offsets = ice::Span<ice::u32 const>{ component_offsets, component_count };
         data_header->block_pool = data_block_pool;
 
-        //// Move the block data pointer so we can store all archetype related information before it.
-        ////  We also need to update the size so we properly calculate the number of entities we can still keep in this block.
-        //data_block->block_data = ice::memory::ptr_align_forward(data_component_info_end, alignof(ice::ecs::EntityHandle));
-        //data_block->block_data_size -= ice::memory::ptr_distance(data_header, data_block->block_data);
-        //data_block->block_entity_count = 0;
-        //data_block->block_entity_count_max = 0;
-
         // We need now to calculate the number of entities that we can store in the remaining memory.
         //  Additionally calculate the offets each component array will be located at.
         {
@@ -324,9 +317,9 @@ namespace ice::ecs
     {
         ice::array::clear(out_archetypes);
 
-        // We need to skip the first query entry if it's for `ice::ecs::EntityHandle`
+        // We need to skip the first query entry if it's for `ice::ecs::Entity`
         // This is due to the fact that it's always there and is not taken into account when sorting components by identifiers.
-        if (ice::span::front(query_info).identifier == ice::ecs::Constant_ComponentIdentifier<ice::ecs::EntityHandle>)
+        if (ice::span::front(query_info).identifier == ice::ecs::Constant_ComponentIdentifier<ice::ecs::Entity>)
         {
             query_info = ice::span::subspan(query_info, 1);
         }
