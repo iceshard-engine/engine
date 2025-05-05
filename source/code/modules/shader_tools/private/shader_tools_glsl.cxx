@@ -28,6 +28,42 @@ namespace ice
 
         using namespace arctic;
 
+
+        void generate_expression(
+            ice::HeapString<>& result,
+            ice::HashMap<arctic::String> const& subs,
+            syntax::Function const& func,
+            syntax::FunctionArg const& arg,
+            SyntaxNode<> node
+        ) noexcept;
+
+        void generate_type(
+            ice::HeapString<>& out_code,
+            arctic::String varname,
+            arctic::syntax::Type const& type
+        ) noexcept
+        {
+            if (type.is_array)
+            {
+                ice::string::push_format(
+                    out_code,
+                    "    {} {}[{}];\n",
+                    type.name.value,
+                    varname,
+                    type.size_array.value
+                );
+            }
+            else
+            {
+                ice::string::push_format(
+                    out_code,
+                    "    {} {};\n",
+                    type.name.value,
+                    varname
+                );
+            }
+        }
+
         void generate_atom(
             ice::HeapString<>& out_code,
             ice::HashMap<arctic::String> const& subs,
@@ -42,10 +78,10 @@ namespace ice
             if (op && op.data().token.type == TokenType::CT_Dot)
             {
                 arctic::String var_base = atom.data().value.value;
-                arctic::String const atom_sub = op.sibling<syntax::Atom>().data().value.value;
                 var_base = ice::hashmap::get(subs, detail::arc_hash(var_base), var_base);
 
-                ice::string::push_format(out_code, "{}.{}", var_base, atom_sub);
+                ice::string::push_format(out_code, "{}.", var_base);
+                generate_expression(out_code, subs, func, arg, op.sibling());
             }
             else
             {
@@ -59,7 +95,6 @@ namespace ice
             ice::HashMap<arctic::String> const& subs,
             syntax::Function const& func,
             syntax::FunctionArg const& arg,
-            syntax::Type const& ret,
             SyntaxNode<> node
         ) noexcept
         {
@@ -75,7 +110,7 @@ namespace ice
                     if (atom.is_parenthized)
                     {
                         ice::string::push_back(result, "(");
-                        generate_expression(result, subs, func, arg, ret, node.child());
+                        generate_expression(result, subs, func, arg, node.child());
                         ice::string::push_back(result, ")");
                     }
                     else
@@ -86,7 +121,7 @@ namespace ice
                 }
                 case SyntaxEntity::E_CallArg:
                 {
-                    generate_expression(result, subs, func, arg, ret, node.child());
+                    generate_expression(result, subs, func, arg, node.child());
                     if (node.sibling())
                     {
                         ice::string::push_back(result, ", ");
@@ -96,18 +131,31 @@ namespace ice
                 case SyntaxEntity::E_Operator:
                 {
                     syntax::Operator const& op = node.to<syntax::Operator>().data();
-                    ice::string::push_format(result, " {} ", op.token.value);
+                    if (op.is_unary)
+                    {
+                        ice::string::push_format(result, "{}", op.token.value);
+                    }
+                    else
+                    {
+                        ice::string::push_format(result, " {} ", op.token.value);
+                    }
+
                     if (node.child())
                     {
-                        generate_expression(result, subs, func, arg, ret, node.child());
+                        generate_expression(result, subs, func, arg, node.child());
                     }
                     break;
                 }
                 case SyntaxEntity::E_Call:
                     ice::string::push_format(result, "{}(", node.to<syntax::Call>().data().name.value);
                     // Call children groups
-                    generate_expression(result, subs, func, arg, ret, node.child());
+                    generate_expression(result, subs, func, arg, node.child());
                     ice::string::push_back(result, ")");
+                    break;
+                case SyntaxEntity::E_IndexOperator:
+                    ice::string::push_back(result, "[");
+                    generate_expression(result, subs, func, arg, node.child());
+                    ice::string::push_back(result, "]");
                     break;
                 default:
                     break;
@@ -139,7 +187,7 @@ namespace ice
             {
                 ice::string::push_back(result, " = ");
 
-                generate_expression(result, subs, func, arg, ret, assignnode.child());
+                generate_expression(result, subs, func, arg, assignnode.child());
             }
         }
 
@@ -165,7 +213,7 @@ namespace ice
                 }
                 else if (SyntaxNode exp = fnentry.to<syntax::Expression>(); exp)
                 {
-                    generate_expression(result, subs, func, arg, ret, exp.child());
+                    generate_expression(result, subs, func, arg, exp.child());
                     ice::string::push_back(result, ";\n");
                 }
                 fnentry = fnentry.sibling<>();
@@ -265,6 +313,7 @@ namespace ice
                 bool const valid_binding = detail::arc_annotation(variable, "binding", binding);
                 ICE_ASSERT_CORE(valid_set && valid_binding);
 
+                syntax::Type const& vartype = variable.child<syntax::Type>().data();
                 SyntaxNode<syntax::Struct> strct = shader.find_struct(variable.child<syntax::Type>());
                 if (member = strct.child<syntax::StructMember>(); member)
                 {
@@ -274,12 +323,20 @@ namespace ice
 
                     while (member)
                     {
-                        syntax::Type const& type = member.child<syntax::Type>().data();
-                        ice::string::push_format(result, "    {} {};\n", type.name.value, member.data().name.value);
+                        glsl::generate_type(
+                            result,
+                            member.data().name.value,
+                            member.child<syntax::Type>().data()
+                        );
                         member = member.sibling<syntax::StructMember>();
                     }
 
-                    ice::string::push_format(result, "}} {};\n\n", variable.data().name.value);
+                    ice::string::push_format(result, "}} {}", variable.data().name.value);
+                    if (vartype.is_array)
+                    {
+                        ice::string::push_format(result, "[{}]", vartype.size_array.value);
+                    }
+                    ice::string::push_back(result, ";\n\n");
                 }
                 else
                 {

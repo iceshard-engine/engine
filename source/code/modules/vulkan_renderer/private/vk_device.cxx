@@ -492,7 +492,8 @@ namespace ice::render::vk
             }
         }
 
-        ice::u32 offset = 0;
+        ice::u32 images_offset = 0;
+        ice::u32 buffers_offset = 0;
         for (ResourceSetUpdateInfo const& update_info : update_infos)
         {
             VkWriteDescriptorSet descriptor_set_write{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
@@ -504,19 +505,20 @@ namespace ice::render::vk
 
             if (update_info.resource_type == ResourceType::SampledImage || update_info.resource_type == ResourceType::InputAttachment)
             {
-                descriptor_set_write.pImageInfo = ice::array::begin(write_image_info) + offset;
-                offset += ice::count(update_info.resources);
+                descriptor_set_write.pImageInfo = ice::array::begin(write_image_info) + images_offset;
+                images_offset += ice::count(update_info.resources);
             }
 
             if (update_info.resource_type == ResourceType::Sampler)
             {
-                descriptor_set_write.pImageInfo = ice::array::begin(write_image_info) + offset;
-                offset += ice::count(update_info.resources);
+                descriptor_set_write.pImageInfo = ice::array::begin(write_image_info) + images_offset;
+                images_offset += ice::count(update_info.resources);
             }
 
             if (update_info.resource_type == ResourceType::UniformBuffer)
             {
-                descriptor_set_write.pBufferInfo = ice::array::begin(write_buffer_info);
+                descriptor_set_write.pBufferInfo = ice::array::begin(write_buffer_info) + buffers_offset;
+                buffers_offset += ice::count(update_info.resources);
             }
 
             ice::array::push_back(vk_writes, descriptor_set_write);
