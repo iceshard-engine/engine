@@ -21,6 +21,12 @@ namespace ice::ecs
         Invalid = 0x0
     };
 
+    struct EntityInfo
+    {
+        ice::u32 index : 24;
+        ice::u32 generation : 8;
+    };
+
 
     static constexpr ice::u32 Constant_EntitySlotArchetype_Bits = 12;
     static constexpr ice::u32 Constant_EntitySlotBlock_Bits = 8;
@@ -54,7 +60,15 @@ namespace ice::ecs
 
 
     template<typename T>
+    static constexpr bool IsEntity = std::is_same_v<ice::ecs::Entity, T>;
+
+    template<typename T>
     static constexpr bool IsEntityHandle = std::is_same_v<ice::ecs::EntityHandle, T>;
+
+
+    constexpr auto entity_info(
+        ice::ecs::Entity entity
+    ) noexcept -> ice::ecs::EntityInfo;
 
     constexpr auto entity_slot_info(
         ice::ecs::EntitySlot slot
@@ -64,6 +78,13 @@ namespace ice::ecs
         ice::ecs::EntityHandle handle
     ) noexcept -> ice::ecs::EntityHandleInfo;
 
+
+    constexpr auto entity_info(
+        ice::ecs::Entity entity
+    ) noexcept -> ice::ecs::EntityInfo
+    {
+        return std::bit_cast<ice::ecs::EntityInfo>(entity);
+    }
 
     constexpr auto entity_slot_info(
         ice::ecs::EntitySlot slot

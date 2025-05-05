@@ -12,25 +12,12 @@ namespace ice::ecs
     namespace detail
     {
 
-        struct EntityInfo
-        {
-            ice::u32 index : 24;
-            ice::u32 generation : 8;
-        };
-
-        auto entity_info(
-            ice::ecs::Entity entity
-        ) noexcept -> ice::ecs::detail::EntityInfo
-        {
-            return std::bit_cast<ice::ecs::detail::EntityInfo>(entity);
-        }
-
         auto make_entity(
             ice::u32 index,
             ice::u32 generation
         ) noexcept -> ice::ecs::Entity
         {
-            ice::ecs::detail::EntityInfo const info{
+            ice::ecs::EntityInfo const info{
                 .index = index,
                 .generation = generation
             };
@@ -72,9 +59,9 @@ namespace ice::ecs
 
     bool EntityIndex::is_alive(ice::ecs::Entity entity) const noexcept
     {
-        using ice::ecs::detail::EntityInfo;
+        using ice::ecs::EntityInfo;
 
-        EntityInfo const info = ice::ecs::detail::entity_info(entity);
+        EntityInfo const info = ice::ecs::entity_info(entity);
         return _generation[info.index] == info.generation;
     }
 
@@ -124,9 +111,9 @@ namespace ice::ecs
 
     void EntityIndex::destroy(ice::ecs::Entity entity) noexcept
     {
-        using ice::ecs::detail::EntityInfo;
+        using ice::ecs::EntityInfo;
 
-        EntityInfo const info = ice::ecs::detail::entity_info(entity);
+        EntityInfo const info = ice::ecs::entity_info(entity);
         _generation[info.index] += 1;
 
         ice::queue::push_back(_free_indices, info.index);

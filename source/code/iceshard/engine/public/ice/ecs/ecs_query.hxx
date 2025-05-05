@@ -23,22 +23,10 @@ namespace ice::ecs
         template<typename Definition>
         inline auto entity_count(ice::ecs::Query<Definition> const& query) noexcept -> ice::u32;
 
-        //template<ice::ecs::QueryType... QueryComponents>
-        //inline auto entity_data(
-        //    ice::ecs::Query<ice::ecs::QueryDefinition<QueryComponents...>> const& query,
-        //    ice::ecs::Entity entity
-        //) noexcept -> ice::ecs::detail::QueryEntityTupleResult<QueryComponents...>;
-
         template<ice::ecs::QueryType... QueryComponents>
         inline auto entity_data(
             ice::ecs::Query<ice::ecs::QueryDefinition<QueryComponents...>> const& query,
-            ice::ecs::EntityHandle handle
-        ) noexcept -> ice::ecs::detail::QueryEntityTupleResult<QueryComponents...>;
-
-        template<ice::ecs::QueryType... QueryComponents>
-        inline auto entity_data(
-            ice::ecs::Query<ice::ecs::QueryDefinition<QueryComponents...>> const& query,
-            ice::ecs::EntitySlot slot
+            ice::ecs::Entity entity
         ) noexcept -> ice::ecs::detail::QueryEntityTupleResult<QueryComponents...>;
 
         template<typename Definition>
@@ -65,7 +53,6 @@ namespace ice::ecs
 
     } // namespace query
 
-
     //! \brief A query holds information about all archetypes that should be iterated but it's not yet executed.
     template<typename Definition>
     struct Query
@@ -83,6 +70,7 @@ namespace ice::ecs
         using ArrayDataBlock = ice::Array<ice::ecs::DataBlock const*>;
         using ArrayArgumentIndexMap = ice::Array<ice::StaticArray<ice::u32, Constant_Definition.component_count>>;
 
+        ice::ecs::QueryProvider const* provider;
         ice::ecs::QueryAccessTracker* access_trackers[Constant_Definition.component_count];
         ice::Array<ice::ecs::ArchetypeInstanceInfo const*> archetype_instances;
         ice::Array<ice::ecs::DataBlock const*> archetype_data_blocks;
@@ -159,11 +147,12 @@ namespace ice::ecs
         template<ice::ecs::QueryType... QueryComponents>
         inline auto entity_data(
             ice::ecs::Query<ice::ecs::QueryDefinition<QueryComponents...>> const& query,
-            ice::ecs::EntitySlot slot
+            ice::ecs::Entity entity
         ) noexcept -> ice::ecs::detail::QueryEntityTupleResult<QueryComponents...>
         {
             static constexpr ice::ucount component_count = sizeof...(QueryComponents);
-            ice::ecs::EntitySlotInfo const slotinfo = ice::ecs::entity_slot_info(slot);
+            ice::ecs::EntitySlotInfo slotinfo;
+            query.provider->query_data_slots({ &entity, 1 }, { &slotinfo, 1 });
 
             ice::u32 arch_idx = 0;
             ice::ecs::ArchetypeInstanceInfo const* arch = nullptr;
@@ -211,18 +200,6 @@ namespace ice::ecs
 
             return ice::ecs::detail::create_entity_tuple<QueryComponents...>(slotinfo.index, helper_pointer_array);
         }
-
-        template<ice::ecs::QueryType... QueryComponents>
-        inline auto entity_data(
-            ice::ecs::Query<ice::ecs::QueryDefinition<QueryComponents...>> const& query,
-            ice::ecs::EntityHandle handle
-        ) noexcept -> ice::ecs::detail::QueryEntityTupleResult<QueryComponents...>
-        {
-            return ice::ecs::query::entity_data(
-                query, ice::ecs::entity_handle_info(handle).slot
-            );
-        }
-
 
         template<typename Definition, typename Fn>
         inline auto for_each_block(ice::ecs::Query<Definition> const& query, Fn&& fn) noexcept

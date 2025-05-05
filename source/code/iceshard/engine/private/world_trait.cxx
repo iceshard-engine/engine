@@ -73,9 +73,14 @@ namespace ice
         return _context.world().entity_operations();
     }
 
-    auto Trait::entity_queries() noexcept -> ice::ecs::QueryProvider&
+    auto Trait::entity_queries() noexcept -> ice::ecs::QueryProvider const&
     {
         return _context.world().entity_queries();
+    }
+
+    auto Trait::queries() noexcept -> ice::ecs::QueryStorage&
+    {
+        return _context.world().entity_queries_storage();
     }
 
 } // namespace ice

@@ -12,13 +12,6 @@
 namespace ice
 {
 
-    using QueryCameras = ice::ecs::QueryDefinition<
-        ice::ecs::EntityHandle,
-        ice::Camera const&,
-        ice::CameraOrtho const*,
-        ice::CameraPerspective const*
-    >;
-
     struct TraitCameraData
     {
         ice::StringID name;
@@ -64,7 +57,6 @@ namespace ice
         ) noexcept -> ice::Task<>;
 
     private:
-        ice::ecs::Query<ice::QueryCameras> _query_cameras;
         ice::HashMap<ice::TraitCameraData> _render_data;
 
         ice::TaskCheckpoint _ready;

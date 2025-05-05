@@ -34,9 +34,9 @@ namespace ice::ecs
             ice::String name
         ) const noexcept -> ice::ecs::Archetype = 0;
 
-        virtual auto resolve_entities(
+        virtual auto query_data_slots(
             ice::Span<ice::ecs::Entity const> requested,
-            ice::Span<ice::ecs::EntityHandle> resolved
+            ice::Span<ice::ecs::EntitySlotInfo> out_data_slots
         ) const noexcept -> ice::ucount = 0;
 
     protected:
@@ -55,6 +55,9 @@ namespace ice::ecs
     {
         using Definition = ice::ecs::QueryDefinition<Types...>;
         static constexpr Definition definition{ };
+
+        // Store the query provider.
+        out_query.provider = this;
 
         // Run the internal query to access all data that is not available here.
         this->query_internal(
@@ -90,30 +93,5 @@ namespace ice::ecs
         this->initialize_query(result);
         return result;
     }
-
-
-    // template<ice::ecs::QueryType First, ice::ecs::QueryType... Args>
-    // struct QueryWork<First, Args...>
-    // {
-    //     using QueryDefinition = ice::ecs::QueryDefinition<First, Args...>;
-    //     using QueryWorkFn = typename QueryDefinition::ForEachEntityFn;
-    //     using Query = typename QueryDefinition::Query;
-
-    //     static void execute(void const* self_ptr) noexcept;
-
-    //     Query const query;
-    //     QueryWorkFn* const work_function;
-    // };
-
-    // template<ice::ecs::QueryType First, ice::ecs::QueryType... Args>
-    // void QueryWork<First, Args...>::execute(void const* self_ptr) noexcept
-    // {
-    //     QueryWork<ice::u32, Args...> const* const self = reinterpret_cast<QueryWork<ice::u32, Args...> const*>(self_ptr);
-
-    //     ice::ecs::query::for_each_entity<QueryDefinition>(
-    //         self->query,
-    //         self->work_function
-    //     );
-    // }
 
 } // namespace ice::ecs

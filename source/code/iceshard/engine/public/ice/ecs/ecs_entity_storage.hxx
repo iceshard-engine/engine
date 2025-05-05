@@ -4,6 +4,7 @@
 #pragma once
 #include <ice/shard_container.hxx>
 #include <ice/ecs/ecs_entity.hxx>
+#include <ice/ecs/ecs_entity_index.hxx>
 #include <ice/ecs/ecs_archetype.hxx>
 #include <ice/ecs/ecs_query.hxx>
 #include <ice/ecs/ecs_query_provider.hxx>
@@ -26,6 +27,9 @@ namespace ice::ecs
 
         ~EntityStorage() noexcept;
 
+        auto entities() noexcept -> ice::ecs::EntityIndex&;
+        auto entities() const noexcept -> ice::ecs::EntityIndex const&;
+
         void update_archetypes() noexcept;
 
         void execute_operations(
@@ -37,9 +41,9 @@ namespace ice::ecs
             ice::String name
         ) const noexcept -> ice::ecs::Archetype override;
 
-        auto resolve_entities(
+        auto query_data_slots(
             ice::Span<ice::ecs::Entity const> requested,
-            ice::Span<ice::ecs::EntityHandle> resolved
+            ice::Span<ice::ecs::EntitySlotInfo> out_data_slots
         ) const noexcept -> ice::ucount override;
 
     protected:
@@ -52,12 +56,13 @@ namespace ice::ecs
 
     private:
         ice::ProxyAllocator _allocator;
+        ice::ecs::EntityIndex _entity_index;
         ice::ecs::ArchetypeIndex const& _archetype_index;
 
-        ice::HashMap<ice::ecs::EntityHandle> _entities;
         ice::HashMap<ice::ecs::QueryAccessTracker*> _access_trackers;
         ice::Array<ice::ecs::DataBlock> _head_blocks;
         ice::Array<ice::ecs::DataBlock*> _data_blocks;
+        ice::Array<ice::ecs::EntitySlotInfo> _data_slots;
     };
 
 } // namespace ice::ecs

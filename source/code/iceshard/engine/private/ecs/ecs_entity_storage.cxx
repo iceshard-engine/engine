@@ -21,57 +21,31 @@ namespace ice::ecs
             void* block_data;
         };
 
-        auto make_entity_handle(
-            ice::ecs::Entity entity,
-            ice::ecs::EntitySlotInfo slot_info
-        ) noexcept -> ice::ecs::EntityHandle
-        {
-            struct HandleParts
-            {
-                ice::ecs::Entity entity;
-                ice::ecs::EntitySlotInfo slot_info; // Corresponds to `ice::ecs::EntitySlot`
-            };
-
-            static_assert(sizeof(HandleParts) == sizeof(EntityHandle));
-
-            HandleParts const parts{
-                .entity = entity,
-                .slot_info = slot_info
-            };
-            return std::bit_cast<ice::ecs::EntityHandle>(parts);
-        }
-
         auto get_entity_array(
             ice::ecs::EntityOperations::ComponentInfo const& info,
             ice::ecs::detail::OperationDetails const& data_details,
             ice::u32 entity_count
-        ) noexcept -> ice::Span<ice::ecs::EntityHandle>
+        ) noexcept -> ice::Span<ice::ecs::Entity>
         {
             void* const entity_array_ptr = ice::ptr_add(
                 data_details.block_data,
                 { info.offsets[0] }
             );
 
-            return ice::Span<ice::ecs::EntityHandle>(
-                reinterpret_cast<ice::ecs::EntityHandle*>(entity_array_ptr) + data_details.block_offset,
+            return ice::Span<ice::ecs::Entity>(
+                reinterpret_cast<ice::ecs::Entity*>(entity_array_ptr) + data_details.block_offset,
                 entity_count
             );
         }
 
         void track_entities(
-            ice::HashMap<ice::ecs::EntityHandle>& tracked,
-            ice::Span<ice::ecs::EntityHandle const> updated
-        ) noexcept;
-
-        void notify_changes(
-            ice::ShardContainer& out_shards,
-            ice::ShardID notification_shard,
-            ice::Span<ice::ecs::EntityHandle const> updated,
-            ice::ecs::EntityOperation const& operation
+            ice::HashMap<ice::ecs::Entity>& tracked,
+            ice::Span<ice::ecs::Entity const> updated
         ) noexcept;
 
         void store_entities_with_data(
-            ice::Span<ice::ecs::EntityHandle const> src_entities,
+            ice::Span<ice::ecs::Entity const> src_entities,
+            ice::Span<ice::ecs::EntitySlotInfo> dst_data_slots,
             ice::ecs::EntitySlotInfo base_slot,
             ice::ecs::EntityOperations::ComponentInfo const& src_info,
             ice::ecs::EntityOperations::ComponentInfo const& dst_info,
@@ -141,7 +115,7 @@ namespace ice::ecs
                 sub_component_index += 1;
             }
 
-            ice::Span<ice::ecs::EntityHandle> const dst_entities = ice::ecs::detail::get_entity_array(
+            ice::Span<ice::ecs::Entity> const dst_entities = ice::ecs::detail::get_entity_array(
                 dst_info,
                 dst_data_details,
                 entity_count
@@ -164,10 +138,11 @@ namespace ice::ecs
                     "Invalid archetype instance value!"
                 );
 
-                ice::ecs::EntityHandleInfo handle_info = ice::ecs::entity_handle_info(src_entities[idx]);
+                // Update data slots
+                dst_entities[idx] = src_entities[idx];
 
-                // Save the new handle
-                dst_entities[idx] = make_entity_handle(handle_info.entity, base_slot);
+                ice::ecs::EntityInfo const entity_info = ice::ecs::entity_info(src_entities[idx]);
+                dst_data_slots[entity_info.index] = base_slot;
             }
         }
 
@@ -238,7 +213,8 @@ namespace ice::ecs
         }
 
         void store_entities_without_data(
-            ice::Span<ice::ecs::EntityHandle const> src_entities,
+            ice::Span<ice::ecs::Entity const> src_entities,
+            ice::Span<ice::ecs::EntitySlotInfo> dst_data_slots,
             ice::ecs::EntitySlotInfo base_slot,
             ice::ecs::EntityOperations::ComponentInfo const& info,
             ice::ecs::detail::OperationDetails const& data_details
@@ -269,7 +245,7 @@ namespace ice::ecs
                 ice::memset(ptr, '\0', size * entity_count);
             }
 
-            ice::Span<ice::ecs::EntityHandle> const dst_entities = ice::ecs::detail::get_entity_array(
+            ice::Span<ice::ecs::Entity> const dst_entities = ice::ecs::detail::get_entity_array(
                 info,
                 data_details,
                 entity_count
@@ -292,19 +268,20 @@ namespace ice::ecs
                     "Invalid archetype instance value!"
                 );
 
-                ice::ecs::EntityHandleInfo handle_info = ice::ecs::entity_handle_info(src_entities[idx]);
+                // Update data slots
+                dst_entities[idx] = src_entities[idx];
 
-                // Save the new handle
-                dst_entities[idx] = make_entity_handle(handle_info.entity, base_slot);
+                ice::ecs::EntityInfo const entity_info = ice::ecs::entity_info(src_entities[idx]);
+                dst_data_slots[entity_info.index] = base_slot;
             }
         }
 
         void batch_remove_entities(
             ice::ecs::ArchetypeIndex const& archetypes,
             ice::ecs::EntityOperation const& operation,
-            ice::Span<ice::ecs::EntityHandle const> entities_to_remove,
+            ice::Span<ice::ecs::Entity const> entities_to_remove,
             ice::Span<ice::ecs::DataBlock*> data_blocks,
-            ice::HashMap<ice::ecs::EntityHandle>& tracked,
+            ice::Span<ice::ecs::EntitySlotInfo> data_slots,
             ice::ShardContainer& out_shards
         ) noexcept
         {
@@ -319,8 +296,8 @@ namespace ice::ecs
 
             do
             {
-                EntityHandleInfo handle_info = ice::ecs::entity_handle_info(*it);
-                EntitySlotInfo const slot_info = ice::ecs::entity_slot_info(handle_info.slot);
+                EntityInfo entity_info = ice::ecs::entity_info(*it);
+                EntitySlotInfo const slot_info = data_slots[entity_info.index];
 
                 // Find the archetype info if it changed (Users are encouraged to avoid this)
                 ArchetypeInstance const temp_archetype[1]{ ArchetypeInstance{ slot_info.archetype } };
@@ -365,7 +342,8 @@ namespace ice::ecs
                 {
                     it += 1; // Get the next entity and check if we can already handle it
 
-                    EntitySlotInfo const next_slot_info = ice::ecs::entity_slot_info(ice::ecs::entity_handle_info(*it).slot);
+                    EntityInfo next_entity_info = ice::ecs::entity_info(*it);
+                    EntitySlotInfo const next_slot_info = data_slots[next_entity_info.index];
 
                     // Increase count if we found the next entity
                     if ((slot_info.index + span_size) == next_slot_info.index)
@@ -412,7 +390,7 @@ namespace ice::ecs
                     };
 
                     // Get moved entity array
-                    ice::Span<ice::ecs::EntityHandle const> moved_entities = ice::ecs::detail::get_entity_array(
+                    ice::Span<ice::ecs::Entity const> moved_entities = ice::ecs::detail::get_entity_array(
                         component_info, dst_data_details, movable_entities
                     );
 
@@ -420,16 +398,13 @@ namespace ice::ecs
                     ice::ecs::detail::store_entities_with_data(
                         // List of entities that will be moved
                         moved_entities,
+                        data_slots,
                         slot_info, // The initially removed slot
                         component_info,
                         component_info,
                         del_data_details, /* src data block */
                         dst_data_details /* dst data block */
                     );
-
-                    // Need to track the moved entities and notify for changes if necessary
-                    track_entities(tracked, moved_entities);
-                    notify_changes(out_shards, Shard_EntityHandleChanged, moved_entities, operation);
                 }
 
                 // Remove entity count from the block we moved from (we can just forget the data existed)
@@ -462,38 +437,24 @@ namespace ice::ecs
             }
         }
 
-        void notify_changes(
-            ice::ShardContainer& out_shards,
-            ice::ShardID notification_shard,
-            ice::Span<ice::ecs::EntityHandle const> updated,
-            ice::ecs::EntityOperation const& operation
-        ) noexcept
-        {
-            if (operation.notify_entity_changes == false)
-            {
-                return;
-            }
-
-            for (ice::ecs::EntityHandle updated_handle : updated)
-            {
-                ice::shards::push_back(out_shards, notification_shard | updated_handle);
-            }
-        }
-
     } // namespace detail
+
+    static constexpr ice::ucount Constant_InitialEntityCount = 1024 * 32;
 
     EntityStorage::EntityStorage(
         ice::Allocator& alloc,
         ice::ecs::ArchetypeIndex const& archetype_index
     ) noexcept
         : _allocator{ alloc, "ecs :: entity-storage" }
+        , _entity_index{ _allocator, Constant_InitialEntityCount }
         , _archetype_index{ archetype_index }
-        , _entities{ _allocator }
         , _access_trackers{ _allocator }
         , _head_blocks{ _allocator }
         , _data_blocks{ _allocator }
+        , _data_slots{ _allocator }
     {
         ice::array::reserve(_head_blocks, 100); // 100 archetypes should suffice for now
+        ice::array::resize(_data_slots, Constant_InitialEntityCount);
     }
 
     EntityStorage::~EntityStorage() noexcept
@@ -526,6 +487,16 @@ namespace ice::ecs
 
             block_idx += 1;
         }
+    }
+
+    auto EntityStorage::entities() noexcept -> ice::ecs::EntityIndex&
+    {
+        return _entity_index;
+    }
+
+    auto EntityStorage::entities() const noexcept -> ice::ecs::EntityIndex const&
+    {
+        return _entity_index;
     }
 
     void EntityStorage::update_archetypes() noexcept
@@ -588,6 +559,12 @@ namespace ice::ecs
         // [Done] Set Component: {EntityHandle[1], None, ComponentData[*]} // update data
         // [Done] Set Component: {EntityHandle[*], None} // remove
 
+        // Ensure we have enough data slots
+        if (ice::array::count(_data_slots) < _entity_index.count())
+        {
+            ice::array::resize(_data_slots, _entity_index.count());
+        }
+
         // Ensure all queries are finished
         for (ice::ecs::QueryAccessTracker* tracker : ice::hashmap::values(_access_trackers))
         {
@@ -622,8 +599,8 @@ namespace ice::ecs
                 //  This might have quite a big performance impact if done from multiple source archetypes.
                 for (ice::u32 idx = 0; idx < operation.entity_count && same_archetype; ++idx)
                 {
-                    EntityHandle const handle = operation.entities[idx];
-                    EntitySlotInfo const slot_info = ice::ecs::entity_slot_info(ice::ecs::entity_handle_info(handle).slot);
+                    EntityInfo const entity = ice::ecs::entity_info(operation.entities[idx]);
+                    EntitySlotInfo const slot_info = _data_slots[entity.index];
 
                     if (expected_archetype_index == 0)
                     {
@@ -643,9 +620,8 @@ namespace ice::ecs
             }
 
             // Get the archetype from the first entity, we are ensured such an entity exists.
-            EntityHandle const handle = operation.entities[0];
-            EntityHandleInfo const handle_info = ice::ecs::entity_handle_info(handle);
-            EntitySlotInfo const slot_info = ice::ecs::entity_slot_info(handle_info.slot);
+            EntityInfo const handle = ice::ecs::entity_info(operation.entities[0]);
+            EntitySlotInfo const slot_info = _data_slots[handle.index];
 
             ArchetypeInstanceInfo const* src_instance_info[1]{ nullptr };
             if (slot_info.archetype != 0)
@@ -727,7 +703,7 @@ namespace ice::ecs
                         };
 
                         ice::u32 const entities_stored = ice::min(available_space, remaining_count);
-                        ice::Span<ice::ecs::EntityHandle const> const entities{
+                        ice::Span<ice::ecs::Entity const> const entities{
                             operation.entities + processed_count,
                             entities_stored
                         };
@@ -738,6 +714,7 @@ namespace ice::ecs
                             {
                                 ice::ecs::detail::store_entities_with_data(
                                     entities,
+                                    _data_slots,
                                     base_slot,
                                     *provided_component_info,
                                     dst_component_info,
@@ -749,20 +726,18 @@ namespace ice::ecs
                             {
                                 ice::ecs::detail::store_entities_without_data(
                                     entities,
+                                    _data_slots,
                                     base_slot,
                                     dst_component_info,
                                     dst_data_details /* dst data block */
                                 );
                             }
 
-                            ice::Span<ice::ecs::EntityHandle const> updated_entities = ice::ecs::detail::get_entity_array(
+                            ice::Span<ice::ecs::Entity const> updated_entities = ice::ecs::detail::get_entity_array(
                                 dst_component_info,
                                 dst_data_details,
                                 entities_stored
                             );
-
-                            ice::ecs::detail::track_entities(_entities, updated_entities);
-                            ice::ecs::detail::notify_changes(out_shards, Shard_EntityCreated, updated_entities, operation);
                         }
                         else
                         {
@@ -813,6 +788,7 @@ namespace ice::ecs
 
                             ice::ecs::detail::store_entities_with_data(
                                 entities,
+                                _data_slots,
                                 base_slot,
                                 src_component_info,
                                 dst_component_info,
@@ -821,16 +797,12 @@ namespace ice::ecs
                             );
 
                             {
-                                ice::Span<ice::ecs::EntityHandle const> updated_entities = ice::ecs::detail::get_entity_array(
+                                ice::Span<ice::ecs::Entity const> updated_entities = ice::ecs::detail::get_entity_array(
                                     dst_component_info,
                                     dst_data_details,
                                     entities_stored
                                 );
                                 ICE_ASSERT(ice::count(updated_entities) == 0, "");
-
-                                // Already replaces the old entity entry, so it's is now clear.
-                                ice::ecs::detail::track_entities(_entities, updated_entities);
-                                ice::ecs::detail::notify_changes(out_shards, Shard_EntityArchetypeChanged, updated_entities, operation);
                             }
 
                             // 2. Apply the new provided data if any.
@@ -852,7 +824,7 @@ namespace ice::ecs
                                 dst_data_details = src_data_details;
                                 src_data_details.block_offset = data_block_it_2->block_entity_count - 1; // Get the last entity
 
-                                ice::ecs::EntityHandle const move_entities[1]{
+                                ice::ecs::Entity const move_entities[1]{
                                     ice::span::front(ice::ecs::detail::get_entity_array(src_component_info, src_data_details, 1))
                                 };
 
@@ -864,6 +836,7 @@ namespace ice::ecs
 
                                 ice::ecs::detail::store_entities_with_data(
                                     move_entities,
+                                    _data_slots,
                                     move_slot,
                                     src_component_info,
                                     src_component_info,
@@ -871,15 +844,11 @@ namespace ice::ecs
                                     dst_data_details /* dst data block */
                                 );
 
-                                ice::Span<ice::ecs::EntityHandle const> updated_entities = ice::ecs::detail::get_entity_array(
+                                ice::Span<ice::ecs::Entity const> updated_entities = ice::ecs::detail::get_entity_array(
                                     src_component_info,
                                     dst_data_details,
                                     entities_stored
                                 );
-
-                                // This updates the entities that got moved...
-                                ice::ecs::detail::track_entities(_entities, updated_entities);
-                                ice::ecs::detail::notify_changes(out_shards, Shard_EntityHandleChanged, updated_entities, operation);
                             }
 
                             // Remove entity count from the block we moved from (we can just forget the data existed)
@@ -972,22 +941,18 @@ namespace ice::ecs
 
                     // detail::OperationDetails const dst_data_details = src_data_details;
 
-                    ice::Span<ice::ecs::EntityHandle const> entities = ice::ecs::detail::get_entity_array(
+                    ice::Span<ice::ecs::Entity const> entities = ice::ecs::detail::get_entity_array(
                         src_component_info,
                         detail::OperationDetails{ .block_data = operation.entities },
                         operation.entity_count
                     );
-
-                    // We can forget and notify before the operation because these will be invalidated anyway.
-                    ice::ecs::detail::forget_entities(_entities, entities);
-                    ice::ecs::detail::notify_changes(out_shards, Shard_EntityDestroyed, entities, operation);
 
                     ice::ecs::detail::batch_remove_entities(
                         _archetype_index,
                         operation,
                         entities,
                         _data_blocks,
-                        _entities,
+                        _data_slots,
                         out_shards
                     );
                 }
@@ -1011,17 +976,18 @@ namespace ice::ecs
         return _archetype_index.find_archetype_by_name(name);
     }
 
-    auto EntityStorage::resolve_entities(
+    auto EntityStorage::query_data_slots(
         ice::Span<ice::ecs::Entity const> requested,
-        ice::Span<ice::ecs::EntityHandle> resolved
+        ice::Span<ice::ecs::EntitySlotInfo> out_data_slots
     ) const noexcept -> ice::ucount
     {
         ice::u32 idx = 0;
         ice::ucount valid = 0;
         for (ice::ecs::Entity entity : requested)
         {
-            resolved[idx] = ice::hashmap::get(_entities, ice::hash(entity), EntityHandle::Invalid);
-            valid += ice::u32(resolved[idx] != EntityHandle::Invalid);
+            ice::ecs::EntityInfo const entity_info = ice::ecs::entity_info(entity);
+            out_data_slots[idx] = _data_slots[entity_info.index];
+            valid += _entity_index.is_alive(entity);
             idx += 1;
         }
         return valid;

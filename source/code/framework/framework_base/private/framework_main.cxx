@@ -116,9 +116,6 @@ struct ice::app::State
     ice::UniquePtr<ice::render::RenderDriver> renderer;
     ice::render::RenderSurface* render_surface; // TODO: Make into a UniquePtr
 
-    ice::ecs::ArchetypeIndex archetypes;
-
-
     struct ResourceProviders
     {
         ice::UniquePtr<ice::ResourceProvider> filesys;
@@ -147,7 +144,6 @@ struct ice::app::State
         , game{ ice::framework::create_game(gamework_alloc) }
         , modules{ ice::create_default_module_register(modules_alloc, true) }
         , render_surface{ }
-        , archetypes{ alloc }
         , providers{ }
         , platform{ .core = nullptr }
     {
@@ -415,10 +411,12 @@ auto ice_setup(
     }
 
     // Run game setup
+    ice::UniquePtr<ice::ecs::ArchetypeIndex> archetypes = ice::make_unique<ice::ecs::ArchetypeIndex>(state.alloc, state.alloc);
+
     ice::framework::State const framework_state{
         .modules = *state.modules,
         .resources = *state.resources,
-        .archetypes = state.archetypes,
+        .archetypes = *archetypes,
     };
     state.game->on_setup(framework_state);
 
@@ -434,7 +432,10 @@ auto ice_setup(
         }
     }
 
-    ice::EngineCreateInfo engine_create_info{ .states = ice::create_state_tracker(state.alloc) };
+    ice::EngineCreateInfo engine_create_info{
+        .states = ice::create_state_tracker(state.alloc),
+        .archetypes = ice::move(archetypes),
+    };
     {
         ice::UniquePtr<ice::AssetCategoryArchive> asset_categories = ice::create_asset_category_archive(state.engine_alloc);
         ice::load_asset_category_definitions(state.engine_alloc, *state.modules, *asset_categories);
@@ -447,7 +448,7 @@ auto ice_setup(
     }
 
     {
-        engine_create_info.traits = ice::create_default_trait_archive(state.engine_alloc, state.archetypes, *engine_create_info.states);
+        engine_create_info.traits = ice::create_default_trait_archive(state.engine_alloc, *engine_create_info.archetypes, *engine_create_info.states);
         ice::load_trait_descriptions(state.engine_alloc, *state.modules, *engine_create_info.traits);
     }
 
@@ -543,6 +544,7 @@ auto ice_resume(
         runtime.gfx_wait.set();
     }
 
+    state.engine->entity_storage().update_archetypes();
     state.game->on_resume(*state.engine);
     runtime.gfx_runner->on_resume();
 
@@ -780,7 +782,7 @@ auto ice_shutdown(
     ice::framework::State const framework_state{
         .modules = *state.modules,
         .resources = *state.resources,
-        .archetypes = state.archetypes,
+        .archetypes = state.engine->entity_archetypes(),
     };
     state.game->on_shutdown(framework_state);
 

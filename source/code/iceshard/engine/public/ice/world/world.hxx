@@ -4,6 +4,7 @@
 #pragma once
 #include <ice/data_storage.hxx>
 #include <ice/ecs/ecs_entity_storage.hxx>
+#include <ice/ecs/ecs_query_storage.hxx>
 #include <ice/world/world_trait_types.hxx>
 #include <ice/engine_state.hxx>
 #include <ice/span.hxx>
@@ -30,7 +31,8 @@ namespace ice
         virtual auto trait_storage(ice::Trait const* trait) const noexcept -> ice::DataStorage const* = 0;
 
         virtual auto entities() noexcept -> ice::ecs::EntityIndex& = 0;
-        virtual auto entity_queries() noexcept -> ice::ecs::QueryProvider& = 0;
+        virtual auto entity_queries() noexcept -> ice::ecs::QueryProvider const& = 0;
+        virtual auto entity_queries_storage() noexcept -> ice::ecs::QueryStorage & = 0;
         virtual auto entity_operations() noexcept -> ice::ecs::EntityOperations& = 0;
     };
 

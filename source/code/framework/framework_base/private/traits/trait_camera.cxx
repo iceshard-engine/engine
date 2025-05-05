@@ -61,7 +61,6 @@ namespace ice
         ice::TraitContext& context
     ) noexcept
         : ice::Trait{ context }
-        , _query_cameras{ alloc }
         , _render_data{ alloc }
     {
         context.bind<&IceWorldTrait_RenderCamera::on_update>();
@@ -74,7 +73,6 @@ namespace ice
         ice::WorldStateParams const& params
     ) noexcept -> ice::Task<>
     {
-        entity_queries().initialize_query(_query_cameras);
         co_return;
     }
 
@@ -89,11 +87,18 @@ namespace ice
         ice::EngineFrameUpdate const& params
     ) noexcept -> ice::Task<>
     {
+        auto const& query_cameras = query<
+            ice::ecs::EntityHandle,
+            ice::Camera const&,
+            ice::CameraOrtho const*,
+            ice::CameraPerspective const*
+        >();
+
         //ice::u32 const camera_count = ice::ecs::query::entity_count(_query_cameras);
-        ice::hashmap::reserve(_render_data, ice::ecs::query::entity_count(_query_cameras));
+        ice::hashmap::reserve(_render_data, ice::ecs::query::entity_count(query_cameras));
 
         ice::ecs::QueryExecutionScope query_scope = co_await ice::ecs::await_query_on(
-            _query_cameras, params.thread.main
+            query_cameras, params.thread.main
         );
 
         for (auto[entity, camera, ortho, persp] : ice::ecs::query::for_each_entity(query_scope))

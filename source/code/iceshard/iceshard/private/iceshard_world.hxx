@@ -36,7 +36,8 @@ namespace ice
         auto trait_storage(ice::Trait const* trait) const noexcept -> ice::DataStorage const* override { return nullptr; }
 
         auto entities() noexcept -> ice::ecs::EntityIndex& override { return _entities; }
-        auto entity_queries() noexcept -> ice::ecs::QueryProvider& override { return _entity_storage; }
+        auto entity_queries() noexcept -> ice::ecs::QueryProvider const& override { return _entity_storage; }
+        auto entity_queries_storage() noexcept -> ice::ecs::QueryStorage& override { return _entity_query_storage;}
         auto entity_operations() noexcept -> ice::ecs::EntityOperations& override { return _entity_operations; }
 
         void pre_update(ice::ShardContainer& out_shards) noexcept;
@@ -53,6 +54,7 @@ namespace ice
         ice::ProxyAllocator _allocator;
         ice::ecs::EntityIndex& _entities;
         ice::ecs::EntityStorage& _entity_storage;
+        ice::ecs::QueryStorage _entity_query_storage;
         ice::ecs::EntityOperations _entity_operations;
         ice::Array<ice::UniquePtr<ice::IceshardTraitContext>> _traits;
         ice::IceshardTasksLauncher _tasks_launcher;

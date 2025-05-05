@@ -20,6 +20,7 @@ namespace ice
         , _allocator{ alloc, "world-data" }
         , _entities{ entities }
         , _entity_storage{ entity_storage }
+        , _entity_query_storage{ _allocator, _entity_storage }
         , _entity_operations{ _allocator, 16 }
         , _traits{ ice::move(traits) }
         , _tasks_launcher{ context, ice::array::slice(_traits), task_tracker }

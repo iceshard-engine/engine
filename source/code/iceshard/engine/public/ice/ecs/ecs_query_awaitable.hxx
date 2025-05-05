@@ -106,7 +106,7 @@ namespace ice::ecs
             }
 
             constexpr QueryAwaitableBase(QueryAwaitableBase&& other) noexcept
-                : ice::TaskAwaitableBase{ .modifier = ice::TaskAwaitableModifier::CustomResumer }
+                : ice::TaskAwaitableBase{ ._params = { .modifier = ice::TaskAwaitableModifier::CustomResumer } }
                 , _task_queue{ std::exchange(other._task_queue) }
                 , _custom_resumer{ std::exchange(other._custom_resumer, {}) }
                 , _awaited_access_stage{ }
