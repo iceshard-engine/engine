@@ -2,6 +2,7 @@
 #include <ice/asset.hxx>
 #include <ice/config.hxx>
 #include <ice/mem_unique_ptr.hxx>
+#include <ice/resource.hxx>
 #include <ice/resource_tracker.hxx>
 
 namespace ice

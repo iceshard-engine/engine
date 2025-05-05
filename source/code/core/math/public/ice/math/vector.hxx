@@ -90,10 +90,6 @@ namespace ice::math
             : v{ { array[0], array[1], array[2] } }
         { }
 
-        //constexpr mat(T const(&array)[4]) noexcept
-        //    : v{ { array[0] / array[3], array[1] / array[3], array[2] / array[3] } }
-        //{ }
-
         constexpr mat(T x, T y, T z) noexcept
             : v{ { x, y, z } }
         { }
@@ -104,12 +100,16 @@ namespace ice::math
         { }
 
         template<typename U> requires(std::convertible_to<U, T>)
-            constexpr explicit mat(mat<4, 1, U> other) noexcept
+        constexpr explicit mat(mat<4, 1, U> other) noexcept
             : v{ {
                 static_cast<T>(other.x) / static_cast<T>(other.w),
                 static_cast<T>(other.y) / static_cast<T>(other.w),
                 static_cast<T>(other.z) / static_cast<T>(other.w)
             } }
+        { }
+
+        constexpr explicit mat(T const(&array)[4]) noexcept
+            : v{ { array[0] / array[3], array[1] / array[3], array[2] / array[3] } }
         { }
 
         union

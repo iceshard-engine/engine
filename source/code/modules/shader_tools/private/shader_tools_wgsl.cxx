@@ -74,7 +74,6 @@ namespace ice
             if (op && op.data().token.type == TokenType::CT_Dot)
             {
                 arctic::String var_base = atom.data().value.value;
-                arctic::String const atom_sub = op.sibling<syntax::Atom>().data().value.value;
                 var_base = ice::hashmap::get(subs, detail::arc_hash(var_base), var_base);
 
                 ice::string::push_format(out_code, "{}.", var_base);
@@ -184,7 +183,7 @@ namespace ice
             {
                 ice::string::push_back(result, " = ");
 
-                generate_expression(result, subs, func, arg, ret, assignnode.child());
+                generate_expression(result, subs, func, arg, assignnode.child());
             }
         }
 

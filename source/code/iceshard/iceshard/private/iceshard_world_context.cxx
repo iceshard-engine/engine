@@ -1,4 +1,5 @@
 #include "iceshard_world_context.hxx"
+#include "iceshard_world.hxx"
 
 namespace ice
 {

@@ -732,12 +732,6 @@ namespace ice::ecs
                                     dst_data_details /* dst data block */
                                 );
                             }
-
-                            ice::Span<ice::ecs::Entity const> updated_entities = ice::ecs::detail::get_entity_array(
-                                dst_component_info,
-                                dst_data_details,
-                                entities_stored
-                            );
                         }
                         else
                         {
@@ -842,12 +836,6 @@ namespace ice::ecs
                                     src_component_info,
                                     src_data_details, /* src data block */
                                     dst_data_details /* dst data block */
-                                );
-
-                                ice::Span<ice::ecs::Entity const> updated_entities = ice::ecs::detail::get_entity_array(
-                                    src_component_info,
-                                    dst_data_details,
-                                    entities_stored
                                 );
                             }
 
