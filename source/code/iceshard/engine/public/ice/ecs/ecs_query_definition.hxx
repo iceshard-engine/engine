@@ -12,7 +12,7 @@ namespace ice::ecs
     template<ice::ecs::QueryType... QueryComponents>
     struct QueryDefinition
     {
-        using Query = ice::ecs::Query<ice::ecs::QueryDefinition<QueryComponents...>>;
+        using Query = ice::ecs::Query<QueryComponents...>;
 
         static constexpr ice::ucount Constant_ComponentCount = sizeof...(QueryComponents);
         static constexpr ice::StaticArray<ice::ecs::detail::QueryTypeInfo, Constant_ComponentCount> Constant_Requirements =

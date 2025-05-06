@@ -41,14 +41,14 @@ namespace ice
 
         auto queries() noexcept -> ice::ecs::QueryStorage&;
         template<ice::ecs::QueryType... Types>
-        auto query() noexcept -> ice::ecs::Query<ice::ecs::QueryDefinition<Types...>> const&;
+        auto query() noexcept -> ice::ecs::Query<Types...> const&;
 
     protected:
         ice::TraitContext& _context;
     };
 
     template<ice::ecs::QueryType... Types>
-    auto Trait::query() noexcept -> ice::ecs::Query<ice::ecs::QueryDefinition<Types...>> const&
+    auto Trait::query() noexcept -> ice::ecs::Query<Types...> const&
     {
         return queries().get(ice::ecs::QueryDefinition<Types...>{});
     }

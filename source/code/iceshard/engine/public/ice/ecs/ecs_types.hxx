@@ -21,9 +21,6 @@ namespace ice::ecs
     struct QueryProvider;
     struct QueryAccessTracker;
 
-    template<typename Definition>
-    struct Query;
-
     struct QueryView;
 
 } // namespace ice::ecs

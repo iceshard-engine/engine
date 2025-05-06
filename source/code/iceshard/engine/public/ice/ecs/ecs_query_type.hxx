@@ -57,4 +57,7 @@ namespace ice::ecs
 
     using ice::ecs::detail::QueryType;
 
+    template<ice::ecs::QueryType... QueryComponents>
+    struct Query;
+
 } // namespace ice::ecs

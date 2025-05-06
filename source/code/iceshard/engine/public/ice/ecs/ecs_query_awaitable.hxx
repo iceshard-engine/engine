@@ -17,12 +17,14 @@ namespace ice::ecs
         static constexpr ice::u32 QueryAccessCounterAddition[]{ 0x0000'0001, 0x0001'0000 };
         static constexpr ice::u32 QueryAccessCounterMask[]{ 0xffff'0000, 0xffff'ffff };
 
-        template<typename Definition>
+        template<ice::ecs::QueryType... QueryComponents>
         bool internal_query_is_resumable(
-            ice::ecs::Query<Definition> const& query,
-            ice::u32 const(&awaited_access_stage)[Definition::Constant_ComponentCount]
+            ice::ecs::Query<QueryComponents...> const& query,
+            ice::u32 const(&awaited_access_stage)[sizeof...(QueryComponents)]
         ) noexcept
         {
+            using Definition = typename ice::ecs::Query<QueryComponents...>::Definition;
+
             // Go through all components and check if we can be resumed
             bool resumable = true;
             for (ice::u32 idx = 0; resumable && idx < Definition::Constant_ComponentCount; ++idx)
@@ -40,12 +42,14 @@ namespace ice::ecs
             return resumable;
         }
 
-        template<typename Definition>
+        template<ice::ecs::QueryType... QueryComponents>
         inline auto internal_query_request_access_counters(
-            ice::ecs::Query<Definition> const& query,
-            ice::u32(&awaited_access_stage)[Definition::Constant_ComponentCount]
+            ice::ecs::Query<QueryComponents...> const& query,
+            ice::u32(&awaited_access_stage)[sizeof...(QueryComponents)]
         ) noexcept
         {
+            using Definition = typename ice::ecs::Query<QueryComponents...>::Definition;
+
             for (ice::u32 idx = 0; idx < Definition::Constant_ComponentCount; ++idx)
             {
                 ice::ecs::QueryAccessTracker& tracker = *query.access_trackers[idx];
@@ -59,11 +63,13 @@ namespace ice::ecs
             }
         }
 
-        template<typename Definition>
+        template<ice::ecs::QueryType... QueryComponents>
         inline auto internal_query_release_access_counters(
-            ice::ecs::Query<Definition> const& query
+            ice::ecs::Query<QueryComponents...> const& query
         ) noexcept
         {
+            using Definition = typename ice::ecs::Query<QueryComponents...>::Definition;
+
             for (ice::u32 idx = 0; idx < Definition::Constant_ComponentCount; ++idx)
             {
                 ice::ecs::QueryAccessTracker& tracker = *query.access_trackers[idx];
@@ -75,26 +81,26 @@ namespace ice::ecs
             }
         }
 
-        template<typename Definition>
+        template<ice::ecs::QueryType... QueryComponents>
         struct QueryAwaitableBase : ice::TaskAwaitableBase
         {
             ice::TaskQueue* _task_queue;
             ice::TaskAwaitableCustomResumer _custom_resumer;
-            ice::u32 _awaited_access_stage[Definition::Constant_ComponentCount]{};
+            ice::u32 _awaited_access_stage[sizeof...(QueryComponents)]{};
 
-            static inline auto internal_get_query(void* userdata) noexcept -> ice::ecs::Query<Definition> const&
+            static inline auto internal_get_query(void* userdata) noexcept -> ice::ecs::Query<QueryComponents...> const&
             {
-                return *reinterpret_cast<ice::ecs::Query<Definition> const*>(userdata);
+                return *reinterpret_cast<ice::ecs::Query<QueryComponents...> const*>(userdata);
             }
 
             static inline bool internal_query_resumer(void* userdata, ice::TaskAwaitableBase const& awaitable) noexcept
             {
-                QueryAwaitableBase<Definition> const& self = static_cast<QueryAwaitableBase<Definition> const&>(awaitable);
+                QueryAwaitableBase<QueryComponents...> const& self = static_cast<QueryAwaitableBase<QueryComponents...> const&>(awaitable);
 
                 return internal_query_is_resumable(internal_get_query(userdata), self._awaited_access_stage);
             }
 
-            constexpr QueryAwaitableBase(ice::ecs::Query<Definition> const& query, ice::TaskQueue& task_queue) noexcept
+            constexpr QueryAwaitableBase(ice::ecs::Query<QueryComponents...> const& query, ice::TaskQueue& task_queue) noexcept
                 : ice::TaskAwaitableBase{ ._params = { .modifier = ice::TaskAwaitableModifier::CustomResumer } }
                 , _task_queue{ ice::addressof(task_queue) }
                 , _custom_resumer{ }
@@ -124,7 +130,7 @@ namespace ice::ecs
                 return *this;
             }
 
-            inline auto query() const noexcept -> ice::ecs::Query<Definition> const&
+            inline auto query() const noexcept -> ice::ecs::Query<QueryComponents...> const&
             {
                 return internal_get_query(_custom_resumer.ud_resumer);
             }

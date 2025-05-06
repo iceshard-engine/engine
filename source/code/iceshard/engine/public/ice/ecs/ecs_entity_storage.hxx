@@ -54,6 +54,15 @@ namespace ice::ecs
             ice::Array<ice::ecs::DataBlock const*>& out_data_blocks
         ) const noexcept override;
 
+#if 0
+        void query_expand_internal(
+            ice::Span<ice::ecs::detail::QueryTypeInfo const> query_info,
+            ice::Span<ice::ecs::QueryAccessTracker*> out_access_trackers,
+            ice::Array<ice::ecs::ArchetypeInstanceInfo const*>& out_instance_infos,
+            ice::Array<ice::ecs::DataBlock const*>& out_data_blocks
+        ) const noexcept override;
+#endif
+
     private:
         ice::ProxyAllocator _allocator;
         ice::ecs::EntityIndex _entity_index;
