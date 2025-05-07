@@ -60,4 +60,10 @@ namespace ice::ecs
     template<ice::ecs::QueryType... QueryComponents>
     struct Query;
 
+    template<typename... QueryParts>
+    struct Query_v2;
+
+    template<ice::u32 CompIdx, ice::ecs::QueryType... QueryComponents>
+    struct QueryPart;
+
 } // namespace ice::ecs

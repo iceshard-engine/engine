@@ -41,6 +41,10 @@ namespace ice::ecs
             ice::String name
         ) const noexcept -> ice::ecs::Archetype override;
 
+        auto query_data_slot(
+            ice::ecs::Entity entity
+        ) const noexcept -> ice::ecs::EntityDataSlot override;
+
         auto query_data_slots(
             ice::Span<ice::ecs::Entity const> requested,
             ice::Span<ice::ecs::EntityDataSlot> out_data_slots
@@ -48,6 +52,13 @@ namespace ice::ecs
 
     protected:
         void query_internal(
+            ice::Span<ice::ecs::detail::QueryTypeInfo const> query_info,
+            ice::Span<ice::ecs::QueryAccessTracker*> out_access_trackers,
+            ice::Array<ice::ecs::ArchetypeInstanceInfo const*>& out_instance_infos,
+            ice::Array<ice::ecs::DataBlock const*>& out_data_blocks
+        ) const noexcept override;
+
+        void query_internal_v2(
             ice::Span<ice::ecs::detail::QueryTypeInfo const> query_info,
             ice::Span<ice::ecs::QueryAccessTracker*> out_access_trackers,
             ice::Array<ice::ecs::ArchetypeInstanceInfo const*>& out_instance_infos,
