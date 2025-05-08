@@ -980,7 +980,7 @@ namespace ice::ecs
         ice::StackAllocator<512_B> archetypes_alloc{};
         ice::Array<ice::ecs::Archetype> archetypes{ archetypes_alloc };
         ice::array::reserve(archetypes, ice::mem_max_capacity<ice::ecs::Archetype>(archetypes_alloc.Constant_InternalCapacity));
-        _archetype_index.find_archetypes(query_info, archetypes);
+        _archetype_index.find_archetypes(archetypes, query_info);
 
         ice::u32 const archetype_count = ice::count(archetypes);
         ice::array::resize(out_instance_infos, archetype_count);
@@ -1008,6 +1008,7 @@ namespace ice::ecs
 
     void EntityStorage::query_internal_v2(
         ice::Span<ice::ecs::detail::QueryTypeInfo const> query_info,
+        ice::Span<ice::StringID const> query_tags,
         ice::Span<ice::ecs::QueryAccessTracker*> out_access_trackers,
         ice::Array<ice::ecs::ArchetypeInstanceInfo const*>& out_instance_infos,
         ice::Array<ice::ecs::DataBlock const*>& out_data_blocks
@@ -1017,7 +1018,7 @@ namespace ice::ecs
         ice::StackAllocator<512_B> archetypes_alloc{};
         ice::Array<ice::ecs::Archetype> archetypes{ archetypes_alloc };
         ice::array::reserve(archetypes, ice::mem_max_capacity<ice::ecs::Archetype>(archetypes_alloc.Constant_InternalCapacity));
-        _archetype_index.find_archetypes(query_info, archetypes);
+        _archetype_index.find_archetypes(archetypes, query_info, query_tags);
 
         ice::u32 const prev_archetype_count = ice::count(out_instance_infos);
         ice::u32 const new_archetype_count = ice::count(archetypes);

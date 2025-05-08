@@ -236,4 +236,9 @@ namespace ice
         return value == strid_hash;
     }
 
+    constexpr auto operator<=>(ice::StringID_Arg left, ice::StringID_Arg right) noexcept
+    {
+        return left.value.value <=> right.value.value;
+    }
+
 } // namespace ice

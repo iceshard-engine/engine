@@ -29,34 +29,58 @@ namespace ice::ecs
         }
 
         auto contains_required_components(
-            ice::Span<ice::ecs::detail::QueryTypeInfo const> const& conditions,
-            ice::Span<ice::StringID const> const& identifiers
+            ice::Span<ice::ecs::detail::QueryTypeInfo const> in_conditions,
+            ice::Span<ice::StringID const> in_required_tags,
+            ice::Span<ice::StringID const> checked_identifiers
         ) noexcept -> ice::u32
         {
             using QueryTypeInfo = ice::ecs::detail::QueryTypeInfo;
 
-            ice::u32 const condition_count = ice::count(conditions);
-            ice::u32 const identifier_count = ice::count(identifiers);
+            ice::u32 const tag_count = ice::count(in_required_tags);
+            ice::u32 const condition_count = ice::count(in_conditions);
+            ice::u32 const identifier_count = ice::count(checked_identifiers);
             ice::u32 const identifier_last_index = identifier_count - 1;
 
+            ice::u32 tag_idx = 0;
             ice::u32 condition_idx = 0;
+            // We skip the first identifier, since it's always the 'entity' ID
             ice::u32 identifier_idx = 1;
-            ice::u64 identifier_hash = ice::hash(identifiers[1]);
+            ice::u64 identifier_hash = ice::hash(checked_identifiers[1]);
+
+            bool result = true;
+            for (; (tag_idx < tag_count) && (identifier_idx < identifier_count) && result; ++tag_idx)
+            {
+                ice::u64 const tag_hash = ice::hash(in_required_tags[tag_idx]);
+
+                // As long as `tag_hash` is greater than `identifier_hash` check the next identifier.
+                while (tag_hash > identifier_hash && identifier_idx < identifier_last_index)
+                {
+                    identifier_idx += 1;
+                    identifier_hash = ice::hash(checked_identifiers[identifier_idx]);
+                }
+
+                // We only allow equality checks for tags
+                //  - if we failed the whole archetypes is removed as a possible match.
+                result &= (identifier_hash == tag_hash);
+            }
 
             // As long as we have something to check and we did not fail search for the next ID
             ice::u32 matched_components = 0;
 
-            bool result = true;
+            // Reset for checking the remaining conditions
+            identifier_idx = 1;
+            identifier_hash = ice::hash(checked_identifiers[1]);
+
             for (; (condition_idx < condition_count) && (identifier_idx < identifier_count) && result; ++condition_idx)
             {
-                QueryTypeInfo const& condition = conditions[condition_idx];
+                QueryTypeInfo const& condition = in_conditions[condition_idx];
                 ice::u64 const condition_hash = ice::hash(condition.identifier);
 
                 // As long as `condition_hash` is greater than `identifier_hash` check the next identifier.
                 while (condition_hash > identifier_hash && identifier_idx < identifier_last_index)
                 {
                     identifier_idx += 1;
-                    identifier_hash = ice::hash(identifiers[identifier_idx]);
+                    identifier_hash = ice::hash(checked_identifiers[identifier_idx]);
                 }
 
                 // We are either equal or smaller
@@ -311,8 +335,9 @@ namespace ice::ecs
     }
 
     void ArchetypeIndex::find_archetypes(
+        ice::Array<ice::ecs::Archetype>& out_archetypes,
         ice::Span<ice::ecs::detail::QueryTypeInfo const> query_info,
-        ice::Array<ice::ecs::Archetype>& out_archetypes
+        ice::Span<ice::StringID const> query_tags
     ) const noexcept
     {
         ice::array::clear(out_archetypes);
@@ -324,6 +349,7 @@ namespace ice::ecs
             query_info = ice::span::subspan(query_info, 1);
         }
 
+        ice::u32 const required_tag_count = ice::count(query_tags);
         ice::u32 const required_component_count = [](auto const& query_conditions) noexcept -> ice::u32
         {
             ice::u32 result = 0;
@@ -334,23 +360,26 @@ namespace ice::ecs
             return result;
         }(query_info);
 
+
         ICE_ASSERT(
-            required_component_count != 0,
-            "An query without any required component might impact performance as it will check every archetype possible for a match."
+            (required_component_count != 0) || (required_tag_count != 0),
+            "An query without any required components or tags might impact performance as it will check every archetype possible for a match."
         );
 
+        ice::u32 const total_required_type_count = required_component_count + required_tag_count;
         for (ArchetypeDataHeader const* entry : ice::array::slice(_archetype_data, 1))
         {
             ArchetypeInstanceInfo const& archetype_info = entry->archetype_info;
 
             ice::u32 const archetype_component_count = ice::count(archetype_info.component_identifiers);
-            if (archetype_component_count < required_component_count)
+            if (archetype_component_count < total_required_type_count)
             {
                 continue;
             }
 
             ice::u32 const matched_components = ice::ecs::detail::contains_required_components(
                 query_info,
+                query_tags,
                 archetype_info.component_identifiers
             );
 

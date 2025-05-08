@@ -43,6 +43,12 @@ namespace ice
         template<ice::ecs::QueryType... Types>
         auto query() noexcept -> ice::ecs::Query<Types...> const&;
 
+        template<ice::ecs::QueryType... Types>
+        auto query2() noexcept
+        {
+            return queries().build<Types...>();
+        }
+
     protected:
         ice::TraitContext& _context;
     };

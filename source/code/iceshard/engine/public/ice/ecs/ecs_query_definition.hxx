@@ -55,4 +55,16 @@ namespace ice::ecs
         ice::StaticArray<ice::ecs::detail::QueryTypeInfo, Constant_ComponentCount> const requirements = ice::ecs::detail::QueryRequirements<QueryComponents...>::Constant_Requirements;
     };
 
+    //! \brief A static compile-time definition of a Query that can be executed during frame.
+    //! \tparam ...QueryComponents Component types, with decorators, we want to access in the qyery.
+    //!
+    //! \example QueryDefinition<ComponentB&, const ComponentA*>
+    template<ice::ecs::QueryTagType... Tags>
+    struct QueryTagsDefinition
+    {
+        static constexpr ice::ucount Constant_TagCount = sizeof...(Tags);
+        static constexpr ice::StaticArray<ice::StringID, Constant_TagCount> Constant_Tags =
+            ice::ecs::detail::QueryTags<Tags...>::Constant_Tags;
+    };
+
 } // namespace ice::ecs

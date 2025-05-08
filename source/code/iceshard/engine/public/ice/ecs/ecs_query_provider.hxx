@@ -26,7 +26,8 @@ namespace ice::ecs
 
         template<typename... QueryParts>
         void initialize_query_v2(
-            ice::ecs::Query_v2<QueryParts...>& out_query
+            ice::ecs::Query_v2<QueryParts...>& out_query,
+            ice::Span<ice::StringID const> tags = {}
         ) const noexcept;
 
 #if 0
@@ -65,6 +66,7 @@ namespace ice::ecs
 
         virtual void query_internal_v2(
             ice::Span<ice::ecs::detail::QueryTypeInfo const> query_info,
+            ice::Span<ice::StringID const> query_tags,
             ice::Span<ice::ecs::QueryAccessTracker*> out_access_trackers,
             ice::Array<ice::ecs::ArchetypeInstanceInfo const*>& out_instance_infos,
             ice::Array<ice::ecs::DataBlock const*>& out_data_blocks
@@ -73,6 +75,7 @@ namespace ice::ecs
         template<ice::u32 RefIdx, ice::ecs::QueryType... QueryComponents>
         bool initialize_query_part(
             ice::ecs::QueryPart<RefIdx, QueryComponents...> const& query_part,
+            ice::Span<ice::StringID const> query_tags,
             ice::Span<ice::ecs::QueryAccessTracker*> out_access_trackers,
             ice::Array<ice::ecs::ArchetypeInstanceInfo const*>& out_instance_infos,
             ice::Array<ice::ecs::DataBlock const*>& out_data_blocks,
@@ -124,6 +127,7 @@ namespace ice::ecs
     template<ice::u32 RefIdx, ice::ecs::QueryType... QueryComponents>
     bool QueryProvider::initialize_query_part(
         ice::ecs::QueryPart<RefIdx, QueryComponents...> const& query_part,
+        ice::Span<ice::StringID const> query_tags,
         ice::Span<ice::ecs::QueryAccessTracker*> out_access_trackers,
         ice::Array<ice::ecs::ArchetypeInstanceInfo const*>& out_instance_infos,
         ice::Array<ice::ecs::DataBlock const*>& out_data_blocks,
@@ -137,6 +141,7 @@ namespace ice::ecs
 
         this->query_internal_v2(
             ice::span::from_std_const(Part::Definition::Constant_Requirements),
+            (RefIdx == 0 ? query_tags : ice::Span<ice::StringID const>{}), // We only want to apply tags on the main part
             out_access_trackers,
             out_instance_infos,
             out_data_blocks
@@ -161,18 +166,20 @@ namespace ice::ecs
 
     template<typename... QueryParts>
     void QueryProvider::initialize_query_v2(
-        ice::ecs::Query_v2<QueryParts...>& out_query
+        ice::ecs::Query_v2<QueryParts...>& out_query,
+        ice::Span<ice::StringID const> query_required_tags
     ) const noexcept
     {
         // Store the query provider.
         out_query.provider = this;
 
-        auto const helper = [this, &out_query]<std::size_t... Idx>(std::index_sequence<Idx...> seq) noexcept
+        auto const helper = [this, &out_query, &query_required_tags]<std::size_t... Idx>(std::index_sequence<Idx...> seq) noexcept
         {
             [[maybe_unused]]
             bool const query_results[]{
                 this->initialize_query_part(
                     QueryParts{},
+                    query_required_tags,
                     out_query.access_trackers,
                     out_query.archetype_instances,
                     out_query.archetype_data_blocks,

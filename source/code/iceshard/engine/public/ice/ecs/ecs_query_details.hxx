@@ -31,6 +31,21 @@ namespace ice::ecs::detail
     };
 
 
+    template<QueryTagType... Tags>
+    struct UnsortedQueryTags
+    {
+        static constexpr ice::StaticArray<ice::StringID, sizeof...(Tags)> const Constant_Tags{
+            ice::ecs::Constant_ComponentIdentifier<Tags>...
+        };
+    };
+
+    template<QueryTagType... Tags>
+    struct QueryTags
+    {
+        static constexpr ice::StaticArray<ice::StringID, sizeof...(Tags)> const Constant_Tags =
+            constexpr_sort_array(UnsortedQueryTags<Tags...>::Constant_Tags, 0);
+    };
+
     template<QueryType Arg>
     struct QueryIteratorArgument { };
 

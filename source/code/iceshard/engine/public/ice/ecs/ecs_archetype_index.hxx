@@ -35,8 +35,9 @@ namespace ice::ecs
         ) const noexcept -> ice::ecs::Archetype;
 
         void find_archetypes(
+            ice::Array<ice::ecs::Archetype>& out_archetypes,
             ice::Span<ice::ecs::detail::QueryTypeInfo const> query_info,
-            ice::Array<ice::ecs::Archetype>& out_archetypes
+            ice::Span<ice::StringID const> query_tags = {}
         ) const noexcept;
 
         void fetch_archetype_instance_infos(

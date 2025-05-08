@@ -19,6 +19,9 @@ namespace ice::ecs
         constexpr bool Constant_QueryTypeIsOptional = ice::ecs::IsEntity<T> == false
             && std::is_pointer_v<T>;
 
+        template<typename T>
+        concept QueryTagType = (ice::ecs::Component<T> || ice::ecs::ComponentTag<T>) && !std::is_reference_v<T> && !std::is_pointer_v<T>;
+
         struct QueryTypeInfo
         {
             ice::StringID identifier;
@@ -56,6 +59,7 @@ namespace ice::ecs
     } // namespace detail
 
     using ice::ecs::detail::QueryType;
+    using ice::ecs::detail::QueryTagType;
 
     template<ice::ecs::QueryType... QueryComponents>
     struct Query;

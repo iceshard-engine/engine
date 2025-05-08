@@ -16,8 +16,11 @@ namespace ice::ecs
         virtual void initialize(ice::ecs::QueryProvider const& provider) noexcept = 0;
     };
 
-    template<typename... QueryParts>
-    class QueryEntry_v2 : public QueryStorageEntry
+    template<typename... T>
+    class QueryEntry_v2;
+
+    template<typename... QueryParts, ice::ecs::QueryTagType... QueryTags>
+    class QueryEntry_v2<Query_v2<QueryParts...>, QueryTags...> : public QueryStorageEntry
     {
     public:
         using QueryType = ice::ecs::Query_v2<QueryParts...>;
@@ -35,8 +38,14 @@ namespace ice::ecs
 
         void initialize(ice::ecs::QueryProvider const& provider) noexcept override
         {
-            //provider.initialize_query_v2(query);
-            //provider.initialize_query(query);
+            if constexpr (sizeof...(QueryTags) > 0)
+            {
+                provider.initialize_query_v2(query, ice::span::from_std_const(ice::ecs::QueryTagsDefinition<QueryTags...>::Constant_Tags));
+            }
+            else
+            {
+                provider.initialize_query_v2(query);
+            }
         }
 
         static auto query_hash() noexcept -> ice::u64
@@ -46,10 +55,14 @@ namespace ice::ecs
     };
 
     template<typename... QueryParts>
-    class QueryBuilder
+    class QueryBuilder;
+
+
+    template<typename... QueryParts, ice::ecs::QueryTagType... QueryTags>
+    class QueryBuilder<Query_v2<QueryParts...>, QueryTags...>
     {
     public:
-        using QueryEntryType = ice::ecs::QueryEntry_v2<QueryParts...>;
+        using QueryEntryType = ice::ecs::QueryEntry_v2<Query_v2<QueryParts...>, QueryTags...>;
 
         QueryBuilder(
             ice::Allocator& alloc,
@@ -57,7 +70,6 @@ namespace ice::ecs
             ice::ecs::QueryProvider const& query_provider
         ) noexcept
             : _allocator{ alloc }
-            , _entry{ ice::make_unique<ice::ecs::QueryEntry_v2<QueryParts...>>(alloc, alloc) }
             , _queries{ queries }
             , _query_provider{ query_provider }
         { }
@@ -67,24 +79,25 @@ namespace ice::ecs
         }
 
         template<ice::u32 RefIdx, ice::ecs::QueryType... QueryComponents>
-        auto with() const noexcept -> QueryBuilder<QueryParts..., QueryPart<RefIdx, QueryComponents...>>
+        auto with() const noexcept -> QueryBuilder<Query_v2<QueryParts..., QueryPart<RefIdx, QueryComponents...>>, QueryTags...>
         {
             return { _allocator, _queries, _query_provider };
         }
 
-        template<ice::ecs::ComponentTag... Tags>
-        auto tags() noexcept -> QueryBuilder&
+        template<ice::ecs::QueryTagType... Tags>
+        auto tags() const noexcept -> QueryBuilder<Query_v2<QueryParts...>, Tags...>
         {
-            //ice::ecs::QueryDefinition<QueryComponents..., Tags const&...> definition;
-            return *this;
+            static_assert(sizeof...(QueryTags) == 0, "Setting tags more than once for a query is not supported!");
+            return { _allocator, _queries, _query_provider };
         }
 
-        operator ice::ecs::Query_v2<QueryParts...> const& () noexcept
+        auto finish() noexcept -> ice::ecs::Query_v2<QueryParts...> const&
         {
             if (ice::hashmap::has(_queries, QueryEntryType::query_hash()) == false)
             {
-                _query_provider.initialize_query_v2(_entry->query);
-                ice::hashmap::set(_queries, QueryEntryType::query_hash(), ice::move(_entry));
+                ice::UniquePtr entry = ice::make_unique<QueryEntryType>(_allocator, _allocator);
+                entry->initialize(_query_provider);
+                ice::hashmap::set(_queries, QueryEntryType::query_hash(), ice::move(entry));
             }
 
             return static_cast<QueryEntryType const*>(
@@ -92,12 +105,85 @@ namespace ice::ecs
             )->query;
         }
 
+        operator ice::ecs::Query_v2<QueryParts...> const& () noexcept
+        {
+            return finish();
+        }
+
     private:
         ice::Allocator& _allocator;
-        ice::UniquePtr<QueryEntryType> _entry;
         ice::HashMap<ice::UniquePtr<ice::ecs::QueryStorageEntry>>& _queries;
         ice::ecs::QueryProvider const& _query_provider;
     };
+
+    template<typename... QueryParts>
+    struct Query_
+    {
+    public:
+        using QueryType = ice::ecs::Query_v2<QueryParts...>;
+        using QueryTupleResult = typename QueryType::QueryTupleResult;
+        using QueryBlockTupleResult = typename QueryType::QueryBlockTupleResult;
+
+        inline Query_(QueryType const& query) noexcept
+            : _query{ query }
+        { }
+
+        template<ice::ecs::QueryTagType... Tags>
+        inline Query_(ice::ecs::QueryBuilder<QueryType, Tags...>&& builder) noexcept
+            : _query{ builder.finish() }
+        { }
+
+    public:
+        inline auto entity_count() const noexcept -> ice::ucount;
+
+        inline auto for_entity(ice::ecs::Entity entity) const noexcept -> QueryTupleResult;
+
+        inline auto for_each_entity() const noexcept -> ice::Generator<QueryTupleResult>;
+
+    public:
+        inline auto block_count() const noexcept -> ice::ucount;
+
+        inline auto for_each_block() const noexcept -> ice::Generator<QueryBlockTupleResult>;
+
+    private:
+        Query_v2<QueryParts...> const& _query;
+    };
+
+    template<typename... QueryParts> Query_(Query_v2<QueryParts...>&&) noexcept -> Query_<QueryParts...>;
+    template<typename... QueryParts> Query_(Query_v2<QueryParts...> const&) noexcept -> Query_<QueryParts...>;
+
+    template<typename... QueryParts, ice::ecs::QueryTagType... Tags> Query_(QueryBuilder<Query_v2<QueryParts...>, Tags...>&&) noexcept -> Query_<QueryParts...>;
+
+
+    template<typename... QueryParts>
+    inline auto Query_<QueryParts...>::entity_count() const noexcept -> ice::ucount
+    {
+        return ice::ecs::query_v2::entity_count(_query);
+    }
+
+    template<typename... QueryParts>
+    inline auto Query_<QueryParts...>::block_count() const noexcept -> ice::ucount
+    {
+        return ice::ecs::query_v2::block_count(_query);
+    }
+
+    template<typename... QueryParts>
+    inline auto Query_<QueryParts...>::for_entity(ice::ecs::Entity entity) const noexcept -> typename Query_v2<QueryParts...>::QueryTupleResult
+    {
+        return ice::ecs::query_v2::for_entity(_query, entity);
+    }
+
+    template<typename... QueryParts>
+    inline auto Query_<QueryParts...>::for_each_entity() const noexcept -> ice::Generator<typename Query_v2<QueryParts...>::QueryTupleResult>
+    {
+        return ice::ecs::query_v2::for_each_entity(_query);
+    }
+
+    template<typename... QueryParts>
+    inline auto Query_<QueryParts...>::for_each_block() const noexcept -> ice::Generator<typename Query_v2<QueryParts...>::QueryBlockTupleResult>
+    {
+        return ice::ecs::query_v2::for_each_block(_query);
+    }
 
     template<ice::ecs::QueryType... Types>
     class QueryEntry : public QueryStorageEntry
@@ -212,7 +298,7 @@ namespace ice::ecs
         template<ice::ecs::QueryType... Types>
         auto build(
             ice::ecs::QueryDefinition<Types...> const& = { }
-        ) noexcept -> ice::ecs::QueryBuilder<QueryPart<0, Types...>>;
+        ) noexcept -> ice::ecs::QueryBuilder<Query_v2<QueryPart<0, Types...>>>;
 
     private:
         ice::Allocator& _allocator;
@@ -254,7 +340,7 @@ namespace ice::ecs
     template<ice::ecs::QueryType... Types>
     auto QueryStorage::build(
         ice::ecs::QueryDefinition<Types...> const&
-    ) noexcept -> ice::ecs::QueryBuilder<QueryPart<0, Types...>>
+    ) noexcept -> ice::ecs::QueryBuilder<Query_v2<QueryPart<0, Types...>>>
     {
         return { _allocator, _queries, _provider };
     }
@@ -262,14 +348,12 @@ namespace ice::ecs
     namespace query_v2
     {
 
-        template<typename... QueryParts>
+        template<typename... QueryParts, ice::ecs::QueryTagType... Tags>
         inline auto for_each_entity(
-            ice::ecs::QueryBuilder<QueryParts...>&& query_builder
+            ice::ecs::QueryBuilder<Query_v2<QueryParts...>, Tags...>&& query_builder
         ) noexcept -> ice::Generator<typename ice::ecs::Query_v2<QueryParts...>::QueryTupleResult>
         {
-            return ice::ecs::query_v2::for_each_entity(
-                static_cast<ice::ecs::Query_v2<QueryParts...> const&>(query_builder)
-            );
+            return ice::ecs::query_v2::for_each_entity(query_builder.finish());
         }
 
     }

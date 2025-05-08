@@ -60,6 +60,7 @@ namespace ice::ecs
 
         void query_internal_v2(
             ice::Span<ice::ecs::detail::QueryTypeInfo const> query_info,
+            ice::Span<ice::StringID const> query_tags,
             ice::Span<ice::ecs::QueryAccessTracker*> out_access_trackers,
             ice::Array<ice::ecs::ArchetypeInstanceInfo const*>& out_instance_infos,
             ice::Array<ice::ecs::DataBlock const*>& out_data_blocks
