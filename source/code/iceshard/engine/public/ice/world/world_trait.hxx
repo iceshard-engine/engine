@@ -4,6 +4,8 @@
 #pragma once
 #include <ice/ecs/ecs_types.hxx>
 #include <ice/ecs/ecs_query_storage.hxx>
+#include <ice/ecs/ecs_query_builder.hxx>
+
 #include <ice/world/world_trait_types.hxx>
 #include <ice/world/world_trait_context.hxx>
 #include <ice/shard_container.hxx>
@@ -37,27 +39,17 @@ namespace ice
 
         auto entities() noexcept -> ice::ecs::EntityIndex&;
         auto entity_operations() noexcept -> ice::ecs::EntityOperations&;
-        auto entity_queries() noexcept -> ice::ecs::QueryProvider const&;
-
-        auto queries() noexcept -> ice::ecs::QueryStorage&;
-        template<ice::ecs::QueryType... Types>
-        auto query() noexcept -> ice::ecs::Query<Types...> const&;
+        auto entity_queries() noexcept -> ice::ecs::QueryStorage&;
 
         template<ice::ecs::QueryType... Types>
-        auto query2() noexcept
+        auto query() noexcept -> ice::ecs::QueryBuilder<ice::ecs::QueryObject<ice::ecs::QueryObjectPart<0, Types...>>>
         {
-            return queries().build<Types...>();
+            return entity_queries().build<Types...>();
         }
 
     protected:
         ice::TraitContext& _context;
     };
-
-    template<ice::ecs::QueryType... Types>
-    auto Trait::query() noexcept -> ice::ecs::Query<Types...> const&
-    {
-        return queries().get(ice::ecs::QueryDefinition<Types...>{});
-    }
 
     class TraitDevUI : public ice::DevUIWidget
     {

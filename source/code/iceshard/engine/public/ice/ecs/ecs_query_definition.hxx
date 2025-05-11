@@ -12,8 +12,6 @@ namespace ice::ecs
     template<ice::ecs::QueryType... QueryComponents>
     struct QueryDefinition
     {
-        using Query = ice::ecs::Query<QueryComponents...>;
-
         static constexpr ice::ucount Constant_ComponentCount = sizeof...(QueryComponents);
         static constexpr ice::StaticArray<ice::ecs::detail::QueryTypeInfo, Constant_ComponentCount> Constant_Requirements =
             ice::ecs::detail::QueryRequirements<QueryComponents...>::Constant_Requirements;
@@ -38,18 +36,6 @@ namespace ice::ecs
             );
         }
 
-        // template<typename Fn>
-        // static void invoke_for_each_entity_fn(void* fnp, ice::u32 count, void** component_pointer_array) noexcept
-        // {
-        //     return invoke_for_each_entity((Fn)fnp, count, component_pointer_array);
-        // }
-
-        // template<typename Fn>
-        // static void invoke_for_each_entity_op(void* obj, ice::u32 count, void** component_pointer_array) noexcept
-        // {
-        //     return invoke_for_each_entity(*(Fn*)obj, count, component_pointer_array);
-        // }
-
         ice::u32 const component_count = Constant_ComponentCount;
 
         ice::StaticArray<ice::ecs::detail::QueryTypeInfo, Constant_ComponentCount> const requirements = ice::ecs::detail::QueryRequirements<QueryComponents...>::Constant_Requirements;
@@ -66,5 +52,22 @@ namespace ice::ecs
         static constexpr ice::StaticArray<ice::StringID, Constant_TagCount> Constant_Tags =
             ice::ecs::detail::QueryTags<Tags...>::Constant_Tags;
     };
+
+    namespace detail
+    {
+
+        template<typename Types>
+        struct QueryDefinitionFromTupleHelper;
+
+        template<ice::ecs::QueryType... Types>
+        struct QueryDefinitionFromTupleHelper<std::tuple<Types...>>
+        {
+            using Definition = ice::ecs::QueryDefinition<Types...>;
+        };
+
+    } // namespace detail
+
+    template<typename TypesTuple>
+    using QueryDefinitionFromTuple = typename ice::ecs::detail::QueryDefinitionFromTupleHelper<TypesTuple>::Definition;
 
 } // namespace ice::ecs

@@ -8,7 +8,6 @@ namespace ice::ecs
 {
 
     enum class Entity : ice::u32;
-    enum class EntityHandle : ice::u64;
 
     struct ArchetypeInfo;
 
@@ -16,6 +15,18 @@ namespace ice::ecs
     class EntityIndex;
     class EntityStorage;
     class EntityOperations;
+
+
+    enum class QueryPolicy
+    {
+        Unchecked,
+        Synchronized,
+
+        Default = Unchecked,
+    };
+
+    template<ice::ecs::QueryPolicy Policy, typename... Parts>
+    struct Query;
 
     class QueryStorage;
     struct QueryProvider;

@@ -38,7 +38,6 @@ namespace ice::ecs
             return ice::hash(left.identifier) < ice::hash(right.identifier);
         }
 
-
         template<QueryType T>
         struct QueryComponentTypeInfo
         {
@@ -60,14 +59,5 @@ namespace ice::ecs
 
     using ice::ecs::detail::QueryType;
     using ice::ecs::detail::QueryTagType;
-
-    template<ice::ecs::QueryType... QueryComponents>
-    struct Query;
-
-    template<typename... QueryParts>
-    struct Query_v2;
-
-    template<ice::u32 CompIdx, ice::ecs::QueryType... QueryComponents>
-    struct QueryPart;
 
 } // namespace ice::ecs

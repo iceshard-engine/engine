@@ -1,0 +1,661 @@
+#pragma once
+#include <ice/ecs/ecs_query_object.hxx>
+#include <ice/ecs/ecs_query_provider.hxx>
+#include <ice/ecs/ecs_query_awaitable.hxx>
+
+namespace ice::ecs
+{
+
+    struct TraitQueryOperations
+    {
+    public:
+        template<typename Self>
+        inline auto entity_count(this Self const& self) noexcept -> ice::ucount;
+
+        template<typename Self>
+        inline auto for_entity(this Self const& self, ice::ecs::Entity entity) noexcept -> typename Self::ResultType;
+
+        template<typename Self>
+        inline auto for_each_entity(this Self const& self) noexcept -> ice::Generator<typename Self::ResultType>;
+
+        template<typename Self, typename Fn>
+        inline void for_each_entity(this Self const& self, Fn&& fn) noexcept;
+
+    public:
+        template<typename Self>
+        inline auto block_count(this Self const& self) noexcept -> ice::ucount;
+
+        template<typename Self>
+        inline auto for_each_block(this Self const& self) noexcept -> ice::Generator<typename Self::BlockResultType>;
+
+        template<typename Self, typename Fn>
+        inline void for_each_block(this Self const& self, Fn&& fn) noexcept;
+    };
+
+    namespace detail
+    {
+
+        template<ice::u32 RefIdx, QueryType... T>
+        inline auto create_entity_tuple(
+            ice::u32 index,
+            void** component_pointer_array,
+            ice::ecs::detail::QueryObjectPart<RefIdx, T...>
+        ) noexcept -> ice::ecs::detail::QueryEntityTupleResult<T...>
+        {
+            using QueryTypeTuple = std::tuple<T...>;
+            using QueryTypeTupeResult = ice::ecs::detail::QueryEntityTupleResult<T...>;
+
+            auto const select_entity = [&]<std::size_t... Idx>(std::index_sequence<Idx...>) noexcept
+            {
+                return QueryTypeTupeResult{
+                    ice::ecs::detail::QueryIteratorArgument<std::tuple_element_t<Idx, QueryTypeTuple>>::select_entity_ptr(
+                        ice::ecs::detail::QueryIteratorArgument<std::tuple_element_t<Idx, QueryTypeTuple>>::block_array(component_pointer_array[Idx]),
+                        index * static_cast<ice::u32>(component_pointer_array[Idx] != nullptr)
+                    )...
+                };
+            };
+
+            return select_entity(std::make_index_sequence<sizeof...(T)>{});
+        }
+
+        template<QueryType... TupleTypes, ice::u32 RefIdx, QueryType... SubQueryTypes>
+        inline auto create_entity_tuple_concat(
+            std::tuple<TupleTypes...>&& in_tuple,
+            ice::ecs::QueryProvider const& provider,
+            ice::Span<ice::ecs::ArchetypeInstanceInfo const* const> archetype_instances,
+            ice::Span<ice::ecs::DataBlock const* const> archetype_data_blocks,
+            ice::Span<ice::u32 const> archetype_argument_idx_map,
+            ice::Span<ice::u32 const> archetype_parts_count,
+            ice::ecs::detail::QueryObjectPart<RefIdx, SubQueryTypes...>
+        ) noexcept -> ice::ecs::detail::QueryEntityTupleResult<TupleTypes..., SubQueryTypes...>
+        {
+            using InTuple = ice::ecs::detail::QueryEntityTupleResult<TupleTypes...>;
+            using RefType = std::tuple_element_t<RefIdx, InTuple>;
+            using SubTuple = ice::ecs::detail::QueryEntityTupleResult<SubQueryTypes...>;
+
+            RefType const& ref = std::get<RefIdx>(in_tuple);
+
+
+            static constexpr ice::ucount component_count = sizeof...(SubQueryTypes);
+            ice::ecs::EntityDataSlot const slotinfo = provider.query_data_slot(ref->entity);
+
+            ice::u32 arch_idx = 0;
+            ice::ecs::ArchetypeInstanceInfo const* arch = nullptr;
+            ice::ecs::DataBlock const* block = nullptr;
+
+            for (; arch_idx < archetype_parts_count[0]; ++arch_idx)
+            {
+                arch = archetype_instances[arch_idx];
+                if (arch->archetype_instance == ice::ecs::ArchetypeInstance{ slotinfo.archetype })
+                {
+                    // Find the specific block
+                    ice::u32 slot_block = slotinfo.block;
+                    block = archetype_data_blocks[arch_idx];
+                    while (slot_block > 0 && block != nullptr)
+                    {
+                        block = block->next;
+                        slot_block -= 1;
+                    }
+                    break;
+                }
+            }
+
+            ICE_ASSERT_CORE(arch != nullptr && block != nullptr);
+
+            void* helper_pointer_array[component_count]{ nullptr };
+            ice::Span<ice::u32 const> argument_idx_map = ice::span::subspan(archetype_argument_idx_map, arch_idx * component_count, component_count);
+
+            for (ice::u32 arg_idx = 0; arg_idx < component_count; ++arg_idx)
+            {
+                if (argument_idx_map[arg_idx] == ice::u32_max)
+                {
+                    helper_pointer_array[arg_idx] = nullptr;
+                }
+                else
+                {
+                    ice::u32 const cmp_idx = argument_idx_map[arg_idx];
+
+                    helper_pointer_array[arg_idx] = ice::ptr_add(
+                        block->block_data,
+                        { arch->component_offsets[cmp_idx] }
+                    );
+                }
+            }
+
+            return std::tuple_cat(
+                in_tuple,
+                ice::ecs::detail::create_entity_tuple<SubQueryTypes...>(slotinfo.index, helper_pointer_array)
+            );
+        }
+
+        template<ice::u32 RefIdx, QueryType... T>
+        inline auto create_block_tuple(
+            ice::u32 count,
+            void** component_pointer_array,
+            ice::ecs::detail::QueryObjectPart<RefIdx, T...>
+        ) noexcept -> ice::ecs::detail::QueryBlockTupleResult<T...>
+        {
+            using QueryTypeTuple = std::tuple<T...>;
+            using QueryTypeTupleResult = ice::ecs::detail::QueryBlockTupleResult<T...>;
+
+            auto const enumerate_types = [&]<std::size_t... Idx>(std::index_sequence<Idx...> seq) noexcept -> QueryTypeTupleResult
+            {
+                return QueryTypeTupleResult{ count, ice::ecs::detail::QueryIteratorArgument<std::tuple_element_t<Idx, QueryTypeTuple>>::block_array(component_pointer_array[Idx])... };
+            };
+
+            return enumerate_types(std::make_index_sequence<sizeof...(T)>{});
+        }
+
+        template<typename Fn, ice::ecs::QueryType... QueryTypes, ice::u32 RefIdx, ice::ecs::QueryType... SubQueryTypes>
+        static void invoke_for_each_entity(
+            Fn&& fn,
+            ice::u32 count,
+            void** component_pointer_array,
+            ice::ecs::QueryProvider const& provider,
+            ice::Span<ice::ecs::ArchetypeInstanceInfo const* const> archetype_instances,
+            ice::Span<ice::ecs::DataBlock const* const> archetype_data_blocks,
+            ice::Span<ice::u32 const> archetype_argument_idx_map,
+            ice::Span<ice::u32 const> archetype_parts_count,
+            ice::ecs::detail::QueryObjectPart<0, QueryTypes...>,
+            ice::ecs::detail::QueryObjectPart<RefIdx, SubQueryTypes...>
+        ) noexcept
+        {
+            using QueryTypeTuple = std::tuple<QueryTypes...>;
+            using SubQueryTypeTuple = std::tuple<SubQueryTypes...>;
+
+            static constexpr ice::ucount component_count = sizeof...(SubQueryTypes);
+            void* helper_pointer_array[component_count]{ nullptr };
+
+            auto const invoke_for_entity = [&](
+                typename ice::ecs::detail::QueryIteratorArgument<QueryTypes>::BlockIteratorArg... args,
+                typename ice::ecs::detail::QueryIteratorArgument<SubQueryTypes>::BlockIteratorArg... subargs
+            ) noexcept
+            {
+                ice::forward<Fn>(fn)(
+                    ice::ecs::detail::QueryIteratorArgument<QueryTypes>::select_entity(args, 0)...,
+                    ice::ecs::detail::QueryIteratorArgument<SubQueryTypes>::select_entity(subargs, 0)...
+                );
+            };
+
+            auto const enumerate_entities = [&](
+                ice::u32 count,
+                typename ice::ecs::detail::QueryIteratorArgument<std::tuple_element_t<RefIdx, QueryTypeTuple>>::BlockIteratorArg refcmp,
+                typename ice::ecs::detail::QueryIteratorArgument<QueryTypes>::BlockIteratorArg... args
+            ) noexcept
+            {
+                for (ice::u32 idx = 0; idx < count; ++idx)
+                {
+                    ice::ecs::EntityDataSlot const slotinfo = provider.query_data_slot(refcmp[idx].entity);
+
+                    ice::u32 arch_idx = 0;
+                    ice::ecs::ArchetypeInstanceInfo const* arch = nullptr;
+                    ice::ecs::DataBlock const* block = nullptr;
+
+                    for (; arch_idx < archetype_parts_count[0]; ++arch_idx)
+                    {
+                        arch = archetype_instances[arch_idx];
+                        if (arch->archetype_instance == ice::ecs::ArchetypeInstance{ slotinfo.archetype })
+                        {
+                            // Find the specific block
+                            ice::u32 slot_block = slotinfo.block;
+                            block = archetype_data_blocks[arch_idx];
+                            while (slot_block > 0 && block != nullptr)
+                            {
+                                block = block->next;
+                                slot_block -= 1;
+                            }
+                            break;
+                        }
+                    }
+
+                    ICE_ASSERT_CORE(arch != nullptr && block != nullptr);
+
+                    ice::Span<ice::u32 const> argument_idx_map = ice::span::subspan(archetype_argument_idx_map, arch_idx * component_count, component_count);
+
+                    for (ice::u32 arg_idx = 0; arg_idx < component_count; ++arg_idx)
+                    {
+                        if (argument_idx_map[arg_idx] == ice::u32_max)
+                        {
+                            helper_pointer_array[arg_idx] = nullptr;
+                        }
+                        else
+                        {
+                            ice::u32 const cmp_idx = argument_idx_map[arg_idx];
+
+                            helper_pointer_array[arg_idx] = ice::ptr_add(
+                                block->block_data,
+                                { arch->component_offsets[cmp_idx] }
+                            );
+                        }
+                    }
+
+                    auto const enumerate_sub_types = [&]<std::size_t... SubIdx>(std::index_sequence<SubIdx...> seq) noexcept
+                    {
+                        invoke_for_entity(
+                            args...,
+                            ice::ecs::detail::QueryIteratorArgument<std::tuple_element_t<SubIdx, SubQueryTypeTuple>>::block_array(helper_pointer_array[SubIdx])...
+                        );
+                    };
+
+                    enumerate_sub_types(std::make_index_sequence<sizeof...(SubQueryTypes)>{});
+                }
+            };
+
+            auto const enumerate_types = [&]<std::size_t... Idx>(std::index_sequence<Idx...> seq) noexcept
+            {
+                enumerate_entities(
+                    count,
+                    ice::ecs::detail::QueryIteratorArgument<std::tuple_element_t<RefIdx, QueryTypeTuple>>::block_array(component_pointer_array[RefIdx]),
+                    ice::ecs::detail::QueryIteratorArgument<std::tuple_element_t<Idx, QueryTypeTuple>>::block_array(component_pointer_array[Idx])...
+                );
+            };
+
+            enumerate_types(std::make_index_sequence<sizeof...(QueryTypes)>{});
+        }
+
+    } // namespace detail
+
+    namespace query
+    {
+
+        template<typename MainPart, typename... RefParts>
+        inline auto entity_count(
+            ice::ecs::QueryObject<MainPart, RefParts...> const& query
+        ) noexcept -> ice::ucount
+        {
+            // On a query with multiple parts we only want to check the blocks of the main part.
+            ice::Span const blocks_to_check = ice::array::slice(query.archetype_data_blocks, 0, query.archetype_count_for_part[0]);
+
+            ice::ucount result = 0;
+            for (ice::ecs::DataBlock const* const head_block : blocks_to_check)
+            {
+                // We don't want to count the head-block since it never contains actual entity data.
+                ice::ecs::DataBlock const* it = head_block->next;
+                while (it != nullptr)
+                {
+                    result += it->block_entity_count;
+                    it = it->next;
+                }
+            }
+            return result;
+        }
+
+        template<typename MainPart, typename... RefParts>
+        inline auto block_count(
+            ice::ecs::QueryObject<MainPart, RefParts...> const& query
+        ) noexcept -> ice::ucount
+        {
+            // On a query with multiple parts we only want to check the blocks of the main part.
+            ice::Span const blocks_to_check = ice::array::slice(query.archetype_data_blocks, 0, query.archetype_count_for_part[0]);
+
+            ice::ucount result = 0;
+            for (ice::ecs::DataBlock const* const head_block : blocks_to_check)
+            {
+                // We don't want to count the head-block since it never contains actual entity data.
+                ice::ecs::DataBlock const* it = head_block->next;
+                while (it != nullptr)
+                {
+                    result += 1;
+                    it = it->next;
+                }
+            }
+            return result;
+        }
+
+        template<typename MainPart, typename... RefParts>
+        inline auto for_entity(
+            ice::ecs::QueryObject<MainPart, RefParts...> const& query,
+            ice::ecs::Entity entity
+        ) noexcept -> typename ice::ecs::QueryObject<MainPart, RefParts...>::ResultType
+        {
+            static constexpr ice::ucount component_count = MainPart::ComponentCount;
+            ice::ecs::EntityDataSlot const slotinfo = query.provider->query_data_slot(entity);
+
+            ice::u32 arch_idx = 0;
+            ice::ecs::ArchetypeInstanceInfo const* arch = nullptr;
+            ice::ecs::DataBlock const* block = nullptr;
+
+            ice::u32 const arch_count = ice::count(query.archetype_instances);
+            for (; arch_idx < arch_count; ++arch_idx)
+            {
+                arch = query.archetype_instances[arch_idx];
+                if (arch->archetype_instance == ice::ecs::ArchetypeInstance{ slotinfo.archetype })
+                {
+                    // Find the specific block
+                    ice::u32 slot_block = slotinfo.block;
+                    block = query.archetype_data_blocks[arch_idx];
+                    while (slot_block > 0 && block != nullptr)
+                    {
+                        block = block->next;
+                        slot_block -= 1;
+                    }
+                    break;
+                }
+            }
+
+            ICE_ASSERT_CORE(arch != nullptr && block != nullptr);
+
+            void* helper_pointer_array[component_count]{ nullptr };
+            ice::Span<ice::u32 const> argument_idx_map = ice::array::slice(
+                query.archetype_argument_idx_map, arch_idx * component_count, component_count
+            );
+
+            for (ice::u32 arg_idx = 0; arg_idx < component_count; ++arg_idx)
+            {
+                if (argument_idx_map[arg_idx] == ice::u32_max)
+                {
+                    helper_pointer_array[arg_idx] = nullptr;
+                }
+                else
+                {
+                    ice::u32 const cmp_idx = argument_idx_map[arg_idx];
+
+                    helper_pointer_array[arg_idx] = ice::ptr_add(
+                        block->block_data,
+                        { arch->component_offsets[cmp_idx] }
+                    );
+                }
+            }
+
+            if constexpr (sizeof...(RefParts) == 0)
+            {
+                return ice::ecs::detail::create_entity_tuple(slotinfo.index, helper_pointer_array, MainPart{});
+            }
+            else
+            {
+                return ice::ecs::detail::create_entity_tuple_concat(
+                    ice::ecs::detail::create_entity_tuple(slotinfo.index, helper_pointer_array, MainPart{}),
+                    *query.provider,
+                    ice::array::slice(query.archetype_instances, arch_count),
+                    ice::array::slice(query.archetype_data_blocks, arch_count),
+                    ice::array::slice(query.archetype_argument_idx_map, arch_count * component_count),
+                    ice::span::subspan(ice::Span{ query.archetype_count_for_part }, 1),
+                    RefParts{}...
+                );
+            }
+        }
+
+        template<typename MainPart, typename... RefParts>
+        inline auto for_each_entity(
+            ice::ecs::QueryObject<MainPart, RefParts...> const& query
+        ) noexcept -> ice::Generator<typename ice::ecs::QueryObject<MainPart, RefParts...>::ResultType>
+        {
+            static constexpr ice::ucount component_count = MainPart::ComponentCount;
+
+            void* helper_pointer_array[component_count]{ nullptr };
+
+            // Only go over the archetypes of the main part
+            ice::u32 const arch_count = query.archetype_count_for_part[0];
+            for (ice::u32 arch_idx = 0; arch_idx < arch_count; ++arch_idx)
+            {
+                ice::ecs::ArchetypeInstanceInfo const* arch = query.archetype_instances[arch_idx];
+                ice::ecs::DataBlock const* block = query.archetype_data_blocks[arch_idx];
+                ice::Span<ice::u32 const> argument_idx_map = ice::array::slice(query.archetype_argument_idx_map, arch_idx * component_count, component_count);
+
+                // We skip the first block because it will be always empty.
+                ICE_ASSERT_CORE(block->block_entity_count == 0);
+                block = block->next;
+
+                while (block != nullptr)
+                {
+                    for (ice::u32 arg_idx = 0; arg_idx < component_count; ++arg_idx)
+                    {
+                        if (argument_idx_map[arg_idx] == ice::u32_max)
+                        {
+                            helper_pointer_array[arg_idx] = nullptr;
+                        }
+                        else
+                        {
+                            ice::u32 const cmp_idx = argument_idx_map[arg_idx];
+
+                            helper_pointer_array[arg_idx] = ice::ptr_add(
+                                block->block_data,
+                                { arch->component_offsets[cmp_idx] }
+                            );
+                        }
+                    }
+
+                    ice::ucount entity_idx = 0;
+                    while (entity_idx < block->block_entity_count)
+                    {
+                        if constexpr (sizeof...(RefParts) == 0)
+                        {
+                            co_yield ice::ecs::detail::create_entity_tuple(entity_idx, helper_pointer_array, MainPart{});
+                        }
+                        else
+                        {
+                            co_yield ice::ecs::detail::create_entity_tuple_concat(
+                                ice::ecs::detail::create_entity_tuple(entity_idx, helper_pointer_array, MainPart{}),
+                                *query.provider,
+                                ice::array::slice(query.archetype_instances, arch_count),
+                                ice::array::slice(query.archetype_data_blocks, arch_count),
+                                ice::array::slice(query.archetype_argument_idx_map, arch_count * component_count),
+                                ice::span::subspan(ice::Span{ query.archetype_count_for_part }, 1),
+                                RefParts{}...
+                            );
+                        }
+                        entity_idx += 1;
+                    }
+
+                    block = block->next;
+                }
+            }
+        }
+
+        template<typename MainPart, typename... RefParts, typename Fn>
+        inline auto for_each_entity(
+            ice::ecs::QueryObject<MainPart, RefParts...> const& query,
+            Fn&& fn
+        ) noexcept
+        {
+            using Definition = typename ice::ecs::QueryObject<MainPart, RefParts...>::Definition;
+            static constexpr ice::ucount component_count = MainPart::ComponentCount;
+
+            void* helper_pointer_array[component_count]{ nullptr };
+
+            // Only go over the archetypes of the main part
+            ice::u32 const arch_count = query.archetype_count_for_part[0];
+            for (ice::u32 arch_idx = 0; arch_idx < arch_count; ++arch_idx)
+            {
+                ice::ecs::ArchetypeInstanceInfo const* arch = query.archetype_instances[arch_idx];
+                ice::ecs::DataBlock const* block = query.archetype_data_blocks[arch_idx];
+                ice::Span<ice::u32 const> argument_idx_map = ice::array::slice(query.archetype_argument_idx_map, arch_idx * component_count, component_count);
+
+                // We skip the first block because it will be always empty.
+                ICE_ASSERT_CORE(block->block_entity_count == 0);
+                block = block->next;
+
+                while (block != nullptr)
+                {
+                    for (ice::u32 arg_idx = 0; arg_idx < component_count; ++arg_idx)
+                    {
+                        if (argument_idx_map[arg_idx] == ice::u32_max)
+                        {
+                            helper_pointer_array[arg_idx] = nullptr;
+                        }
+                        else
+                        {
+                            ice::u32 const cmp_idx = argument_idx_map[arg_idx];
+
+                            helper_pointer_array[arg_idx] = ice::ptr_add(
+                                block->block_data,
+                                { arch->component_offsets[cmp_idx] }
+                            );
+                        }
+                    }
+
+                    if constexpr (sizeof...(RefParts) == 0)
+                    {
+                        MainPart::Definition::invoke_for_each_entity(
+                            ice::forward<Fn>(fn),
+                            block->block_entity_count,
+                            helper_pointer_array
+                        );
+                    }
+                    else
+                    {
+                        ice::ecs::detail::invoke_for_each_entity(
+                            ice::forward<Fn>(fn),
+                            block->block_entity_count,
+                            helper_pointer_array,
+                            // Ref parts
+                            *query.provider,
+                            ice::array::slice(query.archetype_instances, arch_count),
+                            ice::array::slice(query.archetype_data_blocks, arch_count),
+                            ice::array::slice(query.archetype_argument_idx_map, arch_count * component_count),
+                            ice::span::subspan(ice::Span{ query.archetype_count_for_part }, 1),
+                            MainPart{},
+                            RefParts{}...
+                        );
+                    }
+
+                    block = block->next;
+                }
+            }
+        }
+
+        template<typename MainPart, typename... RefParts>
+        inline auto for_each_block(
+            ice::ecs::QueryObject<MainPart, RefParts...> const& query
+        ) noexcept -> ice::Generator<typename ice::ecs::QueryObject<MainPart, RefParts...>::BlockResultType>
+        {
+            static_assert(sizeof...(RefParts) == 0, "'for_each_block' only supports basic queries with no entity references!");
+
+            static constexpr ice::ucount component_count = MainPart::ComponentCount;
+
+            void* helper_pointer_array[component_count]{ nullptr };
+
+            ice::u32 const arch_count = ice::count(query.archetype_instances);
+            for (ice::u32 arch_idx = 0; arch_idx < arch_count; ++arch_idx)
+            {
+                ice::ecs::ArchetypeInstanceInfo const* arch = query.archetype_instances[arch_idx];
+                ice::ecs::DataBlock const* block = query.archetype_data_blocks[arch_idx];
+                ice::Span<ice::u32 const> argument_idx_map = ice::array::slice(query.archetype_argument_idx_map, arch_idx * component_count, component_count);
+
+                // We skip the first block because it will be always empty.
+                ICE_ASSERT_CORE(block->block_entity_count == 0);
+                block = block->next;
+
+                while (block != nullptr)
+                {
+                    for (ice::u32 arg_idx = 0; arg_idx < component_count; ++arg_idx)
+                    {
+                        if (argument_idx_map[arg_idx] == ice::u32_max)
+                        {
+                            helper_pointer_array[arg_idx] = nullptr;
+                        }
+                        else
+                        {
+                            ice::u32 const cmp_idx = argument_idx_map[arg_idx];
+
+                            helper_pointer_array[arg_idx] = ice::ptr_add(
+                                block->block_data,
+                                { arch->component_offsets[cmp_idx] }
+                            );
+                        }
+                    }
+
+                    co_yield ice::ecs::detail::create_block_tuple(block->block_entity_count, helper_pointer_array, MainPart{});
+
+                    block = block->next;
+                }
+            }
+        }
+
+        template<typename MainPart, typename... RefParts, typename Fn>
+        inline auto for_each_block(
+            ice::ecs::QueryObject<MainPart, RefParts...> const& query,
+            Fn&& fn
+        ) noexcept
+        {
+            static_assert(sizeof...(RefParts) == 0, "'for_each_block' only supports basic queries with no entity references!");
+            static constexpr ice::ucount component_count = MainPart::ComponentCount;
+
+            void* helper_pointer_array[component_count]{ nullptr };
+
+            ice::u32 const arch_count = ice::count(query.archetype_instances);
+            for (ice::u32 arch_idx = 0; arch_idx < arch_count; ++arch_idx)
+            {
+                ice::ecs::ArchetypeInstanceInfo const* arch = query.archetype_instances[arch_idx];
+                ice::ecs::DataBlock const* block = query.archetype_data_blocks[arch_idx];
+                ice::Span<ice::u32 const> argument_idx_map = ice::array::slice(query.archetype_argument_idx_map, arch_idx * component_count, component_count);
+
+                // We skip the first block because it will be always empty.
+                ICE_ASSERT_CORE(block->block_entity_count == 0);
+                block = block->next;
+
+                while (block != nullptr)
+                {
+                    for (ice::u32 arg_idx = 0; arg_idx < component_count; ++arg_idx)
+                    {
+                        if (argument_idx_map[arg_idx] == ice::u32_max)
+                        {
+                            helper_pointer_array[arg_idx] = nullptr;
+                        }
+                        else
+                        {
+                            ice::u32 const cmp_idx = argument_idx_map[arg_idx];
+
+                            helper_pointer_array[arg_idx] = ice::ptr_add(
+                                block->block_data,
+                                { arch->component_offsets[cmp_idx] }
+                            );
+                        }
+                    }
+
+                    MainPart::Definition::invoke_for_each_block(
+                        ice::forward<Fn>(fn),
+                        block->block_entity_count,
+                        helper_pointer_array
+                    );
+
+                    block = block->next;
+                }
+            }
+        }
+
+    } // namespace query
+
+    template<typename Self>
+    inline auto TraitQueryOperations::entity_count(this Self const& self) noexcept -> ice::ucount
+    {
+        return ice::ecs::query::entity_count(self.query_object());
+    }
+
+    template<typename Self>
+    inline auto TraitQueryOperations::block_count(this Self const& self) noexcept -> ice::ucount
+    {
+        return ice::ecs::query::block_count(self.query_object());
+    }
+
+    template<typename Self>
+    inline auto TraitQueryOperations::for_entity(this Self const& self, ice::ecs::Entity entity) noexcept -> typename Self::ResultType
+    {
+        return ice::ecs::query::for_entity(self.query_object(), entity);
+    }
+
+    template<typename Self>
+    inline auto TraitQueryOperations::for_each_entity(this Self const& self) noexcept -> ice::Generator<typename Self::ResultType>
+    {
+        return ice::ecs::query::for_each_entity(self.query_object());
+    }
+
+    template<typename Self, typename Fn>
+    inline void TraitQueryOperations::for_each_entity(this Self const& self, Fn&& fn) noexcept
+    {
+        return ice::ecs::query::for_each_entity(self.query_object(), ice::forward<Fn>(fn));
+    }
+
+    template<typename Self>
+    inline auto TraitQueryOperations::for_each_block(this Self const& self) noexcept -> ice::Generator<typename Self::BlockResultType>
+    {
+        return ice::ecs::query::for_each_block(self.query_object());
+    }
+
+    template<typename Self, typename Fn>
+    inline void TraitQueryOperations::for_each_block(this Self const& self, Fn&& fn) noexcept
+    {
+        return ice::ecs::query::for_each_block(self.query_object(), ice::forward<Fn>(fn));
+    }
+
+} // namespace ice::ecs

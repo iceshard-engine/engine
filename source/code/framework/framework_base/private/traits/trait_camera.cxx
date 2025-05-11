@@ -11,17 +11,12 @@
 #include <ice/engine_types_mappers.hxx>
 #include <ice/world/world_trait_descriptor.hxx>
 
-#include <ice/ecs/ecs_entity_storage.hxx>
 #include <ice/ecs/ecs_query.hxx>
-#include <ice/ecs/ecs_query_provider.hxx>
-#include <ice/ecs/ecs_query_tasks.hxx>
 #include <ice/ecs/ecs_archetype_index.hxx>
 
-#include <ice/gfx/gfx_context.hxx>
 #include <ice/gfx/gfx_shards.hxx>
 
 #include <ice/render/render_device.hxx>
-#include <ice/render/render_resource.hxx>
 #include <ice/render/render_buffer.hxx>
 
 #include <ice/math/lookat.hxx>
@@ -87,21 +82,16 @@ namespace ice
         ice::EngineFrameUpdate const& params
     ) noexcept -> ice::Task<>
     {
-        auto const& query_cameras = query<
+        ice::ecs::Query query_cameras = co_await query<
             ice::ecs::Entity,
             ice::Camera const&,
             ice::CameraOrtho const*,
             ice::CameraPerspective const*
-        >();
+        >().synchronized_on(params.thread.tasks);
 
-        //ice::u32 const camera_count = ice::ecs::query::entity_count(_query_cameras);
-        ice::hashmap::reserve(_render_data, ice::ecs::query::entity_count(query_cameras));
+        ice::hashmap::reserve(_render_data, query_cameras.entity_count());
 
-        ice::ecs::QueryExecutionScope query_scope = co_await ice::ecs::await_query_on(
-            query_cameras, params.thread.main
-        );
-
-        for (auto[entity, camera, ortho, persp] : ice::ecs::query::for_each_entity(query_scope))
+        for (auto[entity, camera, ortho, persp] : query_cameras.for_each_entity())
         {
             if (camera->name == ice::StringID_Invalid)
             {
