@@ -10,26 +10,26 @@ namespace ice::ecs
     {
     public:
         template<typename Self>
-        inline auto entity_count(this Self const& self) noexcept -> ice::ucount;
+        inline auto entity_count(this Self&& self) noexcept -> ice::ucount;
 
         template<typename Self>
-        inline auto for_entity(this Self const& self, ice::ecs::Entity entity) noexcept -> typename Self::ResultType;
+        inline auto for_entity(this Self&& self, ice::ecs::Entity entity) noexcept -> typename ice::clear_type_t<Self>::ResultType;
 
         template<typename Self>
-        inline auto for_each_entity(this Self const& self) noexcept -> ice::Generator<typename Self::ResultType>;
+        inline auto for_each_entity(this Self&& self) noexcept -> ice::Generator<typename ice::clear_type_t<Self>::ResultType>;
 
         template<typename Self, typename Fn>
-        inline void for_each_entity(this Self const& self, Fn&& fn) noexcept;
+        inline void for_each_entity(this Self&& self, Fn&& fn) noexcept;
 
     public:
         template<typename Self>
-        inline auto block_count(this Self const& self) noexcept -> ice::ucount;
+        inline auto block_count(this Self&& self) noexcept -> ice::ucount;
 
         template<typename Self>
-        inline auto for_each_block(this Self const& self) noexcept -> ice::Generator<typename Self::BlockResultType>;
+        inline auto for_each_block(this Self&& self) noexcept -> ice::Generator<typename ice::clear_type_t<Self>::BlockResultType>;
 
         template<typename Self, typename Fn>
-        inline void for_each_block(this Self const& self, Fn&& fn) noexcept;
+        inline void for_each_block(this Self&& self, Fn&& fn) noexcept;
     };
 
     namespace detail
@@ -375,9 +375,10 @@ namespace ice::ecs
             }
         }
 
-        template<typename MainPart, typename... RefParts>
-        inline auto for_each_entity(
-            ice::ecs::QueryObject<MainPart, RefParts...> const& query
+        template<typename MainPart, typename... RefParts, typename QueryObjectOwner>
+        inline auto for_each_entity_gen(
+            ice::ecs::QueryObject<MainPart, RefParts...> const& query_object,
+            QueryObjectOwner
         ) noexcept -> ice::Generator<typename ice::ecs::QueryObject<MainPart, RefParts...>::ResultType>
         {
             static constexpr ice::ucount component_count = MainPart::ComponentCount;
@@ -385,12 +386,12 @@ namespace ice::ecs
             void* helper_pointer_array[component_count]{ nullptr };
 
             // Only go over the archetypes of the main part
-            ice::u32 const arch_count = query.archetype_count_for_part[0];
+            ice::u32 const arch_count = query_object.archetype_count_for_part[0];
             for (ice::u32 arch_idx = 0; arch_idx < arch_count; ++arch_idx)
             {
-                ice::ecs::ArchetypeInstanceInfo const* arch = query.archetype_instances[arch_idx];
-                ice::ecs::DataBlock const* block = query.archetype_data_blocks[arch_idx];
-                ice::Span<ice::u32 const> argument_idx_map = ice::array::slice(query.archetype_argument_idx_map, arch_idx * component_count, component_count);
+                ice::ecs::ArchetypeInstanceInfo const* arch = query_object.archetype_instances[arch_idx];
+                ice::ecs::DataBlock const* block = query_object.archetype_data_blocks[arch_idx];
+                ice::Span<ice::u32 const> argument_idx_map = ice::array::slice(query_object.archetype_argument_idx_map, arch_idx * component_count, component_count);
 
                 // We skip the first block because it will be always empty.
                 ICE_ASSERT_CORE(block->block_entity_count == 0);
@@ -426,11 +427,11 @@ namespace ice::ecs
                         {
                             co_yield ice::ecs::detail::create_entity_tuple_concat(
                                 ice::ecs::detail::create_entity_tuple(entity_idx, helper_pointer_array, MainPart{}),
-                                *query.provider,
-                                ice::array::slice(query.archetype_instances, arch_count),
-                                ice::array::slice(query.archetype_data_blocks, arch_count),
-                                ice::array::slice(query.archetype_argument_idx_map, arch_count * component_count),
-                                ice::span::subspan(ice::Span{ query.archetype_count_for_part }, 1),
+                                *query_object.provider,
+                                ice::array::slice(query_object.archetype_instances, arch_count),
+                                ice::array::slice(query_object.archetype_data_blocks, arch_count),
+                                ice::array::slice(query_object.archetype_argument_idx_map, arch_count * component_count),
+                                ice::span::subspan(ice::Span{ query_object.archetype_count_for_part }, 1),
                                 RefParts{}...
                             );
                         }
@@ -444,7 +445,7 @@ namespace ice::ecs
 
         template<typename MainPart, typename... RefParts, typename Fn>
         inline auto for_each_entity(
-            ice::ecs::QueryObject<MainPart, RefParts...> const& query,
+            ice::ecs::QueryObject<MainPart, RefParts...> const& query_object,
             Fn&& fn
         ) noexcept
         {
@@ -454,12 +455,12 @@ namespace ice::ecs
             void* helper_pointer_array[component_count]{ nullptr };
 
             // Only go over the archetypes of the main part
-            ice::u32 const arch_count = query.archetype_count_for_part[0];
+            ice::u32 const arch_count = query_object.archetype_count_for_part[0];
             for (ice::u32 arch_idx = 0; arch_idx < arch_count; ++arch_idx)
             {
-                ice::ecs::ArchetypeInstanceInfo const* arch = query.archetype_instances[arch_idx];
-                ice::ecs::DataBlock const* block = query.archetype_data_blocks[arch_idx];
-                ice::Span<ice::u32 const> argument_idx_map = ice::array::slice(query.archetype_argument_idx_map, arch_idx * component_count, component_count);
+                ice::ecs::ArchetypeInstanceInfo const* arch = query_object.archetype_instances[arch_idx];
+                ice::ecs::DataBlock const* block = query_object.archetype_data_blocks[arch_idx];
+                ice::Span<ice::u32 const> argument_idx_map = ice::array::slice(query_object.archetype_argument_idx_map, arch_idx * component_count, component_count);
 
                 // We skip the first block because it will be always empty.
                 ICE_ASSERT_CORE(block->block_entity_count == 0);
@@ -499,11 +500,11 @@ namespace ice::ecs
                             block->block_entity_count,
                             helper_pointer_array,
                             // Ref parts
-                            *query.provider,
-                            ice::array::slice(query.archetype_instances, arch_count),
-                            ice::array::slice(query.archetype_data_blocks, arch_count),
-                            ice::array::slice(query.archetype_argument_idx_map, arch_count * component_count),
-                            ice::span::subspan(ice::Span{ query.archetype_count_for_part }, 1),
+                            *query_object.provider,
+                            ice::array::slice(query_object.archetype_instances, arch_count),
+                            ice::array::slice(query_object.archetype_data_blocks, arch_count),
+                            ice::array::slice(query_object.archetype_argument_idx_map, arch_count * component_count),
+                            ice::span::subspan(ice::Span{ query_object.archetype_count_for_part }, 1),
                             MainPart{},
                             RefParts{}...
                         );
@@ -514,9 +515,10 @@ namespace ice::ecs
             }
         }
 
-        template<typename MainPart, typename... RefParts>
-        inline auto for_each_block(
-            ice::ecs::QueryObject<MainPart, RefParts...> const& query
+        template<typename MainPart, typename... RefParts, typename QueryObjectOwner>
+        inline auto for_each_block_gen(
+            ice::ecs::QueryObject<MainPart, RefParts...> const& query,
+            QueryObjectOwner
         ) noexcept -> ice::Generator<typename ice::ecs::QueryObject<MainPart, RefParts...>::BlockResultType>
         {
             static_assert(sizeof...(RefParts) == 0, "'for_each_block' only supports basic queries with no entity references!");
@@ -617,43 +619,59 @@ namespace ice::ecs
     } // namespace query
 
     template<typename Self>
-    inline auto TraitQueryOperations::entity_count(this Self const& self) noexcept -> ice::ucount
+    inline auto TraitQueryOperations::entity_count(this Self&& self) noexcept -> ice::ucount
     {
         return ice::ecs::query::entity_count(self.query_object());
     }
 
     template<typename Self>
-    inline auto TraitQueryOperations::block_count(this Self const& self) noexcept -> ice::ucount
+    inline auto TraitQueryOperations::block_count(this Self&& self) noexcept -> ice::ucount
     {
         return ice::ecs::query::block_count(self.query_object());
     }
 
     template<typename Self>
-    inline auto TraitQueryOperations::for_entity(this Self const& self, ice::ecs::Entity entity) noexcept -> typename Self::ResultType
+    inline auto TraitQueryOperations::for_entity(
+        this Self&& self, ice::ecs::Entity entity
+    ) noexcept -> typename ice::clear_type_t<Self>::ResultType
     {
         return ice::ecs::query::for_entity(self.query_object(), entity);
     }
 
     template<typename Self>
-    inline auto TraitQueryOperations::for_each_entity(this Self const& self) noexcept -> ice::Generator<typename Self::ResultType>
+    inline auto TraitQueryOperations::for_each_entity(this Self&& self) noexcept -> ice::Generator<typename ice::clear_type_t<Self>::ResultType>
     {
-        return ice::ecs::query::for_each_entity(self.query_object());
+        if constexpr (ice::clear_type_t<Self>::Policy == QueryPolicy::Synchronized && std::is_rvalue_reference_v<decltype(self)>)
+        {
+            return ice::ecs::query::for_each_entity_gen(self.query_object(), ice::move(self));
+        }
+        else
+        {
+            return ice::ecs::query::for_each_entity_gen(self.query_object(), int{});
+        }
     }
 
     template<typename Self, typename Fn>
-    inline void TraitQueryOperations::for_each_entity(this Self const& self, Fn&& fn) noexcept
+    inline void TraitQueryOperations::for_each_entity(this Self&& self, Fn&& fn) noexcept
     {
         return ice::ecs::query::for_each_entity(self.query_object(), ice::forward<Fn>(fn));
     }
 
     template<typename Self>
-    inline auto TraitQueryOperations::for_each_block(this Self const& self) noexcept -> ice::Generator<typename Self::BlockResultType>
+    inline auto TraitQueryOperations::for_each_block(this Self&& self) noexcept -> ice::Generator<typename ice::clear_type_t<Self>::BlockResultType>
     {
-        return ice::ecs::query::for_each_block(self.query_object());
+        if constexpr (ice::clear_type_t<Self>::Policy == QueryPolicy::Synchronized && std::is_rvalue_reference_v<decltype(self)>)
+        {
+            return ice::ecs::query::for_each_block_gen(self.query_object(), ice::move(self));
+        }
+        else
+        {
+            return ice::ecs::query::for_each_block_gen(self.query_object());
+        }
     }
 
     template<typename Self, typename Fn>
-    inline void TraitQueryOperations::for_each_block(this Self const& self, Fn&& fn) noexcept
+    inline void TraitQueryOperations::for_each_block(this Self&& self, Fn&& fn) noexcept
     {
         return ice::ecs::query::for_each_block(self.query_object(), ice::forward<Fn>(fn));
     }

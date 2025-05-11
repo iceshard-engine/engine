@@ -55,9 +55,14 @@ namespace ice::ecs
         static constexpr ice::ecs::QueryPolicy Policy = QueryPolicy::Synchronized;
         static constexpr ice::u32 ComponentCount = ObjectType::ComponentCount;
 
-        inline Query(ObjectType const& query, bool requires_release)
+        inline Query(ObjectType const& query, bool requires_release) noexcept
             : _query{ query }
             , _requires_release{ requires_release }
+        { }
+
+        inline Query(Query&& other) noexcept
+            : _query{ other._query }
+            , _requires_release{ ice::exchange(other._requires_release, false) }
         { }
 
         inline ~Query() noexcept
