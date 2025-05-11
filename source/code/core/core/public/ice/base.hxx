@@ -8,6 +8,7 @@
 #include <ice/workarounds.hxx>
 #include <ice/build/build.hxx>
 #include <ice/assert_core.hxx>
+#include <ice/utility.hxx>
 #include <ice/hash.hxx>
 
 #include <ice/concept/enum_bools.hxx>
