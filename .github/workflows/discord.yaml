@@ -20,4 +20,4 @@ jobs:
       with:
         args: |
           New commits have been pushed to `{{ EVENT_PAYLOAD.repository.full_name }}`!
-          {{ EVENT_PAYLOAD.commits.map(e => '- ' + e.message + ' (<' + e.url + '>) <' + e.author.name + '>').join('\n') }}
+          {{ EVENT_PAYLOAD.commits.map(e => '- ' + e.message + ' (<' + e.url + '>) <' + e.author.name + '>').join('\n').slice(0, 2000) }}
