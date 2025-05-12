@@ -1,3 +1,6 @@
+/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 
 #include "webasm_inputs.hxx"
 #include <emscripten/html5.h>

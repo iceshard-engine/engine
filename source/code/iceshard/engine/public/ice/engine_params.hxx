@@ -1,3 +1,6 @@
+/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/engine_types.hxx>
 #include <ice/gfx/gfx_types.hxx>

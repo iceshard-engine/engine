@@ -1,3 +1,6 @@
+/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "imgui_gfx_stage.hxx"
 #include <ice/gfx/gfx_runner.hxx>
 #include <ice/gfx/gfx_context.hxx>

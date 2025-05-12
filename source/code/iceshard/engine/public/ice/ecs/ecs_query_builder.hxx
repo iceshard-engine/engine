@@ -1,3 +1,6 @@
+/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/ecs/ecs_query.hxx>
 #include <ice/ecs/ecs_query_storage_entry.hxx>

@@ -1,3 +1,6 @@
+/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include <ice/mem_allocator_snake.hxx>
 #include <ice/assert_core.hxx>
 #include <bit>

@@ -1,3 +1,6 @@
+/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/engine_state.hxx>
 #include <ice/shard_container.hxx>

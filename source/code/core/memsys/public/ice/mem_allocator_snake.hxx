@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once

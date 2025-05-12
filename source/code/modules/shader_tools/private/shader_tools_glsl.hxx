@@ -1,3 +1,6 @@
+/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/resource_compiler.hxx>
 #include <ice/render/render_shader.hxx>

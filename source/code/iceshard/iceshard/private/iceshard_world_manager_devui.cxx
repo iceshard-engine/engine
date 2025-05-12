@@ -1,3 +1,6 @@
+/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "iceshard_world_manager_devui.hxx"
 #include "iceshard_world_devui.hxx"
 

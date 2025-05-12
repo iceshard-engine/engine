@@ -1,3 +1,6 @@
+/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include "shader_tools_asl.hxx"
 #include "shader_tools_asl_importer.hxx"
