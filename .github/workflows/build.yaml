@@ -1,10 +1,10 @@
-name: Workspace Initialization
+name: Build
 
 on:
   workflow_dispatch:
     inputs:
       configuration:
-        description: Build configuration to run
+        description: Target build configuration
         required: true
         type: choice
         default: Develop
