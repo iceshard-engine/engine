@@ -12,6 +12,8 @@
 namespace ice::ecs
 {
 
+    using ice::ecs::detail::DataBlock;
+    using ice::ecs::detail::DataBlockPool;
     using ice::ecs::detail::ArchetypeInstance;
     using ice::ecs::detail::ArchetypeInstanceInfo;
 
@@ -283,7 +285,7 @@ namespace ice::ecs
             ice::ecs::ArchetypeIndex const& archetypes,
             ice::ecs::EntityOperation const& operation,
             ice::Span<ice::ecs::Entity const> entities_to_remove,
-            ice::Span<ice::ecs::DataBlock*> data_blocks,
+            ice::Span<ice::ecs::detail::DataBlock*> data_blocks,
             ice::Span<ice::ecs::EntityDataSlot> data_slots,
             ice::ShardContainer& out_shards
         ) noexcept
@@ -294,7 +296,7 @@ namespace ice::ecs
             ArchetypeInstance archetype{};
             ArchetypeInstanceInfo const* archetype_infos[1]{ nullptr };
 
-            ice::ecs::DataBlock* archetype_block = nullptr;
+            ice::ecs::detail::DataBlock* archetype_block = nullptr;
             ice::u32 archetype_block_index = ice::u32_max;
 
             do

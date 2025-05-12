@@ -12,22 +12,17 @@
 namespace ice::ecs
 {
 
-    class DataBlockPool;
-
     class ArchetypeIndex
     {
     public:
-        ArchetypeIndex(
-            ice::Allocator& alloc
-        ) noexcept;
-
+        ArchetypeIndex(ice::Allocator& alloc) noexcept;
         ~ArchetypeIndex() noexcept;
 
         auto registered_archetype_count() const noexcept -> ice::u32;
 
         auto register_archetype(
             ice::ecs::ArchetypeInfo const& archetype_info,
-            ice::ecs::DataBlockPool* data_block_pool = nullptr
+            ice::ecs::detail::DataBlockPool* data_block_pool = nullptr
         ) noexcept -> ice::ecs::Archetype;
 
         auto find_archetype_by_name(
@@ -58,17 +53,17 @@ namespace ice::ecs
         void fetch_archetype_instance_info_with_pool(
             ice::ecs::Archetype archetype,
             ice::ecs::detail::ArchetypeInstanceInfo const*& out_instance_info,
-            ice::ecs::DataBlockPool*& out_block_pool
+            ice::ecs::detail::DataBlockPool*& out_block_pool
         ) const noexcept;
 
         void fetch_archetype_instance_pool(
             ice::ecs::detail::ArchetypeInstance archetype,
-            ice::ecs::DataBlockPool*& out_block_pool
+            ice::ecs::detail::DataBlockPool*& out_block_pool
         ) const noexcept;
 
     private:
         ice::Allocator& _allocator;
-        ice::ecs::DataBlockPool _default_block_pool;
+        ice::UniquePtr<ice::ecs::detail::DataBlockPool> _default_block_pool;
 
         ice::HashMap<ice::u32> _archetype_index;
         ice::HashMap<ice::u32> _archetype_names_index;

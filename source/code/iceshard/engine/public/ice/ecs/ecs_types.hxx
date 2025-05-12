@@ -29,8 +29,13 @@ namespace ice::ecs
     //! \headerfile <ice/ecs/ecs_archetype.hxx>
     struct ArchetypeInfo;
 
+    //! \brief A central object used to store and access all archetypes that are registered by the engine, modules and game.
+    //! \details The current implementation does not allow to remove any registered archetypes, so unloading modules that hold type
+    //!   definitions is not supported.
+    //!
     //! \headerfile <ice/ecs/ecs_archetype_index.hxx>
     class ArchetypeIndex;
+
 
     //! \brief Primary identifier for entities in IceShard. Used to update data using operations or access components with queries.
     //!

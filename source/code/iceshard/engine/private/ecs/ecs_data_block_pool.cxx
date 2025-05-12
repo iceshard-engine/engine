@@ -4,18 +4,33 @@
 #include <ice/ecs/ecs_data_block_pool.hxx>
 #include <ice/assert.hxx>
 
-namespace ice::ecs
+namespace ice::ecs::detail
 {
 
-    DataBlockPool::DataBlockPool(ice::Allocator& alloc) noexcept
+    class DefaultDataBlockPool final : public ice::ecs::detail::DataBlockPool
+    {
+    public:
+        DefaultDataBlockPool(ice::Allocator& alloc) noexcept;
+        ~DefaultDataBlockPool() noexcept override;
+
+        auto provided_block_size() const noexcept -> ice::usize override;
+        auto request_block() noexcept -> ice::ecs::detail::DataBlock* override;
+        void release_block(ice::ecs::detail::DataBlock* block) noexcept override;
+
+    private:
+        ice::Allocator& _allocator;
+        ice::ecs::detail::DataBlock* _free_block_list;
+    };
+
+    DefaultDataBlockPool::DefaultDataBlockPool(ice::Allocator& alloc) noexcept
         : _allocator{ alloc }
         , _free_block_list{ nullptr }
     {
     }
 
-    DataBlockPool::~DataBlockPool() noexcept
+    DefaultDataBlockPool::~DefaultDataBlockPool() noexcept
     {
-        ice::ecs::DataBlock* block = _free_block_list;
+        ice::ecs::detail::DataBlock* block = _free_block_list;
         while (block != nullptr)
         {
             auto* block_to_release = block;
@@ -31,12 +46,12 @@ namespace ice::ecs
         }
     }
 
-    auto DataBlockPool::provided_block_size() const noexcept -> ice::usize
+    auto DefaultDataBlockPool::provided_block_size() const noexcept -> ice::usize
     {
         return { Constant_DefaultBlockSize.value - ice::size_of<DataBlock>.value };
     }
 
-    auto DataBlockPool::request_block() noexcept -> ice::ecs::DataBlock*
+    auto DefaultDataBlockPool::request_block() noexcept -> ice::ecs::detail::DataBlock*
     {
         DataBlock* free_block = _free_block_list;
         if (free_block != nullptr)
@@ -58,12 +73,17 @@ namespace ice::ecs
         return free_block;
     }
 
-    void DataBlockPool::release_block(ice::ecs::DataBlock* block) noexcept
+    void DefaultDataBlockPool::release_block(ice::ecs::detail::DataBlock* block) noexcept
     {
         ICE_ASSERT(block->next == nullptr, "Only tail blocks can be released!");
 
         block->next = _free_block_list;
         _free_block_list = block;
+    }
+
+    auto create_default_block_pool(ice::Allocator& alloc) noexcept -> ice::UniquePtr<ice::ecs::detail::DataBlockPool>
+    {
+        return ice::make_unique<ice::ecs::detail::DefaultDataBlockPool>(alloc, alloc);
     }
 
 } // ice::ecs

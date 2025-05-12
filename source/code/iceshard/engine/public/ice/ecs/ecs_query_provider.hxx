@@ -45,7 +45,7 @@ namespace ice::ecs
             ice::Span<ice::StringID const> query_tags,
             ice::Span<ice::ecs::QueryAccessTracker*> out_access_trackers,
             ice::Array<ice::ecs::detail::ArchetypeInstanceInfo const*>& out_instance_infos,
-            ice::Array<ice::ecs::DataBlock const*>& out_data_blocks
+            ice::Array<ice::ecs::detail::DataBlock const*>& out_data_blocks
         ) const noexcept = 0;
 
         template<ice::u32 RefIdx, ice::ecs::QueryType... QueryComponents>
@@ -54,7 +54,7 @@ namespace ice::ecs
             ice::Span<ice::StringID const> query_tags,
             ice::Span<ice::ecs::QueryAccessTracker*> out_access_trackers,
             ice::Array<ice::ecs::detail::ArchetypeInstanceInfo const*>& out_instance_infos,
-            ice::Array<ice::ecs::DataBlock const*>& out_data_blocks,
+            ice::Array<ice::ecs::detail::DataBlock const*>& out_data_blocks,
             ice::Array<ice::u32>& out_argument_idx_map,
             ice::u32& out_archetype_count
         ) const noexcept;
@@ -66,7 +66,7 @@ namespace ice::ecs
         ice::Span<ice::StringID const> query_tags,
         ice::Span<ice::ecs::QueryAccessTracker*> out_access_trackers,
         ice::Array<ice::ecs::detail::ArchetypeInstanceInfo const*>& out_instance_infos,
-        ice::Array<ice::ecs::DataBlock const*>& out_data_blocks,
+        ice::Array<ice::ecs::detail::DataBlock const*>& out_data_blocks,
         ice::Array<ice::u32>& out_argument_idx_map,
         ice::u32& out_archetype_count
     ) const noexcept

@@ -53,7 +53,7 @@ namespace ice::ecs
             ice::Span<ice::StringID const> query_tags,
             ice::Span<ice::ecs::QueryAccessTracker*> out_access_trackers,
             ice::Array<ice::ecs::detail::ArchetypeInstanceInfo const*>& out_instance_infos,
-            ice::Array<ice::ecs::DataBlock const*>& out_data_blocks
+            ice::Array<ice::ecs::detail::DataBlock const*>& out_data_blocks
         ) const noexcept override;
 
     private:
@@ -62,8 +62,8 @@ namespace ice::ecs
         ice::ecs::ArchetypeIndex const& _archetype_index;
 
         ice::HashMap<ice::ecs::QueryAccessTracker*> _access_trackers;
-        ice::Array<ice::ecs::DataBlock> _head_blocks;
-        ice::Array<ice::ecs::DataBlock*> _data_blocks;
+        ice::Array<ice::ecs::detail::DataBlock> _head_blocks;
+        ice::Array<ice::ecs::detail::DataBlock*> _data_blocks;
         ice::Array<ice::ecs::EntityDataSlot> _data_slots;
     };
 

@@ -110,7 +110,7 @@ namespace ice::ecs
         ice::String archetype_name;
         ice::ecs::Archetype archetype_identifier;
         ice::ecs::detail::ArchetypeInstanceInfo archetype_info;
-        ice::ecs::DataBlockPool* block_pool;
+        ice::ecs::detail::DataBlockPool* block_pool;
 
         static auto calculate_meminfo(
             ice::String name,
@@ -140,7 +140,7 @@ namespace ice::ecs
 
     ArchetypeIndex::ArchetypeIndex(ice::Allocator& alloc) noexcept
         : _allocator{ alloc }
-        , _default_block_pool{ _allocator }
+        , _default_block_pool{ ice::ecs::detail::create_default_block_pool(_allocator) }
         , _archetype_index{ _allocator }
         , _archetype_names_index{ _allocator }
         , _archetype_data{ _allocator }
@@ -171,7 +171,7 @@ namespace ice::ecs
 
     auto ArchetypeIndex::register_archetype(
         ice::ecs::ArchetypeInfo const& archetype_info,
-        ice::ecs::DataBlockPool* data_block_pool
+        ice::ecs::detail::DataBlockPool* data_block_pool
     ) noexcept -> ice::ecs::Archetype
     {
         if (ice::hashmap::has(_archetype_index, ice::hash(archetype_info.identifier)))
@@ -186,7 +186,7 @@ namespace ice::ecs
 
         if (data_block_pool == nullptr)
         {
-            data_block_pool = &_default_block_pool;
+            data_block_pool = _default_block_pool.get();
         }
 
         ice::u32 const component_count = ice::count(archetype_info.component_identifiers);
@@ -470,7 +470,7 @@ namespace ice::ecs
     void ArchetypeIndex::fetch_archetype_instance_info_with_pool(
         ice::ecs::Archetype archetype,
         ice::ecs::detail::ArchetypeInstanceInfo const*& out_instance_info,
-        ice::ecs::DataBlockPool*& out_block_pool
+        ice::ecs::detail::DataBlockPool*& out_block_pool
     ) const noexcept
     {
         ice::u32 const instance_count = ice::array::count(_archetype_data);
@@ -492,7 +492,7 @@ namespace ice::ecs
 
     void ArchetypeIndex::fetch_archetype_instance_pool(
         ice::ecs::detail::ArchetypeInstance archetype_instance,
-        ice::ecs::DataBlockPool*& out_block_pool
+        ice::ecs::detail::DataBlockPool*& out_block_pool
     ) const noexcept
     {
         ice::u32 const instance_count = ice::array::count(_archetype_data);

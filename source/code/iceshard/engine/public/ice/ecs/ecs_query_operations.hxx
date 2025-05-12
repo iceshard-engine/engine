@@ -67,7 +67,7 @@ namespace ice::ecs
             std::tuple<TupleTypes...>&& in_tuple,
             ice::ecs::QueryProvider const& provider,
             ice::Span<ice::ecs::detail::ArchetypeInstanceInfo const* const> archetype_instances,
-            ice::Span<ice::ecs::DataBlock const* const> archetype_data_blocks,
+            ice::Span<ice::ecs::detail::DataBlock const* const> archetype_data_blocks,
             ice::Span<ice::u32 const> archetype_argument_idx_map,
             ice::Span<ice::u32 const> archetype_parts_count,
             ice::ecs::detail::QueryObjectPart<RefIdx, SubQueryTypes...>
@@ -85,7 +85,7 @@ namespace ice::ecs
 
             ice::u32 arch_idx = 0;
             ice::ecs::detail::ArchetypeInstanceInfo const* arch = nullptr;
-            ice::ecs::DataBlock const* block = nullptr;
+            ice::ecs::detail::DataBlock const* block = nullptr;
 
             for (; arch_idx < archetype_parts_count[0]; ++arch_idx)
             {
@@ -157,7 +157,7 @@ namespace ice::ecs
             void** component_pointer_array,
             ice::ecs::QueryProvider const& provider,
             ice::Span<ice::ecs::detail::ArchetypeInstanceInfo const* const> archetype_instances,
-            ice::Span<ice::ecs::DataBlock const* const> archetype_data_blocks,
+            ice::Span<ice::ecs::detail::DataBlock const* const> archetype_data_blocks,
             ice::Span<ice::u32 const> archetype_argument_idx_map,
             ice::Span<ice::u32 const> archetype_parts_count,
             ice::ecs::detail::QueryObjectPart<0, QueryTypes...>,
@@ -193,7 +193,7 @@ namespace ice::ecs
 
                     ice::u32 arch_idx = 0;
                     ice::ecs::detail::ArchetypeInstanceInfo const* arch = nullptr;
-                    ice::ecs::DataBlock const* block = nullptr;
+                    ice::ecs::detail::DataBlock const* block = nullptr;
 
                     for (; arch_idx < archetype_parts_count[0]; ++arch_idx)
                     {
@@ -271,10 +271,10 @@ namespace ice::ecs
             ice::Span const blocks_to_check = ice::array::slice(query.archetype_data_blocks, 0, query.archetype_count_for_part[0]);
 
             ice::ucount result = 0;
-            for (ice::ecs::DataBlock const* const head_block : blocks_to_check)
+            for (ice::ecs::detail::DataBlock const* const head_block : blocks_to_check)
             {
                 // We don't want to count the head-block since it never contains actual entity data.
-                ice::ecs::DataBlock const* it = head_block->next;
+                ice::ecs::detail::DataBlock const* it = head_block->next;
                 while (it != nullptr)
                 {
                     result += it->block_entity_count;
@@ -293,10 +293,10 @@ namespace ice::ecs
             ice::Span const blocks_to_check = ice::array::slice(query.archetype_data_blocks, 0, query.archetype_count_for_part[0]);
 
             ice::ucount result = 0;
-            for (ice::ecs::DataBlock const* const head_block : blocks_to_check)
+            for (ice::ecs::detail::DataBlock const* const head_block : blocks_to_check)
             {
                 // We don't want to count the head-block since it never contains actual entity data.
-                ice::ecs::DataBlock const* it = head_block->next;
+                ice::ecs::detail::DataBlock const* it = head_block->next;
                 while (it != nullptr)
                 {
                     result += 1;
@@ -317,7 +317,7 @@ namespace ice::ecs
 
             ice::u32 arch_idx = 0;
             ice::ecs::detail::ArchetypeInstanceInfo const* arch = nullptr;
-            ice::ecs::DataBlock const* block = nullptr;
+            ice::ecs::detail::DataBlock const* block = nullptr;
 
             ice::u32 const arch_count = ice::count(query.archetype_instances);
             for (; arch_idx < arch_count; ++arch_idx)
@@ -394,7 +394,7 @@ namespace ice::ecs
             for (ice::u32 arch_idx = 0; arch_idx < arch_count; ++arch_idx)
             {
                 ice::ecs::detail::ArchetypeInstanceInfo const* arch = query_object.archetype_instances[arch_idx];
-                ice::ecs::DataBlock const* block = query_object.archetype_data_blocks[arch_idx];
+                ice::ecs::detail::DataBlock const* block = query_object.archetype_data_blocks[arch_idx];
                 ice::Span<ice::u32 const> make_argument_idx_map = ice::array::slice(query_object.archetype_argument_idx_map, arch_idx * component_count, component_count);
 
                 // We skip the first block because it will be always empty.
@@ -463,7 +463,7 @@ namespace ice::ecs
             for (ice::u32 arch_idx = 0; arch_idx < arch_count; ++arch_idx)
             {
                 ice::ecs::detail::ArchetypeInstanceInfo const* arch = query_object.archetype_instances[arch_idx];
-                ice::ecs::DataBlock const* block = query_object.archetype_data_blocks[arch_idx];
+                ice::ecs::detail::DataBlock const* block = query_object.archetype_data_blocks[arch_idx];
                 ice::Span<ice::u32 const> make_argument_idx_map = ice::array::slice(query_object.archetype_argument_idx_map, arch_idx * component_count, component_count);
 
                 // We skip the first block because it will be always empty.
@@ -535,7 +535,7 @@ namespace ice::ecs
             for (ice::u32 arch_idx = 0; arch_idx < arch_count; ++arch_idx)
             {
                 ice::ecs::detail::ArchetypeInstanceInfo const* arch = query.archetype_instances[arch_idx];
-                ice::ecs::DataBlock const* block = query.archetype_data_blocks[arch_idx];
+                ice::ecs::detail::DataBlock const* block = query.archetype_data_blocks[arch_idx];
                 ice::Span<ice::u32 const> make_argument_idx_map = ice::array::slice(query.archetype_argument_idx_map, arch_idx * component_count, component_count);
 
                 // We skip the first block because it will be always empty.
@@ -583,7 +583,7 @@ namespace ice::ecs
             for (ice::u32 arch_idx = 0; arch_idx < arch_count; ++arch_idx)
             {
                 ice::ecs::detail::ArchetypeInstanceInfo const* arch = query.archetype_instances[arch_idx];
-                ice::ecs::DataBlock const* block = query.archetype_data_blocks[arch_idx];
+                ice::ecs::detail::DataBlock const* block = query.archetype_data_blocks[arch_idx];
                 ice::Span<ice::u32 const> make_argument_idx_map = ice::array::slice(query.archetype_argument_idx_map, arch_idx * component_count, component_count);
 
                 // We skip the first block because it will be always empty.
