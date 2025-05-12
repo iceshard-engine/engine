@@ -3,8 +3,9 @@
 
 #pragma once
 #include <ice/shard.hxx>
-#include <ice/log_formatters.hxx>
 #include <ice/ecs/ecs_types.hxx>
+#include <ice/ecs/ecs_concepts.hxx>
+#include <ice/log_formatters.hxx>
 
 namespace ice::ecs
 {
@@ -13,17 +14,48 @@ namespace ice::ecs
 
     struct EntityInfo
     {
+        //! \brief Describes the entity's direct ID which can be also used as an index into tables that always track all entities.
+        //!
+        //! \remark An entity's index will only be reused after a certain amount of entities are destroyed. Currently the cutoff is at
+        //!   1024 entities. This means that the same handle will be generated at earliest when `1024 * 256 (generation max value)` entities
+        //!   are cycled through.
         ice::u32 index : 24;
+
+        //! \brief Describes the entity's generation (aka. version) that is used to determine in an entity was destroyed or not.
+        //!
+        //! \note Once an entity is destroyed, the `EntityIndex` will increase the internal generation value for that entity.
+        //!   This ensures that checks with `EntityIndex::is_alive` are quick because they compare the given `Entity` generation with the
+        //!   internal generation. If the values missmatch the entity is considered destroyed.
         ice::u32 generation : 8;
     };
 
-
+    //! \brief Number of bits reserved to identify the entity's `Archetype` in an `EntityStorage`. Allows for 4095 archerypes
     static constexpr ice::u32 Constant_EntityDataSlotArchetype_Bits = 12;
+
+    //! \brief Number of bits reserved to identify the internal data block where the entity data is stored. Allows for an `Archetype` to
+    //!   have up to 256 data blocks.
+    //!
+    //! \remark Because the amount of entities a default allocated block can store differs depending the component count and sizes
+    //!   it might be necessary to provide custom allocators for extremely large `Archetype`s to not run out of `DataBlocks` if such
+    //!   blocks end up to only hold 50 entities or even less, \see `EntityStorage` for more details.
     static constexpr ice::u32 Constant_EntityDataSlotBlock_Bits = 8;
+
+    //! \brief Number of bits reserved to index into the tables stored in a single `DataBlock`. Allows to store 4096 entities in each data block.
+    //!
+    //! \remark Because each `Archerype` may have 256 blocks and each can hold 4096 entities, the total entity count each archetypes can hold ends up
+    //!   to be 1,048,576. If this number is not enough you may consider to relocate some of the bits for your convenience.
+    //!
+    //! \note It might be possible to change the base type of `EntityDataSlot` to 64 bits, however this option was not tested.
     static constexpr ice::u32 Constant_EntityDataSlotIndex_Bits = 12;
 
-    static constexpr ice::u32 Constant_MaxArchetypeCount = 1 << Constant_EntityDataSlotArchetype_Bits;
+    //! \brief Maximum number of archetypes allowed in the system.
+    //! \remark Archetype at index '0' is considered the 'NullArchetype'
+    static constexpr ice::u32 Constant_MaxArchetypeCount = (1 << Constant_EntityDataSlotArchetype_Bits) - 1;
+
+    //! \brief Maximum number of blocks tracked by a single archetype.
     static constexpr ice::u32 Constant_MaxBlockCount = 1 << Constant_EntityDataSlotBlock_Bits;
+
+    //! \brief Maximum number of entities indexable in a single data block.
     static constexpr ice::u32 Constant_MaxBlockEntityIndex = 1 << Constant_EntityDataSlotIndex_Bits;
 
     static_assert(
@@ -40,13 +72,7 @@ namespace ice::ecs
 
     static_assert(sizeof(EntityDataSlot) == sizeof(ice::u32));
 
-
-    template<typename T>
-    static constexpr bool IsEntity = std::is_same_v<ice::ecs::Entity, T>;
-
-    constexpr auto entity_info(
-        ice::ecs::Entity entity
-    ) noexcept -> ice::ecs::EntityInfo
+    constexpr auto entity_info(ice::ecs::Entity entity) noexcept -> ice::ecs::EntityInfo
     {
         return std::bit_cast<ice::ecs::EntityInfo>(entity);
     }
@@ -68,7 +94,7 @@ struct fmt::formatter<ice::ecs::Entity>
     template<typename FormatContext>
     constexpr auto format(ice::ecs::Entity entity, FormatContext& ctx)
     {
-        constexpr ice::ecs::EntityInfo const info = ice::ecs::entity_info(entity);
+        ice::ecs::EntityInfo const info = ice::ecs::entity_info(entity);
         return fmt::format_to(ctx.out(), "E<{}.{}>", info.index, info.generation);
     }
 };

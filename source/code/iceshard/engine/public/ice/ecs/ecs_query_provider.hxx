@@ -44,7 +44,7 @@ namespace ice::ecs
             ice::Span<ice::ecs::detail::QueryTypeInfo const> query_info,
             ice::Span<ice::StringID const> query_tags,
             ice::Span<ice::ecs::QueryAccessTracker*> out_access_trackers,
-            ice::Array<ice::ecs::ArchetypeInstanceInfo const*>& out_instance_infos,
+            ice::Array<ice::ecs::detail::ArchetypeInstanceInfo const*>& out_instance_infos,
             ice::Array<ice::ecs::DataBlock const*>& out_data_blocks
         ) const noexcept = 0;
 
@@ -53,7 +53,7 @@ namespace ice::ecs
             ice::ecs::detail::QueryObjectPart<RefIdx, QueryComponents...> const& query_part,
             ice::Span<ice::StringID const> query_tags,
             ice::Span<ice::ecs::QueryAccessTracker*> out_access_trackers,
-            ice::Array<ice::ecs::ArchetypeInstanceInfo const*>& out_instance_infos,
+            ice::Array<ice::ecs::detail::ArchetypeInstanceInfo const*>& out_instance_infos,
             ice::Array<ice::ecs::DataBlock const*>& out_data_blocks,
             ice::Array<ice::u32>& out_argument_idx_map,
             ice::u32& out_archetype_count
@@ -65,7 +65,7 @@ namespace ice::ecs
         ice::ecs::detail::QueryObjectPart<RefIdx, QueryComponents...> const& query_part,
         ice::Span<ice::StringID const> query_tags,
         ice::Span<ice::ecs::QueryAccessTracker*> out_access_trackers,
-        ice::Array<ice::ecs::ArchetypeInstanceInfo const*>& out_instance_infos,
+        ice::Array<ice::ecs::detail::ArchetypeInstanceInfo const*>& out_instance_infos,
         ice::Array<ice::ecs::DataBlock const*>& out_data_blocks,
         ice::Array<ice::u32>& out_argument_idx_map,
         ice::u32& out_archetype_count
@@ -91,9 +91,9 @@ namespace ice::ecs
 
         // Copy values to the array
         ice::u32* it = ice::array::begin(out_argument_idx_map) + prev_arim_count;
-        for (ice::ecs::ArchetypeInstanceInfo const* instance : ice::array::slice(out_instance_infos, prev_arch_count))
+        for (ice::ecs::detail::ArchetypeInstanceInfo const* instance : ice::array::slice(out_instance_infos, prev_arch_count))
         {
-            auto const archetype_argument_idx_map = ice::ecs::detail::argument_idx_map<QueryComponents...>(*instance);
+            auto const archetype_argument_idx_map = ice::ecs::detail::make_argument_idx_map<QueryComponents...>(*instance);
             ice::memcpy(it, archetype_argument_idx_map.data(), archetype_argument_idx_map.size() * sizeof(ice::u32));
             it += Part::ComponentCount;
         }

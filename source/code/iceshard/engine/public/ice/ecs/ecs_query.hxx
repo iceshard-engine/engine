@@ -3,19 +3,13 @@
 
 #pragma once
 #include <ice/ecs/ecs_archetype.hxx>
-#include <ice/ecs/ecs_data_block.hxx>
 #include <ice/ecs/ecs_query_object.hxx>
-#include <ice/ecs/ecs_query_provider.hxx>
 #include <ice/ecs/ecs_query_operations.hxx>
-
-#include <ice/task_generator.hxx>
-#include <ice/container/array.hxx>
-#include <ice/span.hxx>
 
 namespace ice::ecs
 {
 
-    template<ice::ecs::QueryPolicy Policy, typename... Parts>
+    template<ice::ecs::QueryPolicy, typename... Parts>
     struct Query : public TraitQueryOperations
     {
     public:

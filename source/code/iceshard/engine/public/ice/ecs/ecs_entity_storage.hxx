@@ -3,6 +3,7 @@
 
 #pragma once
 #include <ice/shard_container.hxx>
+#include <ice/ecs/ecs_types.hxx>
 #include <ice/ecs/ecs_entity.hxx>
 #include <ice/ecs/ecs_entity_index.hxx>
 #include <ice/ecs/ecs_archetype.hxx>
@@ -12,10 +13,6 @@
 
 namespace ice::ecs
 {
-
-    class ArchetypeIndex;
-
-    class EntityOperations;
 
     class EntityStorage : public ice::ecs::QueryProvider
     {
@@ -55,7 +52,7 @@ namespace ice::ecs
             ice::Span<ice::ecs::detail::QueryTypeInfo const> query_info,
             ice::Span<ice::StringID const> query_tags,
             ice::Span<ice::ecs::QueryAccessTracker*> out_access_trackers,
-            ice::Array<ice::ecs::ArchetypeInstanceInfo const*>& out_instance_infos,
+            ice::Array<ice::ecs::detail::ArchetypeInstanceInfo const*>& out_instance_infos,
             ice::Array<ice::ecs::DataBlock const*>& out_data_blocks
         ) const noexcept override;
 

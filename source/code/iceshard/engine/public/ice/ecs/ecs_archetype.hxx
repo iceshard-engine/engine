@@ -2,11 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/stringid.hxx>
-#include <ice/ecs/ecs_types.hxx>
-#include <ice/ecs/ecs_component.hxx>
-#include <ice/ecs/ecs_detail.hxx>
-#include <ice/container_types.hxx>
+#include <ice/ecs/ecs_archetype_detail.hxx>
 #include <ice/span.hxx>
 
 namespace ice::ecs
@@ -17,41 +13,66 @@ namespace ice::ecs
         Invalid = 0x0
     };
 
-    enum class ArchetypeInstance : ice::u32
-    {
-    };
-
-
     template<ice::ecs::Component... Components>
     struct ArchetypeDefinition
     {
-        static constexpr ice::u32 Const_ComponentCount = sizeof...(Components) + 1;
+        //! \brief Quick access to the count of components for this archetype definition.
+        //! \details To be used when no direct access to the typelist is available. (ex.: ArchType::ComponentCount)
+        static constexpr ice::u32 ComponentCount = sizeof...(Components) + 1;
 
+        //! \brief A optional name attached to this archetype. Can be used to access archetypes from the `ArchetypeIndex` without
+        //!   knowing all or any of the components.
         ice::String name;
+
+        //! \brief Unique identifier created from the sorted component list.
         ice::ecs::Archetype identifier;
-        std::array<ice::StringID, Const_ComponentCount> component_identifiers;
-        std::array<ice::u32, Const_ComponentCount> component_sizes;
-        std::array<ice::u32, Const_ComponentCount> component_alignments;
+
+        //! \brief List of identifiers for each component in the template list.
+        //!
+        //! \remark This array contains the sorted version, which means the value at index '0' might not correspond
+        //!   to the type at index '0'.
+        std::array<ice::StringID, ComponentCount> component_identifiers;
+
+        //! \brief List of sizes for each component in the template list.
+        //!
+        //! \remark This array contains the sorted version, which means the value at index '0' might not correspond
+        //!   to the type's size at index '0'.
+        std::array<ice::u32, ComponentCount> component_sizes;
+
+        //! \brief List of alignments for each component in the template list.
+        //!
+        //! \remark This array contains the sorted version, which means the value at index '0' might not correspond
+        //!   to the type's alignment at index '0'.
+        std::array<ice::u32, ComponentCount> component_alignments;
 
         constexpr inline ArchetypeDefinition(ice::String name = {}) noexcept;
 
         constexpr inline operator ice::ecs::Archetype() const noexcept;
     };
 
-
+    //! \brief Quick access to an instance of ArchetypeDefinition with the given components.
     template<ice::ecs::Component... Components>
     static constexpr ArchetypeDefinition<Components...> Constant_ArchetypeDefinition{ };
 
+    //! \brief Quick access to the identifier of an ArchetypeDefinition with the given components.
     template<ice::ecs::Component... Components>
     static constexpr ice::ecs::Archetype Constant_Archetype = Constant_ArchetypeDefinition<Components...>.identifier;
 
-
     struct ArchetypeInfo
     {
+        //! \copydoc ArchetypeDefinition::name
         ice::String name;
+
+        //! \copydoc ArchetypeDefinition::identifier
         ice::ecs::Archetype identifier;
+
+        //! \copydoc ArchetypeDefinition::component_identifiers
         ice::Span<ice::StringID const> component_identifiers;
+
+        //! \copydoc ArchetypeDefinition::component_sizes
         ice::Span<ice::u32 const> component_sizes;
+
+        //! \copydoc ArchetypeDefinition::component_alignments
         ice::Span<ice::u32 const> component_alignments;
 
         template<ice::ecs::Component... Components>
@@ -59,97 +80,6 @@ namespace ice::ecs
             ice::ecs::ArchetypeDefinition<Components...> const& archetype_info
         ) noexcept;
     };
-
-    struct ArchetypeInstanceInfo
-    {
-        ice::ecs::ArchetypeInstance archetype_instance;
-        ice::Span<ice::StringID const> component_identifiers;
-        ice::Span<ice::u32 const> component_sizes;
-        ice::Span<ice::u32 const> component_alignments;
-        ice::Span<ice::u32 const> component_offsets;
-        ice::u32 component_entity_count_max;
-    };
-
-
-    namespace detail
-    {
-
-        struct SortableArchetypeComponent
-        {
-            ice::StringID identifier;
-            ice::u32 size;
-            ice::u32 alignment;
-        };
-
-        constexpr bool operator<(
-            SortableArchetypeComponent const& left,
-            SortableArchetypeComponent const& right
-        ) noexcept
-        {
-            return ice::hash(left.identifier) < ice::hash(right.identifier);
-        }
-
-        template<ice::ecs::Component... Components>
-        struct UnsortedArchetypeInfo
-        {
-            static constexpr std::array<SortableArchetypeComponent, sizeof...(Components)> const Const_Components{
-                SortableArchetypeComponent{
-                    .identifier = ice::ecs::Constant_ComponentIdentifier<Components>,
-                    .size = ice::ecs::Constant_ComponentSize<Components>,
-                    .alignment = ice::ecs::Constant_ComponentAlignment<Components>,
-                }...
-            };
-        };
-
-        template<ice::ecs::Component... Components>
-        struct SortedArchetypeInfo
-        {
-            static constexpr std::array<SortableArchetypeComponent, sizeof...(Components)> const Const_Components =
-                constexpr_sort_array(UnsortedArchetypeInfo<Components...>::Const_Components);
-        };
-
-        constexpr auto make_archetype_identifier(
-            ice::Span<ice::StringID const> component_identifiers
-        ) noexcept -> ice::ecs::Archetype
-        {
-            ice::u64 handle_hash = ice::hash32("ice.__ecs_archetype__");
-            for (ice::StringID_Arg component : component_identifiers)
-            {
-                handle_hash <<= 5;
-                handle_hash ^= ice::hash(component);
-            }
-            return static_cast<Archetype>(handle_hash);
-        }
-
-        template<ice::ecs::Component... Components>
-        constexpr auto argument_idx_map(
-            ice::Span<ice::StringID const> component_identifiers_target_order
-        ) noexcept -> ice::StaticArray<ice::u32, sizeof...(Components)>
-        {
-            constexpr ice::u32 component_count = sizeof...(Components);
-            constexpr ice::StringID components_identifiers_original_order[]{ ice::ecs::Constant_ComponentIdentifier<Components>... };
-
-            ice::StaticArray<ice::u32, component_count> result{ ice::u32_max };
-            for (ice::u32 idx = 0; idx < component_count; ++idx)
-            {
-                result[idx] = std::numeric_limits<ice::u32>::max();
-
-                ice::u32 arg_idx = 0;
-                for (ice::StringID_Arg component_arg : component_identifiers_target_order)
-                {
-                    if (component_arg == components_identifiers_original_order[idx])
-                    {
-                        result[idx] = arg_idx;
-                        break;
-                    }
-                    arg_idx += 1;
-                }
-            }
-            return result;
-        }
-
-    } // namespace detail
-
 
     template<ice::ecs::Component... Components>
     constexpr inline ArchetypeDefinition<Components...>::ArchetypeDefinition(ice::String name) noexcept
@@ -160,7 +90,7 @@ namespace ice::ecs
     {
         auto const& sorted_components = ice::ecs::detail::SortedArchetypeInfo<Components...>::Const_Components;
 
-        for (ice::u32 idx = 1; idx < Const_ComponentCount; ++idx)
+        for (ice::u32 idx = 1; idx < ComponentCount; ++idx)
         {
             component_identifiers[idx] = sorted_components[idx - 1].identifier;
             component_sizes[idx] = sorted_components[idx - 1].size;
@@ -188,7 +118,8 @@ namespace ice::ecs
     {
     }
 
-
+    //! \brief A namespace containing various compile-time checks and validations to ensure all compile-time invariants are holding
+    //!   after refactors or invasive changes into implementation details
     namespace static_validation
     {
 

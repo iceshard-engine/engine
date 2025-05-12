@@ -133,7 +133,7 @@ namespace ice::ecs
     {
         constexpr ice::ecs::ArchetypeDefinition<Components...> const& pseudo_archetype_definition = ice::ecs::Constant_ArchetypeDefinition<Components...>;
 
-        constexpr ice::StaticArray<ice::u32, sizeof...(Components)> const idx_map = ice::ecs::detail::argument_idx_map<Components...>(
+        constexpr ice::StaticArray<ice::u32, sizeof...(Components)> const idx_map = ice::ecs::detail::make_argument_idx_map<Components...>(
             ice::span::from_std_const(pseudo_archetype_definition.component_identifiers)
         );
 
@@ -174,7 +174,7 @@ namespace ice::ecs
     {
         static ice::ecs::ArchetypeDefinition<Components...> constexpr HelperArchetype;
 
-        static ice::StaticArray<ice::u32, sizeof...(Components)> constexpr ComponentIdxMap = ice::ecs::detail::argument_idx_map<Components...>(
+        static ice::StaticArray<ice::u32, sizeof...(Components)> constexpr ComponentIdxMap = ice::ecs::detail::make_argument_idx_map<Components...>(
             ice::span::from_std_const(HelperArchetype.component_identifiers)
         );
 
@@ -294,7 +294,7 @@ namespace ice::ecs
     {
         static ice::ecs::ArchetypeDefinition<Components...> constexpr HelperArchetype;
 
-        static ice::StaticArray<ice::u32, sizeof...(Components)> constexpr ComponentIdxMap = ice::ecs::detail::argument_idx_map<Components...>(
+        static ice::StaticArray<ice::u32, sizeof...(Components)> constexpr ComponentIdxMap = ice::ecs::detail::make_argument_idx_map<Components...>(
             ice::span::from_std_const(HelperArchetype.component_identifiers)
         );
 

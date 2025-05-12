@@ -12,6 +12,9 @@
 namespace ice::ecs
 {
 
+    using ice::ecs::detail::ArchetypeInstance;
+    using ice::ecs::detail::ArchetypeInstanceInfo;
+
     namespace detail
     {
 
@@ -508,7 +511,7 @@ namespace ice::ecs
             }
 
             // Go over each archetype component and create non-existent trackers
-            ice::ecs::ArchetypeInstanceInfo const* info = nullptr;
+            ice::ecs::detail::ArchetypeInstanceInfo const* info = nullptr;
             _archetype_index.fetch_archetype_instance_info_by_index(idx, info);
             ICE_ASSERT_CORE(info != nullptr);
 

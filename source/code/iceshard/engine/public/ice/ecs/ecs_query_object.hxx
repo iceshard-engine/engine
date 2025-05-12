@@ -3,6 +3,7 @@
 
 #pragma once
 #include <ice/ecs/ecs_query_object_part.hxx>
+#include <ice/ecs/ecs_data_block.hxx>
 
 namespace ice::ecs
 {
@@ -36,7 +37,7 @@ namespace ice::ecs
 
         ice::ecs::QueryProvider const* provider;
         ice::ecs::QueryAccessTracker* access_trackers[std::tuple_size_v<ComponentsTypeList>];
-        ice::Array<ice::ecs::ArchetypeInstanceInfo const*> archetype_instances;
+        ice::Array<ice::ecs::detail::ArchetypeInstanceInfo const*> archetype_instances;
         ice::Array<ice::ecs::DataBlock const*> archetype_data_blocks;
         ice::Array<ice::u32> archetype_argument_idx_map;
         ice::u32 archetype_count_for_part[PartCount];

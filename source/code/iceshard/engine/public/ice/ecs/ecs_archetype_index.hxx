@@ -42,27 +42,27 @@ namespace ice::ecs
 
         void fetch_archetype_instance_infos(
             ice::Span<ice::ecs::Archetype const> archetypes,
-            ice::Span<ice::ecs::ArchetypeInstanceInfo const*> out_instance_infos
+            ice::Span<ice::ecs::detail::ArchetypeInstanceInfo const*> out_instance_infos
         ) const noexcept;
 
         void fetch_archetype_instance_infos(
-            ice::Span<ice::ecs::ArchetypeInstance const> archetype_instances,
-            ice::Span<ice::ecs::ArchetypeInstanceInfo const*> out_instance_infos
+            ice::Span<ice::ecs::detail::ArchetypeInstance const> archetype_instances,
+            ice::Span<ice::ecs::detail::ArchetypeInstanceInfo const*> out_instance_infos
         ) const noexcept;
 
         void fetch_archetype_instance_info_by_index(
             ice::u32 index,
-            ice::ecs::ArchetypeInstanceInfo const*& out_instance_info
+            ice::ecs::detail::ArchetypeInstanceInfo const*& out_instance_info
         ) const noexcept;
 
         void fetch_archetype_instance_info_with_pool(
             ice::ecs::Archetype archetype,
-            ice::ecs::ArchetypeInstanceInfo const*& out_instance_info,
+            ice::ecs::detail::ArchetypeInstanceInfo const*& out_instance_info,
             ice::ecs::DataBlockPool*& out_block_pool
         ) const noexcept;
 
         void fetch_archetype_instance_pool(
-            ice::ecs::ArchetypeInstance archetype,
+            ice::ecs::detail::ArchetypeInstance archetype,
             ice::ecs::DataBlockPool*& out_block_pool
         ) const noexcept;
 

@@ -109,7 +109,7 @@ namespace ice::ecs
     {
         ice::String archetype_name;
         ice::ecs::Archetype archetype_identifier;
-        ice::ecs::ArchetypeInstanceInfo archetype_info;
+        ice::ecs::detail::ArchetypeInstanceInfo archetype_info;
         ice::ecs::DataBlockPool* block_pool;
 
         static auto calculate_meminfo(
@@ -306,7 +306,7 @@ namespace ice::ecs
         }
 
         ice::u32 const archetype_index = ice::array::count(_archetype_data);
-        data_header->archetype_info.archetype_instance = ArchetypeInstance{ archetype_index };
+        data_header->archetype_info.archetype_instance = ice::ecs::detail::ArchetypeInstance{ archetype_index };
 
         ice::array::push_back(_archetype_data, data_header);
         ice::hashmap::set(_archetype_index, ice::hash(archetype_info.identifier), archetype_index);
@@ -369,7 +369,7 @@ namespace ice::ecs
         ice::u32 const total_required_type_count = required_component_count + required_tag_count;
         for (ArchetypeDataHeader const* entry : ice::array::slice(_archetype_data, 1))
         {
-            ArchetypeInstanceInfo const& archetype_info = entry->archetype_info;
+            ice::ecs::detail::ArchetypeInstanceInfo const& archetype_info = entry->archetype_info;
 
             ice::u32 const archetype_component_count = ice::count(archetype_info.component_identifiers);
             if (archetype_component_count < total_required_type_count)
@@ -394,7 +394,7 @@ namespace ice::ecs
 
     void ArchetypeIndex::fetch_archetype_instance_infos(
         ice::Span<ice::ecs::Archetype const> archetypes,
-        ice::Span<ice::ecs::ArchetypeInstanceInfo const*> out_instance_infos
+        ice::Span<ice::ecs::detail::ArchetypeInstanceInfo const*> out_instance_infos
     ) const noexcept
     {
         ICE_ASSERT(
@@ -421,8 +421,8 @@ namespace ice::ecs
     }
 
     void ArchetypeIndex::fetch_archetype_instance_infos(
-        ice::Span<ice::ecs::ArchetypeInstance const> archetype_instances,
-        ice::Span<ice::ecs::ArchetypeInstanceInfo const*> out_instance_infos
+        ice::Span<ice::ecs::detail::ArchetypeInstance const> archetype_instances,
+        ice::Span<ice::ecs::detail::ArchetypeInstanceInfo const*> out_instance_infos
     ) const noexcept
     {
         ICE_ASSERT(
@@ -433,7 +433,7 @@ namespace ice::ecs
         ice::u32 const instance_count = ice::array::count(_archetype_data);
 
         ice::u32 archetype_idx = 0;
-        for (ArchetypeInstance archetype_instance : archetype_instances)
+        for (ice::ecs::detail::ArchetypeInstance archetype_instance : archetype_instances)
         {
             ice::u32 const instance_idx = static_cast<ice::u32>(archetype_instance);
             ICE_ASSERT(
@@ -449,7 +449,7 @@ namespace ice::ecs
 
     void ArchetypeIndex::fetch_archetype_instance_info_by_index(
         ice::u32 index,
-        ice::ecs::ArchetypeInstanceInfo const*& out_instance_info
+        ice::ecs::detail::ArchetypeInstanceInfo const*& out_instance_info
     ) const noexcept
     {
         ice::u32 const instance_count = ice::array::count(_archetype_data);
@@ -469,7 +469,7 @@ namespace ice::ecs
 
     void ArchetypeIndex::fetch_archetype_instance_info_with_pool(
         ice::ecs::Archetype archetype,
-        ice::ecs::ArchetypeInstanceInfo const*& out_instance_info,
+        ice::ecs::detail::ArchetypeInstanceInfo const*& out_instance_info,
         ice::ecs::DataBlockPool*& out_block_pool
     ) const noexcept
     {
@@ -491,7 +491,7 @@ namespace ice::ecs
     }
 
     void ArchetypeIndex::fetch_archetype_instance_pool(
-        ice::ecs::ArchetypeInstance archetype_instance,
+        ice::ecs::detail::ArchetypeInstance archetype_instance,
         ice::ecs::DataBlockPool*& out_block_pool
     ) const noexcept
     {

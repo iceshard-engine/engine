@@ -5,6 +5,7 @@
 #include <ice/ecs/ecs_query_object.hxx>
 #include <ice/ecs/ecs_query_provider.hxx>
 #include <ice/ecs/ecs_query_awaitable.hxx>
+#include <ice/task_generator.hxx>
 
 namespace ice::ecs
 {
@@ -65,7 +66,7 @@ namespace ice::ecs
         inline auto create_entity_tuple_concat(
             std::tuple<TupleTypes...>&& in_tuple,
             ice::ecs::QueryProvider const& provider,
-            ice::Span<ice::ecs::ArchetypeInstanceInfo const* const> archetype_instances,
+            ice::Span<ice::ecs::detail::ArchetypeInstanceInfo const* const> archetype_instances,
             ice::Span<ice::ecs::DataBlock const* const> archetype_data_blocks,
             ice::Span<ice::u32 const> archetype_argument_idx_map,
             ice::Span<ice::u32 const> archetype_parts_count,
@@ -83,13 +84,13 @@ namespace ice::ecs
             ice::ecs::EntityDataSlot const slotinfo = provider.query_data_slot(ref->entity);
 
             ice::u32 arch_idx = 0;
-            ice::ecs::ArchetypeInstanceInfo const* arch = nullptr;
+            ice::ecs::detail::ArchetypeInstanceInfo const* arch = nullptr;
             ice::ecs::DataBlock const* block = nullptr;
 
             for (; arch_idx < archetype_parts_count[0]; ++arch_idx)
             {
                 arch = archetype_instances[arch_idx];
-                if (arch->archetype_instance == ice::ecs::ArchetypeInstance{ slotinfo.archetype })
+                if (arch->archetype_instance == ice::ecs::detail::ArchetypeInstance{ slotinfo.archetype })
                 {
                     // Find the specific block
                     ice::u32 slot_block = slotinfo.block;
@@ -106,17 +107,17 @@ namespace ice::ecs
             ICE_ASSERT_CORE(arch != nullptr && block != nullptr);
 
             void* helper_pointer_array[component_count]{ nullptr };
-            ice::Span<ice::u32 const> argument_idx_map = ice::span::subspan(archetype_argument_idx_map, arch_idx * component_count, component_count);
+            ice::Span<ice::u32 const> make_argument_idx_map = ice::span::subspan(archetype_argument_idx_map, arch_idx * component_count, component_count);
 
             for (ice::u32 arg_idx = 0; arg_idx < component_count; ++arg_idx)
             {
-                if (argument_idx_map[arg_idx] == ice::u32_max)
+                if (make_argument_idx_map[arg_idx] == ice::u32_max)
                 {
                     helper_pointer_array[arg_idx] = nullptr;
                 }
                 else
                 {
-                    ice::u32 const cmp_idx = argument_idx_map[arg_idx];
+                    ice::u32 const cmp_idx = make_argument_idx_map[arg_idx];
 
                     helper_pointer_array[arg_idx] = ice::ptr_add(
                         block->block_data,
@@ -155,7 +156,7 @@ namespace ice::ecs
             ice::u32 count,
             void** component_pointer_array,
             ice::ecs::QueryProvider const& provider,
-            ice::Span<ice::ecs::ArchetypeInstanceInfo const* const> archetype_instances,
+            ice::Span<ice::ecs::detail::ArchetypeInstanceInfo const* const> archetype_instances,
             ice::Span<ice::ecs::DataBlock const* const> archetype_data_blocks,
             ice::Span<ice::u32 const> archetype_argument_idx_map,
             ice::Span<ice::u32 const> archetype_parts_count,
@@ -191,13 +192,13 @@ namespace ice::ecs
                     ice::ecs::EntityDataSlot const slotinfo = provider.query_data_slot(refcmp[idx].entity);
 
                     ice::u32 arch_idx = 0;
-                    ice::ecs::ArchetypeInstanceInfo const* arch = nullptr;
+                    ice::ecs::detail::ArchetypeInstanceInfo const* arch = nullptr;
                     ice::ecs::DataBlock const* block = nullptr;
 
                     for (; arch_idx < archetype_parts_count[0]; ++arch_idx)
                     {
                         arch = archetype_instances[arch_idx];
-                        if (arch->archetype_instance == ice::ecs::ArchetypeInstance{ slotinfo.archetype })
+                        if (arch->archetype_instance == ice::ecs::detail::ArchetypeInstance{ slotinfo.archetype })
                         {
                             // Find the specific block
                             ice::u32 slot_block = slotinfo.block;
@@ -213,17 +214,17 @@ namespace ice::ecs
 
                     ICE_ASSERT_CORE(arch != nullptr && block != nullptr);
 
-                    ice::Span<ice::u32 const> argument_idx_map = ice::span::subspan(archetype_argument_idx_map, arch_idx * component_count, component_count);
+                    ice::Span<ice::u32 const> make_argument_idx_map = ice::span::subspan(archetype_argument_idx_map, arch_idx * component_count, component_count);
 
                     for (ice::u32 arg_idx = 0; arg_idx < component_count; ++arg_idx)
                     {
-                        if (argument_idx_map[arg_idx] == ice::u32_max)
+                        if (make_argument_idx_map[arg_idx] == ice::u32_max)
                         {
                             helper_pointer_array[arg_idx] = nullptr;
                         }
                         else
                         {
-                            ice::u32 const cmp_idx = argument_idx_map[arg_idx];
+                            ice::u32 const cmp_idx = make_argument_idx_map[arg_idx];
 
                             helper_pointer_array[arg_idx] = ice::ptr_add(
                                 block->block_data,
@@ -315,14 +316,14 @@ namespace ice::ecs
             ice::ecs::EntityDataSlot const slotinfo = query.provider->query_data_slot(entity);
 
             ice::u32 arch_idx = 0;
-            ice::ecs::ArchetypeInstanceInfo const* arch = nullptr;
+            ice::ecs::detail::ArchetypeInstanceInfo const* arch = nullptr;
             ice::ecs::DataBlock const* block = nullptr;
 
             ice::u32 const arch_count = ice::count(query.archetype_instances);
             for (; arch_idx < arch_count; ++arch_idx)
             {
                 arch = query.archetype_instances[arch_idx];
-                if (arch->archetype_instance == ice::ecs::ArchetypeInstance{ slotinfo.archetype })
+                if (arch->archetype_instance == ice::ecs::detail::ArchetypeInstance{ slotinfo.archetype })
                 {
                     // Find the specific block
                     ice::u32 slot_block = slotinfo.block;
@@ -339,19 +340,19 @@ namespace ice::ecs
             ICE_ASSERT_CORE(arch != nullptr && block != nullptr);
 
             void* helper_pointer_array[component_count]{ nullptr };
-            ice::Span<ice::u32 const> argument_idx_map = ice::array::slice(
+            ice::Span<ice::u32 const> make_argument_idx_map = ice::array::slice(
                 query.archetype_argument_idx_map, arch_idx * component_count, component_count
             );
 
             for (ice::u32 arg_idx = 0; arg_idx < component_count; ++arg_idx)
             {
-                if (argument_idx_map[arg_idx] == ice::u32_max)
+                if (make_argument_idx_map[arg_idx] == ice::u32_max)
                 {
                     helper_pointer_array[arg_idx] = nullptr;
                 }
                 else
                 {
-                    ice::u32 const cmp_idx = argument_idx_map[arg_idx];
+                    ice::u32 const cmp_idx = make_argument_idx_map[arg_idx];
 
                     helper_pointer_array[arg_idx] = ice::ptr_add(
                         block->block_data,
@@ -392,9 +393,9 @@ namespace ice::ecs
             ice::u32 const arch_count = query_object.archetype_count_for_part[0];
             for (ice::u32 arch_idx = 0; arch_idx < arch_count; ++arch_idx)
             {
-                ice::ecs::ArchetypeInstanceInfo const* arch = query_object.archetype_instances[arch_idx];
+                ice::ecs::detail::ArchetypeInstanceInfo const* arch = query_object.archetype_instances[arch_idx];
                 ice::ecs::DataBlock const* block = query_object.archetype_data_blocks[arch_idx];
-                ice::Span<ice::u32 const> argument_idx_map = ice::array::slice(query_object.archetype_argument_idx_map, arch_idx * component_count, component_count);
+                ice::Span<ice::u32 const> make_argument_idx_map = ice::array::slice(query_object.archetype_argument_idx_map, arch_idx * component_count, component_count);
 
                 // We skip the first block because it will be always empty.
                 ICE_ASSERT_CORE(block->block_entity_count == 0);
@@ -404,13 +405,13 @@ namespace ice::ecs
                 {
                     for (ice::u32 arg_idx = 0; arg_idx < component_count; ++arg_idx)
                     {
-                        if (argument_idx_map[arg_idx] == ice::u32_max)
+                        if (make_argument_idx_map[arg_idx] == ice::u32_max)
                         {
                             helper_pointer_array[arg_idx] = nullptr;
                         }
                         else
                         {
-                            ice::u32 const cmp_idx = argument_idx_map[arg_idx];
+                            ice::u32 const cmp_idx = make_argument_idx_map[arg_idx];
 
                             helper_pointer_array[arg_idx] = ice::ptr_add(
                                 block->block_data,
@@ -461,9 +462,9 @@ namespace ice::ecs
             ice::u32 const arch_count = query_object.archetype_count_for_part[0];
             for (ice::u32 arch_idx = 0; arch_idx < arch_count; ++arch_idx)
             {
-                ice::ecs::ArchetypeInstanceInfo const* arch = query_object.archetype_instances[arch_idx];
+                ice::ecs::detail::ArchetypeInstanceInfo const* arch = query_object.archetype_instances[arch_idx];
                 ice::ecs::DataBlock const* block = query_object.archetype_data_blocks[arch_idx];
-                ice::Span<ice::u32 const> argument_idx_map = ice::array::slice(query_object.archetype_argument_idx_map, arch_idx * component_count, component_count);
+                ice::Span<ice::u32 const> make_argument_idx_map = ice::array::slice(query_object.archetype_argument_idx_map, arch_idx * component_count, component_count);
 
                 // We skip the first block because it will be always empty.
                 ICE_ASSERT_CORE(block->block_entity_count == 0);
@@ -473,13 +474,13 @@ namespace ice::ecs
                 {
                     for (ice::u32 arg_idx = 0; arg_idx < component_count; ++arg_idx)
                     {
-                        if (argument_idx_map[arg_idx] == ice::u32_max)
+                        if (make_argument_idx_map[arg_idx] == ice::u32_max)
                         {
                             helper_pointer_array[arg_idx] = nullptr;
                         }
                         else
                         {
-                            ice::u32 const cmp_idx = argument_idx_map[arg_idx];
+                            ice::u32 const cmp_idx = make_argument_idx_map[arg_idx];
 
                             helper_pointer_array[arg_idx] = ice::ptr_add(
                                 block->block_data,
@@ -533,9 +534,9 @@ namespace ice::ecs
             ice::u32 const arch_count = ice::count(query.archetype_instances);
             for (ice::u32 arch_idx = 0; arch_idx < arch_count; ++arch_idx)
             {
-                ice::ecs::ArchetypeInstanceInfo const* arch = query.archetype_instances[arch_idx];
+                ice::ecs::detail::ArchetypeInstanceInfo const* arch = query.archetype_instances[arch_idx];
                 ice::ecs::DataBlock const* block = query.archetype_data_blocks[arch_idx];
-                ice::Span<ice::u32 const> argument_idx_map = ice::array::slice(query.archetype_argument_idx_map, arch_idx * component_count, component_count);
+                ice::Span<ice::u32 const> make_argument_idx_map = ice::array::slice(query.archetype_argument_idx_map, arch_idx * component_count, component_count);
 
                 // We skip the first block because it will be always empty.
                 ICE_ASSERT_CORE(block->block_entity_count == 0);
@@ -545,13 +546,13 @@ namespace ice::ecs
                 {
                     for (ice::u32 arg_idx = 0; arg_idx < component_count; ++arg_idx)
                     {
-                        if (argument_idx_map[arg_idx] == ice::u32_max)
+                        if (make_argument_idx_map[arg_idx] == ice::u32_max)
                         {
                             helper_pointer_array[arg_idx] = nullptr;
                         }
                         else
                         {
-                            ice::u32 const cmp_idx = argument_idx_map[arg_idx];
+                            ice::u32 const cmp_idx = make_argument_idx_map[arg_idx];
 
                             helper_pointer_array[arg_idx] = ice::ptr_add(
                                 block->block_data,
@@ -581,9 +582,9 @@ namespace ice::ecs
             ice::u32 const arch_count = ice::count(query.archetype_instances);
             for (ice::u32 arch_idx = 0; arch_idx < arch_count; ++arch_idx)
             {
-                ice::ecs::ArchetypeInstanceInfo const* arch = query.archetype_instances[arch_idx];
+                ice::ecs::detail::ArchetypeInstanceInfo const* arch = query.archetype_instances[arch_idx];
                 ice::ecs::DataBlock const* block = query.archetype_data_blocks[arch_idx];
-                ice::Span<ice::u32 const> argument_idx_map = ice::array::slice(query.archetype_argument_idx_map, arch_idx * component_count, component_count);
+                ice::Span<ice::u32 const> make_argument_idx_map = ice::array::slice(query.archetype_argument_idx_map, arch_idx * component_count, component_count);
 
                 // We skip the first block because it will be always empty.
                 ICE_ASSERT_CORE(block->block_entity_count == 0);
@@ -593,13 +594,13 @@ namespace ice::ecs
                 {
                     for (ice::u32 arg_idx = 0; arg_idx < component_count; ++arg_idx)
                     {
-                        if (argument_idx_map[arg_idx] == ice::u32_max)
+                        if (make_argument_idx_map[arg_idx] == ice::u32_max)
                         {
                             helper_pointer_array[arg_idx] = nullptr;
                         }
                         else
                         {
-                            ice::u32 const cmp_idx = argument_idx_map[arg_idx];
+                            ice::u32 const cmp_idx = make_argument_idx_map[arg_idx];
 
                             helper_pointer_array[arg_idx] = ice::ptr_add(
                                 block->block_data,

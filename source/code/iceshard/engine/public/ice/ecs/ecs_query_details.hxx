@@ -23,7 +23,7 @@ namespace ice::ecs::detail
     struct QueryRequirements
     {
         static constexpr ice::StaticArray<ice::ecs::detail::QueryTypeInfo, 1 + sizeof...(Components)> const Constant_Requirements =
-            constexpr_sort_array(
+            ice::constexpr_sort_stdarray(
                 UnsortedQueryRequirements<First, Components...>::Constant_Requirements,
                 static_cast<ice::u32>(std::is_same_v<First, ice::ecs::Entity>)
             );
@@ -42,7 +42,7 @@ namespace ice::ecs::detail
     struct QueryTags
     {
         static constexpr ice::StaticArray<ice::StringID, sizeof...(Tags)> const Constant_Tags =
-            constexpr_sort_array(UnsortedQueryTags<Tags...>::Constant_Tags, 0);
+            ice::constexpr_sort_stdarray(UnsortedQueryTags<Tags...>::Constant_Tags, 0);
     };
 
     template<QueryType Arg>
@@ -128,8 +128,8 @@ namespace ice::ecs::detail
 
 
     template<QueryType... Components>
-    inline auto argument_idx_map(
-        ice::ecs::ArchetypeInstanceInfo const& archetype_info
+    inline auto make_argument_idx_map(
+        ice::ecs::detail::ArchetypeInstanceInfo const& archetype_info
     ) noexcept -> std::array<ice::u32, sizeof...(Components)>
     {
         constexpr ice::u32 component_count = sizeof...(Components);

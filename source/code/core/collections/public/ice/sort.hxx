@@ -53,6 +53,9 @@ namespace ice
     template<typename K, typename V, typename Pred>
     inline void sort(ice::Span<K> keys, ice::Span<V> values, Pred&& pred) noexcept;
 
+    template<typename T>
+    constexpr auto constexpr_sort_stdarray(T const& arr, ice::u32 start_offset = 0) noexcept -> T;
+
 
     template<typename K, typename Pred>
     inline void sort_indices(ice::Span<K> keys, ice::Span<ice::u32> indices, Pred&& pred) noexcept;
@@ -280,6 +283,14 @@ namespace ice
 
         // Return the 'next' element of the result.
         return result.next;
+    }
+
+    template<typename T>
+    constexpr auto constexpr_sort_stdarray(T const& arr, ice::u32 start_offset) noexcept -> T
+    {
+        T result = arr;
+        std::sort(std::next(std::begin(result), start_offset), std::end(result));
+        return result;
     }
 
 } // namespace ice
