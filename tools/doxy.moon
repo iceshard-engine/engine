@@ -56,7 +56,7 @@ class DoxyCommand extends Command
         for possible_doxy_path in *possible_paths
             @doxy = Exec possible_doxy_path if File\exists possible_doxy_path
 
-        @fail "Missing a valid 'doxygen' executable! Please check your settings file and/or your enviroment variables."
+        @fail "Missing a valid 'doxygen' executable! Please check your settings file and/or your enviroment variables." unless @doxy
 
     execute: (args, project) =>
         Validation\assert (args.update and args.generate) != true, "It's not supported to generate and update doxygen config file at the same time."
