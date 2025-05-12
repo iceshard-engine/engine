@@ -19,7 +19,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Log information
-        run:
-          - echo Initializing for ${{ inputs.configuration }}
+        run: |
+          echo Initializing for ${{ inputs.configuration }}
       - name: Initialize the workspace
-        using: ./.github/actions/ibt-workspace-init@hotfix-may-13
+        uses: ./.github/actions/ibt-workspace-init@hotfix-may-13
