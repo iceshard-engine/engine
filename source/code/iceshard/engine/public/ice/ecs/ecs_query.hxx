@@ -24,7 +24,7 @@ namespace ice::ecs
     //!
     //! \see ice::ecs::TraitQueryOperations for the definition of each operation a query can perform.
     //! \see ice::ecs::QueryObject<Parts...>
-    template<ice::ecs::QueryType Type, typename... Parts>
+    template<ice::ecs::QueryType, typename... Parts>
     struct Query : public ice::ecs::TraitQueryOperations
     {
     public:
