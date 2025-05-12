@@ -24,6 +24,12 @@ namespace ice::ecs
 
         auto registered_archetype_count() const noexcept -> ice::u32;
 
+        template<ice::ecs::Component... Components>
+        auto new_archetype(
+            ice::String name = {},
+            ice::ecs::detail::DataBlockPool * data_block_pool = nullptr
+        ) noexcept -> ice::ecs::Archetype;
+
         auto register_archetype(
             ice::ecs::ArchetypeInfo const& archetype_info,
             ice::ecs::detail::DataBlockPool* data_block_pool = nullptr
@@ -75,5 +81,16 @@ namespace ice::ecs
         struct ArchetypeDataHeader;
         ice::Array<ArchetypeDataHeader*> _archetype_data;
     };
+
+    template<ice::ecs::Component... Components>
+    inline auto ArchetypeIndex::new_archetype(
+        ice::String name,
+        ice::ecs::detail::DataBlockPool* data_block_pool
+    ) noexcept -> ice::ecs::Archetype
+    {
+        ice::ecs::ArchetypeInfo info = ice::ecs::Constant_ArchetypeDefinition<Components...>;
+        info.name = name;
+        return this->register_archetype(info, data_block_pool);
+    }
 
 } // namespace ice::ecs
