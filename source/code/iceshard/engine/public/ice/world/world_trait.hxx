@@ -3,6 +3,9 @@
 
 #pragma once
 #include <ice/ecs/ecs_types.hxx>
+#include <ice/ecs/ecs_query_storage.hxx>
+#include <ice/ecs/ecs_query_builder.hxx>
+
 #include <ice/world/world_trait_types.hxx>
 #include <ice/world/world_trait_context.hxx>
 #include <ice/shard_container.hxx>
@@ -36,7 +39,13 @@ namespace ice
 
         auto entities() noexcept -> ice::ecs::EntityIndex&;
         auto entity_operations() noexcept -> ice::ecs::EntityOperations&;
-        auto entity_queries() noexcept -> ice::ecs::QueryProvider&;
+        auto entity_queries() noexcept -> ice::ecs::QueryStorage&;
+
+        template<ice::ecs::QueryArg... Types>
+        auto query() noexcept -> ice::ecs::QueryBuilder<ice::ecs::QueryObject<ice::ecs::QueryObjectPart<0, Types...>>>
+        {
+            return entity_queries().build<Types...>();
+        }
 
     protected:
         ice::TraitContext& _context;

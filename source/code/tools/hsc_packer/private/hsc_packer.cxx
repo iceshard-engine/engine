@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/mem_allocator_host.hxx>
@@ -40,6 +40,8 @@ auto select_chunk_loose_resource(
     hailstorm::Data resource_meta,
     hailstorm::Data resource_data,
     std::span<HailstormChunk const> chunks,
+    uint32_t /*partial_chunk_start*/,
+    uint32_t /*partial_chunk_count*/,
     void* userdata
 ) noexcept -> HailstormWriteChunkRef
 {

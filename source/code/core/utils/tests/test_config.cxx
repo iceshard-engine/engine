@@ -1,3 +1,6 @@
+/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 
 #include <catch2/catch_test_macros.hpp>
 #include <ice/config.hxx>

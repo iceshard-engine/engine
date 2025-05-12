@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "resource_provider_hailstorm_devui.hxx"
@@ -162,7 +162,7 @@ namespace ice
         ice::u32 const entry_size = static_cast<ice::u32>(ImGui::GetTextLineHeightWithSpacing());
         ice::u32 const table_size = entry_size * entry_count;
 
-        if (ImGui::BeginTable("HailStormResourceProvider:Chunks", 7, Constant_TableCommonFlags, { 0, (ice::f32) table_size }))
+        if (ImGui::BeginTable("HailStormResourceProvider:Chunks", 6, Constant_TableCommonFlags, { 0, (ice::f32) table_size }))
         {
             ice::u32 const scroll_value = (ice::u32) ImGui::GetScrollY();
             [[maybe_unused]]
@@ -179,7 +179,6 @@ namespace ice
             ImGui::TableSetupColumn("Persistance");
             ImGui::TableSetupColumn("Entries");
             ImGui::TableSetupColumn("Size");
-            ImGui::TableSetupColumn("Original Size", ImGuiTableColumnFlags_DefaultHide);
             ImGui::TableSetupColumn("File Offset", ImGuiTableColumnFlags_DefaultHide);
             ImGui::TableHeadersRow();
 
@@ -211,10 +210,6 @@ namespace ice
                 if (ImGui::TableNextColumn()) // Size
                 {
                     ImGui::TextT("{:p}", ice::usize(chunk.size));
-                }
-                if (ImGui::TableNextColumn()) // Original Size
-                {
-                    ImGui::TextT("{:p}", ice::usize(chunk.size_origin));
                 }
                 if (ImGui::TableNextColumn()) // File Offset
                 {

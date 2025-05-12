@@ -1,3 +1,6 @@
+/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <arctic/arctic.hxx>
 #include <arctic/arctic_word_matcher.hxx>
@@ -33,6 +36,7 @@ namespace ice
     using ASLShaderVisitors = arctic::SyntaxVisitorGroup<
         arctic::syntax::Struct,
         arctic::syntax::Function,
+        arctic::syntax::Variable,
         arctic::syntax::ContextBlock
     >;
 

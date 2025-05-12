@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -16,6 +16,8 @@ namespace ice
         ice::UniquePtr<ice::AssetStorage> assets;
         ice::UniquePtr<ice::TraitArchive> traits;
         ice::UniquePtr<ice::EngineStateTracker> states;
+        ice::UniquePtr<ice::ecs::ArchetypeIndex> archetypes;
+
     };
 
     struct Engine
@@ -25,8 +27,11 @@ namespace ice
         virtual auto assets() noexcept -> ice::AssetStorage& = 0;
         virtual auto worlds() noexcept -> ice::WorldAssembly& = 0;
         virtual auto worlds_updater() noexcept -> ice::WorldUpdater& = 0;
-        virtual auto entities() noexcept -> ice::ecs::EntityIndex& = 0;
         virtual auto states() noexcept -> ice::EngineStateTracker& = 0;
+
+        virtual auto entity_archetypes() noexcept -> ice::ecs::ArchetypeIndex& = 0;
+        virtual auto entity_index() noexcept -> ice::ecs::EntityIndex& = 0;
+        virtual auto entity_storage() noexcept -> ice::ecs::EntityStorage& = 0;
     };
 
 } // namespace ice

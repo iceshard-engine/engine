@@ -31,7 +31,7 @@ namespace ice::gfx
 
     public: // Task methods
         auto gfx_update(
-            ice::gfx::GfxFrameUpdate const& update,
+            ice::gfx::RenderFrameUpdate const& update,
             ice::AssetStorage& assets
         ) noexcept -> ice::Task<>;
 

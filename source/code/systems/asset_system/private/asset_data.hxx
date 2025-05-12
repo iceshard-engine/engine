@@ -1,7 +1,11 @@
+/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/asset.hxx>
 #include <ice/config.hxx>
 #include <ice/mem_unique_ptr.hxx>
+#include <ice/resource.hxx>
 #include <ice/resource_tracker.hxx>
 
 namespace ice

@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -41,6 +41,7 @@ namespace ice
         constexpr operator ice::Span<Type const>() const noexcept { return { _data, _count }; }
     };
 
+    template<typename T, ice::ucount Size> Span(T(&)[Size]) noexcept -> Span<T>;
     template<typename T> Span(ice::Span<T>&&) noexcept -> Span<T>;
     template<typename T> Span(ice::Span<T> const&) noexcept -> Span<T>;
     template<typename T, ContainerLogic Logic, template<typename, ContainerLogic> typename Container> Span(Container<T, Logic> const&) noexcept -> Span<T>;
@@ -111,6 +112,9 @@ namespace ice
 
         template<typename Type, size_t Size>
         constexpr auto from_std(std::array<Type, Size> const& std_array) noexcept -> ice::Span<Type>;
+
+        template<typename Type>
+        constexpr auto memory(ice::Span<Type> span) noexcept -> ice::Memory;
 
     } // namespace span
 
@@ -315,6 +319,16 @@ namespace ice
         }
 
         // TODO: Move to another location or rename? Not sure this is properly named
+        template<typename Type>
+        constexpr auto memory(ice::Span<Type> span) noexcept -> ice::Memory
+        {
+            return ice::Memory{
+                .location = ice::span::begin(span),
+                .size = ice::span::size_bytes(span),
+                .alignment = ice::span::alignment(span)
+            };
+        }
+
         template<typename Type>
         constexpr auto from_memory(ice::Memory const& mem, ice::meminfo meminfo, ice::usize offset) noexcept
         {

@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_gfx_device.hxx"
@@ -81,7 +81,7 @@ namespace ice::gfx
         return *_render_device;
     }
 
-    auto IceGfxDevice::swapchain() noexcept -> ice::render::RenderSwapchain const&
+    auto IceGfxDevice::swapchain() const noexcept -> ice::render::RenderSwapchain const&
     {
         return *_render_swapchain;
     }

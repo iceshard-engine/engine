@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_frame.hxx"
@@ -33,7 +33,7 @@ namespace ice
 
     auto IceshardEngineFrame::entity_index() noexcept -> ice::ecs::EntityIndex&
     {
-        return _frame_data._engine.entities();
+        return _frame_data._engine.entity_index();
     }
 
     auto IceshardEngineFrame::create_tasks(ice::u32 count, ice::ShardID id) noexcept -> ice::Span<ice::Task<>>

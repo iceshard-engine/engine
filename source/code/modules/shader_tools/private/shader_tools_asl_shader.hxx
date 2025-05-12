@@ -1,3 +1,6 @@
+/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include "shader_tools_asl.hxx"
 #include "shader_tools_asl_importer.hxx"
@@ -21,6 +24,7 @@ namespace ice
         void visit(arctic::SyntaxNode<> node) noexcept override;
         void visit(arctic::SyntaxNode<arctic::syntax::Struct> node) noexcept override;
         void visit(arctic::SyntaxNode<arctic::syntax::Function> node) noexcept override;
+        void visit(arctic::SyntaxNode<arctic::syntax::Variable> node) noexcept override;
         void visit(arctic::SyntaxNode<arctic::syntax::ContextBlock> node) noexcept override;
 
     public: // Public because we use it in the generation step directly

@@ -1,3 +1,6 @@
+/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/container/hashmap.hxx>
 #include <ice/task_checkpoint.hxx>
@@ -29,7 +32,7 @@ namespace ice
 
         auto create_world(
             ice::WorldTemplate const& world_template,
-            ice::ecs::EntityIndex& entitites,
+            ice::ecs::EntityStorage& entity_storage,
             ice::Array<ice::UniquePtr<ice::IceshardTraitContext>> traits,
             ice::detail::TraitTaskTracker* task_tracker
         ) noexcept -> ice::IceshardWorld*;

@@ -1,3 +1,6 @@
+/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include <ice/devui_widget.hxx>
 #include <ice/devui_frame.hxx>
 #include <ice/devui_imgui.hxx>

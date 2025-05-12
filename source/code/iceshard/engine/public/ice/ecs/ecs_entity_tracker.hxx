@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -11,6 +11,7 @@
 namespace ice::ecs
 {
 
+#if 0
     class EntityTracker
     {
     public:
@@ -38,5 +39,6 @@ namespace ice::ecs
         ice::HashMap<ice::ecs::EntityHandle> _tracked_entities;
         ice::HashMap<ice::ecs::Entity> _named_entities;
     };
+#endif
 
 } // namespace ice::ecs

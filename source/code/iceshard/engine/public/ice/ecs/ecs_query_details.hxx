@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -7,12 +7,11 @@
 #include <ice/ecs/ecs_query_type.hxx>
 #include <ice/ecs/ecs_archetype.hxx>
 #include <ice/container_types.hxx>
-#include <ice/task_generator.hxx>
 
 namespace ice::ecs::detail
 {
 
-    template<QueryType... Components>
+    template<QueryArg... Components>
     struct UnsortedQueryRequirements
     {
         static constexpr ice::StaticArray<ice::ecs::detail::QueryTypeInfo, sizeof...(Components)> const Constant_Requirements{
@@ -20,21 +19,36 @@ namespace ice::ecs::detail
         };
     };
 
-    template<QueryType First, QueryType... Components>
+    template<QueryArg First, QueryArg... Components>
     struct QueryRequirements
     {
         static constexpr ice::StaticArray<ice::ecs::detail::QueryTypeInfo, 1 + sizeof...(Components)> const Constant_Requirements =
-            constexpr_sort_array(
+            ice::constexpr_sort_stdarray(
                 UnsortedQueryRequirements<First, Components...>::Constant_Requirements,
-                static_cast<ice::u32>(std::is_same_v<First, ice::ecs::EntityHandle>)
+                static_cast<ice::u32>(std::is_same_v<First, ice::ecs::Entity>)
             );
     };
 
 
-    template<QueryType Arg>
+    template<QueryTagType... Tags>
+    struct UnsortedQueryTags
+    {
+        static constexpr ice::StaticArray<ice::StringID, sizeof...(Tags)> const Constant_Tags{
+            ice::ecs::Constant_ComponentIdentifier<Tags>...
+        };
+    };
+
+    template<QueryTagType... Tags>
+    struct QueryTags
+    {
+        static constexpr ice::StaticArray<ice::StringID, sizeof...(Tags)> const Constant_Tags =
+            ice::constexpr_sort_stdarray(UnsortedQueryTags<Tags...>::Constant_Tags, 0);
+    };
+
+    template<QueryArg Arg>
     struct QueryIteratorArgument { };
 
-    template<typename Arg> requires QueryType<Arg*>
+    template<typename Arg> requires QueryArg<Arg*>
     struct QueryIteratorArgument<Arg*>
     {
         using BlockIteratorArg = Arg*;
@@ -56,7 +70,7 @@ namespace ice::ecs::detail
         }
     };
 
-    template<typename Arg> requires QueryType<Arg&>
+    template<typename Arg> requires QueryArg<Arg&>
     struct QueryIteratorArgument<Arg&>
     {
         using BlockIteratorArg = Arg*;
@@ -79,43 +93,43 @@ namespace ice::ecs::detail
     };
 
     template<>
-    struct QueryIteratorArgument<ice::ecs::EntityHandle>
+    struct QueryIteratorArgument<ice::ecs::Entity>
     {
-        using BlockIteratorArg = ice::ecs::EntityHandle const*;
-        using EntityIteratorArg = ice::ecs::EntityHandle;
+        using BlockIteratorArg = ice::ecs::Entity const*;
+        using EntityIteratorArg = ice::ecs::Entity;
 
         static auto block_array(void* array_ptrs)
         {
             return reinterpret_cast<BlockIteratorArg>(array_ptrs);
         }
 
-        static auto select_entity(BlockIteratorArg block_ptr, ice::u32 idx) noexcept -> ice::ecs::EntityHandle
+        static auto select_entity(BlockIteratorArg block_ptr, ice::u32 idx) noexcept -> ice::ecs::Entity
         {
             return *(block_ptr + idx);
         }
 
-        static auto select_entity_ptr(BlockIteratorArg block_ptr, ice::u32 idx) noexcept -> ice::ecs::EntityHandle const*
+        static auto select_entity_ptr(BlockIteratorArg block_ptr, ice::u32 idx) noexcept -> ice::ecs::Entity const*
         {
             return block_ptr + idx;
         }
     };
 
-    template<QueryType... Args>
+    template<QueryArg... Args>
     using QueryBlockIteratorSignature = void (ice::u32, typename QueryIteratorArgument<Args>::BlockIteratorArg...);
 
-    template<QueryType... Args>
+    template<QueryArg... Args>
     using QueryEntityIteratorSignature = void (typename QueryIteratorArgument<Args>::EntityIteratorArg...);
 
-    template<QueryType... Args>
+    template<QueryArg... Args>
     using QueryBlockTupleResult = std::tuple<ice::ucount, typename QueryIteratorArgument<Args>::BlockIteratorArg...>;
 
-    template<QueryType... Args>
+    template<QueryArg... Args>
     using QueryEntityTupleResult = std::tuple<typename QueryIteratorArgument<Args>::BlockIteratorArg...>;
 
 
-    template<QueryType... Components>
-    inline auto argument_idx_map(
-        ice::ecs::ArchetypeInstanceInfo const& archetype_info
+    template<QueryArg... Components>
+    inline auto make_argument_idx_map(
+        ice::ecs::detail::ArchetypeInstanceInfo const& archetype_info
     ) noexcept -> std::array<ice::u32, sizeof...(Components)>
     {
         constexpr ice::u32 component_count = sizeof...(Components);
@@ -140,7 +154,7 @@ namespace ice::ecs::detail
         return result;
     }
 
-    template<typename Fn, QueryType... T>
+    template<typename Fn, QueryArg... T>
     inline auto invoke_for_each_block(Fn&& fn, ice::u32 count, void** component_pointer_array) noexcept
     {
         using QueryTypeTuple = std::tuple<T...>;
@@ -156,7 +170,7 @@ namespace ice::ecs::detail
         enumerate_types(std::make_index_sequence<sizeof...(T)>{});
     }
 
-    template<typename Fn, QueryType... T>
+    template<typename Fn, QueryArg... T>
     inline auto invoke_for_each_entity(Fn&& fn, ice::u32 count, void** component_pointer_array) noexcept
     {
         using QueryTypeTuple = std::tuple<T...>;
@@ -182,7 +196,7 @@ namespace ice::ecs::detail
         enumerate_types(std::make_index_sequence<sizeof...(T)>{});
     }
 
-    template<QueryType... T>
+    template<QueryArg... T>
     inline auto create_block_tuple(ice::u32 count, void** component_pointer_array) noexcept -> ice::ecs::detail::QueryBlockTupleResult<T...>
     {
         using QueryTypeTuple = std::tuple<T...>;
@@ -196,7 +210,7 @@ namespace ice::ecs::detail
         return enumerate_types(std::make_index_sequence<sizeof...(T)>{});
     }
 
-    template<QueryType... T>
+    template<QueryArg... T>
     inline auto create_entity_tuple(ice::u32 index, void** component_pointer_array) noexcept -> ice::ecs::detail::QueryEntityTupleResult<T...>
     {
         using QueryTypeTuple = std::tuple<T...>;

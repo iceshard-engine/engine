@@ -1,3 +1,6 @@
+/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "shader_tools_asl_shader.hxx"
 
 namespace ice
@@ -144,6 +147,10 @@ namespace ice
         }
 
         ice::array::push_back(_functions, node);
+    }
+
+    void ASLShader::visit(arctic::SyntaxNode<arctic::syntax::Variable> node) noexcept
+    {
     }
 
     void ASLShader::visit(arctic::SyntaxNode<arctic::syntax::ContextBlock> node) noexcept

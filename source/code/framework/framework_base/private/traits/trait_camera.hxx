@@ -1,26 +1,22 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/game_camera.hxx>
-#include <ice/render/render_declarations.hxx>
-#include <ice/container/array.hxx>
+
 #include <ice/ecs/ecs_query.hxx>
+#include <ice/render/render_declarations.hxx>
+#include <ice/world/world_trait.hxx>
+#include <ice/world/world_trait_descriptor.hxx>
 
 namespace ice
 {
 
-    using QueryCameras = ice::ecs::QueryDefinition<
-        ice::ecs::EntityHandle,
-        ice::Camera const&,
-        ice::CameraOrtho const*,
-        ice::CameraPerspective const*
-    >;
-
     struct TraitCameraData
     {
-        ice::StringID camera_name;
-        ice::CameraData render_data;
+        ice::StringID name;
+        ice::CameraData camera_data;
+        ice::render::Buffer render_data;
     };
 
     class IceWorldTrait_RenderCamera : public ice::Trait
@@ -46,14 +42,23 @@ namespace ice
             ice::EngineFrameUpdate const& params
         ) noexcept -> ice::Task<>;
 
+        auto on_gfx_update(
+            ice::render::RenderDevice& device,
+            ice::DataStorage& data
+        ) noexcept -> ice::Task<>;
+
+        auto on_gfx_shutdown(
+            ice::render::RenderDevice& device
+        ) noexcept -> ice::Task<>;
+
     protected:
         auto task_update_cameras(
             ice::EngineFrame& frame
         ) noexcept -> ice::Task<>;
 
     private:
-        ice::ecs::Query<ice::QueryCameras> _query_cameras;
-        ice::Array<ice::TraitCameraData> _cameras;
+        ice::HashMap<ice::TraitCameraData> _render_data;
+
         ice::TaskCheckpoint _ready;
     };
 

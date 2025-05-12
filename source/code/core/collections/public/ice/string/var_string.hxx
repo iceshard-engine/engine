@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -105,6 +105,14 @@ namespace ice::string
     inline auto serialize(ice::string::VarStringType auto const& str, ice::Memory target) noexcept -> ice::Memory;
 
 } // namespace ice::string
+
+namespace ice::data
+{
+
+    template<typename CharType = char>
+    inline auto read_varstring(ice::Data data, ice::VarStringBase<CharType>& out_str) noexcept -> ice::Data;
+
+} // namespace ice::data
 
 namespace ice
 {

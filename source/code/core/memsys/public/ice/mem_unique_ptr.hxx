@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -171,7 +171,7 @@ namespace ice
 
     template<typename T, typename... Args>
     concept MakeUniqueConstructorAvailable = requires(Args&&... args) {
-        { new T(std::forward<Args>(args)...) } -> std::convertible_to<T*>;
+        { new T{ std::forward<Args>(args)... } } -> std::convertible_to<T*>;
     };
 
     template<typename T, typename... Args>

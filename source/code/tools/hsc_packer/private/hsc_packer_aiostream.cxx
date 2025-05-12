@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "hsc_packer_app.hxx"
@@ -151,12 +151,12 @@ auto stream_write_metadata(
 
 auto stream_write_resource(
     hailstorm::v1::HailstormWriteData const& write_data,
-    ice::u32 idx,
+    hailstorm::v1::HailstormWriteInfo& write_info,
     ice::usize offset,
     HailstormAIOWriter* writer
 ) noexcept -> bool
 {
-    return writer->write_resource(idx, offset);
+    return writer->write_resource(write_info.resource_index, offset);
 }
 
 bool hscp_write_hailstorm_file(
@@ -176,8 +176,6 @@ bool hscp_write_hailstorm_file(
             .align = 8,
             .type = 2,
             .persistance = 3,
-            .is_encrypted = false,
-            .is_compressed = false,
             .app_custom_value = 42,
         },
         HailstormChunk{
@@ -185,8 +183,6 @@ bool hscp_write_hailstorm_file(
             .align = 8,
             .type = 1,
             .persistance = 3,
-            .is_encrypted = false,
-            .is_compressed = false,
             .app_custom_value = 24,
         }
     };
@@ -205,7 +201,7 @@ bool hscp_write_hailstorm_file(
         },
         .fn_async_open = (HailstormAsyncWriteParams::AsyncOpenFn*) stream_open,
         .fn_async_write_header = (HailstormAsyncWriteParams::AsyncWriteHeaderFn*) stream_write_header,
-        .fn_async_write_metadata = (HailstormAsyncWriteParams::AsyncWriteDataFn*) stream_write_metadata,
+        .fn_async_write_metadata = (HailstormAsyncWriteParams::AsyncWriteMetadataFn*) stream_write_metadata,
         .fn_async_write_resource = (HailstormAsyncWriteParams::AsyncWriteDataFn*) stream_write_resource,
         .fn_async_close = (HailstormAsyncWriteParams::AsyncCloseFn*) stream_close,
         .async_userdata = &writer

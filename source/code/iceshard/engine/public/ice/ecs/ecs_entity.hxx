@@ -1,91 +1,102 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/shard.hxx>
-#include <ice/log_formatters.hxx>
 #include <ice/ecs/ecs_types.hxx>
+#include <ice/ecs/ecs_concepts.hxx>
+#include <ice/log_formatters.hxx>
 
 namespace ice::ecs
 {
 
+    //! \brief Primary identifier for entities in IceShard. Used to update data using operations or access components with queries.
+    //!
+    //! \details An Entity handle is opaque and does not provide any functionality out of the box. It's mainly used as an argument in other ECS related
+    //!   systems. For examples, you can check if entities are alive with `EntityIndex::is_alive` or query a specific components with `Query` objects.
     enum class Entity : ice::u32 { };
 
-    enum class EntitySlot : ice::u32
+    //! \brief Provides easy access to the specific parts making up the `Entity` handle value.
+    struct EntityInfo
     {
-        Invalid = 0x0
+        //! \brief Describes the entity's direct ID which can be also used as an index into tables that always track all entities.
+        //!
+        //! \remark An entity's index will only be reused after a certain amount of entities are destroyed. Currently the cutoff is at
+        //!   1024 entities. This means that the same handle will be generated at earliest when `1024 * 256 (generation max value)` entities
+        //!   are cycled through.
+        ice::u32 index : 24;
+
+        //! \brief Describes the entity's generation (aka. version) that is used to determine in an entity was destroyed or not.
+        //!
+        //! \note Once an entity is destroyed, the `EntityIndex` will increase the internal generation value for that entity.
+        //!   This ensures that checks with `EntityIndex::is_alive` are quick because they compare the given `Entity` generation with the
+        //!   internal generation. If the values missmatch the entity is considered destroyed.
+        ice::u32 generation : 8;
     };
 
-    enum class EntityHandle : ice::u64
-    {
-        Invalid = 0x0
-    };
+    //! \brief Extracts details from an entity handle.
+    //! \param entity Handle to the data should be extracted from.
+    //! \return information extracted from the Entity handle.
+    constexpr auto entity_info(ice::ecs::Entity entity) noexcept -> ice::ecs::EntityInfo;
 
 
-    static constexpr ice::u32 Constant_EntitySlotArchetype_Bits = 12;
-    static constexpr ice::u32 Constant_EntitySlotBlock_Bits = 8;
-    static constexpr ice::u32 Constant_EntitySlotIndex_Bits = 12;
+    //! \brief Number of bits reserved to identify the entity's `Archetype` in an `EntityStorage`. Allows for 4095 archerypes
+    static constexpr ice::u32 Constant_EntityDataSlotArchetype_Bits = 12;
 
-    static constexpr ice::u32 Constant_MaxArchetypeCount = 1 << Constant_EntitySlotArchetype_Bits;
-    static constexpr ice::u32 Constant_MaxBlockCount = 1 << Constant_EntitySlotBlock_Bits;
-    static constexpr ice::u32 Constant_MaxBlockEntityIndex = 1 << Constant_EntitySlotIndex_Bits;
+    //! \brief Number of bits reserved to identify the internal data block where the entity data is stored. Allows for an `Archetype` to
+    //!   have up to 256 data blocks.
+    //!
+    //! \remark Because the amount of entities a default allocated block can store differs depending the component count and sizes
+    //!   it might be necessary to provide custom allocators for extremely large `Archetype`s to not run out of `DataBlocks` if such
+    //!   blocks end up to only hold 50 entities or even less, \see `EntityStorage` for more details.
+    static constexpr ice::u32 Constant_EntityDataSlotBlock_Bits = 8;
+
+    //! \brief Number of bits reserved to index into the tables stored in a single `DataBlock`. Allows to store 4096 entities in each data block.
+    //!
+    //! \remark Because each `Archerype` may have 256 blocks and each can hold 4096 entities, the total entity count each archetypes can hold ends up
+    //!   to be 1,048,576. If this number is not enough you may consider to relocate some of the bits for your convenience.
+    //!
+    //! \note It might be possible to change the base type of `EntityDataSlot` to 64 bits, however this option was not tested.
+    static constexpr ice::u32 Constant_EntityDataSlotIndex_Bits = 12;
+
+    //! \brief Maximum number of archetypes allowed in the system.
+    //! \remark Archetype at index '0' is considered the 'NullArchetype'
+    static constexpr ice::u32 Constant_MaxArchetypeCount = (1 << Constant_EntityDataSlotArchetype_Bits) - 1;
+
+    //! \brief Maximum number of blocks tracked by a single archetype.
+    static constexpr ice::u32 Constant_MaxBlockCount = 1 << Constant_EntityDataSlotBlock_Bits;
+
+    //! \brief Maximum number of entities indexable in a single data block.
+    static constexpr ice::u32 Constant_MaxBlockEntityIndex = 1 << Constant_EntityDataSlotIndex_Bits;
 
     static_assert(
-        Constant_EntitySlotArchetype_Bits + Constant_EntitySlotBlock_Bits + Constant_EntitySlotIndex_Bits == 32,
+        Constant_EntityDataSlotArchetype_Bits + Constant_EntityDataSlotBlock_Bits + Constant_EntityDataSlotIndex_Bits == 32,
         "The entity slot can currently only use 32 bits of data to address a single entity. Depending on the use case this can be changed or worked around."
     );
 
-
-    struct EntitySlotInfo
+    //! \brief Describes the location where the entity data is stored for a specific `EntityStorage` implementation.
+    //!   There shouldn't be any case where users of the API will need to directly access this information.
+    //!
+    //! \remarks (2025.05) The current storage implementation does not grant access to all components of a specific entity with just the
+    //!   information available in this structure. You will also need the `ArchetypeInstanceInfo` description to access the right locations.
+    struct EntityDataSlot
     {
-        ice::u32 archetype : Constant_EntitySlotArchetype_Bits;
-        ice::u32 block     : Constant_EntitySlotBlock_Bits;
-        ice::u32 index     : Constant_EntitySlotIndex_Bits;
+        ice::u32 archetype : Constant_EntityDataSlotArchetype_Bits;
+        ice::u32 block     : Constant_EntityDataSlotBlock_Bits;
+        ice::u32 index     : Constant_EntityDataSlotIndex_Bits;
     };
 
-    struct EntityHandleInfo
+    static_assert(sizeof(EntityDataSlot) == sizeof(ice::u32));
+
+    constexpr auto entity_info(ice::ecs::Entity entity) noexcept -> ice::ecs::EntityInfo
     {
-        ice::ecs::Entity entity;
-        ice::ecs::EntitySlot slot;
-    };
-
-    static_assert(sizeof(EntitySlotInfo) == sizeof(EntitySlot));
-    static_assert(sizeof(EntityHandleInfo) == sizeof(EntityHandle));
-
-
-    template<typename T>
-    static constexpr bool IsEntityHandle = std::is_same_v<ice::ecs::EntityHandle, T>;
-
-    constexpr auto entity_slot_info(
-        ice::ecs::EntitySlot slot
-    ) noexcept -> ice::ecs::EntitySlotInfo;
-
-    constexpr auto entity_handle_info(
-        ice::ecs::EntityHandle handle
-    ) noexcept -> ice::ecs::EntityHandleInfo;
-
-
-    constexpr auto entity_slot_info(
-        ice::ecs::EntitySlot slot
-    ) noexcept -> ice::ecs::EntitySlotInfo
-    {
-        return std::bit_cast<ice::ecs::EntitySlotInfo>(slot);
-    }
-
-    constexpr auto entity_handle_info(
-        ice::ecs::EntityHandle handle
-    ) noexcept -> ice::ecs::EntityHandleInfo
-    {
-        return std::bit_cast<ice::ecs::EntityHandleInfo>(handle);
+        return std::bit_cast<ice::ecs::EntityInfo>(entity);
     }
 
 } // namespace ice::ecs
 
 template<>
 constexpr inline ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::ecs::Entity> = ice::shard_payloadid("ice::ecs::Entity");
-
-template<>
-constexpr inline ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::ecs::EntityHandle> = ice::shard_payloadid("ice::ecs::EntityHandle");
 
 template<>
 struct fmt::formatter<ice::ecs::Entity>
@@ -99,32 +110,7 @@ struct fmt::formatter<ice::ecs::Entity>
     template<typename FormatContext>
     constexpr auto format(ice::ecs::Entity entity, FormatContext& ctx)
     {
-        return fmt::format_to(ctx.out(), "<{}>", static_cast<std::underlying_type_t<ice::ecs::Entity>>(entity));
-    }
-};
-
-template<>
-struct fmt::formatter<ice::ecs::EntityHandle>
-{
-    template<typename ParseContext>
-    constexpr auto parse(ParseContext& ctx)
-    {
-        return ctx.begin();
-    }
-
-    template<typename FormatContext>
-    constexpr auto format(ice::ecs::EntityHandle handle, FormatContext& ctx)
-    {
-        ice::ecs::EntityHandleInfo const handle_info = ice::ecs::entity_handle_info(handle);
-        ice::ecs::EntitySlotInfo const slot_info = ice::ecs::entity_slot_info(handle_info.slot);
-
-        return fmt::format_to(
-            ctx.out(),
-            "<{}/{}>@<{}.{}>",
-            slot_info.archetype,
-            static_cast<std::underlying_type_t<ice::ecs::Entity>>(handle_info.entity),
-            slot_info.block,
-            slot_info.index
-        );
+        ice::ecs::EntityInfo const info = ice::ecs::entity_info(entity);
+        return fmt::format_to(ctx.out(), "E<{}.{}>", info.index, info.generation);
     }
 };

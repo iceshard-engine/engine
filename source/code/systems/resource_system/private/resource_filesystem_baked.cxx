@@ -95,7 +95,7 @@ namespace ice
         , _header{ header }
         , _origin{ ice::move(origin) }
         , _name{ ice::move(name) }
-        , _uri{ ice::Scheme_File, _name }
+        , _uri{ _name }
     {
     }
 

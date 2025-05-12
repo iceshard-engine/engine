@@ -1,3 +1,6 @@
+/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "shader_tools_wgsl.hxx"
 
 #if ISP_WEBAPP || ISP_WINDOWS
@@ -24,6 +27,42 @@ namespace ice
 
         using namespace arctic;
 
+        void generate_type(
+            ice::HeapString<>& out_code,
+            arctic::String varname,
+            arctic::syntax::Type const& type
+        ) noexcept
+        {
+            if (type.is_array)
+            {
+                ice::string::push_format(
+                    out_code,
+                    "{}: array<{}, {}>,\n",
+                    varname,
+                    type.name.value,
+                    type.size_array.value
+                );
+            }
+            else
+            {
+                ice::string::push_format(
+                    out_code,
+                    "{}: {},\n",
+                    varname,
+                    type.name.value
+
+                );
+            }
+        }
+
+        void generate_expression(
+            ice::HeapString<>& result,
+            ice::HashMap<arctic::String> const& subs,
+            syntax::Function const& func,
+            syntax::FunctionArg const& arg,
+            SyntaxNode<> node
+        ) noexcept;
+
         void generate_atom(
             ice::HeapString<>& out_code,
             ice::HashMap<arctic::String> const& subs,
@@ -38,10 +77,10 @@ namespace ice
             if (op && op.data().token.type == TokenType::CT_Dot)
             {
                 arctic::String var_base = atom.data().value.value;
-                arctic::String const atom_sub = op.sibling<syntax::Atom>().data().value.value;
                 var_base = ice::hashmap::get(subs, detail::arc_hash(var_base), var_base);
 
-                ice::string::push_format(out_code, "{}.{}", var_base, atom_sub);
+                ice::string::push_format(out_code, "{}.", var_base);
+                generate_expression(out_code, subs, func, arg, op.sibling());
             }
             else
             {
@@ -55,7 +94,6 @@ namespace ice
             ice::HashMap<arctic::String> const& subs,
             syntax::Function const& func,
             syntax::FunctionArg const& arg,
-            syntax::Type const& ret,
             SyntaxNode<> node
         ) noexcept
         {
@@ -71,7 +109,7 @@ namespace ice
                     if (atom.is_parenthized)
                     {
                         ice::string::push_back(result, "(");
-                        generate_expression(result, subs, func, arg, ret, node.child());
+                        generate_expression(result, subs, func, arg, node.child());
                         ice::string::push_back(result, ")");
                     }
                     else
@@ -82,7 +120,7 @@ namespace ice
                 }
                 case SyntaxEntity::E_CallArg:
                 {
-                    generate_expression(result, subs, func, arg, ret, node.child());
+                    generate_expression(result, subs, func, arg, node.child());
                     if (node.sibling())
                     {
                         ice::string::push_back(result, ", ");
@@ -92,18 +130,31 @@ namespace ice
                 case SyntaxEntity::E_Operator:
                 {
                     syntax::Operator const& op = node.to<syntax::Operator>().data();
-                    ice::string::push_format(result, " {} ", op.token.value);
+                    if (op.is_unary)
+                    {
+                        ice::string::push_format(result, "{}", op.token.value);
+                    }
+                    else
+                    {
+                        ice::string::push_format(result, " {} ", op.token.value);
+                    }
+
                     if (node.child())
                     {
-                        generate_expression(result, subs, func, arg, ret, node.child());
+                        generate_expression(result, subs, func, arg, node.child());
                     }
                     break;
                 }
                 case SyntaxEntity::E_Call:
                     ice::string::push_format(result, "{}(", node.to<syntax::Call>().data().name.value);
                     // Call children groups
-                    generate_expression(result, subs, func, arg, ret, node.child());
+                    generate_expression(result, subs, func, arg, node.child());
                     ice::string::push_back(result, ")");
+                    break;
+                case SyntaxEntity::E_IndexOperator:
+                    ice::string::push_back(result, "[");
+                    generate_expression(result, subs, func, arg, node.child());
+                    ice::string::push_back(result, "]");
                     break;
                 default:
                     break;
@@ -113,26 +164,58 @@ namespace ice
             }
         }
 
+        void generate_variable(
+            ice::HeapString<>& result,
+            ice::HashMap<arctic::String> const& subs,
+            syntax::Function const& func,
+            syntax::FunctionArg const& arg,
+            syntax::Type const& ret,
+            SyntaxNode<syntax::Variable> varnode
+        ) noexcept
+        {
+            IPT_ZONE_SCOPED;
+
+            syntax::Variable const& var = varnode.data();
+            SyntaxNode typenode = varnode.child<syntax::Type>();
+            ICE_ASSERT_CORE(typenode);
+
+            syntax::Type const& type = typenode.data();
+            ice::string::push_format(result, "var {}: {}", var.name.value, type.name.value);
+
+            if (SyntaxNode assignnode = typenode.sibling<syntax::Operator>(); assignnode)
+            {
+                ice::string::push_back(result, " = ");
+
+                generate_expression(result, subs, func, arg, assignnode.child());
+            }
+        }
+
         auto generate_function(
             ice::HeapString<>& result,
             ice::HashMap<arctic::String> const& subs,
             syntax::Function const& func,
             syntax::FunctionArg const& arg,
             syntax::Type const& ret,
-            SyntaxNode<> exp
+            SyntaxNode<> fnentry
         ) noexcept
         {
             IPT_ZONE_SCOPED;
 
-            // arctic::String const fn_name = func.name.value;
-            while (exp)
+            while (fnentry)
             {
                 ice::string::push_back(result, "    ");
 
-                generate_expression(result, subs, func, arg, ret, exp.child());
-
-                ice::string::push_back(result, ";\n");
-                exp = exp.sibling<syntax::Expression>();
+                if (SyntaxNode var = fnentry.to<syntax::Variable>(); var)
+                {
+                    generate_variable(result, subs, func, arg, ret, var);
+                    ice::string::push_back(result, ";\n");
+                }
+                else if (SyntaxNode exp = fnentry.to<syntax::Expression>(); exp)
+                {
+                    generate_expression(result, subs, func, arg, exp.child());
+                    ice::string::push_back(result, ";\n");
+                }
+                fnentry = fnentry.sibling<>();
             }
         }
 
@@ -170,26 +253,19 @@ namespace ice
                     if (arctic::String location; detail::arc_annotation(member, "location", location))
                     {
                         is_inout = true;
-                        ice::string::push_format(
-                            result, "    @location({}) {}: {},\n",
-                            location, member.data().name.value, type.name.value
-                        );
+                        ice::string::push_format(result, "    @location({}) ", location);
                     }
                     else if (detail::arc_annotation(member, "builtin", location))
                     {
                         is_inout = true;
-                        ice::string::push_format(
-                            result, "    @builtin({}) {}: {},\n",
-                            location, member.data().name.value, type.name.value
-                        );
+                        ice::string::push_format(result, "    @builtin({}) ", location);
                     }
                     else
                     {
-                        ice::string::push_format(
-                            result, "    {}: {},\n",
-                            member.data().name.value, type.name.value
-                        );
+                        ice::string::push_back(result, "    ");
                     }
+
+                    wgsl::generate_type(result, member.data().name.value, type);
 
                     //ice::string::push_format(result, "    {} {};\n", type.name.value, member.data().name.value);
                     member = member.sibling<syntax::StructMember>();
@@ -262,7 +338,7 @@ namespace ice
             );
             ice::string::push_format(result, "    var out: {};\n", shader._outputs.data().name.value);
             ice::hashmap::set(subs, detail::arc_hash(shader._mainfunc.data().name.value), arctic::String{ "out" });
-            generate_function(result, subs, shader._mainfunc.data(), arg.data(), ret.data(), body.child<syntax::Expression>());
+            generate_function(result, subs, shader._mainfunc.data(), arg.data(), ret.data(), body.child());
             ice::string::push_back(result, "    return out;\n");
             ice::string::push_back(result, "}\n");
             return result;
@@ -383,7 +459,9 @@ namespace ice
                 alloc, tracker, source, shader_stage, transpiled_result, entry_point
             );
 
-            if (result.valid() == false)
+            ICE_LOG(LogSeverity::Debug, LogTag::System, "WGSL: {}", transpiled_result);
+
+            if (result.failed())
             {
                 ICE_LOG(LogSeverity::Error, LogTag::System, "Failed to load shader '{}' with error '{}'", path, result.error());
                 co_return { };

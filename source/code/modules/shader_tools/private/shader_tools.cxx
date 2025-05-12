@@ -1,3 +1,6 @@
+/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include <ice/shader_tools.hxx>
 #include <ice/resource_compiler_api.hxx>
 #include <ice/log_module.hxx>

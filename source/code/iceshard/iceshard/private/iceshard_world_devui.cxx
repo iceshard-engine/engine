@@ -1,3 +1,6 @@
+/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "iceshard_world_devui.hxx"
 #include <ice/container/hashmap.hxx>
 #include <ice/world/world_trait.hxx>

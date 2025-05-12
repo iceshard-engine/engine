@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -107,6 +107,7 @@ namespace ice
             {
                 BaseStringID<true> result{
                     .value = { .value = hash_result.h[0] },
+                    .debug_info = {.name_value = {.consteval_flag = '\0'}}
                 };
 
                 size_t const cstr_size = value.size();
@@ -233,6 +234,11 @@ namespace ice
     constexpr bool BaseStringID<true>::operator==(ice::StringID_Hash strid_hash) const noexcept
     {
         return value == strid_hash;
+    }
+
+    constexpr auto operator<=>(ice::StringID_Arg left, ice::StringID_Arg right) noexcept
+    {
+        return left.value.value <=> right.value.value;
     }
 
 } // namespace ice

@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -11,7 +11,7 @@ namespace ice::gfx
 
     struct GfxContext;
     struct GfxFrameStages;
-    struct GfxFrameUpdate;
+    struct RenderFrameUpdate;
     struct GfxGraph;
     struct GfxGraphRuntime;
     struct GfxQueueDefinition;

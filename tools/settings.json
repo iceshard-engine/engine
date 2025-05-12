@@ -5,6 +5,9 @@
             "fbuild": {
                 "vstudio_solution_file": "IceShard.sln"
             }
+        },
+        "doxy": {
+            "path": "~/bin/doxy/doxygen.exe"
         }
     },
     "linux": {
@@ -34,5 +37,8 @@
             "location": "build/webasm",
             "version": "3.1.59"
         }
+    },
+    "doxy": {
+        "config": "source/configs/doxyfile"
     }
 }

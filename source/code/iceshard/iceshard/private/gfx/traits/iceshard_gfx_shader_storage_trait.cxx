@@ -33,7 +33,7 @@ namespace ice::gfx
         , ice::TraitDevUI{ {.category="Engine/Gfx", .name="Shaders"} }
         , _loaded_shaders{ alloc }
     {
-        _context.bind<&Trait_GfxShaderStorage::gfx_update, Render>(ice::gfx::ShardID_GfxFrameUpdate);
+        _context.bind<&Trait_GfxShaderStorage::gfx_update, Render>(ice::gfx::ShardID_RenderFrameUpdate);
         _context.bind<&Trait_GfxShaderStorage::gfx_shutdown, Render>(ice::gfx::ShardID_GfxShutdown);
         _context.bind<&Trait_GfxShaderStorage::on_asset_loaded>("iceshard:shaders-internal:loaded`ice::Asset"_shardid);
     }
@@ -80,7 +80,7 @@ namespace ice::gfx
     }
 
     auto Trait_GfxShaderStorage::gfx_update(
-        ice::gfx::GfxFrameUpdate const& update,
+        ice::gfx::RenderFrameUpdate const& update,
         ice::AssetStorage& assets
     ) noexcept -> ice::Task<>
     {
@@ -132,11 +132,11 @@ namespace ice::gfx
         co_return;
     }
 
-    auto Trait_GfxShaderStorage::gfx_shutdown(ice::gfx::GfxStateChange const& params) noexcept -> ice::Task<>
+    auto Trait_GfxShaderStorage::gfx_shutdown(ice::render::RenderDevice& device) noexcept -> ice::Task<>
     {
         for (ice::gfx::GfxShaderEntry& entry : ice::hashmap::values(_loaded_shaders))
         {
-            params.context.device().destroy_shader(entry.shader);
+            device.destroy_shader(entry.shader);
             entry.asset.release();
         }
 

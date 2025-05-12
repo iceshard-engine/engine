@@ -16,12 +16,6 @@ A modern, C++-native, header-only, test framework for unit-tests, TDD and BDD.
 - **version:** 3.3.2
 - **license:** BSL-1.0 License
 
-## chipmunk2d
-A fast and lightweight 2D game physics library.
-- **upstream:** https://github.com/slembcke/Chipmunk2D
-- **version:** 7.0.3+
-- **license:** MIT
-
 ## cli11
 CLI11 is a command line parser for C++11 and beyond that provides a rich feature set with a simple and intuitive interface.
 - **upstream:** https://github.com/CLIUtils/CLI11
@@ -45,7 +39,7 @@ FreeType is a freely available software library to render fonts.
 ## hailstorm
 Custom package format for storing resources used by 'iceshard' game engine framework.
 - **upstream:** https://github.com/iceshard-engine/hailstorm
-- **version:** 0.2.0
+- **version:** 0.4.0
 - **license:** MIT
 
 ## imgui
@@ -53,6 +47,12 @@ Dear ImGui: Bloat-free Immediate Mode Graphical User interface for C++ with mini
 - **upstream:** https://github.com/ocornut/imgui
 - **version:** 1.90
 - **license:** MIT
+
+## imguizmo
+Immediate mode 3D gizmo for scene editing and other controls based on Dear Imgui
+- **upstream:** https://github.com/CedricGuillemet/ImGuizmo
+- **version:** 1.91.3
+- **license:** https://github.com/CedricGuillemet/ImGuizmo?tab=MIT-1-ov-file#readme
 
 ## msdf_atlas_gen
 MSDF font atlas generator.
@@ -65,6 +65,12 @@ Multi-channel signed distance field generator.
 - **upstream:** https://github.com/Chlumsky/msdfgen
 - **version:** 1.9.2
 - **license:** MIT
+
+## rapidfuzz_cpp
+Rapid fuzzy string matching in C++ using the Levenshtein Distance
+- **upstream:** https://github.com/rapidfuzz/rapidfuzz-cpp/tree/main
+- **version:** 3.0.5
+- **license:** https://github.com/rapidfuzz/rapidfuzz-cpp/blob/main/LICENSE
 
 ## rapidjson
 A fast JSON parser/generator for C++ with both SAX/DOM style API
@@ -93,7 +99,7 @@ Conan recipe for the SDL2 library.
 ## tracy
 A real time, nanosecond resolution, remote telemetry, hybrid frame and sampling profiler for games and other applications.
 - **upstream:** https://github.com/wolfpld/tracy
-- **version:** 0.10.0
+- **version:** 0.11.1
 - **license:** BSD-3-Clause
 
 ## vulkan-headers

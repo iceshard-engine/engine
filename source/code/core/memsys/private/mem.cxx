@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/mem.hxx>
@@ -100,6 +100,12 @@ namespace ice
 
         ice::usize const copy_size = ice::usize{ ice::min(memory.size.value, data.size.value) };
         ice::memcpy(memory.location, data.location, copy_size);
+        return memory;
+    }
+
+    auto memset(ice::Memory memory, ice::u8 value) noexcept -> ice::Memory
+    {
+        std::memset(memory.location, value, memory.size.value);
         return memory;
     }
 

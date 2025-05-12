@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_engine.hxx"
@@ -18,8 +18,9 @@ namespace ice
         : _allocator{ alloc }
         , _assets{ ice::move(create_info.assets) }
         , _states{ ice::move(create_info.states) }
-        , _entities{ _allocator, 10'000 }
-        , _worlds{ _allocator, _entities, ice::move(create_info.traits), *_states }
+        , _entity_archetypes{ ice::move(create_info.archetypes) }
+        , _entity_storage{ _allocator, *_entity_archetypes }
+        , _worlds{ _allocator, _entity_storage, ice::move(create_info.traits), *_states }
     {
     }
 
@@ -36,11 +37,6 @@ namespace ice
     auto IceshardEngine::worlds_updater() noexcept -> ice::WorldUpdater&
     {
         return _worlds;
-    }
-
-    auto IceshardEngine::entities() noexcept -> ice::ecs::EntityIndex&
-    {
-        return _entities;
     }
 
     void IceshardEngine::destroy() noexcept

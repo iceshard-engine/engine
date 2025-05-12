@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -40,7 +40,7 @@ namespace ice
 
     auto memcpy(void* dest, void const* source, ice::usize size) noexcept -> void*;
     auto memcpy(ice::Memory memory, ice::Data data) noexcept -> ice::Memory;
-
+    auto memset(ice::Memory memory, ice::u8 value) noexcept -> ice::Memory;
 
     constexpr AllocRequest::AllocRequest(ice::usize size, ice::ualign alignment) noexcept
         : size{ size }

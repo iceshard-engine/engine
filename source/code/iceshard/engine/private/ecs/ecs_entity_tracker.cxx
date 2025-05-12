@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/ecs/ecs_entity_tracker.hxx>
@@ -9,6 +9,7 @@
 namespace ice::ecs
 {
 
+#if 0
     EntityTracker::EntityTracker(ice::Allocator& alloc) noexcept
         : _allocator{ alloc }
         , _tracked_entities{ _allocator }
@@ -103,7 +104,6 @@ namespace ice::ecs
             }
         }
     }
-
-
+#endif
 
 } // namespace ice::ecs

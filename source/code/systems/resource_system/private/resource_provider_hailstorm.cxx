@@ -91,7 +91,7 @@ namespace ice
         // We might actually have the block still allocated even though all references where removed at some point.
         if (_memory.location == nullptr)
         {
-            ice::Memory const res_memory = _allocator.allocate({ { size_t(_chunk.size_origin) }, (ice::ualign) _chunk.align });
+            ice::Memory const res_memory = _allocator.allocate({ { size_t(_chunk.size) }, (ice::ualign) _chunk.align });
             ice::detail::AsyncReadRequest request{ aioport, _file, ice::usize{static_cast<ice::usize::base_type>(_chunk.size)}, ice::usize{static_cast<ice::usize::base_type>(_chunk.offset)}, res_memory };
             ice::usize const bytes_read = co_await request;
 

@@ -1,3 +1,6 @@
+/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/string/string.hxx>
 #include <ice/assert_core.hxx>
@@ -27,6 +30,11 @@ namespace ImGui
     constexpr auto ToColor(ice::Color<ice::u8> color) noexcept -> ImU32
     {
         return ImU32{ ice::u32(color.a) << 24 | ice::u32(color.b) << 16 | ice::u32(color.g) << 8 | ice::u32(color.r) };
+    }
+
+    constexpr auto ToVec2(ice::vec4f pos) noexcept -> ImVec2
+    {
+        return { pos.x, pos.y };
     }
 
     template<typename... Args>

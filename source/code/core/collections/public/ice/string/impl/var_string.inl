@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 
@@ -100,6 +100,14 @@ namespace ice
         return (_data + bytes + idx);
     }
 
+    template<typename CharType>
+    inline VarStringBase<CharType>::operator ice::BasicString<CharType>() const noexcept
+    {
+        ice::u32 bytes = 0;
+        ice::ucount const size = ice::string::detail::read_varstring_size(_data, bytes);
+        return { _data + bytes, size };
+    }
+
     namespace string
     {
 
@@ -163,5 +171,27 @@ namespace ice
         }
 
     } // namespace string
+
+    namespace data
+    {
+
+        template<typename CharType>
+        inline auto read_varstring(ice::Data data, ice::VarStringBase<CharType>& out_str) noexcept -> ice::Data
+        {
+            ICE_ASSERT_CORE(data.size >= 2_B); // 1 byte for size + 1 for a single character
+
+            char const* const rawstr = reinterpret_cast<char const*>(data.location);
+
+            ice::ucount bytes;
+            ice::ucount const size = ice::string::detail::read_varstring_size(rawstr, bytes);
+            if (size > 0)
+            {
+                out_str._data = rawstr;
+            }
+
+            return ice::ptr_add(data, { bytes + size });
+        }
+
+    } // namespace data
 
 } // namespace ice

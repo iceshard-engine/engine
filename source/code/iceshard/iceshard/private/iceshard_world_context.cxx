@@ -1,4 +1,8 @@
+/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "iceshard_world_context.hxx"
+#include "iceshard_world.hxx"
 
 namespace ice
 {
@@ -18,7 +22,7 @@ namespace ice
 
     auto IceshardWorldContext::create_world(
         ice::WorldTemplate const& world_template,
-        ice::ecs::EntityIndex& entities,
+        ice::ecs::EntityStorage& entity_storage,
         ice::Array<ice::UniquePtr<ice::IceshardTraitContext>> traits,
         ice::detail::TraitTaskTracker* task_tracker
     ) noexcept -> ice::IceshardWorld*
@@ -27,8 +31,8 @@ namespace ice
             _allocator,
             _allocator,
             world_template.name,
-            entities,
-            world_template.entity_storage,
+            entity_storage.entities(),
+            entity_storage,
             *this,
             ice::move(traits),
             task_tracker

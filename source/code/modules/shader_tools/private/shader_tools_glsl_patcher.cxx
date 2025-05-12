@@ -1,3 +1,6 @@
+/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "shader_tools_glsl_patcher.hxx"
 
 namespace ice
@@ -96,6 +99,10 @@ namespace ice
             if (name == "sampleTexture")
             {
                 glsl_native_sampleTexture(node, _allocator);
+            }
+            else
+            {
+                return ASLPatcher::visit(node);
             }
         }
         else

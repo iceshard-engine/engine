@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -115,7 +115,7 @@ namespace ice::math
     ) noexcept -> mat<4, 4, f32>
     {
         mat<4, 4, f32> result{ };
-
+#if 1
         result.v[0][0] = 2.f / (right - left);
         result.v[1][1] = 2.f / (bottom - top);
         result.v[2][2] = 1.f / (near_plane - far_plane);
@@ -123,6 +123,15 @@ namespace ice::math
         result.v[3][1] = -(bottom + top) / (bottom - top);
         result.v[3][2] = near_plane / (near_plane - far_plane);
         result.v[3][3] = 1.f;
+#else
+        result.v[0][0] = 2.f / (right - left);
+        result.v[1][1] = 2.f / (top - bottom);
+        result.v[2][2] = 1.f / (near_plane - far_plane);
+        result.v[3][0] = -(right + left) / (right - left);
+        result.v[3][1] = -(top + bottom) / (top - bottom);
+        result.v[3][2] = near_plane / (near_plane - far_plane);
+        result.v[3][3] = 1.f;
+#endif
         return result;
     }
 

@@ -12,7 +12,7 @@ import SettingsCommand from require 'ice.commands.settings'
 
 import RunCommand from require 'tools.run'
 import NatvisCommand from require 'tools.natvis'
-import CodeStyleCommand from require 'tools.codestyle'
+import DoxyCommand from require 'tools.doxy'
 
 LicenseCommand.settings.authors = "Dandielo <dandielo@iceshard.net>"
 LicenseCommand.settings.license = "MIT"
@@ -25,13 +25,15 @@ class IceShard extends Application
         'update': UpdateCommand
         'devenv': DevenvCommand
         'exec': ExecCommand
-        'natvis': NatvisCommand
         'codestyle': CodeStyleCommand
         'license': LicenseCommand
         'script': ScriptCommand
         'android': AndroidCommand
         'webasm': WebAsmCommand
         'settings': SettingsCommand
+        -- Custom commands
+        'natvis': NatvisCommand
+        'doxy': DoxyCommand
     }
 
 { :IceShard }

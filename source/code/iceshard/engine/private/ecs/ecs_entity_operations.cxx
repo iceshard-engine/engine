@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/ecs/ecs_entity_operations.hxx>
@@ -37,7 +37,7 @@ namespace ice::ecs
         _entry = _entry->next;
 
         // We need to skip over operations that are acting as block heads
-        while (_entry != nullptr && _entry->entities == reinterpret_cast<EntityHandle const*>(1))
+        while (_entry != nullptr && _entry->entities == reinterpret_cast<Entity const*>(1))
         {
             _entry = _entry->next;
         }
@@ -46,17 +46,6 @@ namespace ice::ecs
 
     namespace detail
     {
-
-        auto make_empty_entity_handle(
-            ice::ecs::Entity entity
-        ) noexcept -> ice::ecs::EntityHandle
-        {
-            ice::ecs::EntityHandleInfo const info{
-                    .entity = entity,
-                    .slot = ice::ecs::EntitySlot::Invalid
-            };
-            return std::bit_cast<ice::ecs::EntityHandle>(info);
-        }
 
         auto allocate_operation_nodes(
             ice::Allocator& alloc,
@@ -76,7 +65,7 @@ namespace ice::ecs
             operations->entity_count = 0;
             operations->component_data_size = 0;
             operations->archetype = Archetype::Invalid;
-            operations->entities = reinterpret_cast<ice::ecs::EntityHandle*>(1); // Allocation guard node
+            operations->entities = reinterpret_cast<ice::ecs::Entity*>(1); // Allocation guard node
             operations->component_data = reinterpret_cast<void*>(node_data.size.value);
             return operations;
         }
@@ -293,10 +282,10 @@ namespace ice::ecs
     ) noexcept
     {
         void* handle_loc;
-        EntityOperation* operation = entity_operations.new_storage_operation(ice::meminfo_of<ice::ecs::EntityHandle>, handle_loc);
+        EntityOperation* operation = entity_operations.new_storage_operation(ice::meminfo_of<ice::ecs::Entity>, handle_loc);
         operation->archetype = archetype;
-        operation->entities = reinterpret_cast<ice::ecs::EntityHandle*>(handle_loc);
-        *operation->entities = detail::make_empty_entity_handle(entity);
+        operation->entities = reinterpret_cast<ice::ecs::Entity*>(handle_loc);
+        operation->entities[0] = entity;
         operation->entity_count = 1;
         operation->notify_entity_changes = true;
         operation->component_data = nullptr;
@@ -313,18 +302,15 @@ namespace ice::ecs
         ice::u32 const entity_count = ice::count(entities);
 
         void* handle_loc;
-        EntityOperation* operation = entity_operations.new_storage_operation(ice::meminfo_of<ice::ecs::EntityHandle> * entity_count, handle_loc);
+        EntityOperation* operation = entity_operations.new_storage_operation(ice::meminfo_of<ice::ecs::Entity> * entity_count, handle_loc);
         operation->archetype = archetype;
-        operation->entities = reinterpret_cast<ice::ecs::EntityHandle*>(handle_loc);
+        operation->entities = reinterpret_cast<ice::ecs::Entity*>(handle_loc);
         operation->entity_count = entity_count;
         operation->notify_entity_changes = notify_changes;
         operation->component_data = nullptr;
         operation->component_data_size = 0;
 
-        for (ice::u32 idx = 0; idx < entity_count; ++idx)
-        {
-            operation->entities[idx] = detail::make_empty_entity_handle(entities[idx]);
-        }
+        ice::memcpy(operation->entities, ice::span::data(entities), ice::span::size_bytes(entities));
     }
 
     void queue_set_archetype_with_data(
@@ -339,7 +325,7 @@ namespace ice::ecs
         ice::ucount const entity_count = ice::count(entities);
         ice::ucount const component_count = ice::count(component_info.names);
 
-        ice::meminfo additional_data_size = ice::meminfo_of<ice::ecs::EntityHandle> * entity_count;
+        ice::meminfo additional_data_size = ice::meminfo_of<ice::ecs::Entity> * entity_count;
         additional_data_size += ice::meminfo_of<ice::ecs::EntityOperations::ComponentInfo>;
         additional_data_size += ice::meminfo_of<ice::StringID const> * component_count;
         additional_data_size += ice::meminfo_of<ice::u32 const> * component_count;
@@ -356,13 +342,9 @@ namespace ice::ecs
         EntityOperation* operation = entity_operations.new_storage_operation(additional_data_size, handle_loc);
 
         // Set entity handles
-        ice::ecs::EntityHandle* entities_ptr = reinterpret_cast<ice::ecs::EntityHandle*>(handle_loc);
-        handle_loc = entities_ptr + entity_count;
-
-        for (ice::u32 idx = 0; idx < entity_count; ++idx)
-        {
-            entities_ptr[idx] = detail::make_empty_entity_handle(entities[idx]);
-        }
+        ice::ecs::Entity* entities_ptr = reinterpret_cast<ice::ecs::Entity*>(handle_loc);
+        ice::memcpy(entities_ptr, ice::span::data(entities), ice::span::size_bytes(entities));
+        handle_loc = ice::ptr_add(handle_loc, ice::span::size_bytes(entities));
 
         // Set component info object
         ice::StringID* names_ptr = reinterpret_cast<ice::StringID*>(handle_loc);
@@ -413,14 +395,14 @@ namespace ice::ecs
 
     void queue_remove_entity(
         ice::ecs::EntityOperations& entity_operations,
-        ice::ecs::EntityHandle entity
+        ice::ecs::Entity entity
     ) noexcept
     {
         void* handle_loc;
-        EntityOperation* operation = entity_operations.new_storage_operation(ice::meminfo_of<ice::ecs::EntityHandle>, handle_loc);
+        EntityOperation* operation = entity_operations.new_storage_operation(ice::meminfo_of<ice::ecs::Entity>, handle_loc);
         operation->archetype = ice::ecs::Archetype::Invalid;
-        operation->entities = reinterpret_cast<ice::ecs::EntityHandle*>(handle_loc);
-        *operation->entities = entity;
+        operation->entities = reinterpret_cast<ice::ecs::Entity*>(handle_loc);
+        operation->entities[0] = entity;
         operation->entity_count = 1;
         operation->notify_entity_changes = true;
         operation->component_data = nullptr;
@@ -429,23 +411,6 @@ namespace ice::ecs
 
     void queue_batch_remove_entities(
         ice::ecs::EntityOperations& entity_operations,
-        ice::Span<ice::ecs::EntityHandle const> entities
-    ) noexcept
-    {
-        void* handle_loc;
-        EntityOperation* operation = entity_operations.new_storage_operation(ice::meminfo_of<ice::ecs::EntityHandle> * ice::count(entities), handle_loc);
-        operation->archetype = ice::ecs::Archetype::Invalid;
-        operation->entities = reinterpret_cast<ice::ecs::EntityHandle*>(handle_loc);
-        ice::memcpy(operation->entities, ice::span::data(entities), ice::span::size_bytes(entities));
-        operation->entity_count = ice::count(entities);
-        operation->notify_entity_changes = false;
-        operation->component_data = nullptr;
-        operation->component_data_size = 0;
-    }
-
-    void queue_batch_remove_entities(
-        ice::ecs::EntityOperations& entity_operations,
-        ice::ecs::QueryProvider const& query_provider,
         ice::Span<ice::ecs::Entity const> entities
     ) noexcept
     {
@@ -455,16 +420,15 @@ namespace ice::ecs
         }
 
         void* handle_loc;
-        EntityOperation* operation = entity_operations.new_storage_operation(ice::meminfo_of<ice::ecs::EntityHandle> * ice::count(entities), handle_loc);
+        EntityOperation* operation = entity_operations.new_storage_operation(ice::meminfo_of<ice::ecs::Entity> * ice::count(entities), handle_loc);
         operation->archetype = ice::ecs::Archetype::Invalid;
-        operation->entities = reinterpret_cast<ice::ecs::EntityHandle*>(handle_loc);
+        operation->entities = reinterpret_cast<ice::ecs::Entity*>(handle_loc);
         operation->entity_count = ice::count(entities);
         operation->notify_entity_changes = false;
         operation->component_data = nullptr;
         operation->component_data_size = 0;
 
-        // Resolve the entities to be removed.
-        query_provider.resolve_entities(entities, { operation->entities, operation->entity_count });
+        ice::memcpy(operation->entities, ice::span::data(entities), ice::span::size_bytes(entities));
     }
 
 } // namespace ice::ecs

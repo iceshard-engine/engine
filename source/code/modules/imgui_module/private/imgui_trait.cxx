@@ -40,7 +40,7 @@ namespace ice::devui
         _context.bind<&ImGuiTrait::update>();
         _context.bind<&ImGuiTrait::gfx_start, Render>(ice::gfx::ShardID_GfxStartup);
         _context.bind<&ImGuiTrait::gfx_shutdown, Render>(ice::gfx::ShardID_GfxShutdown);
-        _context.bind<&ImGuiTrait::gfx_update, Render>(ice::gfx::ShardID_GfxFrameUpdate);
+        _context.bind<&ImGuiTrait::gfx_update, Render>(ice::gfx::ShardID_RenderFrameUpdate);
         _context.bind<&ImGuiTrait::on_window_resized>(ice::platform::ShardID_WindowResized);
     }
 
@@ -146,6 +146,8 @@ namespace ice::devui
                     InputID constexpr right_ctrl_key_mod = ice::input::input_identifier(DeviceType::Keyboard, KeyboardMod::CtrlRight, mod_identifier_base_value);
                     InputID constexpr left_shift_key_mod = ice::input::input_identifier(DeviceType::Keyboard, KeyboardMod::ShiftLeft, mod_identifier_base_value);
                     InputID constexpr right_shift_key_mod = ice::input::input_identifier(DeviceType::Keyboard, KeyboardMod::ShiftRight, mod_identifier_base_value);
+                    InputID constexpr left_alt_key_mod = ice::input::input_identifier(DeviceType::Keyboard, KeyboardMod::AltLeft, mod_identifier_base_value);
+                    InputID constexpr right_alt_key_mod = ice::input::input_identifier(DeviceType::Keyboard, KeyboardMod::AltRight, mod_identifier_base_value);
 
                     if (input.identifier == left_ctrl_key_mod || input.identifier == right_ctrl_key_mod)
                     {
@@ -154,6 +156,10 @@ namespace ice::devui
                     if (input.identifier == left_shift_key_mod || input.identifier == right_shift_key_mod)
                     {
                         io.KeyShift = input.value.button.state.pressed;
+                    }
+                    if (input.identifier == left_alt_key_mod || input.identifier == right_alt_key_mod)
+                    {
+                        io.KeyAlt = input.value.button.state.pressed;
                     }
                 }
 
@@ -169,13 +175,14 @@ namespace ice::devui
 
     auto ImGuiTrait::gfx_start(
         ice::gfx::GfxStateChange const& params,
+        ice::gfx::GfxContext& ctx,
         ice::AssetStorage& assets
     ) noexcept -> ice::Task<>
     {
         _imgui_gfx_stage = ice::make_unique<ImGuiGfxStage>(_allocator, _allocator, assets);
         params.registry.register_stage("iceshard.devui"_sid, _imgui_gfx_stage.get());
 
-        ice::vec2u const size = params.context.swapchain().extent();
+        ice::vec2u const size = ctx.swapchain().extent();
         co_await on_window_resized(ice::vec2i{ size });
         co_return;
     }
@@ -186,7 +193,7 @@ namespace ice::devui
         co_return;
     }
 
-    auto ImGuiTrait::gfx_update(ice::gfx::GfxFrameUpdate const& update) noexcept -> ice::Task<>
+    auto ImGuiTrait::gfx_update(ice::gfx::RenderFrameUpdate const& update) noexcept -> ice::Task<>
     {
         IPT_ZONE_SCOPED;
         ImGuiIO const& io = ImGui::GetIO();

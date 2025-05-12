@@ -22,7 +22,7 @@ Settings
     '$WorkspaceCodeDir$/../fbuild.bff'
     '$WorkspaceCodeDir$/../configs.bff'
     '$WorkspaceCodeDir$/../conanfile.txt'
-    '$WorkspaceCodeDir$/../conan_profiles.json'
+    '$WorkspaceCodeDir$/../conanprofiles.txt'
 }
 
 #include "code/projects.bff"

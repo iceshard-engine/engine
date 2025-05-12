@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -34,9 +34,9 @@ namespace ice::math
     constexpr auto scale(mat<4, 4, f32> const& matrix) noexcept -> vec<3, f32>
     {
         return {
-            length(vec{matrix.v[0]}),
-            length(vec{matrix.v[1]}),
-            length(vec{matrix.v[2]})
+            length(vec<3, f32>{matrix.v[0]}),
+            length(vec<3, f32>{matrix.v[1]}),
+            length(vec<3, f32>{matrix.v[2]})
         };
     }
 

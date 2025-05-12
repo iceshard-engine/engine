@@ -1,3 +1,6 @@
+/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "shader_tools_wgsl_patcher.hxx"
 
 namespace ice
@@ -86,6 +89,10 @@ namespace ice
             if (name == "sampleTexture")
             {
                 wgsl_native_sampleTexture(node, _allocator);
+            }
+            else
+            {
+                return ASLPatcher::visit(node);
             }
         }
         else

@@ -15,7 +15,6 @@ namespace ice
     {
         ice::StringID name;
         ice::Span<ice::StringID const> traits;
-        ice::ecs::EntityStorage& entity_storage;
     };
 
     struct WorldAssembly
