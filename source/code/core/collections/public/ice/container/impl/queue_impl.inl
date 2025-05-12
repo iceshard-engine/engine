@@ -594,6 +594,31 @@ namespace ice
         inline void push_front(ice::Queue<Type, Logic>& queue, ice::Span<Type const> items) noexcept;
 
         template<typename Type, ice::ContainerLogic Logic>
+        inline auto take_front(ice::Queue<Type, Logic>& queue, ice::Span<Type> out_values) noexcept -> ice::ucount
+        {
+            ice::ucount const taken_items = ice::min(ice::count(out_values), ice::count(queue));
+
+            // (offset, end][0, remaining)
+            ice::ucount const first_part = ice::min(queue._offset + taken_items, queue._capacity);
+            ice::ucount const second_part = (queue._offset + taken_items) - first_part;
+            ice::ucount const first_part_count = first_part - queue._offset;
+
+            if constexpr (Logic == ContainerLogic::Complex)
+            {
+                ice::mem_move_n_to(ice::span::begin(out_values), queue._data + queue._offset, first_part_count);
+                ice::mem_move_n_to(ice::span::begin(out_values) + first_part_count, queue._data, second_part);
+            }
+            else
+            {
+                ice::memcpy(ice::span::begin(out_values), queue._data + queue._offset, first_part_count * sizeof(Type));
+                ice::memcpy(ice::span::begin(out_values) + first_part_count, queue._data, second_part * sizeof(Type));
+            }
+
+            ice::queue::pop_front(queue, taken_items);
+            return taken_items;
+        }
+
+        template<typename Type, ice::ContainerLogic Logic>
         inline void pop_front(ice::Queue<Type, Logic>& queue, ice::ucount count /*= 1*/) noexcept
         {
             if constexpr (Logic == ContainerLogic::Complex)
