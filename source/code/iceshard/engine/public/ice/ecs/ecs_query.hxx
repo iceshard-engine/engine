@@ -9,8 +9,23 @@
 namespace ice::ecs
 {
 
-    template<ice::ecs::QueryPolicy, typename... Parts>
-    struct Query : public TraitQueryOperations
+    //! \brief Utility type to access component data for one or multiple entities.
+    //!
+    //! \details A query consists of at least one \a main part, and zero or more sub-parts. Each part defines one additional
+    //!   step-down in a entity hierarchy. This means, that if you have a two part query, the first part will be executed on the main
+    //!   list of entities, while the second part will be executed on any entity linked <em>(part of a components data)</em> in the \a main part.
+    //!
+    //! \note Because there is no simple way of pre-fetching linked entities, their archetypes and storage data accesing their components
+    //!   will be less efficient than when doing it in bulk. This feature is mainly provided as \a syntax-sugar, however minor optimizations
+    //!   are where achieved. In the end user doesn't need to create and use an entirely separate query object.
+    //!
+    //! \tparam Type Type of the query, which can be either `Unchecked` or `Synchronized`.
+    //! \tparam ...Parts All parts the query is required to execute before returning data.
+    //!
+    //! \see ice::ecs::TraitQueryOperations for the definition of each operation a query can perform.
+    //! \see ice::ecs::QueryObject<Parts...>
+    template<ice::ecs::QueryType Type, typename... Parts>
+    struct Query : public ice::ecs::TraitQueryOperations
     {
     public:
         using ObjectType = ice::ecs::QueryObject<Parts...>;
@@ -18,7 +33,7 @@ namespace ice::ecs
         using BlockResultType = typename ObjectType::BlockResultType;
         using ComponentsTypeList = typename ObjectType::ComponentsTypeList;
 
-        static constexpr ice::ecs::QueryPolicy Policy = QueryPolicy::Unchecked;
+        static constexpr ice::ecs::QueryType Type = QueryType::Unchecked;
         static constexpr ice::u32 ComponentCount = ObjectType::ComponentCount;
 
         inline Query(ObjectType const& query) noexcept
@@ -38,7 +53,7 @@ namespace ice::ecs
     };
 
     template<typename... Parts>
-    struct Query<QueryPolicy::Synchronized, Parts...> : public TraitQueryOperations
+    struct Query<QueryType::Synchronized, Parts...> : public TraitQueryOperations
     {
     public:
         using ObjectType = ice::ecs::QueryObject<Parts...>;
@@ -46,7 +61,7 @@ namespace ice::ecs
         using BlockResultType = typename ObjectType::BlockResultType;
         using ComponentsTypeList = typename ObjectType::ComponentsTypeList;
 
-        static constexpr ice::ecs::QueryPolicy Policy = QueryPolicy::Synchronized;
+        static constexpr ice::ecs::QueryType Type = QueryType::Synchronized;
         static constexpr ice::u32 ComponentCount = ObjectType::ComponentCount;
 
         inline Query(ObjectType const& query, bool requires_release) noexcept
@@ -80,23 +95,23 @@ namespace ice::ecs
         bool _requires_release;
     };
 
-    template<ice::ecs::QueryPolicy Policy, typename... Parts>
-    auto Query<Policy, Parts...>::synchronized_on(ice::TaskScheduler& scheduler) const noexcept
+    template<ice::ecs::QueryType Type, typename... Parts>
+    auto Query<Type, Parts...>::synchronized_on(ice::TaskScheduler& scheduler) const noexcept
     {
         struct Awaitable : ice::ecs::detail::QueryAwaitableBase<Parts...>
         {
             using ice::ecs::detail::QueryAwaitableBase<Parts...>::QueryAwaitableBase;
 
-            inline auto await_resume() const noexcept -> ice::ecs::Query<QueryPolicy::Synchronized, Parts...>
+            inline auto await_resume() const noexcept -> ice::ecs::Query<QueryType::Synchronized, Parts...>
             {
-                return Query<QueryPolicy::Synchronized, Parts...>{ this->query_object(), this->_is_empty == false };
+                return Query<QueryType::Synchronized, Parts...>{ this->query_object(), this->_is_empty == false };
             }
         };
 
         return Awaitable{ _query, scheduler.schedule()._queue };
     }
 
-    template<typename... Parts> Query(QueryObject<Parts...>&&) noexcept -> Query<QueryPolicy::Unchecked, Parts...>;
-    template<typename... Parts> Query(QueryObject<Parts...> const&) noexcept -> Query<QueryPolicy::Unchecked, Parts...>;
+    template<typename... Parts> Query(QueryObject<Parts...>&&) noexcept -> Query<QueryType::Unchecked, Parts...>;
+    template<typename... Parts> Query(QueryObject<Parts...> const&) noexcept -> Query<QueryType::Unchecked, Parts...>;
 
 } // namespace ice::ecs

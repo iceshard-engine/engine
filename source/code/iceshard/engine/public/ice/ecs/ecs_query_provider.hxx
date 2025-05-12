@@ -48,7 +48,7 @@ namespace ice::ecs
             ice::Array<ice::ecs::detail::DataBlock const*>& out_data_blocks
         ) const noexcept = 0;
 
-        template<ice::u32 RefIdx, ice::ecs::QueryType... QueryComponents>
+        template<ice::u32 RefIdx, ice::ecs::QueryArg... QueryComponents>
         bool initialize_query_object_part(
             ice::ecs::detail::QueryObjectPart<RefIdx, QueryComponents...> const& query_part,
             ice::Span<ice::StringID const> query_tags,
@@ -60,7 +60,7 @@ namespace ice::ecs
         ) const noexcept;
     };
 
-    template<ice::u32 RefIdx, ice::ecs::QueryType... QueryComponents>
+    template<ice::u32 RefIdx, ice::ecs::QueryArg... QueryComponents>
     bool QueryProvider::initialize_query_object_part(
         ice::ecs::detail::QueryObjectPart<RefIdx, QueryComponents...> const& query_part,
         ice::Span<ice::StringID const> query_tags,

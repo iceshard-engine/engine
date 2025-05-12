@@ -17,7 +17,7 @@ namespace ice::ecs
     {
     public:
         //! \brief
-        template<ice::u32 ReferencedIdx, ice::ecs::QueryType... Components>
+        template<ice::u32 ReferencedIdx, ice::ecs::QueryArg... Components>
         using Part = ice::ecs::detail::QueryObjectPart<ReferencedIdx, Components...>;
 
         //! \brief
@@ -28,7 +28,7 @@ namespace ice::ecs
         using ResultType = typename ObjectType::ResultType;
         using BlockResultType = typename ObjectType::BlockResultType;
 
-        static constexpr ice::ecs::QueryPolicy Policy = QueryPolicy::Unchecked;
+        static constexpr ice::ecs::QueryType Type = QueryType::Unchecked;
         static constexpr ice::u32 ComponentCount = ObjectType::ComponentCount;
 
         QueryBuilder(
@@ -43,7 +43,7 @@ namespace ice::ecs
 
         ~QueryBuilder() noexcept = default;
 
-        template<ice::u32 ReferencedIdx, ice::ecs::QueryType... Components>
+        template<ice::u32 ReferencedIdx, ice::ecs::QueryArg... Components>
         auto with() const noexcept -> ice::ecs::QueryBuilder<ice::ecs::QueryObject<Parts..., Part<ReferencedIdx, Components...>>, Tags...>
         {
             return { _allocator, _queries, _query_provider };
@@ -76,16 +76,16 @@ namespace ice::ecs
             {
                 using ice::ecs::detail::QueryAwaitableBase<Parts...>::QueryAwaitableBase;
 
-                inline auto await_resume() const noexcept -> ice::ecs::Query<QueryPolicy::Synchronized, Parts...>
+                inline auto await_resume() const noexcept -> ice::ecs::Query<QueryType::Synchronized, Parts...>
                 {
-                    return Query<QueryPolicy::Synchronized, Parts...>{ this->query_object(), this->_is_empty == false };
+                    return Query<QueryType::Synchronized, Parts...>{ this->query_object(), this->_is_empty == false };
                 }
             };
 
             return Awaitable{ query_object(), scheduler.schedule()._queue };
         }
 
-        operator ice::ecs::Query<QueryPolicy::Unchecked, Parts...> () const noexcept
+        operator ice::ecs::Query<QueryType::Unchecked, Parts...> () const noexcept
         {
             return ice::ecs::Query{ query_object() };
         }
@@ -97,6 +97,6 @@ namespace ice::ecs
     };
 
     template<typename... Parts, ice::ecs::QueryTagType... Tags>
-    Query(ice::ecs::QueryBuilder<QueryObject<Parts...>, Tags...>) -> Query<QueryPolicy::Unchecked, Parts...>;
+    Query(ice::ecs::QueryBuilder<QueryObject<Parts...>, Tags...>) -> Query<QueryType::Unchecked, Parts...>;
 
 } // namespace ice::ecs

@@ -34,6 +34,12 @@ namespace ice::ecs
         ice::u32 generation : 8;
     };
 
+    //! \brief Extracts details from an entity handle.
+    //! \param entity Handle to the data should be extracted from.
+    //! \return information extracted from the Entity handle.
+    constexpr auto entity_info(ice::ecs::Entity entity) noexcept -> ice::ecs::EntityInfo;
+
+
     //! \brief Number of bits reserved to identify the entity's `Archetype` in an `EntityStorage`. Allows for 4095 archerypes
     static constexpr ice::u32 Constant_EntityDataSlotArchetype_Bits = 12;
 

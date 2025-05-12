@@ -7,7 +7,7 @@
 namespace ice::ecs::detail
 {
 
-    template<ice::u32 ReferencedIdx, ice::ecs::QueryType... Components>
+    template<ice::u32 ReferencedIdx, ice::ecs::QueryArg... Components>
     struct QueryObjectPart
     {
         using Definition = ice::ecs::QueryDefinition<Components...>;

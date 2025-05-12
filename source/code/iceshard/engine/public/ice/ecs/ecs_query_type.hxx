@@ -11,14 +11,14 @@ namespace ice::ecs
     {
 
         template<typename T>
-        concept QueryType = ice::ecs::concepts::Entity<T>
+        concept QueryArg = ice::ecs::concepts::Entity<T>
             || (ice::ecs::Component<T> && !ice::ecs::ComponentTag<T> && (std::is_reference_v<T> || std::is_pointer_v<T>));
 
-        template<QueryType T>
+        template<QueryArg T>
         constexpr bool Constant_QueryTypeIsWritable = ice::ecs::concepts::Entity<T> == false
             && std::is_const_v<ice::clear_type_t<T>> == false;
 
-        template<QueryType T>
+        template<QueryArg T>
         constexpr bool Constant_QueryTypeIsOptional = ice::ecs::concepts::Entity<T> == false
             && std::is_pointer_v<T>;
 
@@ -41,7 +41,7 @@ namespace ice::ecs
             return ice::hash(left.identifier) < ice::hash(right.identifier);
         }
 
-        template<QueryType T>
+        template<QueryArg T>
         struct QueryComponentTypeInfo
         {
             ice::StringID const identifier = ice::ecs::Constant_ComponentIdentifier<ice::clear_type_t<T>>;
@@ -52,7 +52,7 @@ namespace ice::ecs
             constexpr operator QueryTypeInfo() const noexcept;
         };
 
-        template<QueryType T>
+        template<QueryArg T>
         constexpr QueryComponentTypeInfo<T>::operator QueryTypeInfo() const noexcept
         {
             return QueryTypeInfo{ .identifier = identifier, .is_writable = is_writable, .is_optional = is_optional };
@@ -60,7 +60,7 @@ namespace ice::ecs
 
     } // namespace detail
 
-    using ice::ecs::detail::QueryType;
+    using ice::ecs::detail::QueryArg;
     using ice::ecs::detail::QueryTagType;
 
 } // namespace ice::ecs

@@ -20,7 +20,7 @@ namespace ice::ecs
 
         auto query_provider() const noexcept -> ice::ecs::QueryProvider const&;
 
-        template<ice::ecs::QueryType... Types>
+        template<ice::ecs::QueryArg... Types>
         auto build(
             ice::ecs::QueryDefinition<Types...> const& = { }
         ) noexcept -> ice::ecs::QueryBuilder<QueryObject<ice::ecs::detail::QueryObjectPart<0, Types...>>>;
@@ -50,7 +50,7 @@ namespace ice::ecs
         return _provider;
     }
 
-    template<ice::ecs::QueryType... Types>
+    template<ice::ecs::QueryArg... Types>
     inline auto QueryStorage::build(
         ice::ecs::QueryDefinition<Types...> const&
     ) noexcept -> ice::ecs::QueryBuilder<QueryObject<ice::ecs::detail::QueryObjectPart<0, Types...>>>

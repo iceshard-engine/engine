@@ -10,6 +10,8 @@
 namespace ice::ecs
 {
 
+    //! \brief A mixin class that extends Query-like classes with actual methods allowing to access entity components.
+    //! \hideinheritancegraph
     struct TraitQueryOperations
     {
     public:
@@ -39,7 +41,7 @@ namespace ice::ecs
     namespace detail
     {
 
-        template<ice::u32 RefIdx, QueryType... T>
+        template<ice::u32 RefIdx, QueryArg... T>
         inline auto create_entity_tuple(
             ice::u32 index,
             void** component_pointer_array,
@@ -62,7 +64,7 @@ namespace ice::ecs
             return select_entity(std::make_index_sequence<sizeof...(T)>{});
         }
 
-        template<QueryType... TupleTypes, ice::u32 RefIdx, QueryType... SubQueryTypes>
+        template<QueryArg... TupleTypes, ice::u32 RefIdx, QueryArg... SubQueryTypes>
         inline auto create_entity_tuple_concat(
             std::tuple<TupleTypes...>&& in_tuple,
             ice::ecs::QueryProvider const& provider,
@@ -132,7 +134,7 @@ namespace ice::ecs
             );
         }
 
-        template<ice::u32 RefIdx, QueryType... T>
+        template<ice::u32 RefIdx, QueryArg... T>
         inline auto create_block_tuple(
             ice::u32 count,
             void** component_pointer_array,
@@ -150,7 +152,7 @@ namespace ice::ecs
             return enumerate_types(std::make_index_sequence<sizeof...(T)>{});
         }
 
-        template<typename Fn, ice::ecs::QueryType... QueryTypes, ice::u32 RefIdx, ice::ecs::QueryType... SubQueryTypes>
+        template<typename Fn, ice::ecs::QueryArg... QueryTypes, ice::u32 RefIdx, ice::ecs::QueryArg... SubQueryTypes>
         static void invoke_for_each_entity(
             Fn&& fn,
             ice::u32 count,
@@ -645,7 +647,7 @@ namespace ice::ecs
     template<typename Self>
     inline auto TraitQueryOperations::for_each_entity(this Self&& self) noexcept -> ice::Generator<typename ice::clear_type_t<Self>::ResultType>
     {
-        if constexpr (ice::clear_type_t<Self>::Policy == QueryPolicy::Synchronized && std::is_rvalue_reference_v<decltype(self)>)
+        if constexpr (ice::clear_type_t<Self>::Type == QueryType::Synchronized && std::is_rvalue_reference_v<decltype(self)>)
         {
             return ice::ecs::query::for_each_entity_gen(self.query_object(), ice::move(self));
         }
@@ -664,7 +666,7 @@ namespace ice::ecs
     template<typename Self>
     inline auto TraitQueryOperations::for_each_block(this Self&& self) noexcept -> ice::Generator<typename ice::clear_type_t<Self>::BlockResultType>
     {
-        if constexpr (ice::clear_type_t<Self>::Policy == QueryPolicy::Synchronized && std::is_rvalue_reference_v<decltype(self)>)
+        if constexpr (ice::clear_type_t<Self>::Type == QueryType::Synchronized && std::is_rvalue_reference_v<decltype(self)>)
         {
             return ice::ecs::query::for_each_block_gen(self.query_object(), ice::move(self));
         }

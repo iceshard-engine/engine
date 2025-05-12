@@ -27,7 +27,7 @@ namespace ice::ecs
     class EntityOperations;
 
 
-    enum class QueryPolicy
+    enum class QueryType
     {
         Unchecked,
         Synchronized,
@@ -35,7 +35,7 @@ namespace ice::ecs
         Default = Unchecked,
     };
 
-    template<ice::ecs::QueryPolicy Policy, typename... Parts>
+    template<ice::ecs::QueryType Type, typename... Parts>
     struct Query;
 
     class QueryStorage;

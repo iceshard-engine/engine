@@ -12,11 +12,6 @@
 namespace ice::ecs
 {
 
-    using ice::ecs::detail::DataBlock;
-    using ice::ecs::detail::DataBlockPool;
-    using ice::ecs::detail::ArchetypeInstance;
-    using ice::ecs::detail::ArchetypeInstanceInfo;
-
     namespace detail
     {
 
@@ -440,6 +435,10 @@ namespace ice::ecs
 
     EntityStorage::~EntityStorage() noexcept
     {
+        using ice::ecs::detail::DataBlock;
+        using ice::ecs::detail::DataBlockPool;
+        using ice::ecs::detail::ArchetypeInstance;
+
         for (ice::ecs::QueryAccessTracker* tracker : ice::hashmap::values(_access_trackers))
         {
             _allocator.destroy(tracker);
@@ -482,6 +481,9 @@ namespace ice::ecs
 
     void EntityStorage::update_archetypes() noexcept
     {
+        using ice::ecs::detail::DataBlock;
+        using ice::ecs::detail::ArchetypeInstance;
+
         ice::u32 const existing_count = ice::count(_head_blocks);
         ice::u32 const archetype_count = _archetype_index.registered_archetype_count();
         if (existing_count >= archetype_count)
@@ -535,6 +537,12 @@ namespace ice::ecs
     ) noexcept
     {
         IPT_ZONE_SCOPED;
+
+        using ice::ecs::detail::DataBlock;
+        using ice::ecs::detail::DataBlockPool;
+        using ice::ecs::detail::ArchetypeInstance;
+        using ice::ecs::detail::ArchetypeInstanceInfo;
+
         // [Done] Set Archetype: {EntityHandle[*], DstArchetype, ComponentData[*]} // add
         // [Done] Rep Archetype: {EntityHandle[1], DstArchetype, <implicit: SrcArchetype>, ComponentData[*]} // change
         // [Done] Set Component: {EntityHandle[1], None, ComponentData[*]} // update data
@@ -978,8 +986,8 @@ namespace ice::ecs
         ice::Span<ice::ecs::detail::QueryTypeInfo const> query_info,
         ice::Span<ice::StringID const> query_tags,
         ice::Span<ice::ecs::QueryAccessTracker*> out_access_trackers,
-        ice::Array<ice::ecs::ArchetypeInstanceInfo const*>& out_instance_infos,
-        ice::Array<ice::ecs::DataBlock const*>& out_data_blocks
+        ice::Array<ice::ecs::detail::ArchetypeInstanceInfo const*>& out_instance_infos,
+        ice::Array<ice::ecs::detail::DataBlock const*>& out_data_blocks
     ) const noexcept
     {
         IPT_ZONE_SCOPED;
@@ -995,7 +1003,7 @@ namespace ice::ecs
 
         _archetype_index.fetch_archetype_instance_infos(archetypes, ice::array::slice(out_instance_infos, prev_archetype_count));
 
-        for (ice::ecs::ArchetypeInstanceInfo const* instance : ice::array::slice(out_instance_infos, prev_archetype_count))
+        for (ice::ecs::detail::ArchetypeInstanceInfo const* instance : ice::array::slice(out_instance_infos, prev_archetype_count))
         {
             ice::u32 const instance_idx = static_cast<ice::u32>(instance->archetype_instance);
             ice::array::push_back(out_data_blocks, _data_blocks[instance_idx]);

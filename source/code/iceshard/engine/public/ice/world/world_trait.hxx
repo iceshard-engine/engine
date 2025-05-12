@@ -41,7 +41,7 @@ namespace ice
         auto entity_operations() noexcept -> ice::ecs::EntityOperations&;
         auto entity_queries() noexcept -> ice::ecs::QueryStorage&;
 
-        template<ice::ecs::QueryType... Types>
+        template<ice::ecs::QueryArg... Types>
         auto query() noexcept -> ice::ecs::QueryBuilder<ice::ecs::QueryObject<ice::ecs::QueryObjectPart<0, Types...>>>
         {
             return entity_queries().build<Types...>();

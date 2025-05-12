@@ -12,7 +12,7 @@ namespace ice::ecs
     //! \tparam ...QueryComponents Component types, with decorators, we want to access in the qyery.
     //!
     //! \example QueryDefinition<ComponentB&, const ComponentA*>
-    template<ice::ecs::QueryType... QueryComponents>
+    template<ice::ecs::QueryArg... QueryComponents>
     struct QueryDefinition
     {
         static constexpr ice::ucount Constant_ComponentCount = sizeof...(QueryComponents);
@@ -62,7 +62,7 @@ namespace ice::ecs
         template<typename Types>
         struct QueryDefinitionFromTupleHelper;
 
-        template<ice::ecs::QueryType... Types>
+        template<ice::ecs::QueryArg... Types>
         struct QueryDefinitionFromTupleHelper<std::tuple<Types...>>
         {
             using Definition = ice::ecs::QueryDefinition<Types...>;

@@ -150,16 +150,16 @@ namespace ice::ecs
         template<typename... Parts>
         struct QueryAwaitableBase : ice::TaskAwaitableBase
         {
-            using QueryType = ice::ecs::QueryObject<Parts...>;
+            using QueryArg = ice::ecs::QueryObject<Parts...>;
 
             ice::TaskQueue* _task_queue;
             ice::TaskAwaitableCustomResumer _custom_resumer;
-            ice::u32 _awaited_access_stage[QueryType::ComponentCount]{};
+            ice::u32 _awaited_access_stage[QueryArg::ComponentCount]{};
             bool _is_empty;
 
-            static inline auto internal_get_query(void* userdata) noexcept -> QueryType const&
+            static inline auto internal_get_query(void* userdata) noexcept -> QueryArg const&
             {
-                return *reinterpret_cast<QueryType const*>(userdata);
+                return *reinterpret_cast<QueryArg const*>(userdata);
             }
 
             static inline bool internal_query_resumer(void* userdata, ice::TaskAwaitableBase const& awaitable) noexcept
@@ -169,7 +169,7 @@ namespace ice::ecs
                 return internal_query_is_resumable(internal_get_query(userdata), self._awaited_access_stage);
             }
 
-            constexpr QueryAwaitableBase(QueryType const& query, ice::TaskQueue& task_queue) noexcept
+            constexpr QueryAwaitableBase(QueryArg const& query, ice::TaskQueue& task_queue) noexcept
                 : ice::TaskAwaitableBase{ ._params = {.modifier = ice::TaskAwaitableModifier::CustomResumer } }
                 , _task_queue{ ice::addressof(task_queue) }
                 , _custom_resumer{ }
@@ -201,7 +201,7 @@ namespace ice::ecs
                 return *this;
             }
 
-            inline auto query_object() const noexcept -> QueryType const&
+            inline auto query_object() const noexcept -> QueryArg const&
             {
                 return internal_get_query(_custom_resumer.ud_resumer);
             }
