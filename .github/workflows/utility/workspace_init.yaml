@@ -1,0 +1,25 @@
+name: Workspace Initialization
+
+on:
+  workflow_dispatch:
+    inputs:
+      configuration:
+        description: Build configuration to run
+        required: true
+        type: choice
+        default: Develop
+        options:
+          - Debug
+          - Develop
+          - Profile
+          - Release
+
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - name: Log information
+        run:
+          - echo Initializing for ${{ inputs.configuration }}
+      - name: Initialize the workspace
+        using: ./.github/actions/ibt-workspace-init@hotfix-may-13
