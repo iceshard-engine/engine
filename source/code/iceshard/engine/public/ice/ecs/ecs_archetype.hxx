@@ -8,11 +8,21 @@
 namespace ice::ecs
 {
 
+    //! \brief Opaque handle identyfing a single archetype. This value is calculated from a sorted list of components defining that archetype.
+    //!
+    //! \remark If two archetypes are defined with the same components but in different order, the hash will still be the same.
+    //! \remark The `Archetype::Invalid` value is referencing a special 'Null' archetype that cannot have entities and does not contain any data.
+    //!
+    //! \see `ice::ecs::static_validation` namespace for explicit compiletime checks and assertions.
     enum class Archetype : ice::u64
     {
         Invalid = 0x0
     };
 
+    //! \brief Archetype compile-time definition using a set of components.
+    //! \tparam ...Components A set of types that each entity will have access to.
+    //!
+    //! \see ice::ecs::concepts::Component
     template<ice::ecs::Component... Components>
     struct ArchetypeDefinition
     {
@@ -50,14 +60,15 @@ namespace ice::ecs
         constexpr inline operator ice::ecs::Archetype() const noexcept;
     };
 
-    //! \brief Quick access to an instance of ArchetypeDefinition with the given components.
+    //! \brief Quick access to an instance of `ArchetypeDefinition` with the given components.
     template<ice::ecs::Component... Components>
     static constexpr ArchetypeDefinition<Components...> Constant_ArchetypeDefinition{ };
 
-    //! \brief Quick access to the identifier of an ArchetypeDefinition with the given components.
+    //! \brief Quick access to the identifier of an `ArchetypeDefinition` with the given components.
     template<ice::ecs::Component... Components>
     static constexpr ice::ecs::Archetype Constant_Archetype = Constant_ArchetypeDefinition<Components...>.identifier;
 
+    //! \brief Provides the same information as `ArchetypeDefinition`, however it's not templated, allowing for type-erased access.
     struct ArchetypeInfo
     {
         //! \copydoc ArchetypeDefinition::name

@@ -12,7 +12,7 @@ namespace ice::ecs::detail
     //! \brief Opaque handle identyfying the direct instances of an archertype. This value should only be used by internal systems.
     enum class ArchetypeInstance : ice::u32 {};
 
-    //! \brief Internal runtime information on how an archetype and it's components are stored in each `DataBlock`.
+    //! \brief Internal runtime information on how an `Archetype` and it's components are stored in each `DataBlock`.
     //!
     //! \details This information can be used to access entity data by the user in any custom fashion, however due to the complexity
     //!   of doing so, it's better to use queries or execute entity operations instead.
@@ -26,7 +26,7 @@ namespace ice::ecs::detail
         ice::u32 component_entity_count_max;
     };
 
-    //! \brief Helper type to sort components during compile tile in archetype definitions.
+    //! \brief Helper type to sort components during compiletime when instancing `ArchetypeDefinition`s.
     struct SortableArchetypeComponent
     {
         ice::StringID identifier;

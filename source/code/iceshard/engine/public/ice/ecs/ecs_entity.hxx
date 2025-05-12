@@ -10,8 +10,13 @@
 namespace ice::ecs
 {
 
+    //! \brief Primary identifier for entities in IceShard. Used to update data using operations or access components with queries.
+    //!
+    //! \details An Entity handle is opaque and does not provide any functionality out of the box. It's mainly used as an argument in other ECS related
+    //!   systems. For examples, you can check if entities are alive with `EntityIndex::is_alive` or query a specific components with `Query` objects.
     enum class Entity : ice::u32 { };
 
+    //! \brief Provides easy access to the specific parts making up the `Entity` handle value.
     struct EntityInfo
     {
         //! \brief Describes the entity's direct ID which can be also used as an index into tables that always track all entities.
@@ -63,6 +68,11 @@ namespace ice::ecs
         "The entity slot can currently only use 32 bits of data to address a single entity. Depending on the use case this can be changed or worked around."
     );
 
+    //! \brief Describes the location where the entity data is stored for a specific `EntityStorage` implementation.
+    //!   There shouldn't be any case where users of the API will need to directly access this information.
+    //!
+    //! \remarks (2025.05) The current storage implementation does not grant access to all components of a specific entity with just the
+    //!   information available in this structure. You will also need the `ArchetypeInstanceInfo` description to access the right locations.
     struct EntityDataSlot
     {
         ice::u32 archetype : Constant_EntityDataSlotArchetype_Bits;

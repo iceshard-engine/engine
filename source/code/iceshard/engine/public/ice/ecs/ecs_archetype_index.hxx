@@ -12,6 +12,10 @@
 namespace ice::ecs
 {
 
+    //! \brief Stores and provides access to all archetypes that are registered by the engine, modules and game.
+    //!
+    //! \warning The current implementation does not allow to remove any registered `Archetype`, so unloading modules that hold type
+    //!   definitions is not supported.
     class ArchetypeIndex
     {
     public:

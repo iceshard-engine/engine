@@ -10,16 +10,19 @@ namespace ice::ecs
     namespace concepts
     {
 
-        //! \brief A components needs to have all required members \see `ComponentTypeMembers` and be trivially copyable.
+        //! \brief A component needs to define specified members and be trivially copyable.
         //!
-        //! \note The current entity storage only copies data using `memcpy` so only trivially copyable components are allowed.
+        //! \see `ice::ecs::concepts::ComponentTypeMembers` for more information on which members are required.
+        //! \see `std::is_trivially_copyable_v`
+        //!
+        //! \note The current `EntityStorage` only moves data using `ice::memcpy` so only trivially copyable components are allowed.
         template<typename T>
         concept Component = ice::ecs::concepts::ComponentTypeMembers<T>
             && std::is_trivially_copyable_v<ice::clear_type_t<T>>;
 
         //! \brief A tag is an empty component, there is no data stored for tags just information of their existances.
         //!
-        //! \note Archetypes and without tags are separate instances!
+        //! \note Currently there is no way to define tags using a `ArchetypeDefinition`.
         template<typename T>
         concept ComponentTag = ice::ecs::concepts::Component<T> && std::is_empty_v<T>;
 
@@ -28,7 +31,7 @@ namespace ice::ecs
     using ice::ecs::concepts::Component;
     using ice::ecs::concepts::ComponentTag;
 
-    //! \brief Quick access to the identifier of a specific component, tag or the entity type.
+    //! \brief Quick access to the `identifier` of a specific component, tag or the entity type.
     template<typename T> requires ice::ecs::Component<T> || ice::ecs::concepts::Entity<T>
     constexpr inline ice::StringID Constant_ComponentIdentifier = T::Identifier;
 
