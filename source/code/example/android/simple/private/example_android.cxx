@@ -128,9 +128,6 @@ private:
     ice::UniquePtr<ice::gfx::GfxGraph> _graph;
     ice::UniquePtr<ice::gfx::GfxGraphRuntime> _graph_runtime;
 
-    ice::UniquePtr<ice::ecs::ArchetypeIndex> _archetype_index;
-    ice::UniquePtr<ice::ecs::EntityStorage> _entity_storage;
-
     bool _first_time;
 };
 
@@ -150,9 +147,6 @@ void TestGame::on_setup(ice::framework::State const& state) noexcept
 
     mod.load_module(_allocator, pipelines_module);
     mod.load_module(_allocator, vulkan_module);
-
-    _archetype_index = ice::make_unique<ice::ecs::ArchetypeIndex>(_allocator, _allocator);
-    _entity_storage = ice::make_unique<ice::ecs::EntityStorage>(_allocator, _allocator, *_archetype_index);
 }
 
 void TestGame::on_shutdown(ice::framework::State const& state) noexcept
@@ -175,9 +169,7 @@ void TestGame::on_resume(ice::Engine& engine) noexcept
             ice::devui_trait_name()
         };
 
-        engine.worlds().create_world(
-            { .name = "world"_sid, .traits = traits, .entity_storage = *_entity_storage }
-        );
+        engine.worlds().create_world({ .name = "world"_sid, .traits = traits });
     }
 }
 

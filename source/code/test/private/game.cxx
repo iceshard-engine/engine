@@ -127,8 +127,6 @@ struct TestTrait : public ice::Trait
     TestTrait(ice::Allocator& alloc, ice::TraitContext& context) noexcept
         : ice::Trait{ context }
         , _alloc{ alloc }
-        , _query{ _alloc }
-        , _querye{ _alloc }
     {
         _context.bind<&TestTrait::logic>();
         _context.bind<&TestTrait::gfx>(ice::gfx::ShardID_GfxFrameUpdate);
@@ -137,13 +135,7 @@ struct TestTrait : public ice::Trait
     ice::Allocator& _alloc;
     ice::Timer timer;
 
-    using TestArchetype = ice::ecs::ArchetypeDefinition<C1, C2>;
-    static constexpr ice::ecs::ArchetypeDefinition Archetype_TestArchetype = TestArchetype{};
-
-    using TestQuery = ice::ecs::QueryDefinition<C1&, C2&>;
-    using TestQueryE = ice::ecs::QueryDefinition<ice::ecs::EntityHandle, C1&, C2&>;
-    ice::ecs::Query<TestQuery> _query;
-    ice::ecs::Query<TestQueryE> _querye;
+    ice::ecs::Archetype _arch_test;
 
     ice::ecs::EntityOperations* _ops;
     ice::ecs::Entity _my_entity[10000];
@@ -151,12 +143,10 @@ struct TestTrait : public ice::Trait
     auto activate(ice::WorldStateParams const& update) noexcept -> ice::Task<> override
     {
 
-        update.engine.entities().create_many(_my_entity);
+        update.engine.entity_index().create_many(_my_entity);
         _ops = ice::addressof(update.world.entity_operations());
 
-        ice::ecs::queue_set_archetype(*_ops, _my_entity, Archetype_TestArchetype);
-        update.world.entity_queries().initialize_query(_query);
-        update.world.entity_queries().initialize_query(_querye);
+        ice::ecs::queue_set_archetype(*_ops, _my_entity, _arch_test);
 
         ICE_LOG(LogSeverity::Retail, LogTag::Game, "Test Activated!");
         timer = ice::timer::create_timer(update.clock, 100_Tms);
@@ -165,12 +155,14 @@ struct TestTrait : public ice::Trait
 
     auto deactivate(ice::WorldStateParams const& update) noexcept -> ice::Task<> override
     {
-        update.engine.entities().destroy_many(_my_entity);
+        update.engine.entity_index().destroy_many(_my_entity);
 
-        ice::ecs::query::for_each_block(_querye, [&](ice::ucount count, ice::ecs::EntityHandle const* entities, C1*, C2*) noexcept
-        {
-            ice::ecs::queue_batch_remove_entities(*_ops, { entities, count });
-        });
+        query<ice::ecs::Entity>().tags<C1, C2>().for_each_block(
+            [&](ice::ucount count, ice::ecs::Entity const* entities) noexcept
+            {
+                ice::ecs::queue_batch_remove_entities(*_ops, { entities, count });
+            }
+        );
 
         ICE_LOG(LogSeverity::Retail, LogTag::Game, "Test Deactivated!");
         co_return;
@@ -178,10 +170,12 @@ struct TestTrait : public ice::Trait
 
     auto logic(ice::EngineFrameUpdate const& update) noexcept -> ice::Task<>
     {
-        ice::Array<ice::Task<>> tasks{ update.frame.allocator() };
-        ice::array::reserve(tasks, ice::ecs::query::block_count(_query));
+        ice::ecs::Query q = query<C1&, C2&>();
 
-        ice::ecs::query::for_each_block(_query, [&](ice::ucount count, C1* c1p, C2* c2p) noexcept
+        ice::Array<ice::Task<>> tasks{ update.frame.allocator() };
+        ice::array::reserve(tasks, q.block_count());
+
+        q.for_each_block([&](ice::ucount count, C1* c1p, C2* c2p) noexcept
         {
             ice::array::push_back(tasks, [](ice::ucount count, C1* c1p, C2* c2p) noexcept -> ice::Task<>
             {
@@ -196,12 +190,14 @@ struct TestTrait : public ice::Trait
             }(count, c1p, c2p));
         });
 
-        ice::ecs::query::for_each_entity(_query, [](C1& c1, C2& c2) noexcept
-        {
-            IPT_ZONE_SCOPED;
-            c1.x += 1;
-            c2.y += 1.0f / ((ice::f32) c1.x);
-        });
+        q.for_each_entity(
+            [](C1& c1, C2& c2) noexcept
+            {
+                IPT_ZONE_SCOPED;
+                c1.x += 1;
+                c2.y += 1.0f / ((ice::f32) c1.x);
+            }
+        );
 
         if (ice::timer::update(timer))
         {
@@ -286,24 +282,18 @@ void TestGame::on_setup(ice::framework::State const& state) noexcept
     mod.load_module(_allocator, pipelines_module);
     mod.load_module(_allocator, vulkan_module);
 
-    _archetype_index = ice::make_unique<ice::ecs::ArchetypeIndex>(_allocator, _allocator);
-    _archetype_index->register_archetype(TestTrait::Archetype_TestArchetype);
-
-    _entity_storage = ice::make_unique<ice::ecs::EntityStorage>(_allocator, _allocator, *_archetype_index);
+    state.archetypes.new_archetype<C1, C2>("test-arch");
 }
 
 void TestGame::on_shutdown(ice::framework::State const& state) noexcept
 {
-    _entity_storage = nullptr;
-    _archetype_index = nullptr;
-
     ICE_LOG(LogSeverity::Info, LogGame, "Goodbye, World!");
 }
 
 void TestGame::on_resume(ice::Engine& engine) noexcept
 {
     // Create and forget about the null entity.
-    engine.entities().create();
+    engine.entity_index().create();
 
     if (_first_time)
     {
@@ -322,10 +312,10 @@ void TestGame::on_resume(ice::Engine& engine) noexcept
         };
 
         engine.worlds().create_world(
-            { .name = "world"_sid, .traits = traits, .entity_storage = *_entity_storage }
+            { .name = "world"_sid, .traits = traits }
         );
         engine.worlds().create_world(
-            { .name = "world2"_sid, .traits = traits2, .entity_storage = *_entity_storage }
+            { .name = "world2"_sid, .traits = traits2 }
         );
     }
 }
