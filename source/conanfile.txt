@@ -8,10 +8,10 @@ fastbuild-generator/0.4.2@iceshard/stable
 cli11/2.4.1@iceshard/stable
 fmt/10.0.0@iceshard/stable
 tracy/0.11.1@iceshard/stable
-imgui/1.90@iceshard/docking
+imgui/1.90.docking@iceshard/stable
 hailstorm/0.4.0@iceshard/stable
 # chipmunk2d/7.0.3+@iceshard/stable
-arctic/0.2.1@iceshard/stable
+arctic/0.2.2@iceshard/stable
 
 rapidxml/1.13
 rapidxml_ns/1.13.2@iceshard/stable

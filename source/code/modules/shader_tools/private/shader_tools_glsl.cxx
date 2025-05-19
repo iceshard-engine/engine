@@ -21,7 +21,9 @@
 #include "shader_tools_asl_shader.hxx"
 #include "shader_tools_glsl_patcher.hxx"
 
+#if defined(VK_SHADERC)
 #include <shaderc/shaderc.hpp>
+#endif
 
 namespace ice
 {
@@ -565,6 +567,7 @@ namespace ice
             ice::Memory result_mem{};
             if (sctx.stage == ShaderStage::Compiled)
             {
+#if defined(VK_SHADERC)
                 ice::String const glsl_source = result.value();
 
                 shaderc::CompileOptions compile_options{};
@@ -597,6 +600,9 @@ namespace ice
                     result_mem = alloc.allocate(result_size);
                     ice::memcpy(result_mem.location, spv_result.begin(), result_size);
                 }
+#else
+                ICE_LOG(LogSeverity::Error, LogTag::System, "This shader_tools build doesn't support compiling '.glsl' shaders to '.spv' bytecode!");
+#endif
             }
             else
             {

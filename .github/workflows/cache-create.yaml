@@ -1,0 +1,36 @@
+name: Cache Creation (Dependencies)
+run-name: Cache Ceration (Dependencies)
+
+on:
+  push:
+    paths:
+      source/tools/conanfile.txt
+      source/code/conanfile.txt
+      source/code/conanprofiles.txt
+      source/code/fbuild.bff
+  schedule:
+    - cron: '30 6 * * 1,5'
+  workflow_dispatch:
+
+jobs:
+  create-cache:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    name: Create Dependencies Cache
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Setup Conan2
+        uses: iceshard-engine/.github/.github/actions/conan2@main
+        with:
+          conan-cache: true
+          conan-cache-version: 'v1'
+          conan-config-url: https://github.com/iceshard-engine/conan-config.git
+
+      - name: Setup IBT
+        uses: iceshard-engine/.github/.github/actions/ibt-wks@main
+        with:
+          script_basename: 'ice'
+          platform-android: false
+          platform-web: false
+          workspace-cache: false

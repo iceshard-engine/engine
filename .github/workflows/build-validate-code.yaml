@@ -1,0 +1,23 @@
+name: Code Validation
+run-name: Code Validation (${{ github.ref_name }})
+
+on:
+  push:
+    paths:
+      - 'source/**'
+      - '!source/data/**'
+
+jobs:
+  validate:
+    name: Validate (${{ matrix.project }}-${{ matrix.pipeline }}-${{ matrix.config }}, ${{ matrix.host }})
+    uses: ./.github/workflows/build-dispatch.yaml
+    strategy:
+      matrix:
+        project: [all]
+        pipeline: [x64]
+        config: [Debug,Develop,Profile,Release]
+        include:
+          - host: windows-latest
+    with:
+      host-platform: ${{ matrix.host }}
+      target: "${{ matrix.project }}-${{ matrix.pipeline }}-${{ matrix.config }}"
