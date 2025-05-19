@@ -1,0 +1,37 @@
+name: Build
+
+on:
+  workflow_call:
+    inputs:
+      host-platform:
+        description: "Host platform for the build to take place."
+        required: true
+        type: string
+      target:
+        description: "Target to be build. (separated by spaces)"
+        required: true
+        type: string
+
+jobs:
+  setup-workspace:
+    runs-on: ${{ inputs.host-platform }}
+    steps:
+      - name: Setup Conan2
+        uses: iceshard-engine/.github/.github/actions/conan2@main
+        with:
+          conan-cache: true
+          conan-cache-version: 'v1'
+          conan-config-url: https://github.com/iceshard-engine/conan-config.git
+      - name: Setup IBT
+        uses: iceshard-engine/.github/.github/actions/ibt-wks@main
+        with:
+          script_basename: 'ice'
+          platform-android: true
+          platform-web: true
+          workspace-cache: true
+          workspace-cache-version: 'v1'
+
+      # Building the actual target
+      - name: Build (${{ inputs.target }})
+        shell: powershell
+        run: ./ibt-ci build -t ${{ inputs.target }}
