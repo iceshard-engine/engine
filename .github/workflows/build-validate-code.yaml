@@ -15,7 +15,7 @@ jobs:
       matrix:
         project: [all]
         pipeline: [x64]
-        config: [Debug,Develop,Final,Release]
+        config: [Debug,Develop,Profile,Release]
         include:
           - host: windows-latest
     with:

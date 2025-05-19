@@ -27,5 +27,4 @@ namespace ice::info
     //! \brief Engine stability of the current version.
     static constexpr Stability stability = Stability::Alpha;
 
-
 } // namespace ice
