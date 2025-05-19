@@ -13,7 +13,8 @@ on:
         type: string
 
 jobs:
-  setup-workspace:
+  build:
+    name: Build (${{ inputs.target }})
     runs-on: ${{ inputs.host-platform }}
     steps:
       - name: Checkout Source Code
@@ -25,16 +26,17 @@ jobs:
           conan-cache: true
           conan-cache-version: 'v1'
           conan-config-url: https://github.com/iceshard-engine/conan-config.git
+
       - name: Setup IBT
         uses: iceshard-engine/.github/.github/actions/ibt-wks@main
         with:
           script_basename: 'ice'
-          platform-android: true
-          platform-web: true
+          platform-android: ${{ contains(inputs.target, 'android') }}
+          platform-web: ${{ contains(inputs.target, 'webasm') }}
           workspace-cache: true
           workspace-cache-version: 'v1'
 
       # Building the actual target
-      - name: Build (${{ inputs.target }})
+      - name: Build Target (${{ inputs.target }})
         shell: powershell
         run: ./ibt-ci build -t ${{ inputs.target }}
