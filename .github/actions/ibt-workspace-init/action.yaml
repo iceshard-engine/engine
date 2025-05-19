@@ -1,0 +1,20 @@
+name: ibt-workspace-init
+author: dandielo@iceshard.net
+description: Initialization of IBT workspace tools and dependencies.
+
+inputs:
+  ibt-android:
+    description: 'Controls the installation of any required Android packages'
+    required: false
+    default: false
+  ibt-emscripten:
+    description: 'Controls the installation of any required Emscripten packages'
+    required: false
+    default: false
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install Conan2
+      shell: powershell
+      steps: pip install conan

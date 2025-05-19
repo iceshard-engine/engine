@@ -26,6 +26,7 @@ IF NOT EXIST build\tools\conanrun.bat (
 IF "%1" == "init" (
     SHIFT
     CALL :_initialize
+    GOTO :_run
     GOTO :_exit
 )
 

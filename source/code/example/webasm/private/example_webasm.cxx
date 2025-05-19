@@ -115,23 +115,16 @@ struct TestTrait : public ice::Trait
     using TestArchetype = ice::ecs::ArchetypeDefinition<C1, C2>;
     static constexpr ice::ecs::ArchetypeDefinition Archetype_TestArchetype = TestArchetype{};
 
-    using TestQuery = ice::ecs::QueryDefinition<C1&, C2&>;
-    using TestQueryE = ice::ecs::QueryDefinition<ice::ecs::EntityHandle, C1&, C2&>;
-    ice::UniquePtr<ice::ecs::Query<TestQuery>> _query;
-    ice::UniquePtr<ice::ecs::Query<TestQueryE>> _querye;
-
     ice::ecs::EntityOperations* _ops;
     ice::ecs::Entity _my_entity[10000];
 
     auto activate(ice::WorldStateParams const& update) noexcept -> ice::Task<> override
     {
 
-        update.engine.entities().create_many(_my_entity);
+        update.engine.entity_index().create_many(_my_entity);
         _ops = ice::addressof(update.world.entity_operations());
 
         ice::ecs::queue_set_archetype(*_ops, _my_entity, Archetype_TestArchetype);
-        _query = ice::make_unique<ice::ecs::Query<TestQuery>>(_alloc, update.world.entity_queries().create_query(_alloc, TestQuery{}));
-        _querye = ice::make_unique<ice::ecs::Query<TestQueryE>>(_alloc, update.world.entity_queries().create_query(_alloc, TestQueryE{}));
 
         ICE_LOG(LogSeverity::Retail, LogTag::Game, "Test Activated!");
         timer = ice::timer::create_timer(update.clock, 100_Tms);
@@ -140,12 +133,14 @@ struct TestTrait : public ice::Trait
 
     auto deactivate(ice::WorldStateParams const& update) noexcept -> ice::Task<> override
     {
-        update.engine.entities().destroy_many(_my_entity);
+        update.engine.entity_index().destroy_many(_my_entity);
 
-        ice::ecs::query::for_each_block(*_querye, [&](ice::ucount count, ice::ecs::EntityHandle const* entities, C1*, C2*) noexcept
-        {
-            ice::ecs::queue_batch_remove_entities(*_ops, { entities, count });
-        });
+        query<ice::ecs::Entity>().tags<C1, C2>().for_each_block(
+            [&](ice::ucount count, ice::ecs::Entity const* entities) noexcept
+            {
+                ice::ecs::queue_batch_remove_entities(*_ops, { entities, count });
+            }
+        );
 
         ICE_LOG(LogSeverity::Retail, LogTag::Game, "Test Deactivated!");
         co_return;
@@ -153,33 +148,39 @@ struct TestTrait : public ice::Trait
 
     auto logic(ice::EngineFrameUpdate const& update) noexcept -> ice::Task<>
     {
+        ice::ecs::Query q = query<C1&, C2&>();
+
         ice::Array<ice::Task<>> tasks{ update.frame.allocator() };
-        ice::array::reserve(tasks, ice::ecs::query::block_count(*_query));
+        ice::array::reserve(tasks, q.block_count());
 
         std::atomic_uint32_t x = 0;
-        ice::ecs::query::for_each_block(*_query, [&](ice::ucount count, C1* c1p, C2* c2p) noexcept
-        {
-            ice::array::push_back(tasks, [](ice::ucount count, C1* c1p, C2* c2p, std::atomic_uint32_t& x) noexcept -> ice::Task<>
+        q.for_each_block(
+            [&](ice::ucount count, C1* c1p, C2* c2p) noexcept
             {
-                IPT_ZONE_SCOPED_NAMED("block for-each");
-                for (ice::u32 idx = 0; idx < count; ++idx)
+                ice::array::push_back(tasks, [](ice::ucount count, C1* c1p, C2* c2p, std::atomic_uint32_t& x) noexcept -> ice::Task<>
                 {
-                    x += 1;
-                    IPT_ZONE_SCOPED;
-                    c1p[idx].x += 1;
-                    c2p[idx].y += 1.0f / ((ice::f32) c1p[idx].x);
-                }
-                co_return;
-            }(count, c1p, c2p, x));
-        });
+                    IPT_ZONE_SCOPED_NAMED("block for-each");
+                    for (ice::u32 idx = 0; idx < count; ++idx)
+                    {
+                        x += 1;
+                        IPT_ZONE_SCOPED;
+                        c1p[idx].x += 1;
+                        c2p[idx].y += 1.0f / ((ice::f32) c1p[idx].x);
+                    }
+                    co_return;
+                }(count, c1p, c2p, x));
+            }
+        );
 
-        ice::ecs::query::for_each_entity(*_query, [&x](C1& c1, C2& c2) noexcept
-        {
-            x+= 1;
-            IPT_ZONE_SCOPED;
-            c1.x += 1;
-            c2.y += 1.0f / ((ice::f32) c1.x);
-        });
+        q.for_each_entity(
+            [&x](C1& c1, C2& c2) noexcept
+            {
+                x+= 1;
+                IPT_ZONE_SCOPED;
+                c1.x += 1;
+                c2.y += 1.0f / ((ice::f32) c1.x);
+            }
+        );
 
         if (ice::timer::update(timer))
         {
@@ -252,9 +253,6 @@ private:
     ice::UniquePtr<ice::gfx::GfxGraph> _graph;
     ice::UniquePtr<ice::gfx::GfxGraphRuntime> _graph_runtime;
 
-    ice::UniquePtr<ice::ecs::ArchetypeIndex> _archetype_index;
-    ice::UniquePtr<ice::ecs::EntityStorage> _entity_storage;
-
     bool _first_time;
 };
 
@@ -267,8 +265,6 @@ auto ice::framework::create_game(ice::Allocator& alloc) noexcept -> ice::UniqueP
 
 TestGame::TestGame(ice::Allocator& alloc) noexcept
     : _allocator{ alloc }
-    , _archetype_index{ }
-    , _entity_storage{ }
     , _first_time{ true }
 {
 }
@@ -288,10 +284,7 @@ void TestGame::on_setup(ice::framework::State const& state) noexcept
     mod.load_module(_allocator, vulkan_module);
     mod.load_module(_allocator, imgui_module);
 
-    _archetype_index = ice::make_unique<ice::ecs::ArchetypeIndex>(_allocator, _allocator);
-    _archetype_index->register_archetype(TestTrait::Archetype_TestArchetype);
-
-    _entity_storage = ice::make_unique<ice::ecs::EntityStorage>(_allocator, _allocator, *_archetype_index);
+    state.archetypes.register_archetype(TestTrait::Archetype_TestArchetype);
 }
 
 void TestGame::on_shutdown(ice::framework::State const& state) noexcept
@@ -318,12 +311,8 @@ void TestGame::on_resume(ice::Engine& engine) noexcept
             "test"_sid,
         };
 
-        engine.worlds().create_world(
-            { .name = "world"_sid, .traits = traits, .entity_storage = *_entity_storage }
-        );
-        engine.worlds().create_world(
-            { .name = "world2"_sid, .traits = traits2, .entity_storage = *_entity_storage }
-        );
+        engine.worlds().create_world({ .name = "world"_sid, .traits = traits });
+        engine.worlds().create_world({ .name = "world2"_sid, .traits = traits2 });
     }
 }
 

@@ -85,25 +85,49 @@ namespace ice::ecs
 
     bool EntityIndex::create_many(ice::Span<ice::ecs::Entity> out_entities) noexcept
     {
-        // #todo: For now when creating entities in bulk. We skip the check of _free_indices.
-        ice::u32 index = ice::array::count(_generation);
-        ice::u32 const final_index = index + ice::count(out_entities);
-
-        ICE_ASSERT(
-            final_index < _max_entity_count,
-            "Moved past the maximum allowed number of entities!"
-        );
-
-        ice::array::resize(_generation, final_index);
-
+        ice::u32 total_indices_taken = 0;
         auto out_it = ice::span::begin(out_entities);
-        while (index < final_index)
+
+        ice::u32 indices[256];
+        ice::i32 free_count = ice::i32(ice::queue::count(_free_indices)) - ice::ecs::Constant_MinimumFreeIndicesBeforeReuse;
+        while(free_count > 0)
         {
-            _generation[index] = ice::u8{ 0 };
+            ice::u32 const indices_taken = ice::queue::take_front(
+                _free_indices,
+                ice::span::subspan(ice::Span{indices}, 0, ice::min<ice::u32>(free_count, ice::count(indices)))
+            );
 
-            *out_it = detail::make_entity(index, 0);
+            for (ice::u32 idx = 0; idx < indices_taken; ++idx)
+            {
+                *out_it = detail::make_entity(indices[idx], _generation[indices[idx]]);
+                out_it += 1;
+            }
 
-            index += 1;
+            free_count -= indices_taken;
+            total_indices_taken += indices_taken;
+        }
+
+        ice::u32 gen_index = ice::array::count(_generation);
+        ice::u32 const missing_entities = ice::count(out_entities) - total_indices_taken;
+        ice::u32 const final_index = gen_index + missing_entities;
+
+        if (final_index > 0)
+        {
+            ICE_ASSERT(
+                final_index < _max_entity_count,
+                "Moved past the maximum allowed number of entities!"
+            );
+
+            ice::array::resize(_generation, final_index);
+        }
+
+        while (gen_index < final_index)
+        {
+            _generation[gen_index] = ice::u8{ 0 };
+
+            *out_it = detail::make_entity(gen_index, 0);
+
+            gen_index += 1;
             out_it += 1;
         }
         return true;

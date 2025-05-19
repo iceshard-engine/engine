@@ -39,7 +39,9 @@
                     'shaderc_shared'
                 }
             ]
-
+            .Defines = {
+                'VK_SHADERC=1'
+            }
             .Libs = {
                 'shaderc_shared'
             }
