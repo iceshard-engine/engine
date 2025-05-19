@@ -15,4 +15,16 @@ namespace ice::info
     static constexpr ice::u8 engine_version_minor = 5;
     static constexpr ice::u8 engine_version_patch = 0;
 
+    //! \brief Stability category of this engine version.
+    //! \note The following descriptions apply:
+    //!   - Alpha - Might be unstable or crash at times.
+    //!   - Beta - Overall stable but in some cornercases instability might still occur.
+    //!   - RC - The build doesn't crash, has stable performance and all critical known issues are fixed.
+    //!   - Review - The build is open to the public for review / early-adoption.
+    //!   - Public - The build is considered stable and ready for use by the general public.
+    enum class Stability { Alpha, Beta, RC, Review, Public };
+
+    //! \brief Engine stability of the current version.
+    static constexpr Stability stability = Stability::Alpha;
+
 } // namespace ice
