@@ -16,6 +16,9 @@ jobs:
   setup-workspace:
     runs-on: ${{ inputs.host-platform }}
     steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
       - name: Setup Conan2
         uses: iceshard-engine/.github/.github/actions/conan2@main
         with:
