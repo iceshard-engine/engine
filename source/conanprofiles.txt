@@ -4,23 +4,16 @@ os=Windows
 arch=x86_64
 compiler=msvc
 compiler.cppstd=20
-compiler.version=$(MSVCCompilerVersion)
+compiler.version=$(ConanCompilerVersion)
 compiler.runtime=dynamic
 
-
-[settings-Linux-GCC]
-os=Linux
-arch=x86_64
-compiler=gcc
-compiler.cppstd=20
-compiler.version=14
 
 [settings-Linux-Clang]
 os=Linux
 arch=x86_64
 compiler=clang
 compiler.cppstd=20
-compiler.version=16
+compiler.version=$(ConanCompilerVersion)
 
 
 [settings-Android-Arm64]
@@ -30,7 +23,7 @@ arch=armv8
 compiler=clang
 compiler.cppstd=20
 compiler.libcxx=c++_static
-compiler.version=16
+compiler.version=$(ConanCompilerVersion)
 
 [settings-Android-x64]
 os=Android
@@ -39,7 +32,7 @@ arch=x86_64
 compiler=clang
 compiler.cppstd=20
 compiler.libcxx=c++_static
-compiler.version=16
+compiler.version=$(ConanCompilerVersion)
 
 [conf-Android-x64]
 tools.android:ndk_path=$(NDKPath)
@@ -53,7 +46,7 @@ os=Emscripten
 arch=wasm
 compiler=clang
 compiler.cppstd=20
-compiler.version=19
+compiler.version=$(ConanCompilerVersion)
 compiler.libcxx=libc++
 
 [conf-WebAsm]

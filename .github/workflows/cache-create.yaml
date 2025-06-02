@@ -16,7 +16,7 @@ jobs:
   create-cache:
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest]
+        os: [windows-latest,ubuntu-latest]
     name: Create Dependencies Cache
     runs-on: ${{ matrix.os }}
     steps:
