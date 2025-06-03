@@ -1,8 +1,8 @@
 /// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
+#include <ice/app_info.hxx>
 #include <ice/config.hxx>
-#include <ice/log.hxx>
 #include <ice/module_register.hxx>
 #include <ice/resource_compiler_api.hxx>
 #include <ice/resource_compiler.hxx>
@@ -15,6 +15,7 @@
 #include <ice/task_thread.hxx>
 #include <ice/task_utils.hxx>
 #include <ice/tool_app.hxx>
+#include <ice/log.hxx>
 
 #include "asset_compiler_resource_provider.hxx"
 
@@ -28,9 +29,9 @@ public:
         , _output{ }
         , _asset_resource{ }
         , _includes{ _allocator }
-        , _params{ _allocator }
         , _inputs_meta{ _allocator }
         , _inputs{ _allocator }
+        , _params{ _allocator }
         , _output_raw{ false }
         , _output_std{ false }
         , _queue{ }
@@ -159,6 +160,11 @@ public:
             { .predicted_resource_count = 10'000, .io_dedicated_threads = 0 }
         );
 
+        if (ice::string::empty(_asset_basepath))
+        {
+            _asset_basepath = ice::app::workingdir();
+        }
+
         ice::ResourceFileEntry const file_list[]{ {.path = _inputs[0], .basepath = _asset_basepath} };
         ice::ResourceProvider* const file_provider = resource_tracker->attach_provider(
             ice::create_resource_provider_files(_allocator, file_list, nullptr, "<inputs>")
@@ -254,14 +260,14 @@ public:
         {
             if (resource_compiler == nullptr || resource_compiler->fn_supported_resources == nullptr)
             {
-                ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Resource compiler for resource {} is not available.", _asset_resource);
+                ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Resource compiler for resource '{}' is not available.", res->name());
                 return 1;
             }
 
             ice::ucount out_idx = 0;
             if (ice::search(resource_compiler->fn_supported_resources(_params), res_ext, out_idx) == false)
             {
-                ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Resource compiler for resource {} is not available.", _asset_resource);
+                ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Resource compiler for resource '{}' is not available.", res->name());
                 return 1;
             }
 
@@ -463,4 +469,7 @@ private:
     ice::TaskQueue _queue;
     ice::TaskScheduler _scheduler;
     ice::UniquePtr<ice::TaskThread> _thread;
+
+    // Workaround for Clang
+    static inline ice::tool::ToolAppInstancer const& _workaroundSymbol = AssetCompilerApp::AppInstancer;
 };

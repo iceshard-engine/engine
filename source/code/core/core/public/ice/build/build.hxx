@@ -22,11 +22,13 @@ namespace ice::build
 
     static constexpr bool is_windows = current_platform == System::Windows;
 
-    static constexpr bool is_unix = current_platform == System::Unix;
+    static constexpr bool is_linux = current_platform == System::Linux;
 
     static constexpr bool is_android = current_platform == System::Android;
 
     static constexpr bool is_webapp = current_platform == System::WebApp;
+
+    static constexpr bool is_unix = is_linux || is_android || is_webapp;
 
 
     static constexpr bool is_x64 = current_platform == Architecture::x86_x64 || current_platform == Architecture::Arm64;

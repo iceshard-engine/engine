@@ -10,10 +10,6 @@
 
     .CopyModules = true
 
-    .Requires = {
-        'Windows'
-    }
-
     .LocalCompiler =
     [
         .Name = 'isac'

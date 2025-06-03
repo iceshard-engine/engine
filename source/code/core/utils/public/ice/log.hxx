@@ -25,6 +25,17 @@ namespace ice::detail
         ice::detail::LogLocation location
     ) noexcept;
 
+    constexpr auto log_make_args() noexcept
+    {
+        return fmt::make_format_args();
+    }
+
+    template<typename... Args>
+    constexpr auto log_make_args(Args&&... args) noexcept
+    {
+        return fmt::make_format_args(args...);
+    }
+
 } // namespace ice::detail
 
 #if defined ICE_LOG
@@ -39,7 +50,7 @@ namespace ice::detail
                 severity, \
                 ice::detail::get_tag(tag), \
                 format, \
-                fmt::make_format_args(__VA_ARGS__), \
+                ice::detail::log_make_args(__VA_ARGS__), \
                 ice::detail::LogLocation{ .file = __FILE__, .line = __LINE__ } \
             ); \
         } \
@@ -55,7 +66,7 @@ namespace ice::detail
                     severity, \
                     ice::detail::get_tag(tag), \
                     format, \
-                    fmt::make_format_args(__VA_ARGS__), \
+                    ice::detail::log_make_args(__VA_ARGS__), \
                     ice::detail::LogLocation{ .file = __FILE__, .line = __LINE__ } \
                 ); \
             } \

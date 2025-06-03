@@ -20,9 +20,9 @@
 namespace ice::detail
 {
 
-    static constexpr ice::String LogFormat_AssertLineHeader = "{:%T} [ASRT] ASSERT";
-    static constexpr ice::String LogFormat_AssertCondition = "{}({}) : {} > Assertion failed! `{}`\n";
-    static constexpr ice::String LogFormat_AssertMessage = "{}({}) : {} | ";
+    static constexpr fmt::string_view LogFormat_AssertLineHeader = "{:%T} [ASRT] ASSERT";
+    static constexpr fmt::string_view LogFormat_AssertCondition = "{}({}) : {} > Assertion failed! `{}`\n";
+    static constexpr fmt::string_view LogFormat_AssertMessage = "{}({}) : {} | ";
 
     void assert(
         ice::String condition,
@@ -55,7 +55,7 @@ namespace ice::detail
         fmt::format_to_n_result format_result = fmt::format_to_n(
             header_buffer_raw,
             128,
-            fmt_string(LogFormat_AssertLineHeader),
+            LogFormat_AssertLineHeader,
             fmt::localtime(std::time(nullptr))
         );
 
@@ -69,25 +69,21 @@ namespace ice::detail
         static ice::HostAllocator host_alloc{};
         detail::LogMessageBuffer final_buffer{ host_alloc, 3000 };
 
-        fmt::vformat_to(
+        fmt::format_to(
             std::back_inserter(final_buffer),
-            fmt_string(LogFormat_AssertCondition),
-            fmt::make_format_args(
-                fmt_string(location.file),
-                location.line,
-                log_header,
-                fmt_string(condition)
-            )
+            LogFormat_AssertCondition,
+            location.file,
+            location.line,
+            log_header,
+            condition
         );
 
-        fmt::vformat_to(
+        fmt::format_to(
             std::back_inserter(final_buffer),
-            fmt_string(LogFormat_AssertMessage),
-            fmt::make_format_args(
-                fmt_string(location.file),
-                location.line,
-                log_header
-            )
+            LogFormat_AssertMessage,
+            fmt_string(location.file),
+            location.line,
+            log_header
         );
 
         fmt::vformat_to(

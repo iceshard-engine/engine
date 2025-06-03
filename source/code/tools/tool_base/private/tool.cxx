@@ -2,6 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #include <ice/tool.hxx>
+#include <ice/app_info.hxx>
 #include <ice/mem_allocator_host.hxx>
 #include <ice/string/heap_string.hxx>
 #include <ice/path_utils.hxx>
@@ -16,12 +17,9 @@ auto ice::tool::global_allocator() noexcept -> ice::Allocator&
 
 auto ice::tool::path_current_directory() noexcept -> ice::native_file::HeapFilePath
 {
-    ice::u32 const dirsize = GetCurrentDirectoryW(0, 0) - 1; // We don't need the '0' null count
+    ICE_ASSERT_CORE(false); // Test the implementation!
     ice::native_file::HeapFilePath current_workingdir{ global_allocator() };
-    ice::string::resize(current_workingdir, dirsize);
-    GetCurrentDirectoryW(current_workingdir._capacity, current_workingdir._data);
-    ice::string::push_back(current_workingdir, L'\\');
-    ice::path::normalize(current_workingdir);
+    ice::native_file::path_from_string(current_workingdir, ice::app::workingdir());
     return current_workingdir;
 }
 

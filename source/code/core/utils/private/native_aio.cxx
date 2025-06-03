@@ -235,7 +235,7 @@ namespace ice::native_aio
             request->_callback(result, read_size, request->_userdata);
         }
     }
-#elif ISP_WEBAPP || ISP_ANDROID
+#elif ISP_WEBAPP || ISP_ANDROID || ISP_LINUX
     auto aio_open(
         ice::Allocator& alloc,
         ice::native_aio::AIOPortInfo const& info

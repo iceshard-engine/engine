@@ -6,8 +6,13 @@
 namespace ice::detail
 {
 
+    void internal_grow_fmt_buffer(fmt::detail::buffer<char>& buf, size_t capacity) noexcept
+    {
+        static_cast<LogMessageBuffer&>(buf).grow(capacity);
+    }
+
     LogMessageBuffer::LogMessageBuffer(ice::Allocator& alloc, ice::ucount initial_allocation) noexcept
-        : fmt::detail::buffer<char>{ }
+        : fmt::detail::buffer<char>{ internal_grow_fmt_buffer, initial_allocation }
         , _allocator{ alloc }
     {
         this->set(

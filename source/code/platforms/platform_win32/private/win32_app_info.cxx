@@ -13,6 +13,7 @@
 namespace ice::app
 {
 
+#if 0
     auto location() noexcept -> ice::String
     {
         static ice::StaticString<256> app_location = []() noexcept
@@ -54,6 +55,7 @@ namespace ice::app
 
         return working_dir;
     }
+#endif
 
 } // namespace ice::app
 

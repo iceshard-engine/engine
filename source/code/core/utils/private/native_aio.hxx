@@ -18,7 +18,7 @@ namespace ice::native_aio
         HANDLE _completion_port;
         ice::u32 _worker_limit;
     };
-#elif ISP_ANDROID || ISP_WEBAPP
+#elif ISP_ANDROID || ISP_WEBAPP || ISP_LINUX
     struct AIORequestInternal
     {
         AIORequestInternal* next;

@@ -92,6 +92,7 @@
         '-Wno-error=deprecated-declarations'
         '-Wno-switch'
         '-std=c++23'
+        '-stdlib=libc++'
     }
 ]
 
@@ -122,11 +123,13 @@
 .Config_Unix_BinaryBase =
 [
     .Name = 'Config-Unix-Binary'
-    .Requires = { 'Unix', 'GCC-Frontend' }
+    .Requires = { 'Unix', 'CLANG-Frontend' }
     .LinkOptions = {
         '-lc'
         '-lm'
-        '-lstdc++'
+        '-ldl'
+        '-lpthread'
+        '-lc++'
     }
 ]
 

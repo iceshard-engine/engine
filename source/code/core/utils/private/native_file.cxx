@@ -597,17 +597,6 @@ namespace ice::native_file
         return read_file(native_file, 0_B, requested_read_size, memory);
     }
 
-    auto read_file_request(
-        ice::native_aio::AIORequest& request,
-        ice::native_file::File const& native_file,
-        ice::usize requested_read_offset,
-        ice::usize requested_read_size,
-        ice::Memory memory
-    ) noexcept -> ice::native_file::FileRequestStatus
-    {
-        return aio_file_read_request(request, native_file, requested_read_offset, requested_read_size, memory);
-    }
-
     auto read_file(
         ice::native_file::File const& native_file,
         ice::usize requested_read_offset,
@@ -628,6 +617,47 @@ namespace ice::native_file
             bytes_read = 0;
         }
         return { static_cast<ice::usize::base_type>(bytes_read) };
+    }
+
+    auto read_file_request(
+        ice::native_aio::AIORequest& request,
+        ice::native_file::File const& native_file,
+        ice::usize requested_read_offset,
+        ice::usize requested_read_size,
+        ice::Memory memory
+    ) noexcept -> ice::native_file::FileRequestStatus
+    {
+        return aio_file_read_request(request, native_file, requested_read_offset, requested_read_size, memory);
+    }
+
+    auto write_file(
+        ice::native_file::File const& native_file,
+        ice::usize write_offset,
+        ice::Data data
+    ) noexcept -> ice::usize
+    {
+        ICE_ASSERT(false, "Missing implementation!");
+        return 0_B;
+    }
+
+    auto write_file_request(
+        ice::native_aio::AIORequest& request,
+        ice::native_file::File const& native_file,
+        ice::usize write_offset,
+        ice::Data data
+    ) noexcept -> ice::native_file::FileRequestStatus
+    {
+        ICE_ASSERT(false, "Missing implementation!");
+        return FileRequestStatus::Error;
+    }
+
+    auto append_file(
+        ice::native_file::File const& native_file,
+        ice::Data data
+    ) noexcept -> ice::usize
+    {
+        ICE_ASSERT(false, "Missing implementation!");
+        return 0_B;
     }
 
     bool traverse_directories_internal(
@@ -712,6 +742,14 @@ namespace ice::native_file
         ice::string::reserve(dirpath, 256 * 2); // 512 bytes for paths
         ice::string::push_back(dirpath, starting_dir);
         return traverse_directories_internal(dirpath, dirpath, callback, userdata);
+    }
+
+    bool create_directory(
+        ice::native_file::FilePath path
+    ) noexcept
+    {
+        ICE_ASSERT(false, "Missing implementation!");
+        return false;
     }
 
     void path_from_string(

@@ -16,7 +16,7 @@
 #include "shader_tools_glsl.hxx"
 #include "shader_tools_wgsl.hxx"
 
-#if ISP_WEBAPP || ISP_ANDROID
+#if ISP_UNIX
 #define strcmpi strcasecmp
 #endif
 
@@ -92,6 +92,9 @@ namespace ice
         }
 #elif ISP_WEBAPP
         return wgsl::compiler_compile_shader_source(resctx, source, tracker, resources, uris, alloc);
+#elif ISP_LINUX
+        ICE_ASSERT(false, "Missing implementation!");
+        co_return {};
 #elif ISP_ANDROID
         co_return {};
 #endif
@@ -260,6 +263,6 @@ namespace ice
 
 } // namespace ice
 
-#if ISP_WEBAPP || ISP_ANDROID
+#if ISP_UNIX
 #undef strcmpi
 #endif

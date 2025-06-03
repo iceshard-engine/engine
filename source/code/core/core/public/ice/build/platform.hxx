@@ -13,7 +13,7 @@ namespace ice::build
         UWP,
         Windows,
         Android,
-        Unix,
+        Linux,
         WebApp
     };
 
@@ -109,18 +109,11 @@ namespace ice::build
         .compiler = Compiler::Clang
     };
 
-    static constexpr Platform platform_unix_x64_clang = {
-        .name = "unix-x64-clang",
-        .system = System::Unix,
+    static constexpr Platform platform_linux_x64_clang = {
+        .name = "linux-x64-clang",
+        .system = System::Linux,
         .architecture = Architecture::x86_x64,
         .compiler = Compiler::Clang
-    };
-
-    static constexpr Platform platform_unix_x64_gcc = {
-        .name = "unix-x64-gcc",
-        .system = System::Unix,
-        .architecture = Architecture::x86_x64,
-        .compiler = Compiler::GCC
     };
 
     static constexpr Platform platform_webapp_webasm32_clang = {
@@ -136,8 +129,7 @@ namespace ice::build
         platform_windows_x64_clang,
         platform_android_arm64_clang,
         platform_android_x64_clang,
-        platform_unix_x64_clang,
-        platform_unix_x64_gcc,
+        platform_linux_x64_clang,
         platform_webapp_webasm32_clang
     };
 
@@ -152,6 +144,7 @@ namespace ice::build
 
 #if defined(_WIN64)
 #   define ISP_UNIX 0
+#   define ISP_LINUX 0
 #   define ISP_WINDOWS 1
 #   define ISP_ANDROID 0
 #   define ISP_WEBAPP 0
@@ -173,6 +166,7 @@ namespace ice::build
 #   define ISP_ARCHFAM_WEBASM 0
 #elif defined(__ANDROID__)
 #   define ISP_UNIX 1
+#   define ISP_LINUX 0
 #   define ISP_WINDOWS 0
 #   define ISP_ANDROID __ANDROID_API__
 #   define ISP_WEBAPP 0
@@ -193,6 +187,7 @@ namespace ice::build
 #   endif
 #elif defined(EMSCRIPTEN)
 #   define ISP_UNIX 1
+#   define ISP_LINUX 0
 #   define ISP_WINDOWS 0
 #   define ISP_ANDROID 0
 #   define ISP_WEBAPP 1
@@ -207,6 +202,7 @@ namespace ice::build
     static constexpr Platform current_platform = platform_webapp_webasm32_clang;
 #elif __unix__ && !__clang__
 #   define ISP_UNIX 1
+#   define ISP_LINUX 1
 #   define ISP_WINDOWS 0
 #   define ISP_ANDROID 0
 #   define ISP_WEBAPP 0
@@ -220,6 +216,7 @@ namespace ice::build
     static constexpr Platform current_platform = platform_unix_x64_gcc;
 #elif __unix__ && __clang__
 #   define ISP_UNIX 1
+#   define ISP_LINUX 1
 #   define ISP_WINDOWS 0
 #   define ISP_ANDROID 0
 #   define ISP_WEBAPP 0
@@ -230,7 +227,7 @@ namespace ice::build
 #   define ISP_ARCHFAM_ARM 0
 #   define ISP_ARCHFAM_WEBASM 0
 
-    static constexpr Platform current_platform = platform_unix_x64_clang;
+    static constexpr Platform current_platform = platform_linux_x64_clang;
 #else
 #   define ISP_UNIX 0
 #   define ISP_WINDOWS 0
@@ -321,8 +318,8 @@ namespace ice::build
             return "windows";
         case ice::build::System::Android:
             return "android";
-        case ice::build::System::Unix:
-            return "unix";
+        case ice::build::System::Linux:
+            return "linux";
         default:
             return "<invalid>";
         }

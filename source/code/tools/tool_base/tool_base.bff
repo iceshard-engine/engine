@@ -10,13 +10,10 @@
 
     .CopyModules = true
 
-    .Requires = {
-        'Windows'
-    }
-
-    .Private =
+    .Public =
     [
         .Uses = {
+            'application'
             'resource_system'
         }
     ]

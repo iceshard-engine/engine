@@ -61,7 +61,7 @@ extern "C"
 
 } // extern "C"
 
-#elif ISP_ANDROID
+#elif ISP_ANDROID || ISP_LINUX
 
 extern "C"
 {
