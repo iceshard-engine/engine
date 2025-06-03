@@ -10,10 +10,6 @@
 
     .CopyModules = true
 
-    .Requires = {
-        'Windows'
-    }
-
     .Private =
     [
         .Modules = {

@@ -321,7 +321,11 @@ public:
         //  the event is signalled which means all required resources where loaded.
         while (res_count.load(std::memory_order_relaxed) != res_idx)
         {
+#if ISP_WINDOWS
             SleepEx(1, 0);
+#else
+            usleep(1000); // 1ms
+#endif
         }
 
         ice::array::resize(resource_paths, res_idx);
@@ -400,4 +404,7 @@ private:
     // Filters
     ice::Array<ice::HeapString<>> _filter_extensions_heap;
     ice::Array<ice::String> _filter_extensions;
+
+    // Workaround for Clang
+    static inline ice::tool::ToolAppInstancer const& _workaroundSymbol = HailStormPackerApp::AppInstancer;
 };

@@ -17,7 +17,6 @@ auto ice::tool::global_allocator() noexcept -> ice::Allocator&
 
 auto ice::tool::path_current_directory() noexcept -> ice::native_file::HeapFilePath
 {
-    ICE_ASSERT_CORE(false); // Test the implementation!
     ice::native_file::HeapFilePath current_workingdir{ global_allocator() };
     ice::native_file::path_from_string(current_workingdir, ice::app::workingdir());
     return current_workingdir;

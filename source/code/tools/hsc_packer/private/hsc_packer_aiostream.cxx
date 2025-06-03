@@ -100,7 +100,7 @@ inline auto HailstormAIOWriter::async_write(ice::usize write_offset, hailstorm::
         inline bool await_ready() const noexcept { return false; }
         inline bool await_suspend(std::coroutine_handle<> coro_handle) noexcept
         {
-            ICE_ASSERT_CORE(_data.size <= MAXDWORD);
+            ICE_ASSERT_CORE(_data.size <= std::numeric_limits<ice::u32>::max());
             IPT_ZONE_SCOPED_NAMED("AsyncStream::async_write");
 
             // Need to set the coroutine before calling Write, since we could already be finishing writing on a different thread
@@ -216,10 +216,16 @@ inline bool HailstormAIOWriter::open_and_resize(ice::usize total_size) noexcept
     using enum ice::native_file::FileOpenFlags;
     _file = ice::native_file::open_file(_aioport, _filepath, Write | Exclusive | Asynchronous).value();
 
+#if ISP_WINDOWS
     // Resize the file
     SetFilePointerEx(_file.native(), { .QuadPart = ice::isize(total_size).value }, NULL, FILE_BEGIN);
     SetEndOfFile(_file.native());
     SetFilePointerEx(_file.native(), { 0 }, NULL, FILE_BEGIN);
+#elif ISP_LINUX
+    ftruncate64(_file.native(), total_size.value);
+#else
+    ICE_ASSER_CORE(false);
+#endif
 
     // Create the completion port
     return true;
@@ -250,7 +256,11 @@ inline bool HailstormAIOWriter::close() noexcept
 {
     while (_finished_writes != _started_writes)
     {
+#if ISP_WINDOWS
         SleepEx(5, FALSE);
+#elif ISP_LINUX
+        usleep(5000);
+#endif
     }
 
     return true;

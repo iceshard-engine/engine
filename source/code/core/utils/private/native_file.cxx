@@ -537,13 +537,7 @@ namespace ice::native_file
     ) noexcept -> ice::native_file::File
     {
         ice::native_file::File result;
-        if constexpr (ice::build::current_platform == ice::build::System::Android)
-        {
-            result = ice::native_file::File{
-                open(ice::string::begin(path), translate_flags(flags))
-            };
-        }
-        else if constexpr (ice::build::current_platform == ice::build::System::WebApp)
+        if constexpr (ice::build::is_unix)
         {
             result = ice::native_file::File{
                 open(ice::string::begin(path), translate_flags(flags))
