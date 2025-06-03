@@ -3,7 +3,9 @@
 
 #include <ice/assert.hxx>
 #include <ice/app_info.hxx>
+#include <ice/mem_allocator_stack.hxx>
 #include <ice/string/static_string.hxx>
+#include <ice/string_utils.hxx>
 
 namespace ice::app
 {

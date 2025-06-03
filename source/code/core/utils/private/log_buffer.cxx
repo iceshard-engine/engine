@@ -12,7 +12,7 @@ namespace ice::detail
     }
 
     LogMessageBuffer::LogMessageBuffer(ice::Allocator& alloc, ice::ucount initial_allocation) noexcept
-        : fmt::detail::buffer<char>{ internal_grow_fmt_buffer, initial_allocation }
+        : fmt::detail::buffer<char>{ internal_grow_fmt_buffer }
         , _allocator{ alloc }
     {
         this->set(
