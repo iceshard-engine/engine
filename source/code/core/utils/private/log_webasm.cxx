@@ -20,15 +20,15 @@ namespace ice::detail::webasm
         throw "Failed assertion!";
     });
 
-    static constexpr ice::String LogFormat_AssertLineHeader = "{:%T} [ASRT] ASSERT";
-    static constexpr ice::String LogFormat_AssertCondition = "{} > Assertion failed! `{}`\n";
-    static constexpr ice::String LogFormat_AssertMessage = "{} | ";
+    static constexpr fmt::string_view LogFormat_AssertLineHeader = "{:%T} [ASRT] ASSERT";
+    static constexpr fmt::string_view LogFormat_AssertCondition = "{} > Assertion failed! `{}`\n";
+    static constexpr fmt::string_view LogFormat_AssertMessage = "{} | ";
 
-    static constexpr ice::String LogFormat_AlertLocation = "{}({})\n\n";
-    static constexpr ice::String LogFormat_AlertCondition = "Failed condition: `{}`\n\n";
+    static constexpr fmt::string_view LogFormat_AlertLocation = "{}({})\n\n";
+    static constexpr fmt::string_view LogFormat_AlertCondition = "Failed condition: `{}`\n\n";
 
-    static constexpr ice::String LogFormat_LogLineHeader = "{:%T} [{}] {}{}{}";
-    static constexpr ice::String LogFormat_LogLine = "{: <{}s} > ";
+    static constexpr fmt::string_view LogFormat_LogLineHeader = "{:%T} [{}] {}{}{}";
+    static constexpr fmt::string_view LogFormat_LogLine = "{: <{}s} > ";
 
     auto get_tag_name(ice::LogTag tag) noexcept -> ice::String
     {
@@ -73,7 +73,7 @@ namespace ice::detail::webasm
         fmt::format_to_n_result format_result = fmt::format_to_n(
             header_buffer_raw,
             128,
-            fmt_string(LogFormat_AssertLineHeader),
+            LogFormat_AssertLineHeader,
             fmt::localtime(std::time(nullptr))
         );
 
@@ -87,21 +87,17 @@ namespace ice::detail::webasm
         static ice::HostAllocator host_alloc{};
         detail::LogMessageBuffer final_buffer{ host_alloc, 3000 };
 
-        fmt::vformat_to(
+        fmt::format_to(
             std::back_inserter(final_buffer),
-            fmt_string(LogFormat_AssertCondition),
-            fmt::make_format_args(
-                log_header,
-                fmt_string(condition)
-            )
+            LogFormat_AssertCondition,
+            log_header,
+            fmt_string(condition)
         );
 
-        fmt::vformat_to(
+        fmt::format_to(
             std::back_inserter(final_buffer),
-            fmt_string(LogFormat_AssertMessage),
-            fmt::make_format_args(
-                log_header
-            )
+            LogFormat_AssertMessage,
+            log_header
         );
 
         fmt::vformat_to(
@@ -120,19 +116,17 @@ namespace ice::detail::webasm
         emscripten_console_error(final_buffer.data());
         final_buffer.clear();
 
-        fmt::vformat_to(
+        fmt::format_to(
             std::back_inserter(final_buffer),
-            fmt_string(LogFormat_AlertLocation),
-            fmt::make_format_args(
-                fmt_string(location.file),
-                location.line
-            )
+            LogFormat_AlertLocation,
+            fmt_string(location.file),
+            location.line
         );
 
-        fmt::vformat_to(
+        fmt::format_to(
             std::back_inserter(final_buffer),
-            fmt_string(LogFormat_AlertCondition),
-            fmt::make_format_args(fmt_string(condition))
+            LogFormat_AlertCondition,
+            fmt_string(condition)
         );
 
         fmt::vformat_to(
@@ -165,7 +159,7 @@ namespace ice::detail::webasm
         fmt::format_to_n_result format_result = fmt::format_to_n(
             header_buffer_raw,
             256,
-            fmt_string(LogFormat_LogLineHeader),
+            LogFormat_LogLineHeader,
             fmt::localtime(std::time(nullptr)),
             fmt_string(detail::severity_value[static_cast<ice::u32>(severity)]),
             fmt_string(base_tag_name),
@@ -185,7 +179,7 @@ namespace ice::detail::webasm
 
         fmt::vformat_to(
             std::back_inserter(final_buffer),
-            fmt_string(LogFormat_LogLine),
+            LogFormat_LogLine,
             fmt::make_format_args(log_header, LogState::minimal_header_length)
         );
 
