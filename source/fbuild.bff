@@ -3,12 +3,10 @@
 #import SystemRoot
 Settings
 {
-    .Environment =
+    .Environment +
     {
         "SystemRoot=$SystemRoot$"
         "TMP=$SystemRoot$\temp"
-        // TODO: Webasm, find a wat not hardcode this variable
-        "EMSDK_PYTHON=$WorkspaceRoot$/build/webasm/python/3.9.2-nuget_64bit/python.exe"
     }
 }
 
