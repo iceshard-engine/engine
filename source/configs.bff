@@ -117,6 +117,10 @@
         '-Wno-deprecated-declarations'
         '-Wno-missing-braces'
     }
+    .LinkLinkerOptions = {
+        // Because we want to select libraries stored besides executables we need to set the -rpath
+        '-Wl,-rpath,^$ORIGIN/'
+    }
 ]
 
 

@@ -48,6 +48,12 @@ namespace ice::render
                 void* native_window;
                 void* reserved[1];
             } android;
+
+            struct
+            {
+                void* surface;
+                void* display;
+            } wayland;
         };
     };
 

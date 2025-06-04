@@ -439,8 +439,8 @@ namespace ice
             }
         }
 
-        ice::URI const urn_uri{ ice::Scheme_URN, name };
-        if (ice::ResourceHandle res = tracker.find_resource(dynlib_uri); res != nullptr)
+        ice::URI const urn_uri{ ice::Scheme_URN, result };
+        if (ice::ResourceHandle res = tracker.find_resource(urn_uri); res != nullptr)
         {
             return { alloc, ice::resource_origin(res) };
         }

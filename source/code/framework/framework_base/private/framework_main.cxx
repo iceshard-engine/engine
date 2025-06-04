@@ -326,7 +326,7 @@ auto ice_setup(
 
     ice::String dylib_path;
     ice::Array<ice::String> resource_paths{ alloc };
-    if constexpr (ice::build::is_release == false && ice::build::is_windows)
+    if constexpr (ice::build::is_release == false && (ice::build::is_windows || ice::build::is_linux))
     {
         dylib_path = ice::path::directory(ice::app::directory());
         config.dev_dirs.shaders = ice::app::workingdir();

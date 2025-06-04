@@ -65,21 +65,28 @@ namespace ice::app
 #else
     auto location() noexcept -> ice::String
     {
-        ICE_ASSERT_CORE(false);
-        return {};
+        static ice::StaticString<PATH_MAX> app_location = []() noexcept
+        {
+            ice::StaticString<PATH_MAX> result{ "" };
+            int nchar = readlink("/proc/self/exe", ice::string::begin(result), ice::string::capacity(result));
+            ice::string::resize(result, nchar);
+            return result;
+        }();
+
+        return app_location;
     }
 
     auto directory() noexcept -> ice::String
     {
-        ICE_ASSERT_CORE(false);
-        return {};
+        static ice::String app_directory = ice::path::directory(location());
+        return app_directory;
     }
 
     auto workingdir() noexcept -> ice::String
     {
-        static ice::StaticString<256> working_dir = []() noexcept
+        static ice::StaticString<PATH_MAX> working_dir = []() noexcept
         {
-            ice::StaticString<256> result{};
+            ice::StaticString<PATH_MAX> result{};
             char const* success = getcwd(ice::string::begin(result), ice::string::capacity(result));
             ICE_ASSERT(success != nullptr, "Current working directory is too long, can't contain the value!");
             ice::string::resize(result, std::strlen(success));

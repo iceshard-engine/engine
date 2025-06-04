@@ -114,7 +114,7 @@ namespace ice::detail
         ice::detail::LogLocation location
     ) noexcept
     {
-        fmt::vprint(
+        fmt::vprintln(
             stderr,
             fmt_string(message),
             ice::move(args)

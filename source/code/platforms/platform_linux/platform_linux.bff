@@ -1,0 +1,27 @@
+/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
+.Project =
+[
+    .Name = 'platform_linux'
+    .Kind = .Kind_ObjectList
+    .BaseDir = '$WorkspaceCodeDir$/platforms/platform_linux'
+    .Group = 'Platforms'
+
+    .Requires = { 'SDK-Linux' }
+
+    .Public =
+    [
+        .Uses = {
+            'application'
+            'platform'
+            'utils'
+            'tasks'
+        }
+
+        .Modules = { // Move to private?
+            'sdl2'
+        }
+    ]
+]
+.Projects + .Project
