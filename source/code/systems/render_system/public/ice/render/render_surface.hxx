@@ -17,6 +17,7 @@ namespace ice::render
     {
         Win32_Window,
         UWP_Window,
+        Wayland_Window,
         Android_NativeWindow,
         HTML5_DOMCanvas
     };

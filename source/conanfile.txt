@@ -18,8 +18,9 @@ rapidxml_ns/1.13.2@iceshard/stable
 rapidjson/1.1.0
 rapidfuzz_cpp/3.0.5@iceshard/stable
 
-[requires-Windows-MSVC]
 vulkan-memory-allocator/3.0.1
+
+[requires-Windows-MSVC]
 catch2/3.3.2@iceshard/stable
 
 assimp/5.2.5@iceshard/stable
@@ -33,7 +34,6 @@ msdf_atlas_gen/1.2.2@iceshard/stable
 imguizmo/1.91.3@iceshard/stable
 
 [requires-Linux-Clang]
-vulkan-memory-allocator/3.0.1
 catch2/3.3.2@iceshard/stable
 
 assimp/5.2.5@iceshard/stable
@@ -46,11 +46,6 @@ msdf_atlas_gen/1.2.2@iceshard/stable
 # Editor only packages
 imguizmo/1.91.3@iceshard/stable
 
-[requires-Android-Arm64]
-vulkan-memory-allocator/3.0.1
-
-[requires-Android-x64]
-vulkan-memory-allocator/3.0.1
 
 [options-Android-Arm64]
 tracy/*:shared=False

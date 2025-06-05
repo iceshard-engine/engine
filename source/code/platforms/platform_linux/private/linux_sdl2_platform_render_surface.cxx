@@ -14,6 +14,7 @@ namespace ice::platform::linux::sdl2
 
     RenderSurface_WaylandSDL2::RenderSurface_WaylandSDL2() noexcept
     {
+        SDL_VideoInit("wayland");
         SDL_InitSubSystem(SDL_INIT_VIDEO);
     }
 
@@ -26,6 +27,7 @@ namespace ice::platform::linux::sdl2
         }
 
         SDL_QuitSubSystem(SDL_INIT_VIDEO);
+        SDL_VideoQuit();
     }
 
     auto RenderSurface_WaylandSDL2::create(ice::platform::RenderSurfaceParams surface_params) noexcept -> ice::Result
@@ -78,9 +80,10 @@ namespace ice::platform::linux::sdl2
         }
 
         SDL_SysWMinfo wm_info{};
+        SDL_VERSION(&wm_info.version);
         SDL_GetWindowWMInfo(_window, &wm_info);
 
-        out_surface_info.type = ice::render::SurfaceType::Win32_Window;
+        out_surface_info.type = ice::render::SurfaceType::Wayland_Window;
         out_surface_info.wayland.surface = wm_info.info.wl.surface;
         out_surface_info.wayland.display = wm_info.info.wl.display;
         return true;

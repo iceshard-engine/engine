@@ -14,6 +14,8 @@ namespace ice::render::vk
         { ExtensionTarget::InstanceExtension, Extension::VkI_Win32Surface, 0, VK_KHR_WIN32_SURFACE_EXTENSION_NAME },
 #elif ISP_ANDROID
         { ExtensionTarget::InstanceExtension, Extension::VkI_AndroidSurface, 0, VK_KHR_ANDROID_SURFACE_EXTENSION_NAME },
+#elif ISP_LINUX
+        { ExtensionTarget::InstanceExtension, Extension::VkI_WaylandSurface, 0, VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME },
 #else
 #error Unknown platform
 #endif
