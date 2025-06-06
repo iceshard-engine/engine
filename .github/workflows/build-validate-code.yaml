@@ -23,8 +23,8 @@ jobs:
             pipeline: 'x64'
           - host: ubuntu-latest
             pipeline: 'x64-Clang'
-            clang-version: 20
+            clang-version: '20'
     with:
       host-platform: ${{ matrix.host }}
       target: "${{ matrix.project }}-${{ matrix.pipeline }}-${{ matrix.config }}"
-      clang-version: ${{ matrix.clang-version || 0 }}
+      clang-version: ${{ matrix.clang-version || '' }}

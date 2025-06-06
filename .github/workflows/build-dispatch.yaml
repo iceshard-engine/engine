@@ -14,7 +14,7 @@ on:
       clang-version:
         description: "Clang tools version to be installed"
         required: false
-        type: number
+        type: string
 
 jobs:
   build:
@@ -38,6 +38,10 @@ jobs:
           conan-cache: true
           conan-cache-version: 'v1'
           conan-config-url: https://github.com/iceshard-engine/conan-config.git
+          conan-profile-compiler: 'clang'
+          conan-profile-compiler-version: '${{ inputs.clang-version }}'
+          conan-profile-cppstd: '20'
+          conan-profile-libcxx: 'libc++'
 
       - name: Setup IBT
         uses: iceshard-engine/.github/.github/actions/ibt-wks@main
