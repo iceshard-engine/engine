@@ -88,6 +88,7 @@ namespace ice::gfx
         ice::gfx::IceshardGfxRunnerState _state;
         ice::HashMap<ice::gfx::IceshardGfxWorldState> _world_states;
         ice::UniquePtr<ice::gfx::GfxGraphRuntime> _rendergraph;
+        ice::UniquePtr<ice::gfx::GfxGraphRuntime> _scheduled_rendergraph;
 
         ice::ScopedTaskContainer _gfx_tasks;
 
