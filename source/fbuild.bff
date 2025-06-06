@@ -45,7 +45,6 @@ Settings
     .PipelineName = 'x64-Clang'
     .PipelineToolchain = 'clang-20.0.0'
     .PipelineAllowUnityBuilds = true
-    .PipelineSteps = { 'Build', 'Link' }
 
     .PipelineConanProfile = 'Linux-Clang'
 ]

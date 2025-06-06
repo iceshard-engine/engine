@@ -15,6 +15,7 @@ namespace ice::render
 
     enum class SurfaceType
     {
+        Unknown,
         Win32_Window,
         UWP_Window,
         Wayland_Window,
@@ -25,7 +26,7 @@ namespace ice::render
 
     struct SurfaceInfo
     {
-        SurfaceType type;
+        SurfaceType type = SurfaceType::Unknown;
         union
         {
             struct

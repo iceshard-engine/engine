@@ -83,19 +83,44 @@ namespace ice::platform::linux::sdl2
         SDL_VERSION(&wm_info.version);
         SDL_GetWindowWMInfo(_window, &wm_info);
 
+#if defined(SDL_VIDEO_DRIVER_X11)
+        ICE_LOG(LogSeverity::Info, LogTag::Core, "Checking for 'X11' video driver...");
         if (wm_info.subsystem == SDL_SYSWM_X11)
         {
+            ICE_LOG(LogSeverity::Info, LogTag::Core, "Selected 'X11' video driver");
             out_surface_info.type = ice::render::SurfaceType::X11_Window;
             out_surface_info.x11.display = wm_info.info.x11.display;
             out_surface_info.x11.window = wm_info.info.x11.window;
         }
+#endif
+#if defined(SDL_VIDEO_DRIVER_WAYLAND)
+        ICE_LOG_IF(
+            out_surface_info.type == ice::render::SurfaceType::Unknown,
+            LogSeverity::Info, LogTag::Core,
+            "Checking for 'Wayland' video driver..."
+        );
         if (wm_info.subsystem == SDL_SYSWM_WAYLAND)
         {
+            ICE_LOG(LogSeverity::Info, LogTag::Core, "Selected 'Wayland' video driver");
             out_surface_info.type = ice::render::SurfaceType::Wayland_Window;
             out_surface_info.wayland.surface = wm_info.info.wl.surface;
             out_surface_info.wayland.display = wm_info.info.wl.display;
         }
-        return true;
+#endif
+
+#if !defined(SDL_VIDEO_DRIVER_WAYLAND) and !defined(SDL_VIDEO_DRIVER_X11)
+        ICE_LOG(
+            LogSeverity::Error, LogTag::Core,
+            "The currently used SDL2 package does not support Wayland nor X11 surfaces!"
+        );
+#else
+        ICE_LOG_IF(
+            out_surface_info.type == ice::render::SurfaceType::Unknown,
+            LogSeverity::Error, LogTag::Core,
+            "Unrecognized SDL2 Surface type!"
+        );
+#endif
+        return out_surface_info.type != ice::render::SurfaceType::Unknown;
     }
 
     void RenderSurface_WaylandX11SDL2::destroy() noexcept
