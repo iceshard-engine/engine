@@ -214,6 +214,17 @@ namespace ice::gfx
 
     IceshardGfxGraphRuntime::~IceshardGfxGraphRuntime() noexcept
     {
+        // If there is still stages initializing we want to wait for them, so we don't end up with accessing
+        //  '_stages._ready' field after a free.
+        ice::u32 in_progress = _stages._ready.load(std::memory_order_relaxed);
+        while(in_progress > 0)
+        {
+            // Wait if we still have values in progress
+            _stages._ready.wait(in_progress, std::memory_order_relaxed);
+            // Get the new count to dobule check we are in the clear.
+            in_progress = _stages._ready.load(std::memory_order_relaxed);
+        }
+
         render::RenderDevice& device = _context.device();
 
         for (IceshardGfxGraphStages::Entry* entry : _stages._stages)
@@ -236,7 +247,15 @@ namespace ice::gfx
     auto initialize_stage(ice::Task<> init_task, std::atomic_uint32_t& ready_count) noexcept -> ice::Task<>
     {
         co_await init_task;
-        ready_count.fetch_sub(1, std::memory_order_relaxed);
+
+        // If the last stage is finalized we want to send a notification. This is because the graph
+        //  could be waiting in the descrutor when a new graph want's to be initialized.
+        // This may happen during manual resizing the window, so it's probably only an issues during dev-time
+        //  since users should only resize using a in-game menu option.
+        if (ready_count.fetch_sub(1, std::memory_order_relaxed) == 1)
+        {
+            ready_count.notify_one();
+        }
     }
 
     bool IceshardGfxGraphRuntime::prepare(

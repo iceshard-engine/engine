@@ -571,15 +571,21 @@ namespace ice::native_file
     auto sizeof_file(ice::native_file::File const& native_file) noexcept -> ice::usize
     {
         struct stat file_stats;
-        fstat(native_file.native(), &file_stats);
-        return { static_cast<ice::usize::base_type>(file_stats.st_size) };
+        if (fstat(native_file.native(), &file_stats) == 0)
+        {
+            return { static_cast<ice::usize::base_type>(file_stats.st_size) };
+        }
+        return 0_B;
     }
 
     auto sizeof_file(ice::native_file::FilePath path) noexcept -> ice::usize
     {
         struct stat file_stats;
-        stat(ice::string::begin(path), &file_stats);
-        return { static_cast<ice::usize::base_type>(file_stats.st_size) };
+        if (stat(ice::string::begin(path), &file_stats) == 0)
+        {
+            return { static_cast<ice::usize::base_type>(file_stats.st_size) };
+        }
+        return 0_B;
     }
 
     auto read_file(

@@ -9,11 +9,11 @@
 namespace ice::platform::linux::sdl2
 {
 
-    class RenderSurface_WaylandSDL2 final : public RenderSurface
+    class RenderSurface_WaylandX11SDL2 final : public RenderSurface
     {
     public:
-        RenderSurface_WaylandSDL2() noexcept;
-        ~RenderSurface_WaylandSDL2() noexcept;
+        RenderSurface_WaylandX11SDL2() noexcept;
+        ~RenderSurface_WaylandX11SDL2() noexcept;
 
         auto create(ice::platform::RenderSurfaceParams surface_params) noexcept -> ice::Result override;
         auto get_dimensions() const noexcept -> ice::vec2u override { return {}; }

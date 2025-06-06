@@ -333,7 +333,7 @@ auto ice_setup(
         config.dev_dirs.assets = ice::app::workingdir();
 
         // Assumes the apps working-dir is in 'build' and no changes where done to shader compilation step
-        ice::path::join(config.dev_dirs.shaders, "/obj/VkShaders/GFX-Vulkan-Unoptimized-vk-glslc-1-3/data");
+        ice::path::join(config.dev_dirs.shaders, "obj/VkShaders/GFX-Vulkan-Unoptimized-vk-glslc-1-3/data");
         ice::path::join(config.dev_dirs.assets, "../source/data");
         ice::path::normalize(config.dev_dirs.shaders);
         ice::path::normalize(config.dev_dirs.assets);

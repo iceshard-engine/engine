@@ -3,7 +3,7 @@
 
 #include "shader_tools_wgsl.hxx"
 
-#if ISP_WEBAPP || ISP_WINDOWS
+#if ISP_WINDOWS || ISP_LINUX || ISP_WEBAPP
 #include <ice/task_expected.hxx>
 #include <ice/render/render_shader.hxx>
 #include <ice/string/string.hxx>

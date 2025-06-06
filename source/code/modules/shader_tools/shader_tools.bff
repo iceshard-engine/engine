@@ -8,6 +8,7 @@
     .Group = 'Modules'
 
     .BaseDir = '$WorkspaceCodeDir$/modules/shader_tools'
+    .CopyModules = true
 
     .LocalCompiler =
     [
@@ -29,7 +30,7 @@
     .SDK_VulkanShaderC =
     [
         .Name = 'Vulkan-Shader-Compiler'
-        .Requires = { 'SDK-Vulkan', 'SDK-Windows-10' }
+        .Requires = { 'SDK-Vulkan' }
 
         .Public =
         [

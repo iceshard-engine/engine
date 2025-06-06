@@ -380,7 +380,7 @@ namespace ice
             {
                 error = pthread_attr_setstacksize(
                     &thread_attribs,
-                    ice::max(ice::usize::base_type{PTHREAD_STACK_MIN}, info.stack_size.value)
+                    ice::max(ice::usize::base_type(PTHREAD_STACK_MIN), info.stack_size.value)
                 );
                 ICE_ASSERT(
                     error == 0,

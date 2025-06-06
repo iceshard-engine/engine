@@ -18,6 +18,7 @@ namespace ice::render
         Win32_Window,
         UWP_Window,
         Wayland_Window,
+        X11_Window,
         Android_NativeWindow,
         HTML5_DOMCanvas
     };
@@ -55,6 +56,12 @@ namespace ice::render
                 void* surface;
                 void* display;
             } wayland;
+
+            struct
+            {
+                unsigned long window;
+                void* display;
+            } x11;
         };
     };
 

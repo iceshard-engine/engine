@@ -111,15 +111,18 @@
     .Name = 'Config-Unix'
     .Requires = { 'Unix', 'CLANG-Frontend' }
     .BuildOptions = {
+        '-fPIC'
         // Some warnigns disabled for now. To be fixed later.
         '-Wno-unused-command-line-argument'
         '-Wno-unused-private-field'
         '-Wno-deprecated-declarations'
         '-Wno-missing-braces'
+        // '-fsanitize=address'
     }
     .LinkLinkerOptions = {
         // Because we want to select libraries stored besides executables we need to set the -rpath
         '-Wl,-rpath,^$ORIGIN/'
+        // '-fsanitize=address'
     }
 ]
 

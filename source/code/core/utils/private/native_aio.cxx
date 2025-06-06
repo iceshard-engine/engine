@@ -295,6 +295,7 @@ namespace ice::native_aio
         ice::Memory memory
     ) noexcept -> ice::native_file::FileRequestStatus
     {
+        ICE_ASSERT_CORE(memory.location != nullptr);
         AIORequestInternal& internal = reinterpret_cast<AIORequestInternal&>(request);
         internal.next = nullptr;
         internal.native_file_handle = file.native();

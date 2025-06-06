@@ -12,25 +12,23 @@
 namespace ice::platform::linux::sdl2
 {
 
-    RenderSurface_WaylandSDL2::RenderSurface_WaylandSDL2() noexcept
+    RenderSurface_WaylandX11SDL2::RenderSurface_WaylandX11SDL2() noexcept
     {
-        SDL_VideoInit("wayland");
         SDL_InitSubSystem(SDL_INIT_VIDEO);
     }
 
-    RenderSurface_WaylandSDL2::~RenderSurface_WaylandSDL2() noexcept
+    RenderSurface_WaylandX11SDL2::~RenderSurface_WaylandX11SDL2() noexcept
     {
         ICE_ASSERT(_window == nullptr, "Render surface was not properly cleaned up!");
         if (_window != nullptr)
         {
-            RenderSurface_WaylandSDL2::destroy();
+            RenderSurface_WaylandX11SDL2::destroy();
         }
 
-        SDL_QuitSubSystem(SDL_INIT_VIDEO);
         SDL_VideoQuit();
     }
 
-    auto RenderSurface_WaylandSDL2::create(ice::platform::RenderSurfaceParams surface_params) noexcept -> ice::Result
+    auto RenderSurface_WaylandX11SDL2::create(ice::platform::RenderSurfaceParams surface_params) noexcept -> ice::Result
     {
         IPT_ZONE_SCOPED;
 
@@ -51,7 +49,9 @@ namespace ice::platform::linux::sdl2
         {
             if (surface_params.driver == RenderDriverAPI::Vulkan)
             {
-                window_title = ice::String{ "Iceshard (SDL2, Vulkan)" };
+                window_title = ice::String{ "Iceshard (SDL2, Vulkan, " };
+                ice::string::push_back(window_title, SDL_GetCurrentVideoDriver());
+                ice::string::push_back(window_title, ")");
                 creation_flags |= SDL_WINDOW_VULKAN;
             }
             else if (surface_params.driver == RenderDriverAPI::OpenGL)
@@ -72,7 +72,7 @@ namespace ice::platform::linux::sdl2
         return S_Success;
     }
 
-    bool RenderSurface_WaylandSDL2::get_surface(ice::render::SurfaceInfo& out_surface_info) noexcept
+    bool RenderSurface_WaylandX11SDL2::get_surface(ice::render::SurfaceInfo& out_surface_info) noexcept
     {
         if (_window == nullptr)
         {
@@ -83,13 +83,22 @@ namespace ice::platform::linux::sdl2
         SDL_VERSION(&wm_info.version);
         SDL_GetWindowWMInfo(_window, &wm_info);
 
-        out_surface_info.type = ice::render::SurfaceType::Wayland_Window;
-        out_surface_info.wayland.surface = wm_info.info.wl.surface;
-        out_surface_info.wayland.display = wm_info.info.wl.display;
+        if (wm_info.subsystem == SDL_SYSWM_X11)
+        {
+            out_surface_info.type = ice::render::SurfaceType::X11_Window;
+            out_surface_info.x11.display = wm_info.info.x11.display;
+            out_surface_info.x11.window = wm_info.info.x11.window;
+        }
+        if (wm_info.subsystem == SDL_SYSWM_WAYLAND)
+        {
+            out_surface_info.type = ice::render::SurfaceType::Wayland_Window;
+            out_surface_info.wayland.surface = wm_info.info.wl.surface;
+            out_surface_info.wayland.display = wm_info.info.wl.display;
+        }
         return true;
     }
 
-    void RenderSurface_WaylandSDL2::destroy() noexcept
+    void RenderSurface_WaylandX11SDL2::destroy() noexcept
     {
         SDL_DestroyWindow(ice::exchange(_window, nullptr));
     }

@@ -147,6 +147,7 @@ namespace ice
         , _metasize{ meta_size }
         , _datasize{ data_size }
     {
+        ICE_ASSERT_CORE(_metasize <= 10_MiB);
     }
 
     LooseFilesResource::~LooseFilesResource() noexcept

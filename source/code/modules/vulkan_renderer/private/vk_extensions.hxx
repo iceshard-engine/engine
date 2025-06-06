@@ -17,6 +17,7 @@ namespace ice::render::vk
         VkI_Win32Surface = 0x0000'0002, // The three surfaces are mutually exclusive so they may share the same value
         VkI_AndroidSurface = 0x0000'0002,
         VkI_WaylandSurface = 0x0000'0002,
+        VkI_XLibSurface = 0x0000'0004,
         VkI_GetPhysicalDeviceProperties2 = 0x0000'0008,
 
         // Core device extensions

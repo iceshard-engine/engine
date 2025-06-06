@@ -228,17 +228,30 @@ namespace ice::render::vk
     ) noexcept -> ice::render::RenderSurface*
     {
         ICE_ASSERT(
-            surface_info.type == ice::render::SurfaceType::Wayland_Window,
-            "Unsupported surface type provided, accepting 'Wayland_Window' surfaces only!"
+            surface_info.type == ice::render::SurfaceType::Wayland_Window
+            || surface_info.type == ice::render::SurfaceType::X11_Window,
+            "Unsupported surface type provided, accepting 'Wayland_Window' or 'X11_Window' surfaces only!"
         );
 
-        VkWaylandSurfaceCreateInfoKHR surface_create_info{ VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR };
-        surface_create_info.display = static_cast<wl_display*>(surface_info.wayland.display);
-        surface_create_info.surface = static_cast<wl_surface*>(surface_info.wayland.surface);
-
         VkSurfaceKHR vulkan_surface;
-        auto api_result = vkCreateWaylandSurfaceKHR(_vk_instance, &surface_create_info, nullptr, &vulkan_surface);
-        ICE_ASSERT(api_result == VkResult::VK_SUCCESS, "Failed to create Vulkan surface!");
+        if (surface_info.type == ice::render::SurfaceType::Wayland_Window)
+        {
+            VkWaylandSurfaceCreateInfoKHR surface_create_info{ VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR };
+            surface_create_info.display = static_cast<wl_display*>(surface_info.wayland.display);
+            surface_create_info.surface = static_cast<wl_surface*>(surface_info.wayland.surface);
+
+            auto api_result = vkCreateWaylandSurfaceKHR(_vk_instance, &surface_create_info, nullptr, &vulkan_surface);
+            ICE_ASSERT(api_result == VkResult::VK_SUCCESS, "Failed to create Vulkan surface!");
+        }
+        else
+        {
+            VkXlibSurfaceCreateInfoKHR surface_create_info{ VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR };
+            surface_create_info.dpy = static_cast<Display*>(surface_info.x11.display);
+            surface_create_info.window = surface_info.x11.window;
+
+            auto api_result = vkCreateXlibSurfaceKHR(_vk_instance, &surface_create_info, nullptr, &vulkan_surface);
+            ICE_ASSERT(api_result == VkResult::VK_SUCCESS, "Failed to create Vulkan surface!");
+        }
 
         ice::i32 family_index = 0;
         for (VkQueueFamilyProperties const& queue_family_props : _vk_queue_family_properties)

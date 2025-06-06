@@ -118,18 +118,29 @@ namespace ice::render::vk
             "Failed to query surface capabilities!"
         );
 
-        VkSurfaceFormatKHR surface_format = ice::array::front(surface_formats);
+        VkSurfaceFormatKHR selected_format = ice::array::front(surface_formats);
+        if constexpr (ice::build::is_linux)
+        {
+            // If possible select UNORM istead of SRGB
+            for (VkSurfaceFormatKHR format : surface_formats)
+            {
+                if (format.format == VK_FORMAT_B8G8R8A8_UNORM)
+                {
+                    selected_format = format;
+                }
+            }
+        }
 
         VkSwapchainCreateInfoKHR swapchain_info{ VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR };
         swapchain_info.surface = vk_surface->handle();
-        swapchain_info.imageFormat = surface_format.format;
+        swapchain_info.imageFormat = selected_format.format;
         swapchain_info.minImageCount = ice::max(surface_capabilities.minImageCount, 2u);
         swapchain_info.imageExtent = surface_capabilities.currentExtent;
         swapchain_info.imageArrayLayers = 1;
         swapchain_info.oldSwapchain = VK_NULL_HANDLE;
         swapchain_info.clipped = false; // Clipped for android only?
         swapchain_info.presentMode = VK_PRESENT_MODE_FIFO_KHR;
-        swapchain_info.imageColorSpace = surface_format.colorSpace;
+        swapchain_info.imageColorSpace = selected_format.colorSpace;
         swapchain_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
         swapchain_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
         swapchain_info.queueFamilyIndexCount = 0;
@@ -187,7 +198,7 @@ namespace ice::render::vk
 
         return _allocator.create<VulkanSwapchain>(
             vk_swapchain,
-            surface_format.format,
+            selected_format.format,
             swapchain_info.imageExtent,
             _vk_device
         );

@@ -169,7 +169,8 @@ namespace ice
 
     auto AllocatorBase<true>::allocate(ice::AllocRequest request) noexcept -> ice::AllocResult
     {
-        ICE_ASSERT_CORE(request.size != 0_B);
+        // TODO: Check if requesting sizes of '0' can be actually allowed
+        // ICE_ASSERT_CORE(request.size != 0_B);
         ice::AllocResult result = do_allocate(request);
 
         _internal->insert(result);

@@ -33,7 +33,7 @@ namespace ice::platform::linux::sdl2
         ice::ShardContainer _system_events;
         ice::input::DeviceEventQueue _input_events;
 
-        RenderSurface_WaylandSDL2 _render_surface;
+        RenderSurface_WaylandX11SDL2 _render_surface;
     };
 
 } // namespace ice::platform::win32::sdl2

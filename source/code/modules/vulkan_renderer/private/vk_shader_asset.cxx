@@ -56,7 +56,7 @@ namespace ice::render::vk
         ice::ModuleQuery const& module_query
     ) noexcept
     {
-#if ISP_WINDOWS
+#if ISP_WINDOWS || ISP_LINUX
         static ice::String constexpr extensions[]{ ".asl", ".glsl",".spv" };
 #else
         static ice::String constexpr extensions[]{ ".spv" };
@@ -68,7 +68,7 @@ namespace ice::render::vk
             .fn_asset_loader = asset_shader_loader
         };
 
-#if ISP_WINDOWS
+#if ISP_WINDOWS || ISP_LINUX
         ice::ResourceCompiler compiler{ };
         module_query.query_api(compiler);
         asset_category_archive.register_category(ice::render::AssetCategory_Shader, definition, &compiler);
