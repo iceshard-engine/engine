@@ -5,6 +5,8 @@ on:
   push:
     paths:
       - 'source/**'
+      - '.github/workflows/build-dispatch.yaml'
+      - '.github/workflows/build-validate-code.yaml'
       - '!source/data/**'
   workflow_dispatch:
 

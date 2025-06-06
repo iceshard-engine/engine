@@ -30,6 +30,7 @@ jobs:
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
           sudo ./llvm.sh ${{ inputs.clang-version }}
+          sudo apt install libc++-${{ inputs.clang-version }}-dev libc++abi-${{ inputs.clang-version }}-dev
 
       - name: Setup Conan2
         uses: iceshard-engine/.github/.github/actions/conan2@main
