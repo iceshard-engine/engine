@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "linux_sdl2_platform_render_surface.hxx"
