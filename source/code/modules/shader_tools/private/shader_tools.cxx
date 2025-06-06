@@ -60,7 +60,7 @@ namespace ice
                 2u - ice::u32(target == ShaderTargetPlatform::WGSL)
             );
         }
-        if constexpr (ice::build::is_linux)
+        else if constexpr (ice::build::is_linux)
         {
             static ice::String supported_extensions[]{ ".asl", ".glsl" };
             return supported_extensions;

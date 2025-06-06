@@ -1,16 +1,8 @@
-#if __WINDOWS__
 
-#import SystemRoot
 Settings
 {
-    .Environment +
-    {
-        "SystemRoot=$SystemRoot$"
-        "TMP=$SystemRoot$\temp"
-    }
+    // Custom settings if necessary, the '.Environment' variable is already set
 }
-
-#endif
 
 #include "configs.bff"
 
