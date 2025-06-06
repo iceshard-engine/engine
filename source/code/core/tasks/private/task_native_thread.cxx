@@ -326,6 +326,11 @@ namespace ice
             {
                 emscripten_set_thread_name(pthread_self(), ice::string::begin(thread_info.debug_name));
             }
+#elif ISP_LINUX
+            if constexpr (ice::build::is_release == false)
+            {
+                pthread_setname_np(pthread_self(), ice::string::begin(thread_info.debug_name));
+            }
 #endif
 
             ice::ThreadRuntime& runtime = thread_obj->runtime();
