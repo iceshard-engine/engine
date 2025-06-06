@@ -1,3 +1,6 @@
+/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include <ice/platform.hxx>
 #include <ice/platform_event.hxx>
 #include <ice/mem_allocator_host.hxx>
