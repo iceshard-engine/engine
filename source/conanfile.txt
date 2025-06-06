@@ -15,7 +15,7 @@ arctic/0.2.2@iceshard/stable
 
 rapidxml/1.13
 rapidxml_ns/1.13.2@iceshard/stable
-rapidjson/1.1.0
+rapidjson/1.1.0.patched@iceshard/stable
 rapidfuzz_cpp/3.0.5@iceshard/stable
 
 vulkan-memory-allocator/3.0.1

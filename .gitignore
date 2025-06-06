@@ -10,7 +10,10 @@
 # Local data
 /source/data/temp
 /source/data/local
-/tools/scripts/generate_version.moon
+/tools/scripts/*
+
+# Specific scripts that would be nice to have in the repository
+!/tools/scripts/start.moon
 
 # Temporary files to ignore
 compile_commands.json
