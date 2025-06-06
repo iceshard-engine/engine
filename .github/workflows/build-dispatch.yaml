@@ -54,5 +54,5 @@ jobs:
 
       # Building the actual target
       - name: Build Target (${{ inputs.target }})
-        shell: powershell
+        shell: pwsh
         run: ./ibt-ci build -t ${{ inputs.target }}
