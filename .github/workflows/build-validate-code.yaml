@@ -6,6 +6,7 @@ on:
     paths:
       - 'source/**'
       - '!source/data/**'
+  workflow_dispatch:
 
 jobs:
   validate:
