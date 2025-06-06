@@ -31,6 +31,7 @@
     [
         .Name = 'Vulkan-Shader-Compiler'
         .Requires = { 'SDK-Vulkan' }
+        .RequiresAny = { 'Windows', 'Linux' }
 
         .Public =
         [
