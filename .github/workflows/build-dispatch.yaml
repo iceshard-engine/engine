@@ -11,6 +11,10 @@ on:
         description: "Target to be build. (separated by spaces)"
         required: true
         type: string
+      clang-version:
+        description: "Clang tools version to be installed"
+        required: false
+        type: number
 
 jobs:
   build:
@@ -19,6 +23,13 @@ jobs:
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v4
+
+      - name: Setup Clang ${{ inputs.clang-version }} (ubuntu-only)
+        if: ${{ inputs.host-platform == 'ubuntu-latest' }}
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh ${{ inputs.clang-version }}
 
       - name: Setup Conan2
         uses: iceshard-engine/.github/.github/actions/conan2@main
