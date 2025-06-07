@@ -3,57 +3,19 @@
 
 #include "linux_threads.hxx"
 #include <ice/task_thread.hxx>
+#include <ice/log.hxx>
 #include <ice/os.hxx>
 #include <bit>
 
 namespace ice::platform::linux
 {
 
-    // auto get_num_cores(ice::Allocator& alloc) noexcept -> ice::ucount
-    // {
-    //     DWORD byte_size = 0;
-    //     GetLogicalProcessorInformationEx(RelationProcessorCore, nullptr, &byte_size);
-    //     ICE_ASSERT_CORE(GetLastError() == ERROR_INSUFFICIENT_BUFFER);
-
-    //     ice::AllocResult const buffer = alloc.allocate(ice::usize{ byte_size });
-    //     SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX* info =
-    //         (SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX*) buffer.memory;
-
-    //     DWORD const result = GetLogicalProcessorInformationEx(
-    //         RelationProcessorCore, info, &byte_size
-    //     );
-    //     ICE_ASSERT_CORE(result == TRUE);
-
-    //     ice::ucount num_procs = 0;
-    //     ice::usize byte_size_processed = 0_B;
-    //     for (; byte_size_processed.value < byte_size;)
-    //     {
-    //         // TODO: Return core counts for different efficiency classes.
-    //         // info->Processor.EfficiencyClass
-
-    //         // If we have more than one logical processor in this core.
-    //         if ((info->Processor.Flags & LTP_PC_SMT))
-    //         {
-    //             for (GROUP_AFFINITY const& group : ice::Span{ info->Processor.GroupMask, info->Processor.GroupCount })
-    //             {
-    //                 num_procs += std::popcount(group.Mask);
-    //             }
-    //         }
-    //         else
-    //         {
-    //             num_procs += 1;
-    //         }
-
-    //         // Move to the next structure.
-    //         byte_size_processed += { info->Size };
-    //         info = (SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX*) ice::ptr_add(
-    //             buffer.memory, byte_size_processed
-    //         );
-    //     }
-
-    //     alloc.deallocate(buffer);
-    //     return num_procs;
-    // }
+    auto get_num_cores(ice::Allocator& alloc) noexcept -> ice::ucount
+    {
+        ice::ucount const hw_concurrency = sysconf(_SC_NPROCESSORS_ONLN);
+        ICE_LOG(LogSeverity::Info, LogTag::System, "Logical Processors: {}", hw_concurrency);
+        return hw_concurrency;
+    }
 
     LinuxThreads::LinuxThreads(
         ice::Allocator& alloc,
@@ -68,7 +30,7 @@ namespace ice::platform::linux
         , _threads{ }
         , _aioport{ ice::native_aio::aio_open(alloc, { .worker_limit = 2, .debug_name = "ice.aio-port" }) }
     {
-        ice::ucount const hw_concurrency = 0;// ice::min(get_num_cores(alloc), 8u);
+        ice::ucount const hw_concurrency = ice::min(get_num_cores(alloc), 8u); // max 8 tasks threads
         ice::ucount tp_size = ice::max(hw_concurrency, 2u); // min 2 task threads
 
         for (ice::Shard const option : params)
