@@ -1,4 +1,5 @@
 #pragma once
+#include <ice/base.hxx>
 #include <ice/clock_types.hxx>
 
 namespace ice::current_thread

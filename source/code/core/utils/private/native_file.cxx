@@ -18,7 +18,6 @@
 
 #if ISP_WEBAPP
 #include <emscripten.h>
-#include "native_file.hxx"
 #endif
 
 namespace ice::native_file
