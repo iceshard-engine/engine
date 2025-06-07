@@ -24,7 +24,11 @@ namespace ice::native_aio
         AIORequestInternal* next;
         ice::i32 native_file_handle;
         ice::u32 request_type; // 1 == read, 2 == write
-        void* data_location;
+        union
+        {
+            void* data_destination;
+            void const* data_location;
+        };
         ice::u32 data_offset;
         ice::u32 data_size;
     };

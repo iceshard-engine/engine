@@ -42,6 +42,7 @@ void hailstorm_print_headerinfo(
             (Constant_HailstormHeaderVersion_0 & 0x00ff'0000) >> 16,
             (Constant_HailstormHeaderVersion_0 & 0x0000'ff00) >> 8,
             (Constant_HailstormHeaderVersion_0 & 0x0000'00ff) >> 0,
+            0
         };
 
         HSCR_INFO(LogTag_InfoHeader, "Base-Header");

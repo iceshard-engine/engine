@@ -683,8 +683,7 @@ namespace ice::native_file
         ice::Data data
     ) noexcept -> ice::native_file::FileRequestStatus
     {
-        ICE_ASSERT(false, "Missing implementation!");
-        return FileRequestStatus::Error;
+        return aio_file_write_request(request, native_file, write_offset, data);
     }
 
     auto append_file(
@@ -860,7 +859,14 @@ namespace ice::native_file
         ice::String string
     ) noexcept
     {
-        ice::path::join(path, string);
+        if (ice::string::any(path))
+        {
+            ice::path::join(path, string);
+        }
+        else if (ice::string::any(string))
+        {
+            path = string;
+        }
     }
 
 #else

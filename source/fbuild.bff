@@ -44,9 +44,12 @@ Settings
 [
     Using( .Pipeline_Linux_x64 )
 
-    .PipelineName = 'x64-Clang'
+    .PipelineName = 'x64'
     .PipelineToolchain = 'clang-20.0.0'
     .PipelineAllowUnityBuilds = true
+
+    // Projects from this pipeline may be exposed as compilers for other pipelines
+    .PipelineDefinesCompilers = true
 
     .PipelineConanProfile = 'Linux-Clang'
 ]

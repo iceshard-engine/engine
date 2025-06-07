@@ -47,7 +47,7 @@ public:
         // Open the pack file
         if (packfile_validate() == false)
         {
-            ICE_LOG(ice::LogSeverity::Retail, LogTag_Main, "Provide input file is not a valid Hailstorm pack.");
+            ICE_LOG(ice::LogSeverity::Retail, LogTag_Main, "Provided input file is not a valid Hailstorm pack.");
             return 1;
         }
 

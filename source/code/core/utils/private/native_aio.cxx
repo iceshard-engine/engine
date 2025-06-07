@@ -300,9 +300,43 @@ namespace ice::native_aio
         internal.next = nullptr;
         internal.native_file_handle = file.native();
         internal.request_type = 1; // 1 = read, 2 = write
-        internal.data_location = memory.location;
+        internal.data_destination = memory.location;
         internal.data_offset = static_cast<ice::u32>(requested_read_offset.value);
         internal.data_size = static_cast<ice::u32>(requested_read_size.value);
+        ice::linked_queue::push(request._port->_requests, ice::addressof(internal));
+
+        // Increment the semaphore
+        sem_post(&request._port->_semaphore);
+        return ice::native_file::FileRequestStatus::Pending;
+    }
+
+    auto aio_file_write_request(
+        ice::native_aio::AIORequest& request,
+        ice::native_file::File const& file,
+        ice::usize requested_write_offset,
+        ice::Data data
+    ) noexcept -> ice::native_file::FileRequestStatus
+    {
+        using ice::native_file::FileRequestStatus;
+
+        if (data.size == 0_B)
+        {
+            return FileRequestStatus::Completed;
+        }
+
+        if (data.size.value > ice::u32_max)
+        {
+            // Too big of a write
+            return FileRequestStatus::Error;
+        }
+
+        AIORequestInternal& internal = reinterpret_cast<AIORequestInternal&>(request);
+        internal.next = nullptr;
+        internal.native_file_handle = file.native();
+        internal.request_type = 2; // 1 = read, 2 = write
+        internal.data_location = data.location;
+        internal.data_size = ice::u32(data.size.value);
+        internal.data_offset = ice::u32(requested_write_offset.value);
         ice::linked_queue::push(request._port->_requests, ice::addressof(internal));
 
         // Increment the semaphore
@@ -344,23 +378,35 @@ namespace ice::native_aio
             if (internal->request_type == 1)
             {
                 // TODO: Handle sizes / offsets above 4gb
-                ice::i32 const bytes_read = pread(
+                ssize_t const bytes_read = pread(
                     internal->native_file_handle,
-                    internal->data_location,
+                    internal->data_destination,
                     internal->data_size,
                     internal->data_offset
                 );
 
                 ICE_ASSERT_CORE(bytes_read > 0); // 0 == eof, -1 == error
                 ICE_ASSERT_CORE(bytes_read == internal->data_size);
-
                 out_size = { (ice::usize::base_type) bytes_read };
             }
             else
             {
-                // TODO: Write requests
-                ICE_ASSERT_CORE(false);
+                ssize_t const bytes_written = pwrite(
+                    internal->native_file_handle,
+                    internal->data_location,
+                    internal->data_size,
+                    internal->data_offset
+                );
+
+                ICE_ASSERT_CORE(bytes_written > 0);
+                ICE_ASSERT_CORE(bytes_written == internal->data_size);
+                out_size = { (ice::usize::base_type) bytes_written };
             }
+        }
+        else
+        {
+            // Repost the semaphore, because we missed a request.
+            sem_post(&port->_semaphore);
         }
         return out_size > 0_B;
     }
@@ -368,12 +414,12 @@ namespace ice::native_aio
     void aio_complete_request(
         ice::native_aio::AIORequest const* request,
         ice::native_aio::AIORequestResult result,
-        ice::usize read_size
+        ice::usize processed_bytes
     ) noexcept
     {
         if (request != nullptr && request->_callback != nullptr)
         {
-            request->_callback(result, read_size, request->_userdata);
+            request->_callback(result, processed_bytes, request->_userdata);
         }
     }
 #else

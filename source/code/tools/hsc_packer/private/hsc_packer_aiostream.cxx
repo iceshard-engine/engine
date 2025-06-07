@@ -42,6 +42,7 @@ struct HailstormAIOWriter
     ice::Span<ice::ResourceHandle> _resources;
 
     std::atomic_uint32_t _started_writes;
+    std::atomic_uint32_t _finished_loads;
     std::atomic_uint32_t _finished_writes;
 
     ~HailstormAIOWriter() noexcept = default;
@@ -289,6 +290,7 @@ inline auto HailstormAIOWriter::async_write_resource(ice::u32 idx, ice::usize of
 {
     _started_writes.fetch_add(1, std::memory_order_relaxed);
     ice::ResourceResult const load_result = co_await _resource_tracker.load_resource(_resources[idx]);
+    _finished_loads.fetch_add(1, std::memory_order_relaxed);
     if (load_result.resource_status == ice::ResourceStatus::Loaded)
     {
         bool const success = co_await async_write(offset, data_to_hsdata(load_result.data));
