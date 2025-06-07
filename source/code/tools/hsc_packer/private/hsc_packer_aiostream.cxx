@@ -6,6 +6,7 @@
 
 #include <ice/task.hxx>
 #include <ice/task_utils.hxx>
+#include <ice/task_thread_utils.hxx>
 #include <ice/resource_tracker.hxx>
 
 using ice::LogSeverity;
@@ -256,11 +257,8 @@ inline bool HailstormAIOWriter::close() noexcept
 {
     while (_finished_writes != _started_writes)
     {
-#if ISP_WINDOWS
-        SleepEx(5, FALSE);
-#elif ISP_LINUX
-        usleep(5000);
-#endif
+        using ice::operator""_Tms;
+        ice::current_thread::sleep(5_Tms);
     }
 
     return true;
