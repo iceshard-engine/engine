@@ -18,6 +18,7 @@
 
 #if ISP_WEBAPP
 #include <emscripten.h>
+#include "native_file.hxx"
 #endif
 
 namespace ice::native_file
@@ -267,6 +268,7 @@ namespace ice::native_file
         ice::Data data
     ) noexcept -> ice::usize
     {
+        IPT_ZONE_SCOPED;
         ice::usize total_written = 0_B;
 
         OVERLAPPED overlapped{};
@@ -477,6 +479,11 @@ namespace ice::native_file
         return create_directory_internal(actual_path);
     }
 
+    bool is_directory(ice::native_file::FilePath path) noexcept
+    {
+        return false;
+    }
+
     void path_from_string(
         ice::native_file::HeapFilePath& out_filepath,
         ice::String path_string
@@ -513,9 +520,27 @@ namespace ice::native_file
 
 #elif ISP_UNIX
 
+    static constexpr ice::i32 Constant_ModeDirectory = S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH;
+    static constexpr ice::i32 Constant_ModeFile = S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH;
+
     inline auto translate_flags(ice::native_file::FileOpenFlags flags) noexcept -> int
     {
-        int result = O_RDONLY;
+        int result = O_RDONLY; // By default support large fils on linux Support
+        if (ice::has_any(flags, FileOpenFlags::Write))
+        {
+            result = O_WRONLY;
+            if (ice::has_any(flags, FileOpenFlags::Read))
+            {
+                result = O_RDWR;
+            }
+
+            // Also ensure the file exists when writing
+            result |= O_CREAT;
+        }
+        if constexpr (ice::build::is_linux)
+        {
+            result |= O_LARGEFILE;
+        }
 #if 0 // TODO: Not supported yet
         if (ice::has_any(flags, FileOpenFlags::Asynchronous))
         {
@@ -540,7 +565,7 @@ namespace ice::native_file
         if constexpr (ice::build::is_unix)
         {
             result = ice::native_file::File{
-                open(ice::string::begin(path), translate_flags(flags))
+                open(ice::string::begin(path), translate_flags(flags), Constant_ModeFile)
             };
         }
         else
@@ -636,8 +661,19 @@ namespace ice::native_file
         ice::Data data
     ) noexcept -> ice::usize
     {
-        ICE_ASSERT(false, "Missing implementation!");
-        return 0_B;
+        IPT_ZONE_SCOPED;
+
+        ice::usize written = 0_B;
+        if (data.size > 0_B)
+        {
+            ssize_t const result = pwrite(native_file.native(), data.location, data.size.value, write_offset.value);
+            ICE_ASSERT(result >= 0, "Failed to write {:i} bytes to file.", data.size);
+            if (result >= 0)
+            {
+                written.value = result;
+            }
+        }
+        return written;
     }
 
     auto write_file_request(
@@ -656,8 +692,7 @@ namespace ice::native_file
         ice::Data data
     ) noexcept -> ice::usize
     {
-        ICE_ASSERT(false, "Missing implementation!");
-        return 0_B;
+        return ice::native_file::write_file(native_file, ice::native_file::sizeof_file(native_file), data);
     }
 
     bool traverse_directories_internal(
@@ -744,12 +779,64 @@ namespace ice::native_file
         return traverse_directories_internal(dirpath, dirpath, callback, userdata);
     }
 
+
+    bool create_directory_internal(
+        ice::native_file::HeapFilePath& dirpath
+    ) noexcept
+    {
+        // If zero, we failed, check why.
+        if (mkdir(ice::string::begin(dirpath), Constant_ModeDirectory) == -1)
+        {
+            // Try the next path before retrying this path.
+            if (errno == EEXIST)
+            {
+                return ice::native_file::is_directory(dirpath);
+            }
+            else if (errno == ENOENT)
+            {
+                // Remove the top-most the directory explicitly.
+                ice::ucount const dirslash = ice::string::find_last_of(dirpath, ice::String{ "/" });
+                if (dirslash == ice::String_NPos)
+                {
+                    return false;
+                }
+
+                // Insert the new '0' to shorten the path for the Windows API.
+                dirpath[dirslash] = '\0';
+                if (create_directory_internal(dirpath) == false)
+                {
+                    return false;
+                }
+
+                // 'Restore' the original path. (we assume it was normalized for iceshard)
+                dirpath[dirslash] = '/';
+
+                // Try again to create the directory
+                return mkdir(ice::string::begin(dirpath), Constant_ModeDirectory) != -1;
+            }
+            // else it's either 'ERROR_ALREADY_EXISTS' so we continue.
+        }
+        return true;
+    }
+
     bool create_directory(
         ice::native_file::FilePath path
     ) noexcept
     {
-        ICE_ASSERT(false, "Missing implementation!");
-        return false;
+        ice::StackAllocator_1024 temp_alloc;
+        // We need to make a local string version, because the windows API does only accept zero-terimanated strings.
+        //   However IceShard uses string views, which might result in strings being "longer" than intended.
+        ice::native_file::HeapFilePath actual_path{ temp_alloc, path };
+        return create_directory_internal(actual_path);
+    }
+
+    bool is_directory(ice::native_file::FilePath path) noexcept
+    {
+        struct stat info;
+        if (stat(ice::string::begin(path), &info) != 0) {
+            return false;
+        }
+        return S_ISDIR(info.st_mode);
     }
 
     void path_from_string(

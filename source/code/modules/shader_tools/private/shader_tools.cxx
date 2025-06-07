@@ -97,10 +97,10 @@ namespace ice
         }
 #elif ISP_WEBAPP
         return wgsl::compiler_compile_shader_source(resctx, source, tracker, resources, uris, alloc);
-#elif ISP_LINUX
-        ICE_ASSERT(false, "Missing implementation!");
-        co_return {};
 #elif ISP_ANDROID
+        co_return {}; // Empty is expected
+#else
+        ICE_ASSERT(false, "Missing implementation!");
         co_return {};
 #endif
     }

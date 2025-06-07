@@ -62,7 +62,7 @@ namespace ice::app
 
         return working_dir;
     }
-#else
+#elif ISP_LINUX
     auto location() noexcept -> ice::String
     {
         static ice::StaticString<PATH_MAX> app_location = []() noexcept
@@ -95,6 +95,24 @@ namespace ice::app
         }();
 
         return working_dir;
+    }
+#else
+    auto location() noexcept -> ice::String
+    {
+        // TODO: Deprecate or return a valid value
+        return {};
+    }
+
+    auto directory() noexcept -> ice::String
+    {
+        // TODO: Deprecate or return a valid value
+        return {};
+    }
+
+    auto workingdir() noexcept -> ice::String
+    {
+        // TODO: Deprecate or return a valid value
+        return {};
     }
 #endif
 

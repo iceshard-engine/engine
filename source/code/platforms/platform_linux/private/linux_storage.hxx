@@ -4,6 +4,7 @@
 #pragma once
 #include <ice/platform_storage.hxx>
 #include <ice/string/heap_string.hxx>
+#include <ice/native_file.hxx>
 #include <ice/span.hxx>
 
 namespace ice::platform::linux
@@ -42,6 +43,9 @@ namespace ice::platform::linux
         void reload_paths(ice::String appname) noexcept;
 
     private:
+        ice::Allocator& _allocator;
+        ice::native_file::HeapFilePath _config_file;
+        ice::HeapString<> _home_location;
         ice::HeapString<> _save_location;
         ice::HeapString<> _cache_location;
         ice::HeapString<> _temp_location;
