@@ -16,13 +16,12 @@ jobs:
     uses: ./.github/workflows/build-dispatch.yaml
     strategy:
       matrix:
+        host: [windows-latest, ubuntu-latest]
         project: [all]
+        pipeline: [x64]
         config: [Debug,Develop,Profile,Release]
         include:
-          - host: windows-latest
-            pipeline: 'x64'
           - host: ubuntu-latest
-            pipeline: 'x64-Clang'
             clang-version: '20'
     with:
       host-platform: ${{ matrix.host }}
