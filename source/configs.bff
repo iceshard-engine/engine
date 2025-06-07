@@ -1,3 +1,5 @@
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
 
 .Configuration_Debug =
 [
@@ -92,6 +94,7 @@
         '-Wno-error=deprecated-declarations'
         '-Wno-switch'
         '-std=c++23'
+        '-stdlib=libc++'
     }
 ]
 
@@ -110,11 +113,18 @@
     .Name = 'Config-Unix'
     .Requires = { 'Unix', 'CLANG-Frontend' }
     .BuildOptions = {
+        '-fPIC'
         // Some warnigns disabled for now. To be fixed later.
         '-Wno-unused-command-line-argument'
         '-Wno-unused-private-field'
         '-Wno-deprecated-declarations'
         '-Wno-missing-braces'
+        // '-fsanitize=address'
+    }
+    .LinkLinkerOptions = {
+        // Because we want to select libraries stored besides executables we need to set the -rpath
+        '-Wl,-rpath,^$ORIGIN/'
+        // '-fsanitize=address'
     }
 ]
 
@@ -122,11 +132,13 @@
 .Config_Unix_BinaryBase =
 [
     .Name = 'Config-Unix-Binary'
-    .Requires = { 'Unix', 'GCC-Frontend' }
+    .Requires = { 'Unix', 'CLANG-Frontend' }
     .LinkOptions = {
         '-lc'
         '-lm'
-        '-lstdc++'
+        '-ldl'
+        '-lpthread'
+        '-lc++'
     }
 ]
 

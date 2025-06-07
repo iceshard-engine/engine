@@ -10,6 +10,12 @@
 #include <ice/container/array.hxx>
 #include <ice/assert.hxx>
 
+extern "C"
+{
+    struct wl_display;
+    struct wl_surface;
+}
+
 
 namespace ice::render::vk
 {
@@ -67,6 +73,11 @@ namespace ice::render::vk
                 if constexpr (ice::build::is_release == false)
                 {
                     if (physical_device_properties.deviceType == VkPhysicalDeviceType::VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU
+                        && _vk_physical_device == vk_nullptr)
+                    {
+                        _vk_physical_device = physical_device;
+                    }
+                    if (physical_device_properties.deviceType == VkPhysicalDeviceType::VK_PHYSICAL_DEVICE_TYPE_CPU
                         && _vk_physical_device == vk_nullptr)
                     {
                         _vk_physical_device = physical_device;
@@ -211,6 +222,74 @@ namespace ice::render::vk
 
         return _vk_alloc->create<VulkanRenderSurface>(_vk_instance, vulkan_surface);
     }
+#elif ISP_LINUX
+    auto VulkanRenderDriver::create_surface(
+        ice::render::SurfaceInfo const& surface_info
+    ) noexcept -> ice::render::RenderSurface*
+    {
+        ICE_ASSERT(
+            surface_info.type == ice::render::SurfaceType::Wayland_Window
+            || surface_info.type == ice::render::SurfaceType::X11_Window,
+            "Unsupported surface type provided, accepting 'Wayland_Window' or 'X11_Window' surfaces only!"
+        );
+
+        VkSurfaceKHR vulkan_surface;
+        if (surface_info.type == ice::render::SurfaceType::Wayland_Window)
+        {
+            VkWaylandSurfaceCreateInfoKHR surface_create_info{ VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR };
+            surface_create_info.display = static_cast<wl_display*>(surface_info.wayland.display);
+            surface_create_info.surface = static_cast<wl_surface*>(surface_info.wayland.surface);
+
+            auto api_result = vkCreateWaylandSurfaceKHR(_vk_instance, &surface_create_info, nullptr, &vulkan_surface);
+            ICE_ASSERT(api_result == VkResult::VK_SUCCESS, "Failed to create Vulkan surface!");
+        }
+        else
+        {
+            VkXlibSurfaceCreateInfoKHR surface_create_info{ VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR };
+            surface_create_info.dpy = static_cast<Display*>(surface_info.x11.display);
+            surface_create_info.window = surface_info.x11.window;
+
+            auto api_result = vkCreateXlibSurfaceKHR(_vk_instance, &surface_create_info, nullptr, &vulkan_surface);
+            ICE_ASSERT(api_result == VkResult::VK_SUCCESS, "Failed to create Vulkan surface!");
+        }
+
+        ice::i32 family_index = 0;
+        for (VkQueueFamilyProperties const& queue_family_props : _vk_queue_family_properties)
+        {
+            VkBool32 supports_presenting;
+
+            [[maybe_unused]]
+            VkResult ph_api_result = vkGetPhysicalDeviceSurfaceSupportKHR(
+                _vk_physical_device,
+                family_index,
+                vulkan_surface,
+                &supports_presenting
+            );
+            ICE_ASSERT(
+                ph_api_result == VkResult::VK_SUCCESS,
+                "Couldn't query information if family {} (index) supports presenting!",
+                family_index
+            );
+
+            if (supports_presenting == VK_TRUE)
+            {
+                if (_vk_presentation_queue_family_index == -1)
+                {
+                    _vk_presentation_queue_family_index = family_index;
+                }
+                else if ((queue_family_props.queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0)
+                {
+                    _vk_presentation_queue_family_index = family_index;
+                }
+            }
+
+            family_index += 1;
+        }
+
+        return _vk_alloc->create<VulkanRenderSurface>(_vk_instance, vulkan_surface);
+    }
+#else
+#error Missing implementation
 #endif
 
     void VulkanRenderDriver::destroy_surface(

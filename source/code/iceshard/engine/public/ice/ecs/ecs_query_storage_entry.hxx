@@ -4,6 +4,7 @@
 #pragma once
 #include <ice/ecs/ecs_query_object.hxx>
 #include <ice/ecs/ecs_query_provider.hxx>
+#include <typeinfo>
 
 namespace ice::ecs
 {

@@ -5,6 +5,10 @@
 #include <ice/os/windows.hxx>
 #include <vulkan/vulkan.h>
 
+#undef Complex
+#undef None
+#undef Bool
+
 constexpr nullptr_t vk_nullptr = VK_NULL_HANDLE;
 
 // Instance Extension Functions

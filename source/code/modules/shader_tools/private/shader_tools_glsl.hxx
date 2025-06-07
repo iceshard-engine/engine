@@ -6,7 +6,8 @@
 #include <ice/render/render_shader.hxx>
 #include <ice/string/heap_string.hxx>
 
-#if ISP_WINDOWS
+#if ISP_WINDOWS || ISP_LINUX
+
 #include <arctic/arctic_syntax_node.hxx>
 
 #include "shader_tools_asl.hxx"

@@ -50,5 +50,5 @@ static ice::ParamInstance<bool> Param_ShowCustomValues{
     "", "--custom-vals", "Shows app custom values (if the format supports them)."
 };
 static ice::ParamInstance<bool> Param_HideHeader{
-    "", "--hide,--header", "Shows header information."
+    "", "--hide", "Hides header information.",
 };

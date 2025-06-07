@@ -6,6 +6,7 @@
 
 #include <ice/task.hxx>
 #include <ice/task_utils.hxx>
+#include <ice/task_thread_utils.hxx>
 #include <ice/resource_tracker.hxx>
 
 using ice::LogSeverity;
@@ -41,6 +42,7 @@ struct HailstormAIOWriter
     ice::Span<ice::ResourceHandle> _resources;
 
     std::atomic_uint32_t _started_writes;
+    std::atomic_uint32_t _finished_loads;
     std::atomic_uint32_t _finished_writes;
 
     ~HailstormAIOWriter() noexcept = default;
@@ -100,7 +102,7 @@ inline auto HailstormAIOWriter::async_write(ice::usize write_offset, hailstorm::
         inline bool await_ready() const noexcept { return false; }
         inline bool await_suspend(std::coroutine_handle<> coro_handle) noexcept
         {
-            ICE_ASSERT_CORE(_data.size <= MAXDWORD);
+            ICE_ASSERT_CORE(_data.size <= std::numeric_limits<ice::u32>::max());
             IPT_ZONE_SCOPED_NAMED("AsyncStream::async_write");
 
             // Need to set the coroutine before calling Write, since we could already be finishing writing on a different thread
@@ -216,10 +218,16 @@ inline bool HailstormAIOWriter::open_and_resize(ice::usize total_size) noexcept
     using enum ice::native_file::FileOpenFlags;
     _file = ice::native_file::open_file(_aioport, _filepath, Write | Exclusive | Asynchronous).value();
 
+#if ISP_WINDOWS
     // Resize the file
     SetFilePointerEx(_file.native(), { .QuadPart = ice::isize(total_size).value }, NULL, FILE_BEGIN);
     SetEndOfFile(_file.native());
     SetFilePointerEx(_file.native(), { 0 }, NULL, FILE_BEGIN);
+#elif ISP_LINUX
+    ftruncate64(_file.native(), total_size.value);
+#else
+    ICE_ASSER_CORE(false);
+#endif
 
     // Create the completion port
     return true;
@@ -250,7 +258,8 @@ inline bool HailstormAIOWriter::close() noexcept
 {
     while (_finished_writes != _started_writes)
     {
-        SleepEx(5, FALSE);
+        using ice::operator""_Tms;
+        ice::current_thread::sleep(5_Tms);
     }
 
     return true;
@@ -281,6 +290,7 @@ inline auto HailstormAIOWriter::async_write_resource(ice::u32 idx, ice::usize of
 {
     _started_writes.fetch_add(1, std::memory_order_relaxed);
     ice::ResourceResult const load_result = co_await _resource_tracker.load_resource(_resources[idx]);
+    _finished_loads.fetch_add(1, std::memory_order_relaxed);
     if (load_result.resource_status == ice::ResourceStatus::Loaded)
     {
         bool const success = co_await async_write(offset, data_to_hsdata(load_result.data));

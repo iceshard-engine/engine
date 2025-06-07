@@ -227,17 +227,39 @@ namespace ice
             }
         }
 
+#if ISP_LINUX
+        static auto f = [](std::string p) noexcept -> std::string
+        {
+            size_t const start_quote = p.find_first_of('"');
+            size_t const end_quote = p.find_last_of('"');
+            if (start_quote != std::string::npos && end_quote != std::string::npos && start_quote < end_quote)
+            {
+                return p.substr(start_quote + 1, (end_quote - start_quote) - 1);
+            }
+            return p;
+        };
+#endif
+
         // Built-In Validators
         if (ice::has_all(definition.flags, PF::ValidatePath))
         {
+#if ISP_LINUX
+            opt->transform(f);
+#endif
             opt->check(CLI::ExistingPath);
         }
         else if (ice::has_all(definition.flags, PF::ValidateFile))
         {
+#if ISP_LINUX
+            opt->transform(f);
+#endif
             opt->check(CLI::ExistingFile);
         }
         else if (ice::has_all(definition.flags, PF::ValidateDirectory))
         {
+#if ISP_LINUX
+            opt->transform(f);
+#endif
             opt->check(CLI::ExistingDirectory);
         }
         return opt;

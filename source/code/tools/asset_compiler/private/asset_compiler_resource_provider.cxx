@@ -20,7 +20,6 @@ AssetCompilerResource::AssetCompilerResource(
     ice::native_file::path_from_string(metapath, _path);
     ice::string::push_back(metapath, ISP_PATH_LITERAL(".isrm"));
 
-    ice::Data result{};
     if (auto metafile = ice::native_file::open_file(metapath, ice::native_file::FileOpenFlags::Read); file)
     {
         _metadata = _allocator.allocate(ice::native_file::sizeof_file(metafile));

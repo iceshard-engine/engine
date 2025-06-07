@@ -5,7 +5,7 @@
 #include <ice/resource_compiler.hxx>
 #include <ice/string/heap_string.hxx>
 
-#if ISP_WEBAPP || ISP_WINDOWS
+#if ISP_WINDOWS || ISP_LINUX || ISP_WEBAPP
 #include <arctic/arctic_syntax_node.hxx>
 #include "shader_tools_asl.hxx"
 

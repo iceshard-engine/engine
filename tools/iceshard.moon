@@ -9,6 +9,7 @@ import ExecCommand from require 'ice.commands.exec'
 import AndroidCommand from require 'ice.commands.android'
 import WebAsmCommand from require 'ice.commands.webasm'
 import SettingsCommand from require 'ice.commands.settings'
+import SDKCommand from require 'ice.commands.sdk'
 
 import RunCommand from require 'tools.run'
 import NatvisCommand from require 'tools.natvis'
@@ -31,6 +32,7 @@ class IceShard extends Application
         'android': AndroidCommand
         'webasm': WebAsmCommand
         'settings': SettingsCommand
+        'sdk': SDKCommand
         -- Custom commands
         'natvis': NatvisCommand
         'doxy': DoxyCommand

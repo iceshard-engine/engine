@@ -3,7 +3,8 @@
 
 #include "shader_tools_glsl.hxx"
 
-#if ISP_WINDOWS
+#if ISP_WINDOWS || ISP_LINUX
+
 #include <ice/task_expected.hxx>
 #include <ice/resource_tracker.hxx>
 #include <ice/container/array.hxx>

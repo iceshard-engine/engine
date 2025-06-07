@@ -16,7 +16,7 @@
             (_wassert(_CRT_WIDE(#expression), _CRT_WIDE(__FILE__), (unsigned)(__LINE__)), 0)    \
         ); } } while(false)
 
-#elif ISP_WEBAPP
+#elif ISP_WEBAPP || ISP_LINUX
 
 #define ICE_ASSERT_CORE(expression) ((expression) \
     ? (void)0 \

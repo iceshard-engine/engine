@@ -23,8 +23,7 @@ namespace ice
             ice::Allocator& alloc,
             ice::ResourceFormatHeader const& header,
             ice::HeapString<> origin,
-            ice::HeapString<> name,
-            ice::Memory metadata
+            ice::HeapString<> name
         ) noexcept;
 
         ~BakedFileResource() noexcept override;

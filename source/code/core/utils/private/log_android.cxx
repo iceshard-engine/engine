@@ -8,6 +8,7 @@
 #if ISP_ANDROID
 #include <ice/mem_allocator_host.hxx>
 #include <android/log.h>
+#include <iterator>
 
 namespace ice::detail::android
 {
@@ -93,10 +94,10 @@ namespace ice::detail::android
             ice::move(args)
         );
 
-        fmt::vformat_to(
+        fmt::format_to(
             std::back_inserter(final_buffer),
             fmt_string(LogFormat_AssertCondition),
-            fmt::make_format_args(fmt_string(condition))
+            fmt_string(condition)
         );
 
         char* last_char = final_buffer.end() - 1;

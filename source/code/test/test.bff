@@ -6,7 +6,7 @@
     .Name = 'test'
     .Kind = .Kind_ConsoleApp
     .Group = 'Tests'
-    .Requires = { 'Windows' }
+    .RequiresAny = { 'Windows', 'Linux' }
 
     .BaseDir = '$WorkspaceCodeDir$/test'
 
@@ -32,12 +32,16 @@
         .Requires = { 'Release' }
 
         .Deploy = true
-        .DependsOn =
+
+        .Public =
         [
-            .Runtime = {
-                'shader_tools'
-                'vulkan_renderer'
-            }
+            .DependsOn =
+            [
+                .Runtime = {
+                    'shader_tools'
+                    'vulkan_renderer'
+                }
+            ]
         ]
     ]
     .Rules = { .ReleaseDeploy }

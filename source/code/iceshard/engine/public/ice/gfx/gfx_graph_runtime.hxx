@@ -17,6 +17,9 @@ namespace ice::gfx
     {
         virtual ~GfxGraphRuntime() noexcept = default;
 
+        //! \brief Checks if the graph is ready and all preparation tasks finished executing.
+        virtual bool ready() const noexcept = 0;
+
         //! \brief Prepares the runtime for the next execution phase.
         //! \details The runtime will check and prepare the graph for execution if all necessary stages are available and everything was initialized.
         //!   In the case where some stages are still not available, the execute will be skipped.

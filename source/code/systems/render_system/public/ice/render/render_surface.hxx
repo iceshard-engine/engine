@@ -15,15 +15,18 @@ namespace ice::render
 
     enum class SurfaceType
     {
+        Unknown,
         Win32_Window,
         UWP_Window,
+        Wayland_Window,
+        X11_Window,
         Android_NativeWindow,
         HTML5_DOMCanvas
     };
 
     struct SurfaceInfo
     {
-        SurfaceType type;
+        SurfaceType type = SurfaceType::Unknown;
         union
         {
             struct
@@ -48,6 +51,18 @@ namespace ice::render
                 void* native_window;
                 void* reserved[1];
             } android;
+
+            struct
+            {
+                void* surface;
+                void* display;
+            } wayland;
+
+            struct
+            {
+                unsigned long window;
+                void* display;
+            } x11;
         };
     };
 

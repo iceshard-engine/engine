@@ -25,7 +25,7 @@ CLI11 is a command line parser for C++11 and beyond that provides a rich feature
 ## fmt
 {{fmt}} is an open-source formatting library providing a fast and safe alternative to C stdio and C++ iostreams.
 - **upstream:** https://fmt.dev/latest/index.html
-- **version:** 10.0.0
+- **version:** 11.2.0
 - **license:** MIT
 
 ## freetype
@@ -45,7 +45,7 @@ Custom package format for storing resources used by 'iceshard' game engine frame
 ## imgui
 Dear ImGui: Bloat-free Immediate Mode Graphical User interface for C++ with minimal dependencies
 - **upstream:** https://github.com/ocornut/imgui
-- **version:** 1.90
+- **version:** 1.90.docking
 - **license:** MIT
 
 ## imguizmo
@@ -75,7 +75,7 @@ Rapid fuzzy string matching in C++ using the Levenshtein Distance
 ## rapidjson
 A fast JSON parser/generator for C++ with both SAX/DOM style API
 - **upstream:** https://github.com/Tencent/rapidjson
-- **version:** 1.1.0
+- **version:** 1.1.0.patched
 - **license:** MIT
 
 ## rapidxml

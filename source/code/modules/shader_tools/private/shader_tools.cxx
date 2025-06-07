@@ -16,7 +16,7 @@
 #include "shader_tools_glsl.hxx"
 #include "shader_tools_wgsl.hxx"
 
-#if ISP_WEBAPP || ISP_ANDROID
+#if ISP_UNIX
 #define strcmpi strcasecmp
 #endif
 
@@ -60,6 +60,11 @@ namespace ice
                 2u - ice::u32(target == ShaderTargetPlatform::WGSL)
             );
         }
+        else if constexpr (ice::build::is_linux)
+        {
+            static ice::String supported_extensions[]{ ".asl", ".glsl" };
+            return supported_extensions;
+        }
         else if constexpr (ice::build::is_webapp)
         {
             static ice::String supported_extensions[]{ ".asl", ".wgsl" };
@@ -80,7 +85,7 @@ namespace ice
         ice::Allocator& alloc
     ) noexcept -> ice::Task<ice::ResourceCompilerResult>
     {
-#if ISP_WINDOWS
+#if ISP_WINDOWS || ISP_LINUX
         ShaderCompilerContext& ctx = *shader_context(resctx);
         if (ctx.target == ShaderTargetPlatform::GLSL)
         {
@@ -93,6 +98,9 @@ namespace ice
 #elif ISP_WEBAPP
         return wgsl::compiler_compile_shader_source(resctx, source, tracker, resources, uris, alloc);
 #elif ISP_ANDROID
+        co_return {}; // Empty is expected
+#else
+        ICE_ASSERT(false, "Missing implementation!");
         co_return {};
 #endif
     }
@@ -117,7 +125,7 @@ namespace ice
 
     auto compiler_result_extension(ice::Span<ice::Shard const> params) noexcept -> ice::String
     {
-#if ISP_WINDOWS
+#if ISP_WINDOWS || ISP_LINUX
         ice::ShaderTargetPlatform const target = param_shader_target(params);
         switch (target)
         {
@@ -135,7 +143,7 @@ namespace ice
     {
         static void v1_compiler_api(ice::api::resource_compiler::v1::ResourceCompilerAPI& api) noexcept
         {
-#if ISP_WINDOWS || ISP_WEBAPP
+#if ISP_WINDOWS || ISP_LINUX || ISP_WEBAPP
             api.fn_prepare_context = compiler_context_prepare;
             api.fn_cleanup_context = compiler_context_cleanup;
             api.fn_supported_resources = compiler_supported_shader_resources;
@@ -260,6 +268,6 @@ namespace ice
 
 } // namespace ice
 
-#if ISP_WEBAPP || ISP_ANDROID
+#if ISP_UNIX
 #undef strcmpi
 #endif

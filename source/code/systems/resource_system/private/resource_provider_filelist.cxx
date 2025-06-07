@@ -58,7 +58,7 @@ namespace ice
     {
         for (FileSystemResource* res_entry : _resources)
         {
-            _named_allocator.destroy(res_entry);
+            ice::destroy_resource_object(_named_allocator, res_entry);
         }
     }
 

@@ -40,5 +40,8 @@
     },
     "doxy": {
         "config": "source/configs/doxyfile"
+    },
+    "vulkan": {
+        "version": "1.4.313.0"
     }
 }

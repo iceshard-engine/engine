@@ -15,6 +15,7 @@
 
 #include <rapidfuzz/distance.hpp>
 #include <rapidfuzz/fuzz.hpp>
+#include <mutex>
 
 namespace ice::devui
 {
@@ -73,8 +74,11 @@ namespace ice::devui
     {
     }
 
+    static std::mutex mtx; // TODO: Might want to replace the mutex with something else
+
     void ImGuiLogger::add_entry(ice::LogSinkMessage const& message) noexcept
     {
+        std::lock_guard lk{ mtx };
         ice::array::push_back(_entries_visible, ice::array::count(_entries));
         ice::array::push_back(_entries, { message.severity, message.tag, message.tag_name, {alloc,message.message} });
     }
@@ -202,6 +206,8 @@ namespace ice::devui
                     (ice::String) entry.message
                 );
             }
+
+            std::lock_guard lk{ mtx };
 
             ice::f64 const max_match = _entries[_entries_visible[0]].filter_match;
             ice::sort_indices(

@@ -1,18 +1,10 @@
-#if __WINDOWS__
+/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
 
-#import SystemRoot
 Settings
 {
-    .Environment =
-    {
-        "SystemRoot=$SystemRoot$"
-        "TMP=$SystemRoot$\temp"
-        // TODO: Webasm, find a wat not hardcode this variable
-        "EMSDK_PYTHON=$WorkspaceRoot$/build/webasm/python/3.9.2-nuget_64bit/python.exe"
-    }
+    // Custom settings if necessary, the '.Environment' variable is already set
 }
-
-#endif
 
 #include "configs.bff"
 
@@ -46,30 +38,18 @@ Settings
     ]
 
     .PipelineConanProfile = 'Windows-MSVC'
-
-    // Adding custom conan profile generator variables
-    .ConanProfileVariables + 'MSVCCompilerVersion'
-    .MSVCCompilerVersion = '194'
-]
-
-.Unity_Pipeline_Linux_x64 =
-[
-    Using( .Pipeline_Linux_x64 )
-
-    .PipelineAllowUnityBuilds = true
-    .PipelineSteps = { 'Build' } // Linking still doesn't work
-
-    .PipelineConanProfile = 'Linux-GCC'
 ]
 
 .Unity_Pipeline_Linux_x64_Clang =
 [
     Using( .Pipeline_Linux_x64 )
 
-    .PipelineName = 'x64-Clang'
-    .PipelineToolchain = 'clang-14.0.0'
+    .PipelineName = 'x64'
+    .PipelineToolchain = 'clang-20.0.0'
     .PipelineAllowUnityBuilds = true
-    .PipelineSteps = { 'Build' } // Linking still doesn't work
+
+    // Projects from this pipeline may be exposed as compilers for other pipelines
+    .PipelineDefinesCompilers = true
 
     .PipelineConanProfile = 'Linux-Clang'
 ]
@@ -165,7 +145,6 @@ Settings
 
 ^BuildPipelines = {
     .Unity_Pipeline_Windows_x64
-    .Unity_Pipeline_Linux_x64
     .Unity_Pipeline_Linux_x64_Clang
     .Unity_Pipeline_Android_ARM64
     .Unity_Pipeline_Android_x64

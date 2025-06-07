@@ -206,7 +206,7 @@ namespace ice
             ice::HeapString<> uri_base{ _named_allocator };
             ice::string::push_format(uri_base, "file://{}/", _virtual_hostname);
 
-            create_resource_from_baked_file(_named_allocator, *this, uri_base, filepath);
+            return create_resource_from_baked_file(_named_allocator, *this, uri_base, filepath);
         }
         else
         {

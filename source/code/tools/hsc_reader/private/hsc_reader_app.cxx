@@ -29,11 +29,13 @@ bool ParamRange::param_parse_results(ParamRange& range, ice::Span<ice::String co
 
 void hscr_initialize_logging() noexcept
 {
-    static const std::tuple<ice::LogTagDefinition const&, bool*> tags[]{
-        { LogTag_Main, &Param_HideHeader.value },
-        { LogTag_InfoChunks, &Param_ShowChunks.value.set },
-        { LogTag_InfoResources, &Param_ShowResources.value.set },
-        { LogTag_InfoPaths, &Param_ShowResourcePaths.value },
+    ice::log_tag_register(LogTag_Main);
+
+    static const std::tuple<ice::LogTagDefinition const&, bool> tags[]{
+        { LogTag_InfoHeader, Param_HideHeader.value == false },
+        { LogTag_InfoChunks, Param_ShowChunks.value.set },
+        { LogTag_InfoResources, Param_ShowResources.value.set },
+        { LogTag_InfoPaths, Param_ShowResourcePaths.value },
     };
 
     for (auto const& tag : tags)
@@ -41,7 +43,6 @@ void hscr_initialize_logging() noexcept
         ice::log_tag_register(std::get<0>(tag));
 
         // Check if the tag can be enabled.
-        bool* temp_param = std::get<1>(tag);
-        ice::log_tag_enable(std::get<0>(tag).tag, *temp_param);
+        ice::log_tag_enable(std::get<0>(tag).tag, std::get<1>(tag));
     }
 }

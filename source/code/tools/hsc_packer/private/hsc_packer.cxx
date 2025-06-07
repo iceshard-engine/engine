@@ -5,6 +5,7 @@
 #include <ice/resource.hxx>
 #include <ice/resource_provider.hxx>
 #include <ice/resource_tracker.hxx>
+#include <ice/task_thread_utils.hxx>
 #include <ice/task_thread_pool.hxx>
 #include <ice/task_utils.hxx>
 #include <ice/tool_app.hxx>
@@ -321,7 +322,8 @@ public:
         //  the event is signalled which means all required resources where loaded.
         while (res_count.load(std::memory_order_relaxed) != res_idx)
         {
-            SleepEx(1, 0);
+            using ice::operator""_Tms;
+            ice::current_thread::sleep(1_Tms);
         }
 
         ice::array::resize(resource_paths, res_idx);
@@ -400,4 +402,7 @@ private:
     // Filters
     ice::Array<ice::HeapString<>> _filter_extensions_heap;
     ice::Array<ice::String> _filter_extensions;
+
+    // Workaround for Clang
+    static inline ice::tool::ToolAppInstancer const& _workaroundSymbol = HailStormPackerApp::AppInstancer;
 };
