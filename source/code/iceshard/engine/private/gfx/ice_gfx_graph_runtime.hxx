@@ -80,6 +80,8 @@ namespace ice::gfx
         ) noexcept;
         ~IceshardGfxGraphRuntime() noexcept override;
 
+        bool ready() const noexcept override;
+
         bool prepare(
             ice::gfx::GfxFrameStages& stages,
             ice::gfx::GfxStageRegistry const& stage_registry,

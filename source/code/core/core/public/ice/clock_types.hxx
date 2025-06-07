@@ -251,5 +251,4 @@ namespace ice
 
     } // namespace detail::ct_tests
 
-
 } // namespace ice

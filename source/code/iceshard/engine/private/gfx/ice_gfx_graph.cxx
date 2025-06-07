@@ -214,6 +214,11 @@ namespace ice::gfx
 
     IceshardGfxGraphRuntime::~IceshardGfxGraphRuntime() noexcept
     {
+        ICE_ASSERT(
+            this->ready(),
+            "Graphics Graph destroyed before all tasks finished executing! Possible read/write memory access errors!"
+        );
+
         render::RenderDevice& device = _context.device();
 
         for (IceshardGfxGraphStages::Entry* entry : _stages._stages)
@@ -231,6 +236,11 @@ namespace ice::gfx
         }
 
         device.destroy_renderpass(_renderpass);
+    }
+
+    bool IceshardGfxGraphRuntime::ready() const noexcept
+    {
+        return _stages._ready.load(std::memory_order_relaxed) == 0;
     }
 
     auto initialize_stage(ice::Task<> init_task, std::atomic_uint32_t& ready_count) noexcept -> ice::Task<>

@@ -11,6 +11,10 @@ on:
         description: "Target to be build. (separated by spaces)"
         required: true
         type: string
+      clang-version:
+        description: "Clang tools version to be installed"
+        required: false
+        type: string
 
 jobs:
   build:
@@ -20,12 +24,24 @@ jobs:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
+      - name: Setup Clang ${{ inputs.clang-version }} (ubuntu-only)
+        if: ${{ inputs.host-platform == 'ubuntu-latest' }}
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh ${{ inputs.clang-version }}
+          sudo apt install libc++-${{ inputs.clang-version }}-dev libc++abi-${{ inputs.clang-version }}-dev
+
       - name: Setup Conan2
         uses: iceshard-engine/.github/.github/actions/conan2@main
         with:
           conan-cache: true
           conan-cache-version: 'v1'
           conan-config-url: https://github.com/iceshard-engine/conan-config.git
+          conan-profile-compiler: 'clang'
+          conan-profile-compiler-version: '${{ inputs.clang-version }}'
+          conan-profile-cppstd: '20'
+          conan-profile-libcxx: 'libc++'
 
       - name: Setup IBT
         uses: iceshard-engine/.github/.github/actions/ibt-wks@main
@@ -38,5 +54,5 @@ jobs:
 
       # Building the actual target
       - name: Build Target (${{ inputs.target }})
-        shell: powershell
+        shell: pwsh
         run: ./ibt-ci build -t ${{ inputs.target }}

@@ -27,8 +27,9 @@ namespace ice::config::detail
         {
             this->~ConfigBuilderContainer();
             alloc.deallocate(this);
+            return true;
         }
-        return _refcount == 0;
+        return false;
     }
 
     void ConfigBuilderContainer::clear() noexcept

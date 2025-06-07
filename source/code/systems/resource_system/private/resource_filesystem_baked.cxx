@@ -88,8 +88,7 @@ namespace ice
         ice::Allocator& alloc,
         ice::ResourceFormatHeader const& header,
         ice::HeapString<> origin,
-        ice::HeapString<> name,
-        ice::Memory metadata
+        ice::HeapString<> name
     ) noexcept
         : _allocator{ alloc }
         , _header{ header }
@@ -213,20 +212,13 @@ namespace ice
         ICE_ASSERT_CORE(read >= 0_B);
         ice::string::push_back(utf8_uri, { temp, header.name_size });
 
-        ice::Memory metadata = alloc.allocate(ice::usize{ header.meta_size });
-        read = ice::native_file::read_file(
-            file, {header.meta_offset}, {header.meta_size}, metadata
-        );
-        ICE_ASSERT_CORE(read >= 0_B);
-
         return ice::create_resource_object<BakedFileResource>(
             alloc,
             provider,
             alloc,
             header,
             ice::move(utf8_file_path),
-            ice::move(utf8_uri),
-            metadata
+            ice::move(utf8_uri)
         );
     }
 

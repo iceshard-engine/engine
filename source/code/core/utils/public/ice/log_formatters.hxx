@@ -12,7 +12,7 @@ template<typename CharType>
 struct fmt::formatter<ice::BasicString<CharType>> : public fmt::formatter<std::basic_string_view<CharType>>
 {
     template<typename FormatContext>
-    constexpr auto format(ice::BasicString<CharType> value, FormatContext& ctx)
+    constexpr auto format(ice::BasicString<CharType> value, FormatContext& ctx) const noexcept
     {
         return fmt::formatter<std::basic_string_view<CharType>>::format({ value._data, value._size }, ctx);
     }
@@ -22,7 +22,7 @@ template<typename CharType>
 struct fmt::formatter<ice::HeapString<CharType>> : public fmt::formatter<ice::BasicString<CharType>>
 {
     template<typename FormatContext>
-    constexpr auto format(ice::HeapString<CharType> const& value, FormatContext& ctx)
+    constexpr auto format(ice::HeapString<CharType> const& value, FormatContext& ctx) const noexcept
     {
         return fmt::formatter<ice::BasicString<CharType>>::format({ value._data, value._size }, ctx);
     }
@@ -38,7 +38,7 @@ struct fmt::formatter<ice::StringID_Hash>
     }
 
     template<typename FormatContext>
-    constexpr auto format(ice::StringID_Hash value, FormatContext& ctx)
+    constexpr auto format(ice::StringID_Hash value, FormatContext& ctx) const noexcept
     {
         if (value.value == ice::stringid_hash(ice::StringID_Invalid).value)
         {
@@ -61,7 +61,7 @@ struct fmt::formatter<ice::BaseStringID<DebugImpl>>
     }
 
     template<typename FormatContext>
-    constexpr auto format(ice::StringID_Arg value, FormatContext& ctx)
+    constexpr auto format(ice::StringID_Arg value, FormatContext& ctx) const noexcept
     {
         if (value == ice::StringID_Invalid)
         {
@@ -101,7 +101,7 @@ struct fmt::formatter<ice::usize>
     }
 
     template<typename FormatContext>
-    constexpr auto format(ice::usize value, FormatContext& ctx)
+    constexpr auto format(ice::usize value, FormatContext& ctx) const noexcept
     {
         using namespace ice;
 
@@ -170,7 +170,7 @@ struct fmt::formatter<ice::ErrorCode>
     }
 
     template<typename FormatContext>
-    constexpr auto format(ice::ErrorCode value, FormatContext& ctx)
+    constexpr auto format(ice::ErrorCode value, FormatContext& ctx) const noexcept
     {
         fmt::string_view const type = value.type() == 'E' ? "Error" : "Success";
         return fmt::format_to(ctx.out(), "{}({}, '{}')", type, value.category(), value.description());
@@ -212,16 +212,17 @@ struct fmt::formatter<T>
     }
 
     template<typename FormatContext>
-    constexpr auto format(ice::TimeType auto value, FormatContext& ctx)
+    constexpr auto format(ice::TimeType auto value, FormatContext& ctx) const noexcept
     {
-        if (presentation == 'd')
+        char final_presentation = presentation;
+        if (final_presentation == 'd')
         {
-            presentation = presentation_type(value);
+            final_presentation = presentation_type(value);
         }
 
         if (floatingp == 0)
         {
-            switch(presentation)
+            switch(final_presentation)
             {
             case 's': return fmt::format_to(ctx.out(), "{:.3f}s", ice::Ts(value).value, floatingp);
             case 'm': return fmt::format_to(ctx.out(), "{}ms", ice::Tms(value).value);
@@ -232,7 +233,7 @@ struct fmt::formatter<T>
         }
         else
         {
-            switch(presentation)
+            switch(final_presentation)
             {
             case 's': return fmt::format_to(ctx.out(), "{:.{}f}s", ice::Ts(value).value, floatingp);
             case 'm': return fmt::format_to(ctx.out(), "{:.{}f}ms", ice::Tms(value).value * 1.0, floatingp);

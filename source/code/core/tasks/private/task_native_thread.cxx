@@ -326,6 +326,11 @@ namespace ice
             {
                 emscripten_set_thread_name(pthread_self(), ice::string::begin(thread_info.debug_name));
             }
+#elif ISP_LINUX
+            if constexpr (ice::build::is_release == false)
+            {
+                pthread_setname_np(pthread_self(), ice::string::begin(thread_info.debug_name));
+            }
 #endif
 
             ice::ThreadRuntime& runtime = thread_obj->runtime();
@@ -380,7 +385,7 @@ namespace ice
             {
                 error = pthread_attr_setstacksize(
                     &thread_attribs,
-                    ice::max(ice::usize::base_type{PTHREAD_STACK_MIN}, info.stack_size.value)
+                    ice::max(ice::usize::base_type(PTHREAD_STACK_MIN), info.stack_size.value)
                 );
                 ICE_ASSERT(
                     error == 0,

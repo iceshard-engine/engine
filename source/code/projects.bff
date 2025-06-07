@@ -23,6 +23,7 @@
 #include "platforms/application/application.bff"
 #include "platforms/platform/platform.bff"
 #include "platforms/platform_win32/platform_win32.bff"
+#include "platforms/platform_linux/platform_linux.bff"
 #include "platforms/platform_android/platform_android.bff"
 #include "platforms/platform_webasm/platform_webasm.bff"
 

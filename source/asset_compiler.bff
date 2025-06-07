@@ -1,11 +1,16 @@
-
+/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
 
 .PlatformRule_GameAssets_ShadersMobile =
 [
     .Name = 'Assets-Shaders-Mobile'
     .Requires = { 'assets-mobile', 'Step-Bake-Shaders' }
     .BuildOptions = {
+#if __WINDOWS__
         '-c shader_tools.dll'
+#else // __LINUX__
+        '-c libshader_tools.so'
+#endif
         '--param shader:target GLSL'
     }
 ]
@@ -15,7 +20,11 @@
     .Name = 'Assets-Shaders-Web'
     .Requires = { 'assets-web', 'Step-Bake-Shaders' }
     .BuildOptions = {
+#if __WINDOWS__
         '-c shader_tools.dll'
+#else // __LINUX__
+        '-c libshader_tools.so'
+#endif
         '--param shader:target WGSL'
     }
 ]

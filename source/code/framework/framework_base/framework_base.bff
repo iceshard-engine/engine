@@ -34,13 +34,6 @@
         }
     ]
 
-    .Rule_IsolatedFrameworkObject =
-    [
-        .Private =
-        [
-            .UnityInputIsolatedFiles = 'private/framework.cxx'
-        ]
-    ]
     .Rule_Win32 =
     [
         .Public =
@@ -50,9 +43,18 @@
             }
         ]
     ]
+    .Rule_Linux =
+    [
+        .Public =
+        [
+            .Uses = {
+                'platform_linux'
+            }
+        ]
+    ]
     .Rules = {
-        .Rule_IsolatedFrameworkObject
         .Rule_Win32
+        .Rule_Linux
     }
 ]
 .Projects + .Project

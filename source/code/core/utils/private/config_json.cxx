@@ -4,6 +4,10 @@
 #include <ice/config/config_builder.hxx>
 #include <ice/config.hxx>
 
+#if ISP_WINDOWS
+#undef GetObject
+#endif
+
 ISC_WARNING_PUSH
 ISCW_OPERATOR_DEPRECATED_BETWEEN_UNRELATED_ENUMERATIONS(ISCW_OP_DISABLE)
 #include <rapidjson/document.h>

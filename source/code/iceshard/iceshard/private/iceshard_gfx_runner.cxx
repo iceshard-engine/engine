@@ -132,7 +132,15 @@ namespace ice::gfx
             }
         }
 
-        _rendergraph = ice::move(rendergraph);
+        // If we are ready we can set the rendergraph immediately, if not we schedule it for later to be updated.
+        if (_rendergraph == nullptr || _rendergraph->ready())
+        {
+            _rendergraph = ice::move(rendergraph);
+        }
+        else
+        {
+            _scheduled_rendergraph = ice::move(rendergraph);
+        }
     }
 
     auto IceshardGfxRunner::update_data(
@@ -209,7 +217,13 @@ namespace ice::gfx
             ice::execute_tasks(tasks);
         }
 
-        if (_rendergraph->prepare(gpu_stages, *_stages, _gfx_tasks))
+        // Check if we have a scheduled render graph and if we can replace
+        if (_scheduled_rendergraph != nullptr && _rendergraph->ready())
+        {
+            _rendergraph = ice::move(_scheduled_rendergraph);
+        }
+
+        if (_scheduled_rendergraph == nullptr && _rendergraph->prepare(gpu_stages, *_stages, _gfx_tasks))
         {
             IPT_ZONE_SCOPED_NAMED("gfx_resume_prepare_tasks");
             // The tasks here might take more than a frame to finish. We should track them somewhere else.
@@ -255,7 +269,7 @@ namespace ice::gfx
         // Execute all stages (currently done simply going over the render graph)
         _present_fence->reset();
 
-        if (_rendergraph->execute(frame, *_present_fence))
+        if (_scheduled_rendergraph == nullptr && _rendergraph->execute(frame, *_present_fence))
         {
             _rendergraph->present();
         }

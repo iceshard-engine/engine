@@ -18,10 +18,6 @@
         .LocalCompilerConfig = 'Release'
     ]
 
-    .Requires = {
-        'Windows'
-    }
-
     .Private =
     [
         .Modules = {

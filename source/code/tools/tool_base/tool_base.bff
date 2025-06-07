@@ -8,15 +8,13 @@
     .BaseDir = '$WorkspaceCodeDir$/tools/tool_base'
     .Group = 'Tools'
 
+    .RequiresAny = { 'Windows', 'Linux' }
     .CopyModules = true
 
-    .Requires = {
-        'Windows'
-    }
-
-    .Private =
+    .Public =
     [
         .Uses = {
+            'application'
             'resource_system'
         }
     ]

@@ -1,5 +1,5 @@
-name: Cache Creation (Dependencies)
-run-name: Cache Ceration (Dependencies)
+name: Cache Creation
+run-name: Cache Creation
 
 on:
   push:
@@ -16,10 +16,13 @@ jobs:
   create-cache:
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest]
-    name: Create Dependencies Cache
+        os: [windows-latest,ubuntu-latest]
+    name: Create Dependencies Cache (Conan2)
     runs-on: ${{ matrix.os }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Setup Conan2
         uses: iceshard-engine/.github/.github/actions/conan2@main
         with:

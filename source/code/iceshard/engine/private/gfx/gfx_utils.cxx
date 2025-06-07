@@ -10,17 +10,6 @@
 namespace ice::gfx
 {
 
-    //auto await_shader_program_on(
-    //    ice::String name,
-    //    ice::AssetStorage& assets,
-    //    ice::TaskScheduler& scheduler
-    //) noexcept -> ice::TaskExpected<ice::render::PipelineProgramInfo>
-    //{
-    //    ice::Expected result = co_await await_shader_program(name, assets);
-    //    co_await scheduler;
-    //    co_return result;
-    //}
-
     auto load_shader_program(
         ice::String name,
         ice::AssetStorage& assets

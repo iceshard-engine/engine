@@ -35,7 +35,7 @@ namespace ice::detail
                 ice::detail::assert( \
                     #condition, \
                     message, \
-                    fmt::make_format_args(__VA_ARGS__), \
+                    ice::detail::log_make_args(__VA_ARGS__), \
                     ice::detail::LogLocation{ .file = __FILE__, .line = __LINE__ } \
                 ); \
                 ice::detail::terminate(); \

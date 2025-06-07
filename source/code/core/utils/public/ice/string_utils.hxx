@@ -13,6 +13,25 @@
 namespace ice
 {
 
+    namespace string
+    {
+
+        template<typename... Args>
+        constexpr void push_format(
+            ice::HeapString<char>& str,
+            fmt::format_string<Args...> format,
+            Args&&... args
+        ) noexcept;
+
+        template<typename Fn>
+        constexpr auto for_each_split(
+            ice::String contents,
+            ice::String separators,
+             Fn&& fn
+        ) noexcept -> ice::u32;
+
+    } // namespace string
+
     auto utf8_to_wide_size(ice::String path) noexcept -> ice::u32;
     bool utf8_to_wide_append(ice::String path, ice::HeapString<ice::wchar>& out_str) noexcept;
     auto utf8_to_wide(ice::Allocator& alloc, ice::String path) noexcept -> ice::HeapString<ice::wchar>;
@@ -131,6 +150,24 @@ namespace ice
             fmt::format_to_n(ice::string::end(str), size, format, ice::forward<Args>(args)...);
             str._size += size;
             str._data[str._size] = '\0';
+        }
+
+        template<typename Fn>
+        constexpr auto for_each_split(ice::String contents, ice::String separator, Fn&& fn) noexcept -> ice::u32
+        {
+            ice::u32 count = 0;
+            while(ice::string::any(contents))
+            {
+                count += 1;
+                ice::ucount const separator_pos = ice::string::find_first_of(contents, separator);
+                ice::String const line = ice::string::substr(contents, 0, separator_pos);
+                if (ice::forward<Fn>(fn)(line) == false)
+                {
+                    break;
+                }
+                contents = ice::string::substr(contents, separator_pos + 1);
+            }
+            return count;
         }
 
     } // namespace string

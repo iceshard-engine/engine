@@ -6,7 +6,7 @@ fastbuild-generator/0.4.2@iceshard/stable
 
 [requires]
 cli11/2.4.1@iceshard/stable
-fmt/10.0.0@iceshard/stable
+fmt/11.2.0@iceshard/stable
 tracy/0.11.1@iceshard/stable
 imgui/1.90.docking@iceshard/stable
 hailstorm/0.4.0@iceshard/stable
@@ -15,11 +15,12 @@ arctic/0.2.2@iceshard/stable
 
 rapidxml/1.13
 rapidxml_ns/1.13.2@iceshard/stable
-rapidjson/1.1.0
+rapidjson/1.1.0.patched@iceshard/stable
 rapidfuzz_cpp/3.0.5@iceshard/stable
 
-[requires-Windows-MSVC]
 vulkan-memory-allocator/3.0.1
+
+[requires-Windows-MSVC]
 catch2/3.3.2@iceshard/stable
 
 assimp/5.2.5@iceshard/stable
@@ -32,11 +33,19 @@ msdf_atlas_gen/1.2.2@iceshard/stable
 # Editor only packages
 imguizmo/1.91.3@iceshard/stable
 
-[requires-Android-Arm64]
-vulkan-memory-allocator/3.0.1
+[requires-Linux-Clang]
+catch2/3.3.2@iceshard/stable
 
-[requires-Android-x64]
-vulkan-memory-allocator/3.0.1
+assimp/5.2.5@iceshard/stable
+sdl2/2.0.22@iceshard/stable
+
+freetype/2.12.1@iceshard/stable
+msdfgen/1.9.2@iceshard/stable
+msdf_atlas_gen/1.2.2@iceshard/stable
+
+# Editor only packages
+imguizmo/1.91.3@iceshard/stable
+
 
 [options-Android-Arm64]
 tracy/*:shared=False

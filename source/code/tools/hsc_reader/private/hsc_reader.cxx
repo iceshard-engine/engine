@@ -47,7 +47,7 @@ public:
         // Open the pack file
         if (packfile_validate() == false)
         {
-            ICE_LOG(ice::LogSeverity::Retail, LogTag_Main, "Provide input file is not a valid Hailstorm pack.");
+            ICE_LOG(ice::LogSeverity::Retail, LogTag_Main, "Provided input file is not a valid Hailstorm pack.");
             return 1;
         }
 
@@ -67,7 +67,7 @@ private:
         _file_path = ice::tool::path_make_absolute(_file_path);
         if (_file = ice::native_file::open_file(_file_path); _file)
         {
-            ice::usize const bytes_read = ice::native_file::read_file(
+            ice::native_file::read_file(
                 _file,
                 ice::size_of<HailstormHeader>,
                 { &_data.header, ice::size_of<HailstormHeader>, ice::align_of<HailstormHeader> }
@@ -125,4 +125,7 @@ private:
     ice::native_file::HeapFilePath _file_path;
     ice::native_file::File _file;
     hailstorm::HailstormData _data;
+
+    // Workaround for Clang
+    static inline ice::tool::ToolAppInstancer const& _workaroundSymbol = HailStormReaderApp::AppInstancer;
 };

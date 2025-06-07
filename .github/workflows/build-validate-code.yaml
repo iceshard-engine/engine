@@ -5,7 +5,10 @@ on:
   push:
     paths:
       - 'source/**'
+      - '.github/workflows/build-dispatch.yaml'
+      - '.github/workflows/build-validate-code.yaml'
       - '!source/data/**'
+  workflow_dispatch:
 
 jobs:
   validate:
@@ -13,11 +16,14 @@ jobs:
     uses: ./.github/workflows/build-dispatch.yaml
     strategy:
       matrix:
+        host: [windows-latest, ubuntu-latest]
         project: [all]
         pipeline: [x64]
         config: [Debug,Develop,Profile,Release]
         include:
-          - host: windows-latest
+          - host: ubuntu-latest
+            clang-version: '20'
     with:
       host-platform: ${{ matrix.host }}
       target: "${{ matrix.project }}-${{ matrix.pipeline }}-${{ matrix.config }}"
+      clang-version: ${{ matrix.clang-version || '' }}
