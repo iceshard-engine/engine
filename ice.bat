@@ -30,10 +30,6 @@ IF "%1" == "init" (
     GOTO :_exit
 )
 
-IF "%1" == "script" (
-    GOTO :_run_mini
-)
-
 :: Move to the application
 GOTO :_run
 
@@ -58,17 +54,6 @@ conan install ..\..\tools -of . --build=missing --profile %CONAN_PROFILE%
 POPD
 ECHO Workspace initialized...
 GOTO :_exit
-
-:: Application runtime
-:_run_mini
-CALL build\tools\conanrunenv_mini.bat
-CALL "%ICE_SCRIPT%" workspace.moon %*
-
-:: Save this value as it so the call to 'deactivate' wont erase it in some caes
-set ERROR_CODE=%ERRORLEVEL%
-CALL build\tools\deactivate_conanrun.bat
-
-GOTO :_errcheck
 
 :_run
 CALL build\tools\conanrun.bat
