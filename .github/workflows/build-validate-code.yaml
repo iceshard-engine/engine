@@ -22,8 +22,12 @@ jobs:
         config: [Debug,Develop,Profile,Release]
         include:
           - host: ubuntu-latest
+            target-platform: linux
             clang-version: '20'
+          - host: 'windows-latest'
+            target-platform: win32
     with:
       host-platform: ${{ matrix.host }}
-      target: "${{ matrix.project }}-${{ matrix.pipeline }}-${{ matrix.config }}"
+      target-platform: ${{ matrix.target-platform }}
+      targets: "${{ matrix.project }}-${{ matrix.pipeline }}-${{ matrix.config }}"
       clang-version: ${{ matrix.clang-version || '' }}

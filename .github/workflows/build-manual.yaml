@@ -26,4 +26,5 @@ jobs:
           - host: windows-latest
     with:
       host-platform: ${{ matrix.host }}
-      target: "${{ matrix.project }}-${{ matrix.pipeline }}-${{ inputs.configuration }}"
+      target-platform: 'win32'
+      targets: "${{ matrix.project }}-${{ matrix.pipeline }}-${{ inputs.configuration }}"

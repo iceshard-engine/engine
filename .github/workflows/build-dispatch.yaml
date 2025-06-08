@@ -7,8 +7,13 @@ on:
         description: "Host platform for the build to take place."
         required: true
         type: string
-      target:
-        description: "Target to be build. (separated by spaces)"
+      target-platform:
+        description: "Target platform for which to build. If set no other platforms will be initialized."
+        required: false
+        default: 'all'
+        type: string
+      targets:
+        description: "Targets to be build. (separated by spaces)"
         required: true
         type: string
       clang-version:
@@ -18,7 +23,7 @@ on:
 
 jobs:
   build:
-    name: Build (${{ inputs.target }})
+    name: Build (${{ inputs.targets }})
     runs-on: ${{ inputs.host-platform }}
     steps:
       - name: Checkout Source Code
@@ -38,6 +43,7 @@ jobs:
           conan-cache: true
           conan-cache-version: 'v1'
           conan-config-url: https://github.com/iceshard-engine/conan-config.git
+          conan-modify-profile: ${{ contains(inputs.host-platform, 'ubuntu') }}
           conan-profile-compiler: 'clang'
           conan-profile-compiler-version: '${{ inputs.clang-version }}'
           conan-profile-cppstd: '20'
@@ -47,12 +53,11 @@ jobs:
         uses: iceshard-engine/.github/.github/actions/ibt-wks@main
         with:
           script_basename: 'ice'
-          platform-android: ${{ contains(inputs.target, 'android') }}
-          platform-web: ${{ contains(inputs.target, 'webasm') }}
+          target-platform: ${{ inputs.target-platform }}
           workspace-cache: true
-          workspace-cache-version: 'v1'
+          workspace-cache-version: 'v1-${{ inputs.target-platform }}'
 
       # Building the actual target
-      - name: Build Target (${{ inputs.target }})
+      - name: Build Targets (${{ inputs.targets }})
         shell: pwsh
-        run: ./ibt-ci build -t ${{ inputs.target }}
+        run: ./ibt-ci build ${{ inputs.targets }}
