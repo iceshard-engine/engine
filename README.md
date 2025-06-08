@@ -25,6 +25,9 @@ Thid party tools and features:
 * Logging using the **fmt** library.
 * Unit tests written in the **Catch2** framework.
 
+## Status
+![Code validation result for Windows targets.](https://github.com/iceshard-engine/engine/actions/workflows/build-validate-windows.yaml/badge.svg)
+
 ## Building the engine
 
 A quick overview how to build the engine on your machine.
