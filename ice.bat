@@ -8,8 +8,6 @@ IF NOT EXIST build\ (
     MKDIR build
 )
 
-CALL :_find_profile_arg %*
-
 :: Create the build\tools directory
 IF NOT EXIST build\tools\ (
     ECHO Preparing tools...
@@ -22,35 +20,13 @@ IF NOT EXIST build\tools\conanrun.bat (
     CALL :_initialize
 )
 
-:: Check specific args before running
-IF "%1" == "init" (
-    SHIFT
-    CALL :_initialize
-    GOTO :_run
-    GOTO :_exit
-)
-
 :: Move to the application
 GOTO :_run
-
-:: Find the value of the --conan_profile argument
-:_find_profile_arg
-IF [%1] EQU [] (
-    CALL SET CONAN_PROFILE="default"
-    GOTO :_exit
-)
-IF "%1" == "--conan_profile" (
-    CALL SET CONAN_PROFILE="%2"
-) ELSE (
-    SHIFT
-    GOTO :_find_profile_arg
-)
-GOTO :_exit
 
 :: Initialize the project environment
 :_initialize
 PUSHD build\tools
-conan install ..\..\tools -of . --build=missing --profile %CONAN_PROFILE%
+conan install ..\..\tools -of . --build=missing --profile default
 POPD
 ECHO Workspace initialized...
 GOTO :_exit
