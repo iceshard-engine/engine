@@ -1,0 +1,25 @@
+name: Code Validation (Android)
+run-name: Code Validation (Android, ${{ github.ref_name }})
+
+on:
+  push:
+    paths:
+      - 'source/**'
+      - '.github/workflows/build-dispatch.yaml'
+      - '.github/workflows/build-validate-android.yaml'
+      - '!source/data/**'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate (${{ matrix.project }}-${{ matrix.pipeline }}-${{ matrix.config }})
+    uses: ./.github/workflows/build-dispatch.yaml
+    strategy:
+      matrix:
+        project: [all]
+        pipeline: [Android29-ARMv8, Android29-x64]
+        config: [Debug,Develop,Profile,Release]
+    with:
+      host-platform: 'windows-latest'
+      target-platform: 'android'
+      targets: "${{ matrix.project }}-${{ matrix.pipeline }}-${{ matrix.config }}"

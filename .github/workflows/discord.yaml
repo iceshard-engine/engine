@@ -11,6 +11,15 @@ jobs:
   notify_discord_commits_pushed:
     name: Notify discord (commits)
     runs-on: ubuntu-latest
+    strategy:
+      # Only send commits one-by-one
+      max-parallel: 1
+      matrix:
+        commit: ${{ github.event.commits }}
+    env:
+      GHITHUB_USER_LINK: '[${{ matrix.commit.author.name }}](<https://github.com/${{ matrix.commit.author.name }}>)'
+      GHITHUB_REPO_URL: 'https://github.com/${{ github.event.repository.full_name }}'
+      GHITHUB_REPO_LINK: '[${{ github.event.repository.full_name }}](<https://github.com/${{ github.event.repository.full_name }}>)'
     steps:
     - name: Notify build started
       uses: Ilshidur/action-discord@master
@@ -19,5 +28,6 @@ jobs:
         DISCORD_USERNAME: 'Yuki <IceShard Engine>'
       with:
         args: |
-          New commits have been pushed to `{{ EVENT_PAYLOAD.repository.full_name }}`!
-          {{ EVENT_PAYLOAD.commits.map(e => '- ' + e.message + ' (<' + e.url + '>) <' + e.author.name + '>').join('\n').slice(0, 2000) }}
+          New commit in ${{ env.GHITHUB_REPO_LINK }} on branch [{{ ('${{ github.event.ref }}').split('/').pop() }}](<${{ env.GHITHUB_REPO_URL }}/tree/{{ ('${{ github.event.ref }}').split('/').pop() }}>)
+          -# See [changes](<${{ matrix.commit.url }}>) by ${{ env.GHITHUB_USER_LINK }} (sha: ${{ matrix.commit.id }})
+          >>> ${{ matrix.commit.message }}
