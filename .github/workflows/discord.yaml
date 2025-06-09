@@ -28,6 +28,6 @@ jobs:
         DISCORD_USERNAME: 'Yuki <IceShard Engine>'
       with:
         args: |
-          New commit in ${{ env.GHITHUB_REPO_LINK }} on branch [{{ ('${{ github.event.ref }}').split('/').pop() }}](${{ env.GHITHUB_REPO_URL }}/tree/{{ ('${{ github.event.ref }}').split('/').pop() }})
-          -# See [changes](${{ matrix.commit.url }}) by ${{ env.GHITHUB_USER_LINK }} (sha: ${{ matrix.commit.id }})
+          New commit in ${{ env.GHITHUB_REPO_LINK }} on branch [{{ ('${{ github.event.ref }}').split('/').pop() }}](<${{ env.GHITHUB_REPO_URL }}/tree/{{ ('${{ github.event.ref }}').split('/').pop() }}>)
+          -# See [changes](<${{ matrix.commit.url }}>) by ${{ env.GHITHUB_USER_LINK }} (sha: ${{ matrix.commit.id }})
           >>> ${{ matrix.commit.message }}
