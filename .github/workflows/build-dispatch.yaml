@@ -41,7 +41,7 @@ jobs:
         uses: iceshard-engine/.github/.github/actions/conan2@main
         with:
           conan-cache: true
-          conan-cache-version: 'v1'
+          conan-cache-version: 'v1-${{ inputs.target-platform }}'
           conan-config-url: https://github.com/iceshard-engine/conan-config.git
           conan-modify-profile: ${{ contains(inputs.host-platform, 'ubuntu') }}
           conan-profile-compiler: 'clang'
