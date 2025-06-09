@@ -1,5 +1,5 @@
-name: Code Validation (Emscripten)
-run-name: Code Validation (Emscripten, ${{ github.ref_name }})
+name: Code Validation (Android)
+run-name: Code Validation (Android, ${{ github.ref_name }})
 
 on:
   push:
