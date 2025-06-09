@@ -1,0 +1,25 @@
+name: Code Validation (Emscripten)
+run-name: Code Validation (Emscripten, ${{ github.ref_name }})
+
+on:
+  push:
+    paths:
+      - 'source/**'
+      - '.github/workflows/build-dispatch.yaml'
+      - '.github/workflows/build-validate-code.yaml'
+      - '!source/data/**'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate (${{ matrix.project }}-${{ matrix.pipeline }}-${{ matrix.config }})
+    uses: ./.github/workflows/build-dispatch.yaml
+    strategy:
+      matrix:
+        project: [all]
+        pipeline: [WebAsm]
+        config: [Debug,Develop,Profile,Release]
+    with:
+      host-platform: 'windows-latest'
+      target-platform: 'web'
+      targets: "${{ matrix.project }}-${{ matrix.pipeline }}-${{ matrix.config }}"

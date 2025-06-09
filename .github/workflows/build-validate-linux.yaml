@@ -1,0 +1,25 @@
+name: Code Validation (Linux)
+run-name: Code Validation (Linux, ${{ github.ref_name }})
+
+on:
+  push:
+    paths:
+      - 'source/**'
+      - '.github/workflows/build-dispatch.yaml'
+      - '.github/workflows/build-validate-code.yaml'
+      - '!source/data/**'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate (${{ matrix.project }}-${{ matrix.pipeline }}-${{ matrix.config }})
+    uses: ./.github/workflows/build-dispatch.yaml
+    strategy:
+      matrix:
+        project: [all]
+        pipeline: [x64]
+        config: [Debug,Develop,Profile,Release]
+    with:
+      host-platform: 'ubuntu-latest'
+      target-platform: 'linux'
+      targets: "${{ matrix.project }}-${{ matrix.pipeline }}-${{ matrix.config }}"
