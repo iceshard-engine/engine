@@ -23,3 +23,4 @@ jobs:
       host-platform: 'windows-latest'
       target-platform: 'web'
       targets: "${{ matrix.project }}-${{ matrix.pipeline }}-${{ matrix.config }}"
+      clang-version: '21'
