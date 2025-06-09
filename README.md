@@ -27,6 +27,9 @@ Thid party tools and features:
 
 ## Status
 ![Code validation result for Windows targets.](https://github.com/iceshard-engine/engine/actions/workflows/build-validate-windows.yaml/badge.svg)
+![Code validation result for Linux targets.](https://github.com/iceshard-engine/engine/actions/workflows/build-validate-linux.yaml/badge.svg)
+![Code validation result for WebAssembly targets.](https://github.com/iceshard-engine/engine/actions/workflows/build-validate-emscripten.yaml/badge.svg)
+![Code validation result for Android targets.](https://github.com/iceshard-engine/engine/actions/workflows/build-validate-android.yaml/badge.svg)
 
 ## Building the engine
 
