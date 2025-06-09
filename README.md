@@ -25,11 +25,25 @@ Thid party tools and features:
 * Logging using the **fmt** library.
 * Unit tests written in the **Catch2** framework.
 
-## Status
+
+### Build status
+
+#### Windows _(Tested)_
 ![Code validation result for Windows targets.](https://github.com/iceshard-engine/engine/actions/workflows/build-validate-windows.yaml/badge.svg)
+
+#### Linux _(Tested)_
 ![Code validation result for Linux targets.](https://github.com/iceshard-engine/engine/actions/workflows/build-validate-linux.yaml/badge.svg)
-![Code validation result for WebAssembly targets.](https://github.com/iceshard-engine/engine/actions/workflows/build-validate-emscripten.yaml/badge.svg)
+
+#### Android _(Untested)_
 ![Code validation result for Android targets.](https://github.com/iceshard-engine/engine/actions/workflows/build-validate-android.yaml/badge.svg)
+
+##### Known issues
+* The x64 binaries do not load properly in emulators
+* The binaries use outdated API Levels and NKD version
+* The binaries are still build with 4 KiB page support instead of required 16 KiB
+
+#### Emscripten _(Tested)_
+![Code validation result for WebAssembly targets.](https://github.com/iceshard-engine/engine/actions/workflows/build-validate-emscripten.yaml/badge.svg)
 
 ## Building the engine
 
@@ -40,19 +54,18 @@ To build this engine you will need the following tools and SDKs installed:
 * [Conan Package Manager](https://conan.io/) - Used to manage project dependencies.
    * This also requires python3 as a dependency.
 * **Windows:**
-   * Required: Visual Studio 2022 _(17.4 or later)_
-   * Required: Windows Kit (10.0.19041.0 or later)
-   * Required: Vulkan SDK _(1.2.170.0 or later)_
-* **Linux:** _(Compilation Only)_
-   * **compilation** tested On:
-      * Manjarno Linux (KDE Plasma) (Kernel 5.15.6-2-MANJARNO x64)
-      * GitHub Runner: Ubuntu-22.04
-   * Required: GCC-12 or Clang-14 or later
-   * Required: standard library libstdc++ v6 or later
-   * ~~Required: Vulkan SDK _(1.2.170.0 or later)_~~ - Not implemented yet.
-   * _(Linking steps are not enabled yet)_
-* **MacOS:**
-   * No support
+   * Visual Studio 2022 _(17.13 or later)_
+   * Windows Kit (10.0.19041.0 or later)
+   * Vulkan SDK _(1.4.313.0 or later)_
+* **Linux:**
+    * Toolchain: Clang-20
+    * Vulkan SDK _(1.4.313.0 or later)_
+* **Android:** _(Outdated)_
+    * Toolchain: NDK-27
+    * AndroidAPI: 29
+* **Web:**
+    * Toolchain: Emscripten-v4.0.9
+* **MacOS:** _(No plans)_
 
 ### Configuring Conan
 
@@ -68,38 +81,6 @@ conan config install https://github.com/iceshard-engine/conan-config.git
 ### Ice Build Tools
 
 This project uses its own command line tool named **Ice Build Tools** to provide various utilities that can be used during development.
-
-It is a Conan package that will be installed on first use. It can be easily updated at any point or reset by removing the `./build/` directory when something goes wrong.
-
----
-#### The `build` command
-
-Building the engine is straight forward, all you need to do is to call this command in your terminal and you have built the engine.
-
-    ./ice.sh build
-    ./ice.bat build
-
-You can further specify the target you want to build by using the `-t --target` option.
-
-    ice build -t all-x64-Debug
-
----
-#### The `vstudio` command
-
-This command allows to generate project files for Visual Studio and open the solution.
-
-    ice vstudio --start
-
----
-#### The `run` command
-
-This command allows to execute pre-defined lists of other commands or tools in order. These execution `scenarios` are stored in the `scenarios.json` file and currently provide a quick way to run the test application and to build shaders on the Windows platform.
-
-    :: Build all shaders into Vulkan SPIR-V
-    ice run -s shaders
-
-    :: Run the default-built test application executable (all-x64-Develop)
-    ice run
 
 
 ## Contributing
