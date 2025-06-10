@@ -11,10 +11,23 @@ namespace ice::math
     struct mat
     {
         using value_type = T;
-        static constexpr auto count_rows = Rows;
-        static constexpr auto count_columns = Cols;
+        static constexpr u32 count_rows = Rows;
+        static constexpr u32 count_columns = Cols;
 
         T v[count_columns][count_rows];
+    };
+
+    template<typename T>
+    struct mat<2, 2, T>
+    {
+        using value_type = T;
+        static constexpr u32 count_rows = 3;
+        static constexpr u32 count_columns = 3;
+
+        T v[count_columns][count_rows];
+
+        template<typename U>
+        constexpr operator mat<3, 3, U>() noexcept;
     };
 
 
@@ -31,6 +44,18 @@ namespace ice::math
     using mat4x4 = mat<4, 4, f32>;
     using mat4 = mat4x4;
 
+    template<typename T>
+    template<typename U>
+    constexpr mat<2, 2, T>::operator mat<3, 3, U>() noexcept
+    {
+        mat<3, 3, U> result;
+        result.v[0][0] = v[0][0];
+        result.v[0][1] = v[0][1];
+        result.v[1][0] = v[1][0];
+        result.v[1][1] = v[1][1];
+        result.v[2][2] = 1;
+        return result;
+    }
 
     template<typename Mat>
     constexpr auto identity() noexcept

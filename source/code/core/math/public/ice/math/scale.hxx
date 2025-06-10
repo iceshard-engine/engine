@@ -9,16 +9,31 @@
 namespace ice::math
 {
 
+    constexpr auto scale2d(vec<2, f32> v) noexcept -> mat<2, 2, f32>;
     constexpr auto scale(vec<3, f32> v) noexcept -> mat<4, 4, f32>;
 
+    constexpr auto scale2d(mat<2, 2, f32> left, vec<2, f32> right) noexcept -> mat<2, 2, f32>;
     constexpr auto scale(mat<4, 4, f32> left, vec<3, f32> right) noexcept -> mat<4, 4, f32>;
 
     constexpr auto scale(mat<4, 4, f32> const& matrix) noexcept -> vec<3, f32>;
 
 
+    constexpr auto scale2d(vec<2, f32> v) noexcept -> mat<2, 2, f32>
+    {
+        return scale2d(mat2x2_identity, v);
+    }
+
     constexpr auto scale(vec<3, f32> v) noexcept -> mat<4, 4, f32>
     {
         return scale(mat4x4_identity, v);
+    }
+
+    constexpr auto scale2d(mat<2, 2, f32> left, vec<2, f32> right) noexcept -> mat<2, 2, f32>
+    {
+        mat<2, 2, f32> temp{ };
+        temp.v[0][0] = right.v[0][0];
+        temp.v[1][1] = right.v[0][1];
+        return mul(left, temp);
     }
 
     constexpr auto scale(mat<4, 4, f32> left, vec<3, f32> right) noexcept -> mat<4, 4, f32>

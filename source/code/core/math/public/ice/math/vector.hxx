@@ -61,6 +61,10 @@ namespace ice::math
             : v{ { static_cast<T>(other.x), static_cast<T>(other.y) } }
         { }
 
+        constexpr explicit mat(T const(&array)[3]) noexcept
+            : v{ { array[0] / array[2], array[1] / array[2] } }
+        { }
+
         union
         {
             T v[count_columns][count_rows];
