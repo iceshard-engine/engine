@@ -9,16 +9,36 @@
 namespace ice::math
 {
 
+    inline auto rotate2d(rad rad) noexcept -> mat<2, 2, f32>;
     inline auto rotate(rad rad, vec<3, f32> v) noexcept -> mat<4, 4, f32>;
 
+    inline auto rotate2d(mat<2, 2, f32> left, rad rad) noexcept -> mat<2, 2, f32>;
     inline auto rotate(mat<4, 4, f32> left, rad rad, vec<3, f32> v) noexcept -> mat<4, 4, f32>;
 
     inline auto rotation(mat<4, 4, f32> const& matrix) noexcept -> vec<3, rad>;
 
 
+    inline auto rotate2d(rad rad) noexcept -> mat<2, 2, f32>
+    {
+        return rotate2d(mat2x2_identity, rad);
+    }
+
     inline auto rotate(rad rad, vec<3, f32> v) noexcept -> mat<4, 4, f32>
     {
         return rotate(mat4x4_identity, rad, v);
+    }
+
+    inline auto rotate2d(mat<2, 2, f32> left, rad rad) noexcept -> mat<2, 2, f32>
+    {
+        f32 const cosv = cos(rad);
+        f32 const sinv = sin(rad);
+
+        mat<2, 2, f32> rm = mat2x2_identity;
+        rm.v[0][0] = cosv;
+        rm.v[0][1] = sinv;
+        rm.v[1][0] = -sinv;
+        rm.v[1][1] = cosv;
+        return mul(left, rm);
     }
 
     inline auto rotate(mat<4, 4, f32> left, rad rad, vec<3, f32> v) noexcept -> mat<4, 4, f32>
