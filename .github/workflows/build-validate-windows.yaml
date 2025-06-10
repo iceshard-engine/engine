@@ -1,0 +1,25 @@
+name: Code Validation (Windows)
+run-name: Code Validation (Windows, ${{ github.ref_name }})
+
+on:
+  push:
+    paths:
+      - 'source/**'
+      - '.github/workflows/build-dispatch.yaml'
+      - '.github/workflows/build-validate-windows.yaml'
+      - '!source/data/**'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate (${{ matrix.project }}-${{ matrix.pipeline }}-${{ matrix.config }})
+    uses: ./.github/workflows/build-dispatch.yaml
+    strategy:
+      matrix:
+        project: [all]
+        pipeline: [x64]
+        config: [Debug,Develop,Profile,Release]
+    with:
+      host-platform: 'windows-latest'
+      target-platform: 'win32'
+      targets: "${{ matrix.project }}-${{ matrix.pipeline }}-${{ matrix.config }}"

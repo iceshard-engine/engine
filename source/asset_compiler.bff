@@ -196,7 +196,10 @@
     .PipelineToolchain = 'isac-local'
 
     .PipelineAllowUnityBuilds = false
-    .PipelineRequirements = { }
+    .PipelineDynamicRequirements = {
+        'isac-compiler',
+        'hscp-librarian',
+    }
     .PipelineProjectRequirements = { 'AssetPipeline' }
     .PipelineSteps = { 'Bake-Shaders', 'Bundle' }
 
