@@ -85,11 +85,11 @@ namespace ice::devui
                 ImGui::PushID(widget.widget);
                 if (ImGui::TableNextColumn()) // Name
                 {
-                    ImGui::StringUnformatted(widget.widget->info.name);
+                    ImGui::StringUnformatted(widget.widget->widget_info.name);
                 }
                 if (ImGui::TableNextColumn()) // Category
                 {
-                    ImGui::StringUnformatted(widget.widget->info.category);
+                    ImGui::StringUnformatted(widget.widget->widget_info.category);
                 }
                 if (ImGui::TableNextColumn()) // Visible
                 {
