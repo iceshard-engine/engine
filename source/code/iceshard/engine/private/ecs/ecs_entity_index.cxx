@@ -151,4 +151,12 @@ namespace ice::ecs
         }
     }
 
+    bool EntityIndex::recreate(ice::Array<ice::ecs::Entity>& entities, ice::u32 new_count) noexcept
+    {
+        destroy_many(entities);
+        ice::array::resize(entities, new_count);
+        create_many(entities);
+        return false;
+    }
+
 } // namespace ice::ecs
