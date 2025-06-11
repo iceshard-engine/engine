@@ -36,6 +36,8 @@ namespace ice::ecs
         void destroy(ice::ecs::Entity entity) noexcept;
         void destroy_many(ice::Span<ice::ecs::Entity> entities) noexcept;
 
+        bool recreate(ice::Array<ice::ecs::Entity>& entity, ice::u32 new_count) noexcept;
+
     private:
         ice::Allocator& _allocator;
         ice::u32 const _max_entity_count;
