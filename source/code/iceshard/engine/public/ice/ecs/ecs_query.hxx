@@ -32,12 +32,14 @@ namespace ice::ecs
         using ResultType = typename ObjectType::ResultType;
         using BlockResultType = typename ObjectType::BlockResultType;
         using ComponentsTypeList = typename ObjectType::ComponentsTypeList;
+        using QueryFilter = ice::ecs::detail::DataBlockFilter::QueryFilter;
 
         static constexpr ice::ecs::QueryType Type = QueryType::Unchecked;
         static constexpr ice::u32 ComponentCount = ObjectType::ComponentCount;
 
         inline Query(ObjectType const& query) noexcept
             : _query{ query }
+            , _filter{ }
         { }
 
     public:
@@ -46,10 +48,19 @@ namespace ice::ecs
             return _query;
         }
 
+        auto filter_object() const noexcept -> QueryFilter const&
+        {
+            return _filter;
+        }
+
+        template<ice::ecs::detail::FilterType T>
+        auto filtered(T const& filter) noexcept -> Query&;
+
         auto synchronized_on(ice::TaskScheduler& scheduler) const noexcept;
 
     private:
         ObjectType const& _query;
+        QueryFilter _filter;
     };
 
     template<typename... Parts>
@@ -60,6 +71,7 @@ namespace ice::ecs
         using ResultType = typename ObjectType::ResultType;
         using BlockResultType = typename ObjectType::BlockResultType;
         using ComponentsTypeList = typename ObjectType::ComponentsTypeList;
+        using QueryFilter = ice::ecs::detail::DataBlockFilter::QueryFilter;
 
         static constexpr ice::ecs::QueryType Type = QueryType::Synchronized;
         static constexpr ice::u32 ComponentCount = ObjectType::ComponentCount;
@@ -72,6 +84,7 @@ namespace ice::ecs
         inline Query(Query&& other) noexcept
             : _query{ other._query }
             , _requires_release{ ice::exchange(other._requires_release, false) }
+            , _filter{ other._filter }
         { }
 
         inline ~Query() noexcept
@@ -90,10 +103,27 @@ namespace ice::ecs
             return _query;
         }
 
+        auto filter_object() const noexcept -> QueryFilter const&
+        {
+            return _filter;
+        }
+
+        template<ice::ecs::detail::FilterType T>
+        auto filtered(T const& filter) noexcept -> Query&;
+
     private:
         ObjectType const& _query;
+        QueryFilter _filter;
         bool _requires_release;
     };
+
+    template<ice::ecs::QueryType Type, typename... Parts>
+    template<ice::ecs::detail::FilterType T>
+    auto Query<Type, Parts...>::filtered(T const& filter) noexcept -> Query&
+    {
+        _filter = QueryFilter{ filter };
+        return *this;
+    }
 
     template<ice::ecs::QueryType Type, typename... Parts>
     auto Query<Type, Parts...>::synchronized_on(ice::TaskScheduler& scheduler) const noexcept
@@ -109,6 +139,14 @@ namespace ice::ecs
         };
 
         return Awaitable{ _query, scheduler.schedule()._queue };
+    }
+
+    template<typename... Parts>
+    template<ice::ecs::detail::FilterType T>
+    auto Query<QueryType::Synchronized, Parts...>::filtered(T const& filter) noexcept -> Query&
+    {
+        _filter = QueryFilter{ filter };
+        return *this;
     }
 
     template<typename... Parts> Query(QueryObject<Parts...>&&) noexcept -> Query<QueryType::Unchecked, Parts...>;

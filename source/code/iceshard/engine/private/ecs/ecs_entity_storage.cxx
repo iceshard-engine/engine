@@ -38,11 +38,6 @@ namespace ice::ecs
             );
         }
 
-        void track_entities(
-            ice::HashMap<ice::ecs::Entity>& tracked,
-            ice::Span<ice::ecs::Entity const> updated
-        ) noexcept;
-
         void store_entities_with_data(
             ice::Span<ice::ecs::Entity const> src_entities,
             ice::Span<ice::ecs::EntityDataSlot> dst_data_slots,
@@ -413,6 +408,50 @@ namespace ice::ecs
             } while(it != end);
         }
 
+        auto default_filter(void const*, void const*) noexcept
+        {
+            return true;
+        }
+
+        auto select_block(
+            ice::ecs::detail::ArchetypeInstanceInfo const& info,
+            ice::ecs::detail::DataBlockPool& pool,
+            ice::ecs::detail::DataBlock* head,
+            ice::ecs::EntityOperation const& operation,
+            ice::u32& out_block_idx
+        ) noexcept -> ice::ecs::detail::DataBlock*
+        {
+            ice::ecs::detail::DataBlock* result = head;
+            ice::ecs::detail::DataBlockFilter filter = info.data_block_filter;
+            ice::ecs::detail::DataBlockFilter::FilterFn fn_filter = ice::value_or_default(filter.fn_filter, default_filter);
+
+            // Get the next block
+            while (result->block_entity_count == result->block_entity_count_max
+                || fn_filter(result->block_filter_data, operation.filter_data) == false)
+            {
+                if (result->next == nullptr)
+                {
+                    result->next = pool.request_block(info);
+                    result = result->next;
+
+                    if (filter.enabled)
+                    {
+                        filter.fn_data_setup(result->block_filter_data, operation.filter_data);
+                    }
+                }
+                else
+                {
+                    result = result->next;
+                }
+
+                out_block_idx += 1;
+            }
+
+            ICE_ASSERT_CORE(result->block_entity_count_max > 0);
+            ICE_ASSERT_CORE(result->block_entity_count <= result->block_entity_count_max);
+            return result;
+        }
+
     } // namespace detail
 
     static constexpr ice::ucount Constant_InitialEntityCount = 1024 * 32;
@@ -662,15 +701,13 @@ namespace ice::ecs
                 ice::u32 block_idx = 0;
 
                 // We need at least the initial data block.
-                DataBlock* data_block_it = _data_blocks[dst_instance_idx];
-                if (data_block_it == nullptr)
-                {
-                    data_block_it = dst_instance_pool->request_block();
-                    data_block_it->block_entity_count_max = dst_instance_info->component_entity_count_max;
-                    data_block_it->block_entity_count = 0;
-
-                    _data_blocks[dst_instance_idx] = data_block_it;
-                }
+                DataBlock* data_block_it = ice::ecs::detail::select_block(
+                    *dst_instance_info,
+                    *dst_instance_pool,
+                    _data_blocks[dst_instance_idx],
+                    operation,
+                    block_idx
+                );
 
                 // Number of remaining entities to process
                 ice::u32 processed_count = 0;
@@ -779,15 +816,6 @@ namespace ice::ecs
                                 dst_data_details /* dst data block */
                             );
 
-                            {
-                                ice::Span<ice::ecs::Entity const> updated_entities = ice::ecs::detail::get_entity_array(
-                                    dst_component_info,
-                                    dst_data_details,
-                                    entities_stored
-                                );
-                                ICE_ASSERT(ice::count(updated_entities) == 0, "");
-                            }
-
                             // 2. Apply the new provided data if any.
                             if (provided_component_info != nullptr)
                             {
@@ -840,20 +868,13 @@ namespace ice::ecs
                     // Get the next block
                     if (remaining_count > 0)
                     {
-                        if (data_block_it->next == nullptr)
-                        {
-                            data_block_it->next = dst_instance_pool->request_block();
-
-                            data_block_it = data_block_it->next;
-                            data_block_it->block_entity_count_max = dst_instance_info->component_entity_count_max;
-                            data_block_it->block_entity_count = 0;
-                        }
-                        else
-                        {
-                            data_block_it = data_block_it->next;
-                        }
-
-                        block_idx += 1;
+                        data_block_it = ice::ecs::detail::select_block(
+                            *dst_instance_info,
+                            *dst_instance_pool,
+                            data_block_it,
+                            operation,
+                            block_idx
+                        );
                     }
 
                 } while (remaining_count > 0);

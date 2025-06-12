@@ -287,7 +287,6 @@ namespace ice::ecs
         operation->entities = reinterpret_cast<ice::ecs::Entity*>(handle_loc);
         operation->entities[0] = entity;
         operation->entity_count = 1;
-        operation->notify_entity_changes = true;
         operation->component_data = nullptr;
         operation->component_data_size = 0;
     }
@@ -295,8 +294,7 @@ namespace ice::ecs
     void queue_set_archetype(
         ice::ecs::EntityOperations& entity_operations,
         ice::Span<ice::ecs::Entity const> entities,
-        ice::ecs::Archetype archetype,
-        bool notify_changes /*= false*/
+        ice::ecs::Archetype archetype
     ) noexcept
     {
         ice::u32 const entity_count = ice::count(entities);
@@ -306,7 +304,6 @@ namespace ice::ecs
         operation->archetype = archetype;
         operation->entities = reinterpret_cast<ice::ecs::Entity*>(handle_loc);
         operation->entity_count = entity_count;
-        operation->notify_entity_changes = notify_changes;
         operation->component_data = nullptr;
         operation->component_data_size = 0;
 
@@ -318,8 +315,7 @@ namespace ice::ecs
         ice::Span<ice::ecs::Entity const> entities,
         ice::ecs::Archetype archetype,
         ice::ecs::EntityOperations::ComponentInfo component_info,
-        ice::Span<ice::Data> component_data,
-        bool notify_changes
+        ice::Span<ice::Data> component_data
     ) noexcept
     {
         ice::ucount const entity_count = ice::count(entities);
@@ -388,7 +384,6 @@ namespace ice::ecs
         operation->archetype = archetype;
         operation->entities = entities_ptr;
         operation->entity_count = entity_count;
-        operation->notify_entity_changes = notify_changes;
         operation->component_data = component_info_ptr;
         operation->component_data_size = ice::ucount(ice::ptr_distance(component_info_ptr, handle_loc).value);
     }
@@ -404,7 +399,6 @@ namespace ice::ecs
         operation->entities = reinterpret_cast<ice::ecs::Entity*>(handle_loc);
         operation->entities[0] = entity;
         operation->entity_count = 1;
-        operation->notify_entity_changes = true;
         operation->component_data = nullptr;
         operation->component_data_size = 0;
     }
@@ -424,10 +418,34 @@ namespace ice::ecs
         operation->archetype = ice::ecs::Archetype::Invalid;
         operation->entities = reinterpret_cast<ice::ecs::Entity*>(handle_loc);
         operation->entity_count = ice::count(entities);
-        operation->notify_entity_changes = false;
         operation->component_data = nullptr;
         operation->component_data_size = 0;
 
+        ice::memcpy(operation->entities, ice::span::data(entities), ice::span::size_bytes(entities));
+    }
+
+    OperationBuilder::~OperationBuilder() noexcept
+    {
+        if (ice::span::empty(entities))
+        {
+            return;
+        }
+
+        ice::u32 const entity_count = ice::count(entities);
+
+        ice::meminfo required_memory = ice::meminfo{ filter_data_size, ice::ualign::b_8 };
+        required_memory += ice::meminfo_of<ice::ecs::Entity> * entity_count;
+
+        void* handle_loc;
+        EntityOperation* operation = operations.new_storage_operation(required_memory, handle_loc);
+        operation->archetype = archetype;
+        operation->entities = reinterpret_cast<ice::ecs::Entity*>(ice::ptr_add(handle_loc, filter_data_size));
+        operation->entity_count = entity_count;
+        operation->component_data = nullptr;
+        operation->component_data_size = 0;
+        operation->filter_data = filter_data_size > 0_B ? handle_loc : nullptr;
+
+        ice::memcpy(handle_loc, filter_data, filter_data_size);
         ice::memcpy(operation->entities, ice::span::data(entities), ice::span::size_bytes(entities));
     }
 

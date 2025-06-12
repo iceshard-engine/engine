@@ -27,11 +27,13 @@ namespace ice::ecs
         template<ice::ecs::Component... Components>
         auto new_archetype(
             ice::String name = {},
-            ice::ecs::detail::DataBlockPool * data_block_pool = nullptr
+            ice::ecs::detail::DataBlockFilter data_block_filter = {},
+            ice::ecs::detail::DataBlockPool* data_block_pool = nullptr
         ) noexcept -> ice::ecs::Archetype;
 
         auto register_archetype(
             ice::ecs::ArchetypeInfo const& archetype_info,
+            ice::ecs::detail::DataBlockFilter data_block_filter = {},
             ice::ecs::detail::DataBlockPool* data_block_pool = nullptr
         ) noexcept -> ice::ecs::Archetype;
 
@@ -85,12 +87,13 @@ namespace ice::ecs
     template<ice::ecs::Component... Components>
     inline auto ArchetypeIndex::new_archetype(
         ice::String name,
+        ice::ecs::detail::DataBlockFilter data_block_filter,
         ice::ecs::detail::DataBlockPool* data_block_pool
     ) noexcept -> ice::ecs::Archetype
     {
         ice::ecs::ArchetypeInfo info = ice::ecs::Constant_ArchetypeDefinition<Components...>;
         info.name = name;
-        return this->register_archetype(info, data_block_pool);
+        return this->register_archetype(info, data_block_filter, data_block_pool);
     }
 
 } // namespace ice::ecs

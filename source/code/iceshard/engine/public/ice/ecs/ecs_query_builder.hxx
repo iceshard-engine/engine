@@ -70,6 +70,11 @@ namespace ice::ecs
             )->object_query();
         }
 
+        auto filter_object() const noexcept -> ice::ecs::detail::DataBlockFilter::QueryFilter
+        {
+            return {};
+        }
+
         auto synchronized_on(ice::TaskScheduler& scheduler) const noexcept
         {
             struct Awaitable : ice::ecs::detail::QueryAwaitableBase<Parts...>
@@ -83,6 +88,14 @@ namespace ice::ecs
             };
 
             return Awaitable{ query_object(), scheduler.schedule()._queue };
+        }
+
+        template<ice::ecs::detail::FilterType T>
+        auto filtered(T const& filter) noexcept
+        {
+            Query result = ice::ecs::Query<QueryType::Unchecked, Parts...>{ query_object() };
+            result.filtered(filter);
+            return result;
         }
 
         operator ice::ecs::Query<QueryType::Unchecked, Parts...> () const noexcept
