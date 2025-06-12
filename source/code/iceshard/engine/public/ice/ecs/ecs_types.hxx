@@ -44,4 +44,11 @@ namespace ice::ecs
 
     struct QueryView;
 
+    namespace detail
+    {
+
+        struct ArchetypeInstanceInfo;
+
+    } // namespace detail
+
 } // namespace ice::ecs

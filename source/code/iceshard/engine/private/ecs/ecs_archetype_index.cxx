@@ -171,6 +171,7 @@ namespace ice::ecs
 
     auto ArchetypeIndex::register_archetype(
         ice::ecs::ArchetypeInfo const& archetype_info,
+        ice::ecs::detail::DataBlockFilter data_block_filter,
         ice::ecs::detail::DataBlockPool* data_block_pool
     ) noexcept -> ice::ecs::Archetype
     {
@@ -255,6 +256,7 @@ namespace ice::ecs
 
         data_header->archetype_name = ice::String{ (char const*) mem_archetype_name.location, ice::size(archetype_info.name) };
         data_header->archetype_identifier = archetype_info.identifier;
+        data_header->archetype_info.data_block_filter = data_block_filter;
         data_header->archetype_info.component_identifiers = ice::Span<ice::StringID const>{ component_identifiers, component_count };
         data_header->archetype_info.component_sizes = ice::Span<ice::u32 const>{ component_sizes, component_count };
         data_header->archetype_info.component_alignments = ice::Span<ice::u32 const>{ component_alignments, component_count };
@@ -264,22 +266,10 @@ namespace ice::ecs
         // We need now to calculate the number of entities that we can store in the remaining memory.
         //  Additionally calculate the offets each component array will be located at.
         {
-            ice::u32 const component_size_sum = std::accumulate(
-                component_sizes,
-                component_sizes + component_count,
-                0
+            ice::ucount const component_entity_count_max = ice::ecs::detail::calculate_entity_count_for_space(
+                data_header->archetype_info,
+                data_block_pool->provided_block_size()
             );
-
-            ice::u32 const component_alignment_sum = std::accumulate(
-                component_alignments,
-                component_alignments + component_count,
-                0
-            );
-
-            ice::usize const block_size = data_block_pool->provided_block_size();
-            ice::usize const available_block_size = { block_size.value - component_alignment_sum };
-
-            data_header->archetype_info.component_entity_count_max = ice::ucount(available_block_size.value / component_size_sum);
 
             ice::u32 next_component_offset = 0;
             for (ice::u32 idx = 0; idx < component_count; ++idx)
@@ -300,7 +290,7 @@ namespace ice::ecs
                     next_component_offset = ice::ecs::detail::align_forward_u32(next_component_offset, component_alignments[idx]);
                     component_offsets[idx] = next_component_offset;
 
-                    next_component_offset += component_sizes[idx] * data_header->archetype_info.component_entity_count_max;
+                    next_component_offset += component_sizes[idx] * component_entity_count_max;
                 }
             }
         }
