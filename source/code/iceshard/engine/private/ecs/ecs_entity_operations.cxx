@@ -275,41 +275,6 @@ namespace ice::ecs
         return OperationIterator{ ._entry = nullptr };
     }
 
-    void queue_set_archetype(
-        ice::ecs::EntityOperations& entity_operations,
-        ice::ecs::Entity entity,
-        ice::ecs::Archetype archetype
-    ) noexcept
-    {
-        void* handle_loc;
-        EntityOperation* operation = entity_operations.new_storage_operation(ice::meminfo_of<ice::ecs::Entity>, handle_loc);
-        operation->archetype = archetype;
-        operation->entities = reinterpret_cast<ice::ecs::Entity*>(handle_loc);
-        operation->entities[0] = entity;
-        operation->entity_count = 1;
-        operation->component_data = nullptr;
-        operation->component_data_size = 0;
-    }
-
-    void queue_set_archetype(
-        ice::ecs::EntityOperations& entity_operations,
-        ice::Span<ice::ecs::Entity const> entities,
-        ice::ecs::Archetype archetype
-    ) noexcept
-    {
-        ice::u32 const entity_count = ice::count(entities);
-
-        void* handle_loc;
-        EntityOperation* operation = entity_operations.new_storage_operation(ice::meminfo_of<ice::ecs::Entity> * entity_count, handle_loc);
-        operation->archetype = archetype;
-        operation->entities = reinterpret_cast<ice::ecs::Entity*>(handle_loc);
-        operation->entity_count = entity_count;
-        operation->component_data = nullptr;
-        operation->component_data_size = 0;
-
-        ice::memcpy(operation->entities, ice::span::data(entities), ice::span::size_bytes(entities));
-    }
-
     void queue_set_archetype_with_data(
         ice::ecs::EntityOperations& entity_operations,
         ice::Span<ice::ecs::Entity const> entities,
@@ -426,7 +391,7 @@ namespace ice::ecs
 
     OperationBuilder::~OperationBuilder() noexcept
     {
-        if (ice::span::empty(entities))
+        if (mode == 0)
         {
             return;
         }
