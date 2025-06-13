@@ -3,7 +3,7 @@
 
 #pragma once
 #include <ice/ecs/ecs_types.hxx>
-#include <ice/ecs/ecs_data_block.hxx>
+#include <ice/ecs/ecs_data_block_filter.hxx>
 #include <ice/stringid.hxx>
 #include <ice/sort.hxx>
 #include <ice/algorithm.hxx>

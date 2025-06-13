@@ -22,7 +22,7 @@ namespace ice::ecs
         };
 
         auto get_entity_array(
-            ice::ecs::EntityOperations::ComponentInfo const& info,
+            ice::ecs::OperationComponentInfo const& info,
             ice::ecs::detail::OperationDetails const& data_details,
             ice::u32 entity_count
         ) noexcept -> ice::Span<ice::ecs::Entity>
@@ -42,8 +42,8 @@ namespace ice::ecs
             ice::Span<ice::ecs::Entity const> src_entities,
             ice::Span<ice::ecs::EntityDataSlot> dst_data_slots,
             ice::ecs::EntityDataSlot base_slot,
-            ice::ecs::EntityOperations::ComponentInfo const& src_info,
-            ice::ecs::EntityOperations::ComponentInfo const& dst_info,
+            ice::ecs::OperationComponentInfo const& src_info,
+            ice::ecs::OperationComponentInfo const& dst_info,
             ice::ecs::detail::OperationDetails const& src_data_details,
             ice::ecs::detail::OperationDetails const& dst_data_details
         ) noexcept
@@ -143,8 +143,8 @@ namespace ice::ecs
 
         void update_entities_with_data(
             ice::u32 entity_count,
-            ice::ecs::EntityOperations::ComponentInfo const& src_info,
-            ice::ecs::EntityOperations::ComponentInfo const& dst_info,
+            ice::ecs::OperationComponentInfo const& src_info,
+            ice::ecs::OperationComponentInfo const& dst_info,
             ice::ecs::detail::OperationDetails const& src_data_details,
             ice::ecs::detail::OperationDetails const& dst_data_details
         ) noexcept
@@ -211,7 +211,7 @@ namespace ice::ecs
             ice::Span<ice::ecs::Entity const> src_entities,
             ice::Span<ice::ecs::EntityDataSlot> dst_data_slots,
             ice::ecs::EntityDataSlot base_slot,
-            ice::ecs::EntityOperations::ComponentInfo const& info,
+            ice::ecs::OperationComponentInfo const& info,
             ice::ecs::detail::OperationDetails const& data_details
         ) noexcept
         {
@@ -378,7 +378,7 @@ namespace ice::ecs
                             movable_entities += 1;
                         }
                     }
-                    EntityOperations::ComponentInfo const component_info{
+                    OperationComponentInfo const component_info{
                         .names = archetype_infos[0]->component_identifiers,
                         .sizes = archetype_infos[0]->component_sizes,
                         .offsets = archetype_infos[0]->component_offsets,
@@ -516,6 +516,11 @@ namespace ice::ecs
     auto EntityStorage::entities() const noexcept -> ice::ecs::EntityIndex const&
     {
         return _entity_index;
+    }
+
+    auto EntityStorage::archetypes() const noexcept -> ice::ecs::ArchetypeIndex const&
+    {
+        return _archetype_index;
     }
 
     void EntityStorage::update_archetypes() noexcept
@@ -664,7 +669,7 @@ namespace ice::ecs
             _archetype_index.fetch_archetype_instance_info_with_pool(operation.archetype, dst_instance_info, dst_instance_pool);
 
 
-            EntityOperations::ComponentInfo const* const provided_component_info = reinterpret_cast<EntityOperations::ComponentInfo const*>(
+            OperationComponentInfo const* const provided_component_info = reinterpret_cast<OperationComponentInfo const*>(
                 operation.component_data
             );
 
@@ -678,7 +683,7 @@ namespace ice::ecs
             {
                 provided_data_details.block_data = ice::ptr_add(
                     operation.component_data,
-                    ice::size_of<EntityOperations::ComponentInfo>
+                    ice::size_of<OperationComponentInfo>
                 );
             }
 
@@ -687,7 +692,7 @@ namespace ice::ecs
             {
                 ice::u32 const dst_instance_idx = static_cast<ice::u32>(dst_instance_info->archetype_instance);
 
-                EntityOperations::ComponentInfo const dst_component_info{
+                OperationComponentInfo const dst_component_info{
                     .names = dst_instance_info->component_identifiers,
                     .sizes = dst_instance_info->component_sizes,
                     .offsets = dst_instance_info->component_offsets,
@@ -769,7 +774,7 @@ namespace ice::ecs
 
                             ice::u32 const src_instance_idx = static_cast<ice::u32>(src_instance_info[0]->archetype_instance);
 
-                            EntityOperations::ComponentInfo const src_component_info{
+                            OperationComponentInfo const src_component_info{
                                 .names = src_instance_info[0]->component_identifiers,
                                 .sizes = src_instance_info[0]->component_sizes,
                                 .offsets = src_instance_info[0]->component_offsets,
@@ -883,7 +888,7 @@ namespace ice::ecs
             {
                 ice::u32 const src_instance_idx = static_cast<ice::u32>(src_instance_info[0]->archetype_instance);
 
-                EntityOperations::ComponentInfo const src_component_info{
+                OperationComponentInfo const src_component_info{
                     .names = src_instance_info[0]->component_identifiers,
                     .sizes = src_instance_info[0]->component_sizes,
                     .offsets = src_instance_info[0]->component_offsets,
@@ -1001,6 +1006,22 @@ namespace ice::ecs
             idx += 1;
         }
         return valid;
+    }
+
+    bool EntityStorage::query_archetype_block(
+        ice::ecs::Archetype archetype,
+        ice::ecs::detail::ArchetypeInstanceInfo const*& out_instance_info,
+        ice::ecs::detail::DataBlock const*& out_head_block
+    ) const noexcept
+    {
+        _archetype_index.fetch_archetype_instance_infos(
+            { &archetype, 1 },
+            { &out_instance_info, 1 }
+        );
+
+        ice::u32 const instance_idx = static_cast<ice::u32>(out_instance_info->archetype_instance);
+        out_head_block = _data_blocks[instance_idx];
+        return true; // TODO: Check if we actually found an archetype.
     }
 
     void EntityStorage::query_internal(

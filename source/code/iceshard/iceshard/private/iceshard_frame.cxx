@@ -12,7 +12,12 @@ namespace ice
         : _frame_data{ frame_data }
         , _data{ _frame_data._fwd_allocator }
         , _shards{ _frame_data._fwd_allocator }
-        , _operations{ _frame_data._fwd_allocator, 16 }
+        , _operations{
+            _frame_data._fwd_allocator,
+            frame_data._engine.entity_index(),
+            frame_data._engine.entity_archetypes(),
+            16
+        }
         , _task_groups{ _frame_data._fwd_allocator }
     {
         ice::array::reserve(_task_groups, 32);

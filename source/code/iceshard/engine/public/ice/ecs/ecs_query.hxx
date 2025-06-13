@@ -33,6 +33,7 @@ namespace ice::ecs
         using BlockResultType = typename ObjectType::BlockResultType;
         using ComponentsTypeList = typename ObjectType::ComponentsTypeList;
         using QueryFilter = ice::ecs::detail::DataBlockFilter::QueryFilter;
+        using QueryFilterArchetype = ice::ecs::Archetype;
 
         static constexpr ice::ecs::QueryType Type = QueryType::Unchecked;
         static constexpr ice::u32 ComponentCount = ObjectType::ComponentCount;
@@ -53,6 +54,12 @@ namespace ice::ecs
             return _filter;
         }
 
+        auto filtered(ice::ecs::Archetype arch) noexcept -> Query&
+        {
+            _filter.arch = arch;
+            return *this;
+        }
+
         template<ice::ecs::detail::FilterType T>
         auto filtered(T const& filter) noexcept -> Query&;
 
@@ -61,6 +68,7 @@ namespace ice::ecs
     private:
         ObjectType const& _query;
         QueryFilter _filter;
+        QueryFilterArchetype _filter_archetype;
     };
 
     template<typename... Parts>
@@ -72,6 +80,7 @@ namespace ice::ecs
         using BlockResultType = typename ObjectType::BlockResultType;
         using ComponentsTypeList = typename ObjectType::ComponentsTypeList;
         using QueryFilter = ice::ecs::detail::DataBlockFilter::QueryFilter;
+        using QueryFilterArchetype = ice::ecs::Archetype;
 
         static constexpr ice::ecs::QueryType Type = QueryType::Synchronized;
         static constexpr ice::u32 ComponentCount = ObjectType::ComponentCount;
@@ -106,6 +115,12 @@ namespace ice::ecs
         auto filter_object() const noexcept -> QueryFilter const&
         {
             return _filter;
+        }
+
+        auto filtered(ice::ecs::Archetype arch) noexcept -> Query&
+        {
+            _filter.arch = arch;
+            return *this;
         }
 
         template<ice::ecs::detail::FilterType T>

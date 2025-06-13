@@ -27,6 +27,7 @@ namespace ice::ecs
         auto entities() noexcept -> ice::ecs::EntityIndex&;
         auto entities() const noexcept -> ice::ecs::EntityIndex const&;
 
+        auto archetypes() const noexcept -> ice::ecs::ArchetypeIndex const&;
         void update_archetypes() noexcept;
 
         void execute_operations(
@@ -46,6 +47,12 @@ namespace ice::ecs
             ice::Span<ice::ecs::Entity const> requested,
             ice::Span<ice::ecs::EntityDataSlot> out_data_slots
         ) const noexcept -> ice::ucount override;
+
+        bool query_archetype_block(
+            ice::ecs::Archetype archetype,
+            ice::ecs::detail::ArchetypeInstanceInfo const*& out_instance_info,
+            ice::ecs::detail::DataBlock const*& out_head_block
+        ) const noexcept override;
 
     protected:
         void query_internal(

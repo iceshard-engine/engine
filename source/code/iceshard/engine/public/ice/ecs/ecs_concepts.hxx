@@ -8,6 +8,7 @@ namespace ice::ecs
 {
 
     enum class Entity : ice::u32;
+    enum class Archetype : ice::u64;
 
 } // namespace ice::ecs
 
@@ -21,6 +22,12 @@ namespace ice::ecs::concepts
     //! \see ice::ecs::Entity
     template<typename T>
     concept Entity = std::is_same_v<ice::ecs::Entity, T>;
+
+    //! \brief Concept to check if an value can represent an archetype reference.
+    //!
+    //! \details Because archetypes can be defined with a name, using a string can be also used in various API calls to reference archetypes.
+    template<typename T>
+    concept ArchetypeRef = std::is_same_v<T, ice::ecs::Archetype> || std::convertible_to<T, ice::String>;
 
     //! \brief Concept checking that a type has all necessary members and definitions to be considered a component type.
     //!
