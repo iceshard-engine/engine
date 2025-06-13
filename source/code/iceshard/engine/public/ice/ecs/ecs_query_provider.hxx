@@ -39,6 +39,12 @@ namespace ice::ecs
             ice::Span<ice::ecs::EntityDataSlot> out_data_slots
         ) const noexcept -> ice::ucount = 0;
 
+        virtual bool query_archetype_block(
+            ice::ecs::Archetype archetype,
+            ice::ecs::detail::ArchetypeInstanceInfo const*& out_instance_info,
+            ice::ecs::detail::DataBlock const*& out_head_block
+        ) const noexcept = 0;
+
     protected:
         virtual void query_internal(
             ice::Span<ice::ecs::detail::QueryTypeInfo const> query_info,
