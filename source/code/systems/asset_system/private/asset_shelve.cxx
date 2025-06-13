@@ -22,27 +22,14 @@ namespace ice
         : storage{ storage }
         , definition{ definition }
         , compiler{ compiler }
-        , compiler_context{ .userdata = nullptr }
         , _allocator{ alloc }
         , _asset_resources{ alloc }
     {
         ice::hashmap::reserve(_asset_resources, 25);
-
-        if (compiler != nullptr && compiler->fn_prepare_context)
-        {
-            bool const valid_context = compiler->fn_prepare_context(_allocator, compiler_context, definition.asset_params);
-            ICE_ASSERT(valid_context, "Failed to prepare resource compiler context");
-        }
     }
 
     AssetShelve::~AssetShelve() noexcept
     {
-        if (compiler != nullptr && compiler->fn_cleanup_context)
-        {
-            bool const valid_context = compiler->fn_cleanup_context(_allocator, compiler_context);
-            ICE_ASSERT(valid_context, "Failed to prepare resource compiler context");
-        }
-
         for (ice::AssetEntry* entry : _asset_resources)
         {
             _allocator.destroy(entry);
