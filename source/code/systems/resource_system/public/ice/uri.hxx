@@ -85,6 +85,10 @@ namespace ice
                 ice::ucount const authority_end = ice::string::find_first_of(uri, '/', 2);
                 if (authority_end == ice::String_NPos)
                 {
+                    if (std::is_constant_evaluated())
+                    {
+                        throw "Invalid URI definition! Do not use '//' without defining a host name!";
+                    }
                     return false;
                 }
 

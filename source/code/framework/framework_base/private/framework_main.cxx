@@ -390,7 +390,7 @@ auto ice_setup(
 
     if constexpr (ice::build::is_android || ice::build::is_windows)
     {
-        ice::URI constexpr packs[]{ "urn://data.hsc"_uri, "urn://shaders.hsc"_uri };
+        ice::URI constexpr packs[]{ "urn:data.hsc"_uri, "urn:shaders.hsc"_uri };
         for (ice::URI const& packuri : packs)
         {
             auto shaders_pak = state.resources->find_resource(packuri);

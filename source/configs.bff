@@ -61,6 +61,7 @@
     .Name = 'Config-Unix'
     .Requires = { 'Android', 'CLANG-Frontend' }
     .BuildOptions = {
+        '-g'
         '-Wall'
         '-Werror'
         // We use [[deprecated]] to keep track of some old API usage without the need to fix them asap.
@@ -80,6 +81,7 @@
     .LinkLinkerOptions = {
         '-llog'
         '-shared' // It might be necessary to check again NDK in regards on linker/compiler flags on the next update.
+        '-Wl,-z,defs'
     }
 ]
 

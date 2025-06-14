@@ -10,6 +10,9 @@ android {
 
     namespace = "$(Namespace)"
 
+    // Defines the NDK version to be used for this project
+    ndkVersion = "$(NDKVersion)"
+
     defaultConfig {
 
         // Uniquely identifies the package for publishing.
@@ -27,6 +30,10 @@ android {
 
         // Defines a user-friendly version name for your app.
         versionName = "$(VersionName)"
+
+    compileOptions {
+        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_11
     }
 
     buildTypes {
@@ -50,6 +57,10 @@ android {
         }
 
         $(ProjectJNISources)
+    }
+
+    lint {
+        baseline = file("lint-baseline.xml")
     }
 }
 
@@ -84,6 +95,6 @@ afterEvaluate {
 }
 
 dependencies {
-    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("androidx.appcompat:appcompat:1.7.1")
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
 }
