@@ -6,7 +6,6 @@ plugins {
 android {
     // Here we use TargetSDK to have possible access to newer APIs
     compileSdk = $(TargetSDK)
-    // buildToolsVersion = "$ (AndroidBuildToolsVersion)"
 
     namespace = "$(Namespace)"
 
@@ -30,6 +29,12 @@ android {
 
         // Defines a user-friendly version name for your app.
         versionName = "$(VersionName)"
+
+        // By default keep debug symbols, just remove it in release afterwards
+        packaging.jniLibs.keepDebugSymbols += "**/*.so"
+
+        $(IBTBuildSystemIntegration)
+    }
 
     compileOptions {
         targetCompatibility = JavaVersion.VERSION_11
@@ -61,36 +66,6 @@ android {
 
     lint {
         baseline = file("lint-baseline.xml")
-    }
-}
-
-afterEvaluate {
-    /**
-     * IBT Integration for FastBuild build system.
-     *  To properly handle our build system, we create a new additional tasks that mimic the behavior of built-in CMakeBuild / NdkBuild steps.
-     *  Because gradle requires the outputs to be stored in a sub-folder with a specific ABI name, IBT is handling this by default.
-     *
-     * NOTE: Currently only ARM64 is supported as a value ABI target using the default IBT Pipeline.
-     *  You can add additional ABI support by calling the proper pipeline for the given ABI.
-     */
-    android.buildTypes.configureEach {
-        val buildConfig = this.name.replaceFirstChar { it.titlecase() }
-        val buildPipeline = "Android$(CompileSDK)"
-        val abiList = listOf("ARMv8", "x64")
-
-        var abiTargets = emptyArray<String>()
-        for (abi in abiList)
-        {
-            abiTargets += "-t"
-            abiTargets += "all-${buildPipeline}-${abi}-${buildConfig}"
-        }
-
-        val fbuildTask = tasks.register<Exec>("compile${buildConfig}UsingFastbuild") {
-            workingDir("$(WorkspaceDir)")
-            executable("$(WorkspaceDir)/$(ScriptFile)")
-            commandLine(listOf("$(WorkspaceDir)/$(ScriptFile)", "build") + abiTargets)
-        }
-        tasks["merge${buildConfig}NativeLibs"].dependsOn(fbuildTask)
     }
 }
 

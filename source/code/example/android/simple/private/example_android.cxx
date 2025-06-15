@@ -47,6 +47,7 @@ struct TestTrait : public ice::Trait
 
     TestTrait(ice::TraitContext& context) noexcept
         : ice::Trait{ context }
+        , timer{ }
     {
         _context.bind<&TestTrait::logic>();
         _context.bind<&TestTrait::gfx>(ice::gfx::ShardID_GfxFrameUpdate);

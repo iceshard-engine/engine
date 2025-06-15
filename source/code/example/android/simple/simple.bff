@@ -43,6 +43,7 @@
                 'vulkan_renderer'
                 'iceshard_pipelines'
                 'imgui_module'
+                'shader_tools'
             }
         ]
 
