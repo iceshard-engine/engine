@@ -26,7 +26,7 @@
         .VersionName = '1.4.2'
 
         .GradlePlugins = {
-            'id("com.android.application") version "8.10.0"'
+            'id("com.android.application") version "8.10.1"'
             'id("org.jetbrains.kotlin.android") version "1.8.20"'
         }
     ]
