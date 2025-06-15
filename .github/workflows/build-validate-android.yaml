@@ -17,7 +17,7 @@ jobs:
     strategy:
       matrix:
         project: [all]
-        pipeline: [Android29-ARMv8, Android29-x64]
+        pipeline: [Android35-ARMv8,Android35-x64]
         config: [Debug,Develop,Profile,Release]
     with:
       host-platform: 'windows-latest'
