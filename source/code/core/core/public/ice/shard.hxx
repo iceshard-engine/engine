@@ -238,11 +238,7 @@ namespace ice
         ice::Shard result{ };
         ice::ShardID const id = ice::shardid(definition);
 
-        if (std::is_constant_evaluated() == false)
-        {
-            ICE_ASSERT_CORE(id.payload == ice::Constant_ShardPayloadID<T> || id.payload == ice::ShardPayloadID_NotSet);
-        }
-
+        ICE_ASSERT_CORE(id.payload == ice::Constant_ShardPayloadID<T> || id.payload == ice::ShardPayloadID_NotSet);
         if (id.payload == ice::Constant_ShardPayloadID<T> || id.payload == ice::ShardPayloadID_NotSet)
         {
             result.id = id;
@@ -257,11 +253,7 @@ namespace ice
     {
         ice::Shard result{ };
 
-        if (std::is_constant_evaluated() == false)
-        {
-            ICE_ASSERT_CORE(id.payload == ice::Constant_ShardPayloadID<T> || id.payload == ice::ShardPayloadID_NotSet);
-        }
-
+        ICE_ASSERT_CORE(id.payload == ice::Constant_ShardPayloadID<T> || id.payload == ice::ShardPayloadID_NotSet);
         if (id.payload == ice::Constant_ShardPayloadID<T> || id.payload == ice::ShardPayloadID_NotSet)
         {
             result.id = id;

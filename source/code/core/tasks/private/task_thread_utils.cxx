@@ -1,3 +1,6 @@
+/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include <ice/task_thread_utils.hxx>
 #include <ice/os/windows.hxx>
 #include <ice/os/unix.hxx>
