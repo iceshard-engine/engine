@@ -575,6 +575,8 @@ auto ice_game_frame(
     state.platform.core->refresh_events();
     ice::ShardContainer const& system_events = state.platform.core->system_events();
 
+    // Update the system clock
+    ice::clock::update(runtime.clock);
     ice::clock::update(runtime.game_clock);
 
     ice::UniquePtr<ice::EngineFrame> new_frame = co_await logic.aquire_frame();
@@ -636,9 +638,6 @@ auto ice_update(
     ice::app::Runtime& runtime
 ) noexcept -> ice::Result
 {
-    // Update the system clock
-    ice::clock::update(runtime.clock);
-
     // Process any awaiting main thread tasks.
     runtime.main_queue.process_all();
 
