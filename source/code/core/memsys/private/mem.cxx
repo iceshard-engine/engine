@@ -46,7 +46,7 @@ namespace ice
             .size = size,
             .alignment = alignment,
         };
-#elif ISP_LINUX || ISP_WEBAPP || (ISP_ANDROID && ISP_ANDROID <= 29)
+#elif ISP_LINUX || ISP_WEBAPP || (ISP_ANDROID && ISP_ANDROID <= 35)
         void* memory_location;
 
         [[maybe_unused]]

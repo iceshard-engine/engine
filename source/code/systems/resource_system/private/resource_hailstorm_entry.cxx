@@ -1,6 +1,7 @@
 /// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
+#include <stdlib.h>
 #include "resource_hailstorm_entry.hxx"
 #include "resource_provider_hailstorm.hxx"
 #include <ice/task_utils.hxx>

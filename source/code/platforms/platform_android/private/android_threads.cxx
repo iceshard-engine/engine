@@ -17,6 +17,7 @@ namespace ice::platform::android
         , _scheduler_gfx{ queue_gfx }
         , _scheduler_tasks{ queue_tasks }
         , _threads{ }
+        , _aio_port{ ice::native_aio::aio_open(alloc, ice::native_aio::AIOPortInfo{ .worker_limit = 1, .debug_name = "ice.aio-port" }) }
     {
         ice::ucount const hw_concurrency = get_nprocs();
         ICE_LOG(LogSeverity::Info, LogTag::System, "Logical Processors: {}", hw_concurrency);
@@ -43,6 +44,11 @@ namespace ice::platform::android
             "platform.graphics-thread"_sid,
             ice::create_thread(alloc, queue_gfx, { .exclusive_queue = true, .debug_name = "ice.gfx" })
         );
+    }
+
+    AndroidThreads::~AndroidThreads() noexcept
+    {
+        ice::native_aio::aio_close(_aio_port);
     }
 
 } // namespace ice::platform::android

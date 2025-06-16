@@ -7,6 +7,7 @@
 #include <ice/assert.hxx>
 #include <ice/devui_imgui.hxx>
 #include <ice/string/static_string.hxx>
+#include <ice/string/heap_string.hxx>
 
 #if ISP_WINDOWS
 #include <imguizmo/ImGuizmo.h>
