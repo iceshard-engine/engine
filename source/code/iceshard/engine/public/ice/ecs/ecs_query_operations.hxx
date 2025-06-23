@@ -266,7 +266,8 @@ namespace ice::ecs
 
         template<typename MainPart, typename... RefParts>
         inline auto entity_count(
-            ice::ecs::QueryObject<MainPart, RefParts...> const& query
+            ice::ecs::QueryObject<MainPart, RefParts...> const& query,
+            ice::ecs::detail::DataBlockFilter::QueryFilter filter
         ) noexcept -> ice::ucount
         {
             // On a query with multiple parts we only want to check the blocks of the main part.
@@ -279,7 +280,10 @@ namespace ice::ecs
                 ice::ecs::detail::DataBlock const* it = head_block->next;
                 while (it != nullptr)
                 {
-                    result += it->block_entity_count;
+                    if (filter.check(it))
+                    {
+                        result += it->block_entity_count;
+                    }
                     it = it->next;
                 }
             }
@@ -384,7 +388,7 @@ namespace ice::ecs
         template<typename MainPart, typename... RefParts, typename QueryObjectOwner>
         inline auto for_each_entity_gen(
             ice::ecs::QueryObject<MainPart, RefParts...> const& query_object,
-            ice::ecs::detail::DataBlockFilter::QueryFilter const& filter,
+            ice::ecs::detail::DataBlockFilter::QueryFilter filter,
             QueryObjectOwner
         ) noexcept -> ice::Generator<typename ice::ecs::QueryObject<MainPart, RefParts...>::ResultType>
         {
@@ -453,7 +457,7 @@ namespace ice::ecs
         template<typename MainPart, typename... RefParts, typename Fn>
         inline auto for_each_entity(
             ice::ecs::QueryObject<MainPart, RefParts...> const& query_object,
-            ice::ecs::detail::DataBlockFilter::QueryFilter const& filter,
+            ice::ecs::detail::DataBlockFilter::QueryFilter filter,
             Fn&& fn
         ) noexcept
         {
@@ -526,7 +530,7 @@ namespace ice::ecs
         template<typename MainPart, typename... RefParts, typename QueryObjectOwner>
         inline auto for_each_block_gen(
             ice::ecs::QueryObject<MainPart, RefParts...> const& query,
-            ice::ecs::detail::DataBlockFilter::QueryFilter const& filter,
+            ice::ecs::detail::DataBlockFilter::QueryFilter filter,
             QueryObjectOwner
         ) noexcept -> ice::Generator<typename ice::ecs::QueryObject<MainPart, RefParts...>::BlockResultType>
         {
@@ -576,7 +580,7 @@ namespace ice::ecs
         template<typename MainPart, typename... RefParts, typename Fn>
         inline auto for_each_block(
             ice::ecs::QueryObject<MainPart, RefParts...> const& query,
-            ice::ecs::detail::DataBlockFilter::QueryFilter const& filter,
+            ice::ecs::detail::DataBlockFilter::QueryFilter filter,
             Fn&& fn
         ) noexcept
         {
@@ -631,7 +635,7 @@ namespace ice::ecs
     template<typename Self>
     inline auto TraitQueryOperations::entity_count(this Self&& self) noexcept -> ice::ucount
     {
-        return ice::ecs::query::entity_count(self.query_object());
+        return ice::ecs::query::entity_count(self.query_object(), self.filter_object());
     }
 
     template<typename Self>

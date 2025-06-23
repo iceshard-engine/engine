@@ -38,6 +38,49 @@ namespace ice::ecs
             );
         }
 
+        auto get_component_offsets(
+            ice::StringID const (&components)[2],
+            ice::ecs::detail::ArchetypeInstanceInfo const& info,
+            ice::u32* out_sizes,
+            ice::u32* out_offsets
+        ) noexcept
+        {
+            for (ice::u32 cmp = 0; cmp < 2; ++cmp)
+            {
+                if (components[cmp] != ice::StringID_Invalid)
+                {
+                    ice::u32 in_arch_idx;
+                    bool const found = ice::binary_search(ice::span::subspan(info.component_identifiers, 1), components[cmp], in_arch_idx);
+                    ICE_ASSERT_CORE(found);
+                    out_sizes[cmp] = info.component_sizes[in_arch_idx + 1];
+                    out_offsets[cmp] = info.component_offsets[in_arch_idx + 1];
+                }
+            }
+        }
+
+#if 0
+        auto get_block(
+            ice::ecs::EntityDataSlot slot_info,
+            ice::ecs::detail::ArchetypeInstanceInfo const* archinfo,
+            ice::Span<ice::ecs::detail::DataBlock*> head_blocks
+        ) noexcept -> ice::ecs::detail::DataBlock*
+        {
+            // Save the block index
+            ice::u32 const archetype_instance_idx = static_cast<ice::u32>(archinfo->archetype_instance);
+            ice::ecs::detail::DataBlock* archetype_block = head_blocks[archetype_instance_idx];
+
+            // Get the proper block
+            while (slot_info.block > 0)
+            {
+                slot_info.block -= 1; // Reduce the block index
+
+                // Get the next block
+                archetype_block = archetype_block->next;
+            }
+            return archetype_block;
+        }
+#endif
+
         void store_entities_with_data(
             ice::Span<ice::ecs::Entity const> src_entities,
             ice::Span<ice::ecs::EntityDataSlot> dst_data_slots,
@@ -273,11 +316,10 @@ namespace ice::ecs
 
         void batch_remove_entities(
             ice::ecs::ArchetypeIndex const& archetypes,
-            ice::ecs::EntityOperation const& operation,
+            ice::HashMap<ice::ecs::detail::EntityDestructor> const& destructors,
             ice::Span<ice::ecs::Entity const> entities_to_remove,
             ice::Span<ice::ecs::detail::DataBlock*> data_blocks,
-            ice::Span<ice::ecs::EntityDataSlot> data_slots,
-            ice::ShardContainer& out_shards
+            ice::Span<ice::ecs::EntityDataSlot> data_slots
         ) noexcept
         {
             auto const* it = ice::span::begin(entities_to_remove);
@@ -289,28 +331,49 @@ namespace ice::ecs
             ice::ecs::detail::DataBlock* archetype_block = nullptr;
             ice::u32 archetype_block_index = ice::u32_max;
 
+            ice::ucount dtor_count = 0;
+            ice::ecs::detail::EntityDestructor const* dtors[5];
+            ice::u32 dtor_components_sizes[10];
+            ice::u32 dtor_components_offsets[10];
+
             do
             {
                 EntityInfo entity_info = ice::ecs::entity_info(*it);
-                EntityDataSlot const slot_info = data_slots[entity_info.index];
+                EntityDataSlot const first_slot_info = data_slots[entity_info.index];
 
                 // Find the archetype info if it changed (Users are encouraged to avoid this)
-                ArchetypeInstance const temp_archetype[1]{ ArchetypeInstance{ slot_info.archetype } };
+                ArchetypeInstance const temp_archetype[1]{ ArchetypeInstance{ first_slot_info.archetype } };
                 if (archetype != temp_archetype[0])
                 {
                     archetypes.fetch_archetype_instance_infos(temp_archetype, archetype_infos);
                     archetype = temp_archetype[0];
+
+                    // Query all attached destructors
+                    dtor_count = 0;
+                    auto dtor_it = ice::multi_hashmap::find_first(destructors, ice::hash(archetype));
+                    while (dtor_it != nullptr)
+                    {
+                        dtors[dtor_count] = ice::addressof(dtor_it.value());
+                        get_component_offsets(
+                            dtors[dtor_count]->components,
+                            *archetype_infos[0],
+                            dtor_components_sizes + dtor_count * 2,
+                            dtor_components_offsets + dtor_count * 2
+                        );
+                        dtor_count += 1;
+                        dtor_it = ice::multi_hashmap::find_next(destructors, dtor_it);
+                    }
                 }
 
-                if (slot_info.block != archetype_block_index)
+                if (first_slot_info.block != archetype_block_index)
                 {
                     // Save the block index
                     ice::u32 const archetype_instance_idx = static_cast<ice::u32>(archetype_infos[0]->archetype_instance);
-                    archetype_block_index = slot_info.block;
+                    archetype_block_index = first_slot_info.block;
                     archetype_block = data_blocks[archetype_instance_idx];
 
                     // Get the proper block
-                    ice::u32 block_idx = slot_info.block;
+                    ice::u32 block_idx = first_slot_info.block;
                     while(block_idx > 0)
                     {
                         block_idx -= 1; // Reduce the block index
@@ -322,26 +385,27 @@ namespace ice::ecs
 
                 ICE_ASSERT_CORE(archetype_block != nullptr);
                 ICE_ASSERT(
-                    archetype_block->block_entity_count > slot_info.index,
+                    archetype_block->block_entity_count > first_slot_info.index,
                     "This storage has no data associated with the given entity handle!"
                 );
 
                 ice::ecs::detail::OperationDetails del_data_details{
-                    .block_offset = slot_info.index, // Initial index
+                    .block_offset = first_slot_info.index, // Initial index
                     .block_data = archetype_block->block_data, // The actual data
                 };
+
+                // Get the next entity
+                it += 1;
 
                 // Batch removal and step to next
                 ice::u32 span_size = 1;
                 while(it != end)
                 {
-                    it += 1; // Get the next entity and check if we can already handle it
-
                     EntityInfo next_entity_info = ice::ecs::entity_info(*it);
                     EntityDataSlot const next_slot_info = data_slots[next_entity_info.index];
 
                     // Increase count if we found the next entity
-                    if ((slot_info.index + span_size) == next_slot_info.index)
+                    if ((first_slot_info.index + span_size) == next_slot_info.index)
                     {
                         span_size += 1;
                     }
@@ -355,6 +419,26 @@ namespace ice::ecs
                     {
                         break;
                     }
+
+                    // Get the next entity
+                    it += 1;
+                }
+
+                // Setup components ptrs
+                for (ice::u32 idx = 0; idx < dtor_count; ++idx)
+                {
+                    // Get the pointers to the specific arrays
+                    void const* const ent = ice::ptr_add(del_data_details.block_data, { archetype_infos[0]->component_offsets[0] });
+                    void* ptr1 = ice::ptr_add(del_data_details.block_data, { dtor_components_offsets[idx * 2] });
+                    void* ptr2 = ice::ptr_add(del_data_details.block_data, { dtor_components_offsets[idx * 2 + 1] });
+
+                    // Move pointers to the first deleted entity index
+                    ice::ecs::Entity const* const entities = reinterpret_cast<ice::ecs::Entity const*>(ent) + del_data_details.block_offset;
+                    ptr1 = ice::ptr_add(ptr1, { del_data_details.block_offset * dtor_components_sizes[idx * 2] });
+                    ptr2 = ice::ptr_add(ptr1, { del_data_details.block_offset * dtor_components_sizes[idx * 2 + 1] });
+
+                    // Call on each destructor
+                    dtors[idx]->fn(dtors[idx]->userdata, span_size, entities, ptr1, ptr2);
                 }
 
                 // Clear the block from the selected entities
@@ -394,7 +478,7 @@ namespace ice::ecs
                         // List of entities that will be moved
                         moved_entities,
                         data_slots,
-                        slot_info, // The initially removed slot
+                        first_slot_info, // The initially removed slot
                         component_info,
                         component_info,
                         del_data_details, /* src data block */
@@ -467,6 +551,7 @@ namespace ice::ecs
         , _head_blocks{ _allocator }
         , _data_blocks{ _allocator }
         , _data_slots{ _allocator }
+        , _destructors{ _allocator }
     {
         ice::array::reserve(_head_blocks, 100); // 100 archetypes should suffice for now
         ice::array::resize(_data_slots, Constant_InitialEntityCount);
@@ -537,6 +622,7 @@ namespace ice::ecs
 
         ice::array::resize(_head_blocks, archetype_count);
         ice::array::resize(_data_blocks, archetype_count);
+        ice::hashmap::reserve(_destructors, archetype_count);
 
         // Setup the empty head blocks for new archetypes.
         //  This approach gives two benefits:
@@ -573,6 +659,30 @@ namespace ice::ecs
                 }
             }
         }
+    }
+
+    bool EntityStorage::attach_destructor(
+        ice::ecs::Archetype archetype,
+        ice::ecs::detail::EntityDestructor const& destructor
+    ) noexcept
+    {
+        ice::ecs::detail::ArchetypeInstanceInfo const* info = nullptr;
+        ice::ecs::detail::DataBlockPool* pool; // we dont care
+        _archetype_index.fetch_archetype_instance_info_with_pool(archetype, info, pool);
+        ICE_ASSERT_CORE(info != nullptr);
+
+        if (ice::hashmap::has(_destructors, ice::hash(info->archetype_instance)))
+        {
+            auto it = ice::multi_hashmap::find_first(_destructors, ice::hash(info->archetype_instance));
+            while (it != nullptr && it.value().identifier != destructor.identifier)
+            {
+                it = ice::multi_hashmap::find_next(_destructors, it);
+            }
+            ICE_ASSERT(it == nullptr, "A destructor with id {} was already attached to this archetype!");
+        }
+
+        ice::multi_hashmap::insert(_destructors, ice::hash(info->archetype_instance), destructor);
+        return true;
     }
 
     void EntityStorage::execute_operations(
@@ -618,7 +728,7 @@ namespace ice::ecs
             }
 
             ICE_LOG(
-                ice::LogSeverity::Debug, ice::LogTag::Engine,
+                ice::LogSeverity::Info, ice::LogTag::Engine,
                 "Executing operation with {} entities.",
                 operation.entity_count
             );
@@ -952,11 +1062,10 @@ namespace ice::ecs
 
                     ice::ecs::detail::batch_remove_entities(
                         _archetype_index,
-                        operation,
+                        _destructors,
                         entities,
                         _data_blocks,
-                        _data_slots,
-                        out_shards
+                        _data_slots
                     );
                 }
             }

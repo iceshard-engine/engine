@@ -9,6 +9,7 @@
 #include <ice/ecs/ecs_archetype.hxx>
 #include <ice/ecs/ecs_query.hxx>
 #include <ice/ecs/ecs_query_provider.hxx>
+#include <ice/ecs/ecs_entity_storage_details.hxx>
 #include <ice/mem_allocator_proxy.hxx>
 
 namespace ice::ecs
@@ -29,6 +30,11 @@ namespace ice::ecs
 
         auto archetypes() const noexcept -> ice::ecs::ArchetypeIndex const&;
         void update_archetypes() noexcept;
+
+        bool attach_destructor(
+            ice::ecs::Archetype archetype,
+            ice::ecs::detail::EntityDestructor const& destructor
+        ) noexcept;
 
         void execute_operations(
             ice::ecs::EntityOperations const& operations,
@@ -72,6 +78,8 @@ namespace ice::ecs
         ice::Array<ice::ecs::detail::DataBlock> _head_blocks;
         ice::Array<ice::ecs::detail::DataBlock*> _data_blocks;
         ice::Array<ice::ecs::EntityDataSlot> _data_slots;
+
+        ice::HashMap<ice::ecs::detail::EntityDestructor> _destructors;
     };
 
 } // namespace ice::ecs
