@@ -145,8 +145,7 @@ struct TestTrait : public ice::Trait
 
         update.engine.entity_index().create_many(_my_entity);
         _ops = ice::addressof(update.world.entity_operations());
-
-        ice::ecs::queue_set_archetype(*_ops, _my_entity, _arch_test);
+        _ops->set(_arch_test, _my_entity);
 
         ICE_LOG(LogSeverity::Retail, LogTag::Game, "Test Activated!");
         timer = ice::timer::create_timer(update.clock, 100_Tms);
@@ -160,7 +159,7 @@ struct TestTrait : public ice::Trait
         query<ice::ecs::Entity>().tags<C1, C2>().for_each_block(
             [&](ice::ucount count, ice::ecs::Entity const* entities) noexcept
             {
-                ice::ecs::queue_batch_remove_entities(*_ops, { entities, count });
+                _ops->destroy({ entities, count });
             }
         );
 

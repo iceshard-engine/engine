@@ -149,7 +149,7 @@ namespace ice::ecs
 
             inline auto await_resume() const noexcept -> ice::ecs::Query<QueryType::Synchronized, Parts...>
             {
-                return Query<QueryType::Synchronized, Parts...>{ this->query_object(), this->_is_empty == false };
+                return Query<QueryType::Synchronized, Parts...>{ this->query_object(), this->filter_object(), this->_is_empty == false };
             }
         };
 
