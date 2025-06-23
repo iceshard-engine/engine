@@ -65,6 +65,7 @@ namespace ice::ecs
             }
 
             // As long as we have something to check and we did not fail search for the next ID
+            [[maybe_unused]]
             ice::u32 matched_components = 0;
 
             // Reset for checking the remaining conditions
