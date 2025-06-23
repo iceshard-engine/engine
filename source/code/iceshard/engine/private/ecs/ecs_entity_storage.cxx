@@ -317,6 +317,7 @@ namespace ice::ecs
         void batch_remove_entities(
             ice::ecs::ArchetypeIndex const& archetypes,
             ice::HashMap<ice::ecs::detail::EntityDestructor> const& destructors,
+            ice::Span<ice::ecs::EntityDataSlot> dst_data_slots,
             ice::Span<ice::ecs::Entity const> entities_to_remove,
             ice::Span<ice::ecs::detail::DataBlock*> data_blocks,
             ice::Span<ice::ecs::EntityDataSlot> data_slots
@@ -481,8 +482,8 @@ namespace ice::ecs
                         first_slot_info, // The initially removed slot
                         component_info,
                         component_info,
-                        del_data_details, /* src data block */
-                        dst_data_details /* dst data block */
+                        dst_data_details, /* src data block */
+                        del_data_details /* dst data block */
                     );
                 }
 
@@ -490,6 +491,14 @@ namespace ice::ecs
                 archetype_block->block_entity_count -= span_size;
 
             } while(it != end);
+
+            // Clear all references
+            // TODO: We might not need this later once we extend Operations with a "type" flag.
+            for (ice::ecs::Entity entity : entities_to_remove)
+            {
+                ice::ecs::EntityInfo const ei = ice::ecs::entity_info(entity);
+                dst_data_slots[ei.index] = {}; // Reset the slot info!
+            }
         }
 
         auto default_filter(void const*, void const*) noexcept
@@ -755,10 +764,10 @@ namespace ice::ecs
                     }
                 }
 
-                // #todo allow different archetypes maybe?
-                ICE_ASSERT(
+                ICE_LOG_IF(
                     same_archetype == true,
-                    "Entities in operation have different archetypes, operation is illformed!"
+                    LogSeverity::Warning, LogTag::Engine,
+                    "Entities in operation have different archetypes, not all operations can handle this yet! Check for possible bugs!"
                 );
             }
 
@@ -976,6 +985,7 @@ namespace ice::ecs
                         }
 
                         // Update the remianing count
+                        processed_count += entities_stored;
                         remaining_count -= entities_stored;
                         data_block_it->block_entity_count += entities_stored;
                     }
@@ -1063,6 +1073,7 @@ namespace ice::ecs
                     ice::ecs::detail::batch_remove_entities(
                         _archetype_index,
                         _destructors,
+                        _data_slots,
                         entities,
                         _data_blocks,
                         _data_slots

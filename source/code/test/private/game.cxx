@@ -135,8 +135,6 @@ struct TestTrait : public ice::Trait
     ice::Allocator& _alloc;
     ice::Timer timer;
 
-    ice::ecs::Archetype _arch_test;
-
     ice::ecs::EntityOperations* _ops;
     ice::ecs::Entity _my_entity[10000];
 
@@ -145,7 +143,7 @@ struct TestTrait : public ice::Trait
 
         update.engine.entity_index().create_many(_my_entity);
         _ops = ice::addressof(update.world.entity_operations());
-        _ops->set(_arch_test, _my_entity);
+        _ops->set("test-arch", _my_entity);
 
         ICE_LOG(LogSeverity::Retail, LogTag::Game, "Test Activated!");
         timer = ice::timer::create_timer(update.clock, 100_Tms);
