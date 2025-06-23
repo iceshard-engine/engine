@@ -87,7 +87,7 @@ namespace ice::ecs
                 }
             };
 
-            return Awaitable{ query_object(), scheduler.schedule()._queue };
+            return Awaitable{ query_object(), filter_object(), scheduler.schedule()._queue };
         }
 
         auto filtered(ice::ecs::Archetype arch) noexcept -> ice::ecs::Query<QueryType::Unchecked, Parts...>
