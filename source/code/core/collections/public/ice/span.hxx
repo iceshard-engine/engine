@@ -330,12 +330,26 @@ namespace ice
         }
 
         template<typename Type>
-        constexpr auto from_memory(ice::Memory const& mem, ice::meminfo meminfo, ice::usize offset) noexcept
+        constexpr auto from_memory(ice::Memory const& mem, ice::ucount count, ice::usize offset) noexcept -> ice::Span<Type>
         {
+            static ice::meminfo minfo = ice::meminfo_of<Type>;
+
             void* const ptr = ice::ptr_add(mem.location, offset);
-            ICE_ASSERT_CORE(ice::is_aligned(ptr, meminfo.alignment));
-            ICE_ASSERT_CORE(ice::ptr_add(mem.location, mem.size) >= ice::ptr_add(ptr, meminfo.size));
-            return ice::Span<Type>{ reinterpret_cast<Type*>(ptr), ice::ucount((meminfo.size / ice::size_of<Type>).value) };
+            ICE_ASSERT_CORE(ice::is_aligned(ptr, minfo.alignment));
+            ICE_ASSERT_CORE(ice::ptr_add(mem.location, mem.size) >= ice::ptr_add(ptr, minfo.size * count));
+            return ice::Span<Type>{ reinterpret_cast<Type*>(ptr), count };
+        }
+
+        // TODO: Move to another location or rename? Not sure this is properly named
+        template<typename Type>
+        constexpr auto from_data(ice::Data const& mem, ice::ucount count, ice::usize offset) noexcept -> ice::Span<Type const>
+        {
+            static ice::meminfo constexpr minfo = ice::meminfo_of<Type>;
+
+            void const* const ptr = ice::ptr_add(mem.location, offset);
+            ICE_ASSERT_CORE(ice::is_aligned(ptr, minfo.alignment));
+            ICE_ASSERT_CORE(ice::ptr_add(mem.location, mem.size) >= ice::ptr_add(ptr, minfo.size * count));
+            return { reinterpret_cast<Type const*>(ptr), count };
         }
 
     } // namespace span

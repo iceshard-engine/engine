@@ -109,6 +109,9 @@ namespace ice::string
     template<typename CharType>
     constexpr auto data_view(ice::BasicString<CharType> str) noexcept -> typename ice::Data;
 
+    template<typename CharType>
+    constexpr auto meminfo(ice::BasicString<CharType> str) noexcept -> ice::meminfo;
+
 } // namespace ice::string
 
 namespace ice

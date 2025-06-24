@@ -123,6 +123,9 @@ namespace ice::array
     template<typename Type>
     inline auto memset(ice::Array<Type, ice::ContainerLogic::Trivial>& arr, ice::u8 value) noexcept -> ice::Memory;
 
+    template<typename Type, ice::ContainerLogic Logic>
+    inline auto meminfo(ice::Array<Type, Logic> const& arr) noexcept -> ice::meminfo;
+
 } // namespace ice::array
 
 namespace ice

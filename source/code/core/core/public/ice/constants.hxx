@@ -46,4 +46,16 @@ namespace ice
     constexpr ice::f32 const f32_nan = std::numeric_limits<ice::f32>::signaling_NaN();
     constexpr ice::f64 const f64_nan = std::numeric_limits<ice::f64>::signaling_NaN();
 
+    // Typed zero values
+    constexpr ice::f32 const f32_0 = ice::f32(0.0f);
+    constexpr ice::f64 const f64_0 = ice::f64(0.0);
+    constexpr ice::i8  const i8_0 = ice::i8(0);
+    constexpr ice::i16 const i16_0 = ice::i16(0);
+    constexpr ice::i32 const i32_0 = ice::i32(0);
+    constexpr ice::i64 const i64_0 = ice::i64(0);
+    constexpr ice::u8  const u8_0 = ice::u8(0);
+    constexpr ice::u16 const u16_0 = ice::u16(0);
+    constexpr ice::u32 const u32_0 = ice::u32(0);
+    constexpr ice::u64 const u64_0 = ice::u64(0);
+
 } // namespace ice

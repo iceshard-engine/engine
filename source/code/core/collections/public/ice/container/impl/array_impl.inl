@@ -539,6 +539,12 @@ namespace ice
             return mem;
         }
 
+        template<typename Type, ice::ContainerLogic Logic>
+        inline auto meminfo(ice::Array<Type, Logic> const& arr) noexcept -> ice::meminfo
+        {
+            return ice::meminfo_of<Type> * ice::array::count(arr);
+        }
+
     } // namespace array
 
 } // namespace ice
