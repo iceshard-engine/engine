@@ -266,7 +266,8 @@ namespace ice::ecs
 
         template<typename MainPart, typename... RefParts>
         inline auto entity_count(
-            ice::ecs::QueryObject<MainPart, RefParts...> const& query
+            ice::ecs::QueryObject<MainPart, RefParts...> const& query,
+            ice::ecs::detail::DataBlockFilter::QueryFilter filter
         ) noexcept -> ice::ucount
         {
             // On a query with multiple parts we only want to check the blocks of the main part.
@@ -279,7 +280,10 @@ namespace ice::ecs
                 ice::ecs::detail::DataBlock const* it = head_block->next;
                 while (it != nullptr)
                 {
-                    result += it->block_entity_count;
+                    if (filter.check(it))
+                    {
+                        result += it->block_entity_count;
+                    }
                     it = it->next;
                 }
             }
@@ -384,6 +388,7 @@ namespace ice::ecs
         template<typename MainPart, typename... RefParts, typename QueryObjectOwner>
         inline auto for_each_entity_gen(
             ice::ecs::QueryObject<MainPart, RefParts...> const& query_object,
+            ice::ecs::detail::DataBlockFilter::QueryFilter filter,
             QueryObjectOwner
         ) noexcept -> ice::Generator<typename ice::ecs::QueryObject<MainPart, RefParts...>::ResultType>
         {
@@ -401,9 +406,9 @@ namespace ice::ecs
 
                 // We skip the first block because it will be always empty.
                 ICE_ASSERT_CORE(block->block_entity_count == 0);
-                block = block->next;
+                block = filter.next(block);
 
-                while (block != nullptr)
+                while (block != nullptr && filter.check(block))
                 {
                     for (ice::u32 arg_idx = 0; arg_idx < component_count; ++arg_idx)
                     {
@@ -444,7 +449,7 @@ namespace ice::ecs
                         entity_idx += 1;
                     }
 
-                    block = block->next;
+                    block = filter.next(block);
                 }
             }
         }
@@ -452,6 +457,7 @@ namespace ice::ecs
         template<typename MainPart, typename... RefParts, typename Fn>
         inline auto for_each_entity(
             ice::ecs::QueryObject<MainPart, RefParts...> const& query_object,
+            ice::ecs::detail::DataBlockFilter::QueryFilter filter,
             Fn&& fn
         ) noexcept
         {
@@ -470,9 +476,9 @@ namespace ice::ecs
 
                 // We skip the first block because it will be always empty.
                 ICE_ASSERT_CORE(block->block_entity_count == 0);
-                block = block->next;
+                block = filter.next(block);
 
-                while (block != nullptr)
+                while (block != nullptr && filter.check(block))
                 {
                     for (ice::u32 arg_idx = 0; arg_idx < component_count; ++arg_idx)
                     {
@@ -516,7 +522,7 @@ namespace ice::ecs
                         );
                     }
 
-                    block = block->next;
+                    block = filter.next(block);
                 }
             }
         }
@@ -524,6 +530,7 @@ namespace ice::ecs
         template<typename MainPart, typename... RefParts, typename QueryObjectOwner>
         inline auto for_each_block_gen(
             ice::ecs::QueryObject<MainPart, RefParts...> const& query,
+            ice::ecs::detail::DataBlockFilter::QueryFilter filter,
             QueryObjectOwner
         ) noexcept -> ice::Generator<typename ice::ecs::QueryObject<MainPart, RefParts...>::BlockResultType>
         {
@@ -542,9 +549,9 @@ namespace ice::ecs
 
                 // We skip the first block because it will be always empty.
                 ICE_ASSERT_CORE(block->block_entity_count == 0);
-                block = block->next;
+                block = filter.next(block);
 
-                while (block != nullptr)
+                while (block != nullptr && filter.check(block))
                 {
                     for (ice::u32 arg_idx = 0; arg_idx < component_count; ++arg_idx)
                     {
@@ -565,7 +572,7 @@ namespace ice::ecs
 
                     co_yield ice::ecs::detail::create_block_tuple(block->block_entity_count, helper_pointer_array, MainPart{});
 
-                    block = block->next;
+                    block = filter.next(block);
                 }
             }
         }
@@ -573,6 +580,7 @@ namespace ice::ecs
         template<typename MainPart, typename... RefParts, typename Fn>
         inline auto for_each_block(
             ice::ecs::QueryObject<MainPart, RefParts...> const& query,
+            ice::ecs::detail::DataBlockFilter::QueryFilter filter,
             Fn&& fn
         ) noexcept
         {
@@ -590,7 +598,7 @@ namespace ice::ecs
 
                 // We skip the first block because it will be always empty.
                 ICE_ASSERT_CORE(block->block_entity_count == 0);
-                block = block->next;
+                block = filter.next(block);
 
                 while (block != nullptr)
                 {
@@ -617,7 +625,7 @@ namespace ice::ecs
                         helper_pointer_array
                     );
 
-                    block = block->next;
+                    block = filter.next(block);
                 }
             }
         }
@@ -627,7 +635,7 @@ namespace ice::ecs
     template<typename Self>
     inline auto TraitQueryOperations::entity_count(this Self&& self) noexcept -> ice::ucount
     {
-        return ice::ecs::query::entity_count(self.query_object());
+        return ice::ecs::query::entity_count(self.query_object(), self.filter_object());
     }
 
     template<typename Self>
@@ -649,18 +657,18 @@ namespace ice::ecs
     {
         if constexpr (ice::clear_type_t<Self>::Type == QueryType::Synchronized && std::is_rvalue_reference_v<decltype(self)>)
         {
-            return ice::ecs::query::for_each_entity_gen(self.query_object(), ice::move(self));
+            return ice::ecs::query::for_each_entity_gen(self.query_object(), self.filter_object(), ice::move(self));
         }
         else
         {
-            return ice::ecs::query::for_each_entity_gen(self.query_object(), int{});
+            return ice::ecs::query::for_each_entity_gen(self.query_object(), self.filter_object(), int{});
         }
     }
 
     template<typename Self, typename Fn>
     inline void TraitQueryOperations::for_each_entity(this Self&& self, Fn&& fn) noexcept
     {
-        return ice::ecs::query::for_each_entity(self.query_object(), ice::forward<Fn>(fn));
+        return ice::ecs::query::for_each_entity(self.query_object(), self.filter_object(), ice::forward<Fn>(fn));
     }
 
     template<typename Self>
@@ -668,18 +676,18 @@ namespace ice::ecs
     {
         if constexpr (ice::clear_type_t<Self>::Type == QueryType::Synchronized && std::is_rvalue_reference_v<decltype(self)>)
         {
-            return ice::ecs::query::for_each_block_gen(self.query_object(), ice::move(self));
+            return ice::ecs::query::for_each_block_gen(self.query_object(), self.filter_object(), ice::move(self));
         }
         else
         {
-            return ice::ecs::query::for_each_block_gen(self.query_object());
+            return ice::ecs::query::for_each_block_gen(self.query_object(), self.filter_object(), int{});
         }
     }
 
     template<typename Self, typename Fn>
     inline void TraitQueryOperations::for_each_block(this Self&& self, Fn&& fn) noexcept
     {
-        return ice::ecs::query::for_each_block(self.query_object(), ice::forward<Fn>(fn));
+        return ice::ecs::query::for_each_block(self.query_object(), self.filter_object(), ice::forward<Fn>(fn));
     }
 
 } // namespace ice::ecs

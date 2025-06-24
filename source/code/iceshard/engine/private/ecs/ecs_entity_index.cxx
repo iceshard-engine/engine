@@ -47,9 +47,11 @@ namespace ice::ecs
         ice::array::reserve(_generation, estimated_entity_count);
 
         // #todo: decide if we need this
-        //[[maybe_unused]]
-        //ice::ecs::Entity const initial_entity = create(); // The first entity will be invalid due to how the index works
-        //ICE_ASSERT(initial_entity == Entity::Invalid, "The definition of an 'Invalid' entity changed!");
+        [[maybe_unused]]
+        ice::ecs::Entity const initial_entity = create(); // The first entity will be invalid due to how the index works
+        ICE_ASSERT(initial_entity == Entity::Invalid, "The definition of an 'Invalid' entity changed!");
+        // Ensure this entity is always seen as "not-alive"
+        _generation[0] = ice::u8_max;
     }
 
     auto EntityIndex::count() const noexcept -> ice::u32
@@ -62,7 +64,7 @@ namespace ice::ecs
         using ice::ecs::EntityInfo;
 
         EntityInfo const info = ice::ecs::entity_info(entity);
-        return _generation[info.index] == info.generation;
+        return ice::count(_generation) > info.index && _generation[info.index] == info.generation;
     }
 
     auto EntityIndex::create() noexcept -> ice::ecs::Entity
@@ -149,6 +151,14 @@ namespace ice::ecs
         {
             this->destroy(entity);
         }
+    }
+
+    bool EntityIndex::recreate(ice::Array<ice::ecs::Entity>& entities, ice::u32 new_count) noexcept
+    {
+        destroy_many(entities);
+        ice::array::resize(entities, new_count);
+        create_many(entities);
+        return false;
     }
 
 } // namespace ice::ecs

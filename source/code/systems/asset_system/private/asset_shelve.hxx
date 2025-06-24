@@ -51,7 +51,6 @@ namespace ice
         ice::DefaultAssetStorage& storage;
         ice::AssetCategoryDefinition const& definition;
         ice::ResourceCompiler const* compiler;
-        ice::ResourceCompilerCtx compiler_context;
 
         class DevUI;
 

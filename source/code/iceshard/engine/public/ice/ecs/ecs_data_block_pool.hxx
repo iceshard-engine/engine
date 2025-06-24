@@ -25,7 +25,7 @@ namespace ice::ecs::detail
         //! \return A unused data block ready to store entity data.
         //!
         //! \note (For developers) After this function returns the pool should't access any of the fields in the block structure.
-        virtual auto request_block() noexcept -> ice::ecs::detail::DataBlock* = 0;
+        virtual auto request_block(ice::ecs::detail::ArchetypeInstanceInfo const& info) noexcept -> ice::ecs::detail::DataBlock* = 0;
 
         //! \brief Returns the block to the pool, ensuring that no data will read from or written to it.
         //! \pre The block parameter is not a `nullptr`.

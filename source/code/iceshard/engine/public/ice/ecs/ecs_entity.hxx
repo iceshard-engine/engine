@@ -14,7 +14,7 @@ namespace ice::ecs
     //!
     //! \details An Entity handle is opaque and does not provide any functionality out of the box. It's mainly used as an argument in other ECS related
     //!   systems. For examples, you can check if entities are alive with `EntityIndex::is_alive` or query a specific components with `Query` objects.
-    enum class Entity : ice::u32 { };
+    enum class Entity : ice::u32 { Invalid = 0 };
 
     //! \brief Provides easy access to the specific parts making up the `Entity` handle value.
     struct EntityInfo

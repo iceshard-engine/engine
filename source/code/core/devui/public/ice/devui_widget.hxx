@@ -30,7 +30,7 @@ namespace ice
 
         virtual bool build_mainmenu(ice::DevUIWidgetState& state) noexcept;
 
-        ice::DevUIWidgetInfo const info;
+        ice::DevUIWidgetInfo const widget_info;
     };
 
 } // namespace ice

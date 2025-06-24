@@ -70,7 +70,17 @@ namespace ice
             ice::Array<ice::URI> dependencies{ alloc }; // Not used currently
 
             ice::ResourceHandle resource = ice::asset_data_resource(transaction.asset._data);
-            ice::ResourceCompilerCtx& ctx = transaction.asset._shelve->compiler_context;
+
+            ice::ResourceCompilerCtx ctx{ nullptr };// = transaction.asset._shelve->compiler_context;
+            ice::api::resource_compiler::v1::ResourceCompilerCtxCleanup cleanup{ alloc, ctx, compiler.fn_cleanup_context };
+            if (compiler.fn_prepare_context)
+            {
+                ICE_ASSERT_CORE(compiler.fn_cleanup_context);
+                if (compiler.fn_prepare_context(alloc, ctx, {}) == false)
+                {
+                    co_return false;
+                }
+            }
 
             // Early return if sources or dependencies couldn't be collected
             if (compiler.fn_collect_sources(ctx, resource, resource_tracker, sources) == false
@@ -88,7 +98,7 @@ namespace ice
             ice::Array<ice::Task<>> tasks{ alloc };
             ice::array::reserve(tasks, ice::array::count(sources));
 
-            static auto fn_validate = [&ctx](
+            auto fn_validate = [&ctx](
                 ice::ResourceCompiler const& compiler,
                 ice::ResourceHandle const& source,
                 ice::ResourceTracker& tracker,
@@ -121,7 +131,7 @@ namespace ice
             ice::Array<ice::ResourceCompilerResult> compiled_sources{ alloc };
             ice::array::resize(compiled_sources, ice::array::count(sources));
 
-            static auto fn_compile = [&ctx](
+            auto fn_compile = [&ctx](
                 ice::ResourceCompiler const& compiler,
                 ice::ResourceHandle const& source,
                 ice::ResourceTracker& tracker,

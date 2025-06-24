@@ -122,6 +122,20 @@ namespace ice
         return false;
     }
 
+    template<typename T, typename Comp, typename... U>
+    constexpr bool search_with(ice::Span<T> values, Comp&& comp, ice::ucount& out_index, U const&... params) noexcept
+    {
+        for (ice::u32 idx = 0; idx < ice::span::count(values); ++idx)
+        {
+            if (ice::forward<Comp>(comp)(values[idx], idx, params...))
+            {
+                out_index = idx;
+                return true;
+            }
+        }
+        return false;
+    }
+
     namespace detail
     {
 

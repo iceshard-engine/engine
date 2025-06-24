@@ -23,10 +23,13 @@ namespace ice::ecs::detail
         //! \brief Size of the available data to be used for entity components.
         ice::usize block_data_size = 0_B;
 
+        //! \brief Block filter data
+        void* block_filter_data;
+
         //! \brief Pointer to component data.
         void* block_data;
 
         ice::ecs::detail::DataBlock* next;
     };
 
-} // namespace ice::ecs
+} // namespace ice::ecs::detail

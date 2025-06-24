@@ -25,7 +25,7 @@ namespace ice
     {
         if (ImGui::BeginMenu("Resource Providers", true))
         {
-            ImGui::MenuItem(ice::string::begin(info.name), nullptr, &state.active);
+            ImGui::MenuItem(ice::string::begin(widget_info.name), nullptr, &state.active);
             ImGui::EndMenu();
         }
         return false;

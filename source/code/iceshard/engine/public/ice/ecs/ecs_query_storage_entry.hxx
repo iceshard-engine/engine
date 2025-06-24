@@ -26,6 +26,7 @@ namespace ice::ecs
     public:
         using QueryObjectType = ice::ecs::QueryObject<Parts...>;
         using QueryObjectEntryType = ice::ecs::QueryObjectEntry<QueryObject<Parts...>, Tags...>;
+        using QueryArchFilterList = ice::Array<ice::ecs::Archetype>;
 
     public:
         static auto hash_value() noexcept -> ice::u64;

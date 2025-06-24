@@ -21,7 +21,7 @@ namespace ice
         , _entities{ entities }
         , _entity_storage{ entity_storage }
         , _entity_query_storage{ _allocator, _entity_storage }
-        , _entity_operations{ _allocator, 16 }
+        , _entity_operations{ _allocator, entities, entity_storage.archetypes(), 16 }
         , _traits{ ice::move(traits) }
         , _tasks_launcher{ context, ice::array::slice(_traits), task_tracker }
         , _devui{ create_devui(_allocator, context) }

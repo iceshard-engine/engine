@@ -128,10 +128,10 @@ namespace ice::devui
         static bool show_demo = false;
 
         ImGui::NewFrame();
-#       if ISP_WINDOWS
+#if ISP_WINDOWS
         ImGuizmo::BeginFrame();
         ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
-#       endif
+#endif
 
         {
             if (ImGui::BeginMainMenuBar())
@@ -142,7 +142,7 @@ namespace ice::devui
                     {
                         for (ImGuiDevUIWidget& runtime : _widget_manager.widgets())
                         {
-                            ice::DevUIWidgetInfo const& info = runtime.widget->info;
+                            ice::DevUIWidgetInfo const& info = runtime.widget->widget_info;
                             if (ice::string::starts_with(info.category, category) && runtime.widget->build_mainmenu(runtime))
                             {
                                 _widget_frame.mainmenu(info, runtime);

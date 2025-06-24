@@ -3,8 +3,10 @@
 
 #pragma once
 #include <ice/ecs/ecs_types.hxx>
+#include <ice/ecs/ecs_data_block_filter.hxx>
 #include <ice/stringid.hxx>
 #include <ice/sort.hxx>
+#include <ice/algorithm.hxx>
 
 namespace ice::ecs::detail
 {
@@ -19,11 +21,11 @@ namespace ice::ecs::detail
     struct ArchetypeInstanceInfo
     {
         ice::ecs::detail::ArchetypeInstance archetype_instance;
+        ice::ecs::detail::DataBlockFilter data_block_filter;
         ice::Span<ice::StringID const> component_identifiers;
         ice::Span<ice::u32 const> component_sizes;
         ice::Span<ice::u32 const> component_alignments;
         ice::Span<ice::u32 const> component_offsets;
-        ice::u32 component_entity_count_max;
     };
 
     //! \brief Helper type to sort components during compiletime when instancing `ArchetypeDefinition`s.
@@ -113,6 +115,15 @@ namespace ice::ecs::detail
             }
         }
         return result;
+    }
+
+    constexpr auto calculate_entity_count_for_space(ice::ecs::detail::ArchetypeInstanceInfo const& arch, ice::usize space) noexcept -> ice::ucount
+    {
+        ice::u32 const component_size_sum = ice::accumulate(arch.component_sizes, 0);
+        ice::u32 const component_alignment_sum = ice::accumulate(arch.component_alignments, 0);
+
+        ice::usize const available_block_size = { ice::usize::subtract(space, arch.data_block_filter.data_size).value - component_alignment_sum };
+        return ice::ucount(available_block_size.value) / component_size_sum;
     }
 
 } // namespace ice::ecs

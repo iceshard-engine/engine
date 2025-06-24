@@ -113,7 +113,7 @@ struct TestTrait : public ice::Trait
     ice::Timer timer;
 
     using TestArchetype = ice::ecs::ArchetypeDefinition<C1, C2>;
-    static constexpr ice::ecs::ArchetypeDefinition Archetype_TestArchetype = TestArchetype{};
+    static constexpr ice::ecs::ArchetypeDefinition Archetype_TestArchetype = TestArchetype{ "test-arch" };
 
     ice::ecs::EntityOperations* _ops;
     ice::ecs::Entity _my_entity[10000];
@@ -123,8 +123,7 @@ struct TestTrait : public ice::Trait
 
         update.engine.entity_index().create_many(_my_entity);
         _ops = ice::addressof(update.world.entity_operations());
-
-        ice::ecs::queue_set_archetype(*_ops, _my_entity, Archetype_TestArchetype);
+        _ops->set("test-arch", _my_entity);
 
         ICE_LOG(LogSeverity::Retail, LogTag::Game, "Test Activated!");
         timer = ice::timer::create_timer(update.clock, 100_Tms);
@@ -138,7 +137,7 @@ struct TestTrait : public ice::Trait
         query<ice::ecs::Entity>().tags<C1, C2>().for_each_block(
             [&](ice::ucount count, ice::ecs::Entity const* entities) noexcept
             {
-                ice::ecs::queue_batch_remove_entities(*_ops, { entities, count });
+                _ops->destroy({ entities, count });
             }
         );
 
@@ -187,9 +186,7 @@ struct TestTrait : public ice::Trait
             ICE_LOG(LogSeverity::Info, LogTag::Game, "TestTrait::logic {}", x.load());
         }
 
-        ICE_LOG(LogSeverity::Debug, LogTag::Game, "{}", std::hash<std::thread::id>{}(std::this_thread::get_id()));
         co_await ice::await_scheduled_on(tasks, update.thread.tasks, update.thread.main);
-        ICE_LOG(LogSeverity::Debug, LogTag::Game, "{}", std::hash<std::thread::id>{}(std::this_thread::get_id()));
         co_return;
     }
 
