@@ -36,8 +36,11 @@ namespace ice::grammar
     static constexpr TokenType UCT_WhenReleased{ UCT_Base + 18 };
     static constexpr TokenType UCT_WhenActive{ UCT_Base + 19 };
     static constexpr TokenType UCT_WhenInactive{ UCT_Base + 20 };
-    static constexpr TokenType UCT_StepActivate{ UCT_Base + 21 };
-    static constexpr TokenType UCT_StepDeactivate{ UCT_Base + 22 };
+    static constexpr TokenType UCT_WhenFlagCheckSeries{ UCT_Base + 21 };
+    static constexpr TokenType UCT_StepActivate{ UCT_Base + 22 };
+    static constexpr TokenType UCT_StepDeactivate{ UCT_Base + 23 };
+    static constexpr TokenType UCT_StepReset{ UCT_Base + 24 };
+    static constexpr TokenType UCT_Modifier{ UCT_Base + 25 };
 
     static constexpr SyntaxRule Rule_ColonOrCommaRules[]{ // , or :
         SyntaxRule{ TokenType::CT_Colon },
@@ -95,6 +98,11 @@ namespace ice::grammar
         SyntaxRule{ Check_IsValidTargetComponent<'z'> },
     };
 
+    static constexpr SyntaxRule Rule_LayerActionComponentPostfixRules[]{
+        SyntaxRule{ TokenType::CT_Dot },
+        SyntaxRule{ Rule_LayerActionComponentListRules, MatchFirst, &syntax::LayerActionStep::source, SyntaxRule::store_value_extend<arctic::String> }
+    };
+
     ////////////////////////////////////////////////////////////////
     // Action Step rules
     ////////////////////////////////////////////////////////////////
@@ -105,35 +113,47 @@ namespace ice::grammar
     };
 
     static constexpr SyntaxRule Rule_LayerActionStepTargetExplicitRules[]{
-        SyntaxRule{ Rule_LayerActionStepTargetTypeRules, MatchFirst },
+        SyntaxRule{ Rule_LayerActionStepTargetTypeRules, MatchFirst, &syntax::LayerActionStep::source_type },
         SyntaxRule{ TokenType::CT_Dot },
     };
 
     static constexpr SyntaxRule Rule_LayerActionStepTargetRules[]{
         SyntaxRule{ Rule_LayerActionStepTargetExplicitRules, MatchAll }.optional(),
-        SyntaxRule{ TokenType::CT_Symbol }, // Capture name
+        SyntaxRule{ TokenType::CT_Symbol, &syntax::LayerActionStep::source }, // Capture name
+        SyntaxRule{ Rule_LayerActionComponentPostfixRules, MatchAll }.optional()
     };
 
     static constexpr SyntaxRule Rule_LayerActionStepBuiltInListRules[]{ // button, axis1d, axis2d or axis3d
         SyntaxRule{ UCT_StepActivate },
         SyntaxRule{ UCT_StepDeactivate },
+        SyntaxRule{ UCT_StepReset },
+    };
+
+    static constexpr SyntaxRule Rule_LayerActionStepArithmeticOperationRules[]{
+        SyntaxRule{ TokenType::OP_Plus },
+        SyntaxRule{ TokenType::OP_Minus },
+        SyntaxRule{ TokenType::OP_Assign },
     };
 
     static constexpr SyntaxRule Rule_LayerActionStepArithmeticRules[]{ // button, axis1d, axis2d or axis3d
-        SyntaxRule{ Rule_LayerActionComponentListRules, MatchFirst },
-        SyntaxRule{ TokenType::OP_Assign },
+        // Explicitly extend the string to cover the previous token and the new matched one. (ex: '.' + 'x' => '.x')
+        SyntaxRule{ Rule_LayerActionComponentListRules, MatchFirst, &syntax::LayerActionStep::destination, SyntaxRule::store_value_extend<arctic::String> },
+        SyntaxRule{ Rule_LayerActionStepArithmeticOperationRules, MatchFirst, &syntax::LayerActionStep::step },
         SyntaxRule{ Rule_LayerActionStepTargetRules, MatchAll }
     };
 
     static constexpr SyntaxRule Rule_LayerActionStepOperationRules[]{ // button, axis1d, axis2d or axis3d
-        SyntaxRule{ Rule_LayerActionStepBuiltInListRules, MatchFirst },
+        SyntaxRule{ Rule_LayerActionStepBuiltInListRules, MatchFirst, &syntax::LayerActionStep::step },
         SyntaxRule{ Rule_LayerActionStepArithmeticRules, MatchAll },
 
     };
 
     static constexpr SyntaxRule Rule_LayerActionStepRules[]{
-        SyntaxRule{ TokenType::CT_Dot },
+        // If we don't end up using the destination string it's fine
+        //   but we require the '.' character to be used when setting destinations via builder.
+        SyntaxRule{ TokenType::CT_Dot, &syntax::LayerActionStep::destination },
         SyntaxRule{ Rule_LayerActionStepOperationRules, MatchFirst }, // TODO: Capture,
+        SyntaxRule{ TokenType::ST_EndOfLine }.repeat(),
     };
 
     ////////////////////////////////////////////////////////////////
@@ -141,8 +161,8 @@ namespace ice::grammar
     ////////////////////////////////////////////////////////////////
 
     static constexpr SyntaxRule Rule_LayerActionWhenTargetTypeRules[]{
-        SyntaxRule{ UCT_Source }, // TODO: Set action target type
-        SyntaxRule{ UCT_Action }, // TODO: Set action target type
+        SyntaxRule{ UCT_Source },
+        SyntaxRule{ UCT_Action },
     };
 
     static constexpr SyntaxRule Rule_LayerActionWhenTargetExplicitRules[]{
@@ -152,7 +172,7 @@ namespace ice::grammar
 
     static constexpr SyntaxRule Rule_LayerActionWhenTargetRules[]{
         SyntaxRule{ Rule_LayerActionWhenTargetExplicitRules, MatchAll }.optional(),
-        SyntaxRule{ TokenType::CT_Symbol, &syntax::LayerActionWhen::source_name }, // Capture name
+        SyntaxRule{ TokenType::CT_Symbol, &syntax::LayerActionWhen::source_name }.optional(), // Capture name
     };
 
     static constexpr SyntaxRule Rule_LayerActionWhenTargetActionConditionListRules[]{
@@ -160,6 +180,7 @@ namespace ice::grammar
         SyntaxRule{ UCT_WhenReleased },
         SyntaxRule{ UCT_WhenActive },
         SyntaxRule{ UCT_WhenInactive },
+        SyntaxRule{ TokenType::KW_True },
     };
 
     static constexpr SyntaxRule Rule_LayerActionWhenTargetComparisonListRules[]{
@@ -202,10 +223,20 @@ namespace ice::grammar
         // Just to create the child node we need to succeed once.
         SyntaxRule{ [](auto const&, auto& ctx) noexcept{ return arctic::ParseState::Success; } }.noadvance(),
         SyntaxRule{ Rule_LayerActionWhenBlockRules, MatchFirst, &syntax::LayerActionWhen::type },
-        SyntaxRule{ Rule_LayerActionWhenTargetRules, MatchAll, &syntax::LayerActionWhen::source_name },
+        SyntaxRule{ Rule_LayerActionWhenTargetRules, MatchAll },
         SyntaxRule{ Rule_LayerActionWhenTargetActionRules, MatchAll },
+        SyntaxRule{ UCT_WhenFlagCheckSeries, &syntax::LayerActionWhen::check_series }.optional(),
         SyntaxRule{ TokenType::ST_EndOfLine }.repeat(),
-        SyntaxRule{ Rule_LayerActionStepRules, MatchChild<syntax::LayerActionStep> }.optional().repeat()
+        SyntaxRule{ Rule_LayerActionStepRules, MatchChild<syntax::LayerActionStep> }.optional().repeat(),
+    };
+
+    ////////////////////////////////////////////////////////////////
+    // Action modifier rules
+    ////////////////////////////////////////////////////////////////
+
+    static constexpr SyntaxRule Rule_LayerActionModifierRules[]{
+        SyntaxRule{ UCT_Modifier },
+        SyntaxRule{ TokenType::ST_EndOfLine }.repeat(),
     };
 
     ////////////////////////////////////////////////////////////////
@@ -226,6 +257,7 @@ namespace ice::grammar
         SyntaxRule{ Rule_LayerActionTypeRules, MatchFirst, &syntax::LayerAction::type },
         SyntaxRule{ TokenType::ST_EndOfLine }.repeat(),
         SyntaxRule{ Rule_LayerActionWhenRules, MatchChild<syntax::LayerActionWhen> }.repeat().optional(),
+        SyntaxRule{ Rule_LayerActionModifierRules, MatchChild<syntax::LayerActionModifier> }.repeat().optional(),
         // SyntaxRule{ Rule_LayerActionRules, MatchChild<syntax::LayerAction> }.repeat().optional(),
     };
 

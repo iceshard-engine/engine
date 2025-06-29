@@ -436,7 +436,7 @@ auto ice_setup(
     ice::EngineCreateInfo engine_create_info{
         .states = ice::create_state_tracker(state.alloc),
         .archetypes = ice::move(archetypes),
-        .action_stack = ice::move(ice::create_input_action_stack(alloc))
+        .action_stack = ice::move(ice::create_input_action_stack(alloc, ""))
     };
     {
         ice::UniquePtr<ice::AssetCategoryArchive> asset_categories = ice::create_asset_category_archive(state.engine_alloc);

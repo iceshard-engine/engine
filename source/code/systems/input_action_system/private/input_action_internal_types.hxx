@@ -6,6 +6,8 @@ namespace ice
 
     struct InputActionIndex
     {
+        static constexpr ice::u16 SelfIndex = 8191;
+
         ice::u16 source_index : 13;
         ice::u16 source_axis : 3;
     };

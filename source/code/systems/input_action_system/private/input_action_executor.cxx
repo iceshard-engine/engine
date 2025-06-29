@@ -6,6 +6,22 @@ namespace ice
 
     bool InputActionExecutor::execute_condition(
         ice::InputActionCondition condition,
+        ice::InputActionRuntime const& action,
+        ice::f32 param
+    ) const noexcept
+    {
+        switch (condition)
+        {
+            using enum InputActionCondition;
+        case ActionActive: return action.active;
+        case ActionInactive: return action.active == false;
+        case AlwaysTrue: return true;
+        default: ICE_ASSERT_CORE(false); return false;
+        }
+    }
+
+    bool InputActionExecutor::execute_condition(
+        ice::InputActionCondition condition,
         ice::InputActionSource const& val,
         ice::f32 param
     ) const noexcept
@@ -13,11 +29,22 @@ namespace ice
         switch (condition)
         {
             using enum InputActionCondition;
+            // Source conditions
+        case Active: return val.event != InputActionSourceEvent::None;
         case Pressed: return val.event == InputActionSourceEvent::KeyPress;
         case Released: return val.event == InputActionSourceEvent::KeyRelease;
         case Trigger: return val.event == InputActionSourceEvent::Trigger;
         case Axis: return val.event == InputActionSourceEvent::Axis;
         case AxisDeadzone: return val.event == InputActionSourceEvent::AxisDeadzone;
+            // Source and Parameter comparisons
+        case Equal: return val.value == param;
+        case NotEqual: return val.value != param;
+        case Greater: return val.value > param;
+        case GreaterOrEqual: return val.value >= param;
+        case Lower: return val.value < param;
+        case LowerOrEqual: return val.value <= param;
+            // Action conditions
+
         default:
             break;
         }
@@ -40,6 +67,9 @@ namespace ice
         case Deactivate:
             runtime.state = 0;
             runtime.active = false;
+            break;
+        case Reset:
+            runtime.value = ice::vec2f{};
             break;
 
         default:

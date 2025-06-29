@@ -1,6 +1,7 @@
 #include "input_action_dsl_grammar.hxx"
 #include "input_action_dsl_layer_builder.hxx"
 
+#include <ice/string_utils.hxx>
 #include <ice/input_action_definitions.hxx>
 #include <ice/log.hxx>
 
@@ -13,7 +14,7 @@ namespace ice
         auto key_from_dsl(arctic::String value) noexcept -> ice::input::KeyboardKey;
         auto mouse_from_dsl(arctic::String value) noexcept -> ice::input::MouseInput;
 
-        auto condition_from_dsl(arctic::Token token) noexcept -> ice::InputActionCondition;
+        auto condition_from_dsl(arctic::Token token, bool action_condition) noexcept -> ice::InputActionCondition;
         auto step_from_dsl(arctic::Token token) noexcept -> ice::InputActionStep;
 
     } // namespace detail
@@ -109,10 +110,16 @@ namespace ice
             if (child.type() == ice::syntax::SyntaxEntity_LayerActionCondition)
             {
                 visit(action, child.to<ice::syntax::LayerActionWhen>());
-            }
-            else if (child.type() == ice::syntax::SyntaxEntity_LayerActionStep)
-            {
-                visit(action, child.to<ice::syntax::LayerActionStep>());
+
+                arctic::SyntaxNode<> steps = child.child();
+                while (steps != false)
+                {
+                    if (steps.type() == ice::syntax::SyntaxEntity_LayerActionStep)
+                    {
+                        visit(action, steps.to<ice::syntax::LayerActionStep>());
+                    }
+                    steps = steps.sibling();
+                }
             }
             child = child.sibling();
         }
@@ -123,21 +130,28 @@ namespace ice
         arctic::SyntaxNode<ice::syntax::LayerActionWhen> node
     ) noexcept
     {
+        using enum ice::InputActionCondition;
+
         ice::syntax::LayerActionWhen const& cond = node.to<ice::syntax::LayerActionWhen>().data();
         ICE_LOG(LogSeverity::Debug, LogTag::Tool, "- {} {}.{}.{} {} {}", cond.type.value, cond.source_type.value, cond.source_name, cond.source_component, cond.condition.value, cond.param.value);
 
-        ice::InputActionCondition const condition = detail::condition_from_dsl(cond.condition);
-
+        bool const from_action = cond.source_type.type == grammar::UCT_Action
+            || (cond.source_type.type == arctic::TokenType::Invalid && cond.source_name.empty()); // "self"
+        ice::InputActionCondition const condition = detail::condition_from_dsl(cond.condition, from_action);
         ice::InputActionConditionFlags flags = InputActionConditionFlags::None;
 
-        // No siblings or next subling beeing "when" == "final" condition.
+        // No siblings or next sibling: "when" == "final" condition.
         if (auto sib = node.sibling<ice::syntax::LayerActionWhen>(); !sib || sib.data().type.type == grammar::UCT_When)
         {
             flags |= InputActionConditionFlags::Final;
         }
-        if (node.child()) // Only steps can introduce children.
+        if (node.child<syntax::LayerActionStep>()) // Only steps can introduce children.
         {
             flags |= InputActionConditionFlags::RunSteps;
+        }
+        if (cond.check_series)
+        {
+            flags |= InputActionConditionFlags::SeriesCheck;
         }
         if (cond.type.type == grammar::UCT_WhenAnd) // Only steps can introduce children.
         {
@@ -151,7 +165,16 @@ namespace ice
         // TODO: SeriesCheck
         // TODO: non-Final
 
-        action.add_condition(cond.source_name, condition, flags);
+        ice::f32 param = 0.0f;
+        bool const is_param_condition = condition == Equal || condition == NotEqual
+            || condition == Greater || condition == GreaterOrEqual
+            || condition == Lower || condition == LowerOrEqual;
+        if (is_param_condition)
+        {
+            param = ice::from_chars(cond.param.value, param);
+        }
+
+        action.add_condition(cond.source_name, condition, flags, param, from_action);
     }
 
     void InputActionDSLLayerBuilder::visit(
@@ -159,7 +182,16 @@ namespace ice
         arctic::SyntaxNode<ice::syntax::LayerActionStep> node
     ) noexcept
     {
-        action.add_step(detail::step_from_dsl(node.data().step));
+        ice::syntax::LayerActionStep const& info = node.data();
+        ice::InputActionStep const step = detail::step_from_dsl(info.step);
+        if (step == InputActionStep::Set || step == InputActionStep::Add || step == InputActionStep::Sub)
+        {
+            action.add_step(info.source, step, info.destination);
+        }
+        else
+        {
+            action.add_step(step);
+        }
     }
 
     auto detail::key_from_dsl(arctic::String value) noexcept -> ice::input::KeyboardKey
@@ -237,21 +269,25 @@ namespace ice
         return result;
     }
 
-    auto detail::condition_from_dsl(arctic::Token token) noexcept -> ice::InputActionCondition
+    auto detail::condition_from_dsl(arctic::Token token, bool action_condition) noexcept -> ice::InputActionCondition
     {
         switch(token.type)
         {
+            // Action conditions
         case grammar::UCT_WhenPressed: return InputActionCondition::Pressed;
         case grammar::UCT_WhenReleased: return InputActionCondition::Released;
-        case grammar::UCT_WhenActive: return InputActionCondition::Active;
-        // case grammar::UCT_WhenInactive: return InputActionCondition::; TODO
+        case grammar::UCT_WhenActive: return action_condition ? InputActionCondition::ActionActive : InputActionCondition::Active;
+        case grammar::UCT_WhenInactive: return InputActionCondition::ActionInactive;
+            // Arithmetic conditions
         case arctic::TokenType::OP_Equal: return InputActionCondition::Equal;
-        // case arctic::TokenType::OP_NotEqual: return InputActionCondition::; // TODO
+        case arctic::TokenType::OP_NotEqual: return InputActionCondition::NotEqual; // TODO
         case arctic::TokenType::OP_Greater: return InputActionCondition::Greater;
         case arctic::TokenType::OP_GreaterOrEqual: return InputActionCondition::GreaterOrEqual;
         case arctic::TokenType::OP_Less: return InputActionCondition::Lower;
         case arctic::TokenType::OP_LessOrEqual: return InputActionCondition::LowerOrEqual;
-        default: return InputActionCondition::Invalid;
+            // Special conditions
+        case arctic::TokenType::KW_True: return InputActionCondition::AlwaysTrue;
+        default: ICE_ASSERT_CORE(false); return InputActionCondition::Invalid;
         }
     }
 
@@ -261,7 +297,12 @@ namespace ice
         {
         case grammar::UCT_StepActivate: return InputActionStep::Activate;
         case grammar::UCT_StepDeactivate: return InputActionStep::Deactivate;
-        default: break;
+        case grammar::UCT_StepReset: return InputActionStep::Reset;
+            // Arithmetic steps
+        case arctic::TokenType::OP_Assign: return InputActionStep::Set;
+        case arctic::TokenType::OP_Plus: return InputActionStep::Add;
+        case arctic::TokenType::OP_Minus: return InputActionStep::Sub;
+        default: ICE_ASSERT_CORE(false); break;
         }
         return InputActionStep::Invalid;
     }

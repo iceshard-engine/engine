@@ -67,6 +67,9 @@ namespace ice
         ) const noexcept -> ice::InputActionSource const& = 0;
     };
 
-    auto create_input_action_stack(ice::Allocator& alloc) noexcept -> ice::UniquePtr<ice::InputActionStack>;
+    auto create_input_action_stack(
+        ice::Allocator& alloc,
+        ice::String actionid_prefix
+    ) noexcept -> ice::UniquePtr<ice::InputActionStack>;
 
 } // namespace ice

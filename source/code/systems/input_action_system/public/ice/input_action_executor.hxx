@@ -15,6 +15,12 @@ namespace ice
             ice::f32 param
         ) const noexcept;
 
+        bool execute_condition(
+            ice::InputActionCondition condition,
+            ice::InputActionRuntime const& action,
+            ice::f32 param
+        ) const noexcept;
+
         void execute_step(
             ice::InputActionStep step,
             ice::InputActionRuntime& runtime

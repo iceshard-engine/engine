@@ -30,6 +30,9 @@ namespace ice
 
         //! \brief Axis to 'source[axis_to_read]' and 'target[axis_to_write]'. [to_read, to_write]
         ice::arr<2, ice::u8> axis;
+
+        //! \brief Contains info the the step source should be taken from an action instead.
+        bool from_action = false;
     };
 
     struct ActionBuilderCondition
@@ -39,13 +42,15 @@ namespace ice
             ice::String name,
             ice::InputActionCondition condition,
             ice::InputActionConditionFlags flags,
-            ice::f32 param
+            ice::f32 param,
+            bool from_action
         ) noexcept
             : condition{ condition }
             , flags{ flags }
             , source{ alloc, name }
             , steps{ alloc }
             , param{ param }
+            , from_action{ from_action }
         { }
 
         //! \brief The check to be performed.
@@ -61,6 +66,9 @@ namespace ice
         ice::Array<ActionBuilderStep> steps;
 
         ice::f32 param;
+
+        //! \brief Contains info the the step source should be taken from an action instead.
+        bool from_action = false;
     };
 
     using ActionBuilderModifier = InputActionModifierData;
@@ -182,6 +190,26 @@ namespace ice
                 return source_storage_idx;
             };
 
+            auto find_action_storage_index = [&strings, &final_actions](ice::String source_name) noexcept -> ice::u16
+            {
+                ice::ucount idx_found = ice::ucount_max;
+                bool const found = ice::search(
+                    ice::array::slice(final_actions),
+                    source_name,
+                    [&strings](ice::InputActionInfo const& action, ice::String expected) noexcept
+                    {
+                        ice::String const source_name = ice::string::substr(
+                            strings, action.name_offset, action.name_length
+                        );
+                        return expected == source_name;
+                    },
+                    idx_found
+                );
+
+                ICE_ASSERT_CORE(found && idx_found < ice::array::count(final_actions));
+                return ice::u16(idx_found);
+            };
+
             // Prepare data of all actions
             ice::u16 step_offset = 0, step_count = 0;
             ice::u16 condition_offset = 0, condition_count = 0;
@@ -220,12 +248,31 @@ namespace ice
                     }
 
                     ICE_ASSERT_CORE(action.presentation != InputActionData::Invalid);
+                    ice::InputActionIndex source_index = {.source_index = 0,.source_axis = 0};
+                    if (condition.from_action)
+                    {
+                        // If we are empty, it's a "self reference"
+                        if (ice::string::any(condition.source))
+                        {
+                            source_index.source_index = find_action_storage_index(condition.source);
+                            source_index.source_axis = ice::u8(static_cast<ice::u8>(action.presentation) - 1);
+                        }
+                        else
+                        {
+                            source_index.source_index = InputActionIndex::SelfIndex;
+                        }
+                    }
+                    else /*if (condition.condition != InputActionCondition::AlwaysTrue
+                        && condition.condition != InputActionCondition::ActionActive
+                        && condition.condition != InputActionCondition::ActionInactive)*/
+                    {
+                        source_index.source_index = find_source_storage_index(condition.source);
+                        source_index.source_axis = ice::u8(static_cast<ice::u8>(action.presentation) - 1);
+                    }
+
                     ice::array::push_back(final_conditions,
                         InputActionConditionData{
-                            .source = {
-                                .source_index = find_source_storage_index(condition.source),
-                                .source_axis = ice::u8(static_cast<ice::u8>(action.presentation) - 1)
-                            },
+                            .source = source_index,
                             .id = condition.condition,
                             .flags = condition.flags,
                             .steps = { step_offset, step_count },
@@ -394,12 +441,13 @@ namespace ice
         ice::String source,
         ice::InputActionCondition condition,
         ice::InputActionConditionFlags flags /*= None*/,
-        ice::f32 param /*= 0.0f*/
+        ice::f32 param /*= 0.0f*/,
+        bool from_action /*= false*/
     ) noexcept -> ActionBuilder&
     {
         ice::array::push_back(_internal->conditions,
             ActionBuilderCondition{
-                _internal->allocator, source, condition, flags, param
+                _internal->allocator, source, condition, flags, param, from_action
             }
         );
         _internal->current_condition = ice::addressof(ice::array::back(_internal->conditions));

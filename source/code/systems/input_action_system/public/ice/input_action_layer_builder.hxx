@@ -73,7 +73,8 @@ namespace ice
             ice::String source,
             ice::InputActionCondition condition,
             ice::InputActionConditionFlags flags = InputActionConditionFlags::None,
-            ice::f32 param = 0.0f
+            ice::f32 param = 0.0f,
+            bool from_action = false
         ) noexcept -> ActionBuilder&;
 
         auto add_step(

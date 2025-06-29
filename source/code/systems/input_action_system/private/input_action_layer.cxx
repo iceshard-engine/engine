@@ -210,20 +210,23 @@ namespace ice
                 for (ice::InputActionConditionData const& cond : conditions)
                 {
                     bool cond_result = false;
-                    if (cond.id >= ice::InputActionCondition::Enabled)
+                    if (cond.id >= ice::InputActionCondition::ActionEnabled)
                     {
-                        #if 0
-                        ice::InputActionRuntime const* tested_runtime = ice::hashmap::try_get(actions, ice::hash(_actions[cond.source.source_index].name));
-                        ICE_ASSERT_CORE(tested_runtime != nullptr);
-                        ICE_ASSERT_CORE(cond.id < ice::InputConditionID::UserCustom);
-
-                        cond_result = _db->execute_condition(
+                        ice::InputActionRuntime const* checked_action = runtime; // Seft (by-default)
+                        if (cond.source.source_index != InputActionIndex::SelfIndex)
+                        {
+                            ice::InputActionInfo const checked_action_info = _actions[cond.source.source_index];
+                            ice::String const checked_action_name = ice::string::substr(
+                                _strings, checked_action_info.name_offset, checked_action_info.name_length
+                            );
+                            checked_action = ice::hashmap::try_get(actions, ice::hash(checked_action_name));
+                        }
+                        ICE_ASSERT_CORE(checked_action != nullptr);
+                        cond_result = executor.execute_condition(
                             cond.id,
-                            *tested_runtime,
+                            *checked_action,
                             cond.param
                         );
-                        #endif
-                        // ICE_ASSERT_CORE(false);
                     }
                     else
                     {

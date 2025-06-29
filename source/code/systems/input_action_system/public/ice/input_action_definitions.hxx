@@ -128,22 +128,28 @@ namespace ice
     {
         Invalid = 0,
 
+        // Source conditions
+        Active,
         Pressed,
         Released,
 
         Trigger,
         Axis,
-
         AxisDeadzone,
 
+        // Source param conditions
         Greater,
         GreaterOrEqual,
         Lower,
         LowerOrEqual,
         Equal,
+        NotEqual,
 
-        Enabled,
-        Active,
+        // Action and Special conditions
+        ActionEnabled,
+        ActionActive,
+        ActionInactive,
+        AlwaysTrue,
     };
 
     enum class InputActionConditionFlags : ice::u8
@@ -184,9 +190,10 @@ namespace ice
         Disable,
         Toggle,
 
-        // Action activation change
+        // Action data and activation changes
         Activate,
         Deactivate,
+        Reset,
 
         // Data operations
         Set,

@@ -49,6 +49,8 @@ namespace ice
     static constexpr ice::TokenInfo Constant_Tokens[]{
         { "action", ice::grammar::UCT_Action },
         { "active", ice::grammar::UCT_WhenActive },
+        { "activate", ice::grammar::UCT_StepActivate },
+        { "deactivate", ice::grammar::UCT_StepDeactivate },
         { "and", ice::grammar::UCT_WhenAnd },
         { "axis1d", ice::grammar::UCT_InputTypeAxis1D },
         { "axis2d", ice::grammar::UCT_InputTypeAxis2D },
@@ -74,6 +76,9 @@ namespace ice
         { "released", ice::grammar::UCT_WhenReleased },
         { "source", ice::grammar::UCT_Source },
         { "when", ice::grammar::UCT_When },
+        { "reset", ice::grammar::UCT_StepReset },
+        { "series", ice::grammar::UCT_WhenFlagCheckSeries },
+        { "mod", ice::grammar::UCT_Modifier },
     };
 
     //! \brief A default implementation of a tokenizer for Arctic language.

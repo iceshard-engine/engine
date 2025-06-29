@@ -15,8 +15,9 @@ namespace ice::syntax
     static constexpr SyntaxEntity SyntaxEntity_LayerSource{ SyntaxEntityBase + 1 };
     static constexpr SyntaxEntity SyntaxEntity_LayerSourceBinding{ SyntaxEntityBase + 2 };
     static constexpr SyntaxEntity SyntaxEntity_LayerAction{ SyntaxEntityBase + 3 };
-    static constexpr SyntaxEntity SyntaxEntity_LayerActionCondition{ SyntaxEntityBase + 3 };
-    static constexpr SyntaxEntity SyntaxEntity_LayerActionStep{ SyntaxEntityBase + 3 };
+    static constexpr SyntaxEntity SyntaxEntity_LayerActionCondition{ SyntaxEntityBase + 4 };
+    static constexpr SyntaxEntity SyntaxEntity_LayerActionStep{ SyntaxEntityBase + 5 };
+    static constexpr SyntaxEntity SyntaxEntity_LayerActionModifier{ SyntaxEntityBase + 6 };
 
     struct Layer : SyntaxNodeData
     {
@@ -55,25 +56,35 @@ namespace ice::syntax
 
     struct LayerActionWhen : SyntaxNodeData
     {
-        static constexpr SyntaxEntity RepresentedSyntaxEntity = SyntaxEntity_LayerAction;
+        static constexpr SyntaxEntity RepresentedSyntaxEntity = SyntaxEntity_LayerActionCondition;
         using SyntaxNodeData::SyntaxNodeData;
 
         arctic::Token type; // when/and(_when)/or(_when)
-        arctic::Token source_type; // source/action
+        arctic::Token source_type = {}; // source/action
         arctic::String source_name; // alpha-num
         arctic::String source_component; // x/y/z
         arctic::Token condition; // .pressed/released/active/inactive/</>/==/>=/<=/!=
         arctic::Token param; // int/float
+        bool check_series = false;
     };
 
     struct LayerActionStep : SyntaxNodeData
     {
-        static constexpr SyntaxEntity RepresentedSyntaxEntity = SyntaxEntity_LayerAction;
+        static constexpr SyntaxEntity RepresentedSyntaxEntity = SyntaxEntity_LayerActionStep;
         using SyntaxNodeData::SyntaxNodeData;
 
+        arctic::Token source_type;
         arctic::String source;
         arctic::String destination;
         arctic::Token step;
+    };
+
+    struct LayerActionModifier : SyntaxNodeData
+    {
+        static constexpr SyntaxEntity RepresentedSyntaxEntity = SyntaxEntity_LayerActionModifier;
+        using SyntaxNodeData::SyntaxNodeData;
+
+        arctic::String name;
     };
 
 } // namespace ice::syntax

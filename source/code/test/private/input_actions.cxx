@@ -27,7 +27,7 @@ namespace ice
         , _layer{ }
     {
         context.bind<&InputActionsTrait::on_update>();
-        // context.bind<&InputActionsTrait::on_click>(ice::ShardID_ClickAction);
+        context.bind<&InputActionsTrait::on_click>("A:click`ice::InputAction const*"_shardid);
     }
 
     auto InputActionsTrait::on_click(ice::InputAction const& action) noexcept -> ice::Task<>
@@ -111,34 +111,40 @@ namespace ice
 
                 // <symbol>[(.pressed)|.released|.active|.inactive|[.[x|y|z] [<|>|<=|>=|==|!=] <param:number>]]
 
-                action Jump: bool
-                    // (behavior default)|once|toggled|accumulated
-                    when Jump.pressed // line: 17
-                     and Jump.x >= 3
-                      or Jump.x < 0.2
-                        // .activate
-                        // .deactivate
-                        // .x = Jump.x
-
-
-                    when Jump.y <= 0.4f
-                    when Jump.z != 0.5f
-                    when action.Jump.active
-                    when action.Jump.inactive
-                    //| self.x = Jump.x
-                    //| activate
-
+                action Jump: float1
                     when Jump.released
-                    when Jump.z == 0.44
-                    //| self.x = 0
-                    //| deactivate
+                        .deactivate
+                        .reset
 
+                    when Jump.pressed
+                        .x = Jump
+                        .activate
 
-
+                    mod
+                    mod
 
                 action Move: float2
+                    when Left.pressed
+                        .x - Left.x
+                      or Right.pressed
+                        .x + Right.x
+                      or Up.pressed
+                        .y + Up.x
+                      or Down.pressed series
+                        .y - Down.x
+                        .activate
+
+                    when .true // only executed if the previous condition series are not valid
+                        .reset
 
                 action Click: bool
+                    when Click.released
+                        .deactivate
+
+                    when Click.pressed
+                        .x = Pos.x
+                        .y = Pos.y
+                        .activate
         )__");
 
         world_update.engine.actions().register_layer(_layer.get());
