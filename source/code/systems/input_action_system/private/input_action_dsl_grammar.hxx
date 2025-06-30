@@ -29,18 +29,23 @@ namespace ice::grammar
     static constexpr TokenType UCT_ActionTypeFloat1{ UCT_Base + 11 };
     static constexpr TokenType UCT_ActionTypeFloat2{ UCT_Base + 12 };
     static constexpr TokenType UCT_ActionTypeFloat3{ UCT_Base + 13 };
-    static constexpr TokenType UCT_When{ UCT_Base + 14 };
-    static constexpr TokenType UCT_WhenAnd{ UCT_Base + 15 };
-    static constexpr TokenType UCT_WhenOr{ UCT_Base + 16 };
-    static constexpr TokenType UCT_WhenPressed{ UCT_Base + 17 };
-    static constexpr TokenType UCT_WhenReleased{ UCT_Base + 18 };
-    static constexpr TokenType UCT_WhenActive{ UCT_Base + 19 };
-    static constexpr TokenType UCT_WhenInactive{ UCT_Base + 20 };
-    static constexpr TokenType UCT_WhenFlagCheckSeries{ UCT_Base + 21 };
-    static constexpr TokenType UCT_StepActivate{ UCT_Base + 22 };
-    static constexpr TokenType UCT_StepDeactivate{ UCT_Base + 23 };
-    static constexpr TokenType UCT_StepReset{ UCT_Base + 24 };
-    static constexpr TokenType UCT_Modifier{ UCT_Base + 25 };
+    static constexpr TokenType UCT_ActionFlagOnce{ UCT_Base + 14 };
+    static constexpr TokenType UCT_ActionFlagToggled{ UCT_Base + 15 };
+    static constexpr TokenType UCT_ActionFlagAccumulated{ UCT_Base + 16 };
+    static constexpr TokenType UCT_When{ UCT_Base + 17 };
+    static constexpr TokenType UCT_WhenAnd{ UCT_Base + 18 };
+    static constexpr TokenType UCT_WhenOr{ UCT_Base + 19 };
+    static constexpr TokenType UCT_WhenPressed{ UCT_Base + 20 };
+    static constexpr TokenType UCT_WhenReleased{ UCT_Base + 21 };
+    static constexpr TokenType UCT_WhenActive{ UCT_Base + 22 };
+    static constexpr TokenType UCT_WhenInactive{ UCT_Base + 23 };
+    static constexpr TokenType UCT_WhenFlagCheckSeries{ UCT_Base + 24 };
+    static constexpr TokenType UCT_StepActivate{ UCT_Base + 25 };
+    static constexpr TokenType UCT_StepDeactivate{ UCT_Base + 26 };
+    static constexpr TokenType UCT_StepReset{ UCT_Base + 27 };
+    static constexpr TokenType UCT_Modifier{ UCT_Base + 28 };
+    static constexpr TokenType UCT_ModifierOpMin{ UCT_Base + 29 };
+    static constexpr TokenType UCT_ModifierOpMax{ UCT_Base + 30 };
 
     static constexpr SyntaxRule Rule_ColonOrCommaRules[]{ // , or :
         SyntaxRule{ TokenType::CT_Colon },
@@ -219,13 +224,33 @@ namespace ice::grammar
         SyntaxRule{ UCT_WhenOr },
     };
 
+    static constexpr SyntaxRule Rule_LayerActionFlagsListRules[]{
+        SyntaxRule{ UCT_ActionFlagOnce, &syntax::LayerAction::flag_once },
+        SyntaxRule{ UCT_ActionFlagToggled, &syntax::LayerAction::flag_toggled },
+        SyntaxRule{ UCT_ActionFlagAccumulated, &syntax::LayerAction::flag_accumulated },
+    };
+
+    static constexpr SyntaxRule Rule_LayerActionFlagsRules[]{
+        SyntaxRule{ grammar::TokenType::CT_Comma },
+        SyntaxRule{ Rule_LayerActionFlagsListRules, MatchFirst }
+    };
+
+    static constexpr SyntaxRule Rule_LayerActionWhenFlagsListRules[]{
+        SyntaxRule{ UCT_WhenFlagCheckSeries, &syntax::LayerActionWhen::flag_series }
+    };
+
+    static constexpr SyntaxRule Rule_LayerActionWhenFlagsRules[]{
+        SyntaxRule{ grammar::TokenType::CT_Comma },
+        SyntaxRule{ Rule_LayerActionWhenFlagsListRules, MatchFirst }
+    };
+
     static constexpr SyntaxRule Rule_LayerActionWhenRules[]{
         // Just to create the child node we need to succeed once.
         SyntaxRule{ [](auto const&, auto& ctx) noexcept{ return arctic::ParseState::Success; } }.noadvance(),
         SyntaxRule{ Rule_LayerActionWhenBlockRules, MatchFirst, &syntax::LayerActionWhen::type },
         SyntaxRule{ Rule_LayerActionWhenTargetRules, MatchAll },
         SyntaxRule{ Rule_LayerActionWhenTargetActionRules, MatchAll },
-        SyntaxRule{ UCT_WhenFlagCheckSeries, &syntax::LayerActionWhen::check_series }.optional(),
+        SyntaxRule{ Rule_LayerActionWhenFlagsRules, MatchAll }.optional(),
         SyntaxRule{ TokenType::ST_EndOfLine }.repeat(),
         SyntaxRule{ Rule_LayerActionStepRules, MatchChild<syntax::LayerActionStep> }.optional().repeat(),
     };
@@ -234,8 +259,25 @@ namespace ice::grammar
     // Action modifier rules
     ////////////////////////////////////////////////////////////////
 
+    static constexpr SyntaxRule Rule_LayerActionModifierComponentRules[]{
+        SyntaxRule{ TokenType::CT_Dot, &syntax::LayerActionModifier::component },
+        SyntaxRule{ Rule_LayerActionComponentListRules, MatchFirst, &syntax::LayerActionModifier::component, arctic::SyntaxRule::store_value_extend<arctic::String> }
+    };
+
+    static constexpr SyntaxRule Rule_LayerActionModifierOperationListRules[]{
+        SyntaxRule{ TokenType::OP_Div },
+        SyntaxRule{ TokenType::OP_Mul },
+        SyntaxRule{ TokenType::OP_Plus },
+        SyntaxRule{ TokenType::OP_Minus },
+        SyntaxRule{ UCT_ModifierOpMin },
+        SyntaxRule{ UCT_ModifierOpMax },
+    };
+
     static constexpr SyntaxRule Rule_LayerActionModifierRules[]{
         SyntaxRule{ UCT_Modifier },
+        SyntaxRule{ Rule_LayerActionModifierComponentRules, MatchAll },
+        SyntaxRule{ Rule_LayerActionModifierOperationListRules, MatchFirst, &syntax::LayerActionModifier::operation },
+        SyntaxRule{ Rule_LayerActionWhenParamNumberTokenListRules, MatchFirst, &syntax::LayerActionModifier::param },
         SyntaxRule{ TokenType::ST_EndOfLine }.repeat(),
     };
 
@@ -255,6 +297,7 @@ namespace ice::grammar
         SyntaxRule{ TokenType::CT_Symbol, &syntax::LayerAction::name },
         SyntaxRule{ TokenType::CT_Colon },
         SyntaxRule{ Rule_LayerActionTypeRules, MatchFirst, &syntax::LayerAction::type },
+        SyntaxRule{ Rule_LayerActionFlagsRules, MatchAll }.optional(),
         SyntaxRule{ TokenType::ST_EndOfLine }.repeat(),
         SyntaxRule{ Rule_LayerActionWhenRules, MatchChild<syntax::LayerActionWhen> }.repeat().optional(),
         SyntaxRule{ Rule_LayerActionModifierRules, MatchChild<syntax::LayerActionModifier> }.repeat().optional(),

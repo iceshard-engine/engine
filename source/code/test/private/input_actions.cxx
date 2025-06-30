@@ -111,17 +111,17 @@ namespace ice
 
                 // <symbol>[(.pressed)|.released|.active|.inactive|[.[x|y|z] [<|>|<=|>=|==|!=] <param:number>]]
 
-                action Jump: float1
+                action Jump: float1, accumulated
                     when Jump.released
+                        .x = Jump
                         .deactivate
-                        .reset
 
                     when Jump.pressed
-                        .x = Jump
+                        .x + Jump
                         .activate
 
-                    mod
-                    mod
+                    mod .x / 60
+                    mod .x max 2
 
                 action Move: float2
                     when Left.pressed
@@ -130,16 +130,16 @@ namespace ice
                         .x + Right.x
                       or Up.pressed
                         .y + Up.x
-                      or Down.pressed series
+                      or Down.pressed, series
                         .y - Down.x
                         .activate
 
                     when .true // only executed if the previous condition series are not valid
                         .reset
 
-                action Click: bool
-                    when Click.released
-                        .deactivate
+                action Click: bool, once
+                    //when Click.released
+                    //    .deactivate
 
                     when Click.pressed
                         .x = Pos.x

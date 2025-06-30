@@ -52,6 +52,9 @@ namespace ice::syntax
 
         arctic::String name;
         arctic::Token type;
+        bool flag_toggled = false;
+        bool flag_once = false;
+        bool flag_accumulated = false;
     };
 
     struct LayerActionWhen : SyntaxNodeData
@@ -65,7 +68,7 @@ namespace ice::syntax
         arctic::String source_component; // x/y/z
         arctic::Token condition; // .pressed/released/active/inactive/</>/==/>=/<=/!=
         arctic::Token param; // int/float
-        bool check_series = false;
+        bool flag_series = false;
     };
 
     struct LayerActionStep : SyntaxNodeData
@@ -84,7 +87,9 @@ namespace ice::syntax
         static constexpr SyntaxEntity RepresentedSyntaxEntity = SyntaxEntity_LayerActionModifier;
         using SyntaxNodeData::SyntaxNodeData;
 
-        arctic::String name;
+        arctic::String component;
+        arctic::Token operation;
+        arctic::String param;
     };
 
 } // namespace ice::syntax

@@ -15,7 +15,6 @@ namespace ice
         void visit(arctic::SyntaxNode<ice::syntax::Layer> node) noexcept override;
 
         void visit(arctic::SyntaxNode<ice::syntax::LayerSource> node) noexcept;
-
         void visit(arctic::SyntaxNode<ice::syntax::LayerAction> node) noexcept;
 
         void visit(
@@ -26,6 +25,11 @@ namespace ice
         void visit(
             ice::InputActionLayerBuilder::ActionBuilder& action,
             arctic::SyntaxNode<ice::syntax::LayerActionStep> node
+        ) noexcept;
+
+        void visit(
+            ice::InputActionLayerBuilder::ActionBuilder& action,
+            arctic::SyntaxNode<ice::syntax::LayerActionModifier> node
         ) noexcept;
 
         auto finalize(ice::Allocator& alloc) noexcept { return _builder->finalize(alloc); }

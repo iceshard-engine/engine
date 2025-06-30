@@ -16,6 +16,7 @@ namespace ice
 
         auto condition_from_dsl(arctic::Token token, bool action_condition) noexcept -> ice::InputActionCondition;
         auto step_from_dsl(arctic::Token token) noexcept -> ice::InputActionStep;
+        auto modifier_from_dsl(arctic::Token token) noexcept -> ice::InputActionModifier;
 
     } // namespace detail
 
@@ -96,13 +97,28 @@ namespace ice
     void InputActionDSLLayerBuilder::visit(arctic::SyntaxNode<ice::syntax::LayerAction> node) noexcept
     {
         ice::InputActionData action_datatype = InputActionData::Bool;
-        if (node.data().type.type == ice::grammar::UCT_ActionTypeFloat2)
+        ice::syntax::LayerAction const& action_info = node.data();
+        if (action_info.type.type == ice::grammar::UCT_ActionTypeFloat2)
         {
             action_datatype = InputActionData::Float2;
         }
 
-        ICE_LOG(LogSeverity::Info, LogTag::Engine, "Action: {}", node.data().name);
-        ice::InputActionLayerBuilder::ActionBuilder action = _builder->define_action(node.data().name, action_datatype);
+        ICE_LOG(LogSeverity::Info, LogTag::Engine, "Action: {}", action_info.name);
+        ice::InputActionLayerBuilder::ActionBuilder action = _builder->define_action(action_info.name, action_datatype);
+        ice::InputActionBehavior behavior = InputActionBehavior::Default;
+        if (action_info.flag_once)
+        {
+            behavior = InputActionBehavior::ActiveOnce;
+        }
+        else if (action_info.flag_toggled)
+        {
+            behavior = InputActionBehavior::Toggled;
+        }
+        else if (action_info.flag_accumulated)
+        {
+            behavior = InputActionBehavior::Accumulated;
+        }
+        action.set_behavior(behavior);
 
         arctic::SyntaxNode<> child = node.child();
         while(child != false)
@@ -120,6 +136,10 @@ namespace ice
                     }
                     steps = steps.sibling();
                 }
+            }
+            else if (child.type() == ice::syntax::SyntaxEntity_LayerActionModifier)
+            {
+                visit(action, child.to<ice::syntax::LayerActionModifier>());
             }
             child = child.sibling();
         }
@@ -149,7 +169,7 @@ namespace ice
         {
             flags |= InputActionConditionFlags::RunSteps;
         }
-        if (cond.check_series)
+        if (cond.flag_series)
         {
             flags |= InputActionConditionFlags::SeriesCheck;
         }
@@ -171,7 +191,7 @@ namespace ice
             || condition == Lower || condition == LowerOrEqual;
         if (is_param_condition)
         {
-            param = ice::from_chars(cond.param.value, param);
+            ice::from_chars(cond.param.value, param);
         }
 
         action.add_condition(cond.source_name, condition, flags, param, from_action);
@@ -192,6 +212,23 @@ namespace ice
         {
             action.add_step(step);
         }
+    }
+
+    void InputActionDSLLayerBuilder::visit(
+        ice::InputActionLayerBuilder::ActionBuilder& action,
+        arctic::SyntaxNode<ice::syntax::LayerActionModifier> node
+    ) noexcept
+    {
+        ice::syntax::LayerActionModifier const& info = node.data();
+        ice::InputActionModifier const modifier = detail::modifier_from_dsl(info.operation);
+
+        ice::f32 param_value = 0.0f;
+        if (ice::from_chars(info.param, param_value) == false)
+        {
+            ICE_ASSERT_CORE(false);
+        }
+
+        action.add_modifier(modifier, param_value, info.component);
     }
 
     auto detail::key_from_dsl(arctic::String value) noexcept -> ice::input::KeyboardKey
@@ -305,6 +342,21 @@ namespace ice
         default: ICE_ASSERT_CORE(false); break;
         }
         return InputActionStep::Invalid;
+    }
+
+    auto detail::modifier_from_dsl(arctic::Token token) noexcept -> ice::InputActionModifier
+    {
+        switch (token.type)
+        {
+        case grammar::UCT_ModifierOpMax: return InputActionModifier::Max;
+        case arctic::TokenType::OP_Div: return InputActionModifier::Div;
+            // Not implemented yet
+        case grammar::UCT_ModifierOpMin:
+        case arctic::TokenType::OP_Mul:
+        case arctic::TokenType::OP_Plus:
+        case arctic::TokenType::OP_Minus:
+        default: ICE_ASSERT_CORE("Not Implemented!" && false); return InputActionModifier::Invalid;
+        }
     }
 
 } // namespace ice
