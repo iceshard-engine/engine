@@ -47,6 +47,10 @@ namespace ice
             ice::InputActionCheck check = InputActionCheck::Active
         ) const noexcept override;
 
+        auto action_time(
+            ice::String action
+        ) const noexcept -> ice::Tms override;
+
         bool action_value(
             ice::String action,
             ice::vec2f& out_value
@@ -224,6 +228,18 @@ namespace ice
             }
         }
         return false;
+    }
+
+    auto SimpleInputActionStack::action_time(
+        ice::String action_name
+    ) const noexcept -> ice::Tms
+    {
+        // Check for success
+        if (ice::Expected const action = this->action(action_name); action)
+        {
+            return (Tms) ice::clock::elapsed(action.value()->timestamp, ice::clock::now());
+        }
+        return Tms{ };
     }
 
     bool SimpleInputActionStack::action_value(

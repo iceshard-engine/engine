@@ -35,6 +35,10 @@ namespace ice
             ice::InputActionCheck check = InputActionCheck::Active
         ) const noexcept = 0;
 
+        virtual auto action_time(
+            ice::String action
+        ) const noexcept -> ice::Tms = 0;
+
         virtual bool action_value(
             ice::String action,
             ice::vec2f& out_value
