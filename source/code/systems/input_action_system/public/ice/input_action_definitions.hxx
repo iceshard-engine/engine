@@ -194,6 +194,7 @@ namespace ice
         Activate,
         Deactivate,
         Reset,
+        Time,
 
         // Data operations
         Set,

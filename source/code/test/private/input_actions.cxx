@@ -111,17 +111,11 @@ namespace ice
 
                 // <symbol>[(.pressed)|.released|.active|.inactive|[.[x|y|z] [<|>|<=|>=|==|!=] <param:number>]]
 
-                action Jump: float1, accumulated
-                    when Jump.released
-                        .x = Jump
-                        .deactivate
-
+                action Jump: float1
                     when Jump.pressed
-                        .x + Jump
+                        .time
                         .activate
-
-                    mod .x / 60
-                    mod .x max 2
+                    mod .x max 1.0
 
                 action Move: float2
                     when Left.pressed
@@ -138,9 +132,6 @@ namespace ice
                         .reset
 
                 action Click: bool, once
-                    //when Click.released
-                    //    .deactivate
-
                     when Click.pressed
                         .x = Pos.x
                         .y = Pos.y

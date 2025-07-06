@@ -83,6 +83,7 @@ namespace ice
         { "when", ice::grammar::UCT_When },
         { "reset", ice::grammar::UCT_StepReset },
         { "series", ice::grammar::UCT_WhenFlagCheckSeries },
+        { "time", ice::grammar::UCT_StepTime },
         { "mod", ice::grammar::UCT_Modifier },
     };
 

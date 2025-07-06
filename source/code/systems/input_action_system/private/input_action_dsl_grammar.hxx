@@ -43,9 +43,10 @@ namespace ice::grammar
     static constexpr TokenType UCT_StepActivate{ UCT_Base + 25 };
     static constexpr TokenType UCT_StepDeactivate{ UCT_Base + 26 };
     static constexpr TokenType UCT_StepReset{ UCT_Base + 27 };
-    static constexpr TokenType UCT_Modifier{ UCT_Base + 28 };
-    static constexpr TokenType UCT_ModifierOpMin{ UCT_Base + 29 };
-    static constexpr TokenType UCT_ModifierOpMax{ UCT_Base + 30 };
+    static constexpr TokenType UCT_StepTime{ UCT_Base + 28 };
+    static constexpr TokenType UCT_Modifier{ UCT_Base + 29 };
+    static constexpr TokenType UCT_ModifierOpMin{ UCT_Base + 30 };
+    static constexpr TokenType UCT_ModifierOpMax{ UCT_Base + 31 };
 
     static constexpr SyntaxRule Rule_ColonOrCommaRules[]{ // , or :
         SyntaxRule{ TokenType::CT_Colon },
@@ -128,10 +129,11 @@ namespace ice::grammar
         SyntaxRule{ Rule_LayerActionComponentPostfixRules, MatchAll }.optional()
     };
 
-    static constexpr SyntaxRule Rule_LayerActionStepBuiltInListRules[]{ // button, axis1d, axis2d or axis3d
+    static constexpr SyntaxRule Rule_LayerActionStepBuiltInListRules[]{
         SyntaxRule{ UCT_StepActivate },
         SyntaxRule{ UCT_StepDeactivate },
         SyntaxRule{ UCT_StepReset },
+        SyntaxRule{ UCT_StepTime },
     };
 
     static constexpr SyntaxRule Rule_LayerActionStepArithmeticOperationRules[]{

@@ -1,5 +1,6 @@
 #include <ice/input_action_executor.hxx>
 #include <ice/input_action_definitions.hxx>
+#include <ice/clock.hxx>
 
 namespace ice
 {
@@ -70,8 +71,11 @@ namespace ice
             break;
         case Reset:
             runtime.value = ice::vec2f{};
+            runtime.raw_value = ice::vec3f{};
             break;
-
+        case Time:
+            runtime.raw_value.x = (float) Ts(ice::clock::elapsed(runtime.timestamp, ice::clock::now())).value;
+            break;
         default:
             break;
         }

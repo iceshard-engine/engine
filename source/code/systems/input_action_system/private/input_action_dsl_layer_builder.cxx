@@ -335,6 +335,7 @@ namespace ice
         case grammar::UCT_StepActivate: return InputActionStep::Activate;
         case grammar::UCT_StepDeactivate: return InputActionStep::Deactivate;
         case grammar::UCT_StepReset: return InputActionStep::Reset;
+        case grammar::UCT_StepTime: return InputActionStep::Time;
             // Arithmetic steps
         case arctic::TokenType::OP_Assign: return InputActionStep::Set;
         case arctic::TokenType::OP_Plus: return InputActionStep::Add;
