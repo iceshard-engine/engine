@@ -132,7 +132,7 @@ namespace ice
             ice::u16 count_storage_values = 0;
 
             ice::HeapString<> strings{ _allocator };
-            ice::Array<ice::InputActionSourceInfo> final_sources{ _allocator };
+            ice::Array<ice::InputActionSourceEntryInfo> final_sources{ _allocator };
             ice::Array<ice::InputActionStepData> final_steps{ _allocator };
             ice::Array<ice::InputActionConditionData> final_conditions{ _allocator };
             ice::Array<ice::InputActionModifierData> final_modifiers{ _allocator };
@@ -144,9 +144,8 @@ namespace ice
                 for (ice::input::InputID input_event : source.events)
                 {
                     ice::array::push_back(final_sources,
-                        InputActionSourceInfo{
-                            .name_offset = ice::u16(ice::size(strings)),
-                            .name_length = ice::u16(ice::size(source.name)),
+                        InputActionSourceEntryInfo{
+                            .name = { ice::u16(ice::size(strings)), ice::u16(ice::size(source.name)) },
                             .input = input_event,
                             .type = source.type,
                             .storage = count_storage_values,
@@ -175,10 +174,10 @@ namespace ice
                 bool const found = ice::search(
                     ice::array::slice(final_sources),
                     source_name,
-                    [&strings](ice::InputActionSourceInfo const& source, ice::String expected) noexcept
+                    [&strings](ice::InputActionSourceEntryInfo const& source, ice::String expected) noexcept
                     {
                         ice::String const source_name = ice::string::substr(
-                            strings, source.name_offset, source.name_length
+                            strings, source.name.offset, source.name.size
                         );
                         return expected == source_name;
                     },

@@ -67,7 +67,7 @@ namespace ice
 
         virtual auto source_runtime(
             ice::InputActionLayer const& layer,
-            ice::InputActionSourceInfo const& source_info
+            ice::InputActionSourceEntryInfo const& source_info
         ) const noexcept -> ice::InputActionSource const& = 0;
     };
 

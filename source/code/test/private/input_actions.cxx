@@ -6,9 +6,10 @@
 #include <ice/engine.hxx>
 #include <ice/engine_shards.hxx>
 #include <ice/engine_runner.hxx>
-#include <ice/input_action_stack.hxx>
+#include <ice/input_action_info.hxx>
 #include <ice/input_action_layer.hxx>
 #include <ice/input_action_layer_builder.hxx>
+#include <ice/input_action_stack.hxx>
 #include <ice/input/input_controller.hxx>
 #include <ice/input/input_keyboard.hxx>
 #include <ice/input/input_mouse.hxx>
@@ -155,7 +156,7 @@ namespace ice
     void InputActionsTrait::build_content() noexcept
     {
         ImGui::SeparatorText("Sources");
-        for (ice::InputActionSourceInfo const& source_info : _layer->sources())
+        for (ice::InputActionSourceEntryInfo const& source_info : _layer->sources())
         {
             ice::InputActionSource const& source = _stack->source_runtime(*_layer, source_info);
             if (source_info.type == InputActionSourceType::Axis2d)

@@ -28,6 +28,14 @@ namespace ice
 
     using uptr = std::uintptr_t;
 
+    // Declaration of ref types
+    //! \brief Holds 'offset' and 'size' fields (u8) to access data stored in a buffer-like object.
+    using ref8 = struct { ice::u8 offset; ice::u8 size; };
+    //! \brief Holds 'offset' and 'size' fields (u16) to access data stored in a buffer-like object.
+    using ref16 = struct { ice::u16 offset; ice::u16 size; };
+    //! \brief Holds 'offset' and 'size' fields (u32) to access data stored in a buffer-like object.
+    using ref32 = struct { ice::u32 offset; ice::u32 size; };
+
     // Forward declaration of time-types
     struct Ts;
     struct Tms;

@@ -5,70 +5,46 @@
 namespace ice
 {
 
+    //! \brief Developer defined input action that can represent anything from a simple click,
+    //!   down to specific axis values and mixes between them.
     struct InputAction
     {
-        ice::Timestamp timestamp;
+        //! \brief Provides a quick way to disable or enable specific actions during runtime. (default: true)
+        bool enabled = true;
+
+        //! \brief Tracks activity of the action. (default: false)
+        //! \note An action can only be active if it's enabled.
+        bool active = false;
+
+        //! \brief The value the action is returning. This value is defined / calculated by a set of steps
+        //!   the developer created for this specific action.
+        //! \note The value is up-to-date / valid only when the action is active.
         ice::vec2f value;
+
+        //! \brief Timestamp when the action was activated.
+        //! \note The value is up-to-date / valid only when then action is active.
+        ice::Timestamp timestamp;
     };
 
+    //! \brief Developer defined "input source" for activating actions and processing their values.
+    //! \details A source represents a single device input event. This can be a Button, Axis, Trigger, Key, Position on
+    //!   any input device like a mouse, keyboard, controller or anything else.
+    //! \note When represeting an axis, only a single component is set each source.
+    //!   So for a 2d axis you will need to define two sources.
     struct InputActionSource
     {
+        //! \brief The type of the event that triggered a value change for this source.
+        //! \note It might be possible for multiple events of different types, to trigger an event.
         ice::InputActionSourceEvent event;
-        ice::f32 value;
+
+        //! \brief Tracks if the value actually changed between the action events.
+        //! \note Since multiple events can trigger a value change, we want to act only once for multiple buttons.
         bool changed;
+
+        //! \brief The value of the input source.
+        //! \details See \see InputActionSourceInfo::type for details.
+        ice::f32 value;
     };
-
-    struct InputActionLayerInfo
-    {
-        ice::u16 count_sources;
-        ice::u16 count_actions;
-        ice::u16 count_conditions;
-        ice::u16 count_steps;
-        ice::u16 count_modifiers;
-        ice::u32 offset_strings;
-    };
-
-    struct InputActionSourceInfo
-    {
-        //! \brief Where to find the name in the data blob.
-        ice::u16 name_offset, name_length;
-
-        //! \brief Input identifier this input source object will get values from.
-        ice::input::InputID input;
-
-        //! \brief Action Type, which determines how input events are processed.
-        //!
-        //! \note Behavior definitions:
-        //!   `Key` | `Button` => `1.0` on Press, `0.0` on Release.
-        //!   `Axis` => `if <value> gt_or_eq <deadzone>` then `[deadzone, 1.0]`, else `0.0`
-        ice::InputActionSourceType type;
-
-        //! \brief The storage offset where the input value should be stored.
-        ice::u16 storage;
-
-        //! \brief Additional param usable by some source types.
-        //! \note Currently only used by 'Axis' sources for deadzone checks.
-        ice::f32 param = 0.0;
-    };
-
-    static_assert(sizeof(InputActionSourceInfo) % 4 == 0);
-
-    struct InputActionInfo
-    {
-        //! \brief Where to find the name in the data blob.
-        ice::u16 name_offset, name_length;
-
-        //! \brief Presentation of the action data.
-        ice::InputActionData presentation;
-
-        ice::InputActionBehavior behavior;
-
-        ice::arr<2, ice::u16> conditions; // offset, count, steps_offset
-
-        ice::arr<2, ice::u8> mods; // offset, count
-    };
-
-    static_assert(sizeof(InputActionInfo) % 4 == 0);
 
     struct InputActionRuntime : ice::InputAction
     {
@@ -77,12 +53,10 @@ namespace ice
 
         ice::u8 state = 0;
         bool toggle_enabled = false;
-        bool enabled = false;
         bool was_active = false;
-        bool active = false;
     };
 
-    static_assert(sizeof(InputActionRuntime) == 56);
+    static_assert(sizeof(InputActionRuntime) == 64);
 
 
     enum class InputActionCheck : ice::u8
@@ -105,15 +79,6 @@ namespace ice
         Trigger,
         Axis,
         AxisDeadzone
-    };
-
-    enum class InputActionSourceType : ice::u8
-    {
-        Key,
-        Button,
-        Trigger,
-        Axis1d,
-        Axis2d
     };
 
     enum class InputActionBehavior : ice::u8

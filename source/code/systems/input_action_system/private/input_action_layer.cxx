@@ -19,7 +19,7 @@ namespace ice
 
     struct StandardInputActionLayerParams
     {
-        ice::Span<ice::InputActionSourceInfo const> sources;
+        ice::Span<ice::InputActionSourceEntryInfo const> sources;
         ice::Span<ice::InputActionInfo const> actions;
         ice::Span<ice::InputActionConditionData const> conditions;
         ice::Span<ice::InputActionStepData const> steps;
@@ -38,7 +38,7 @@ namespace ice
         ice::usize offset = ice::size_of<ice::InputActionLayerInfo>;
         ice::StandardInputActionLayerParams result{};
 
-        result.sources = ice::span::from_data<ice::InputActionSourceInfo>(memory, layer_info->count_sources, offset);
+        result.sources = ice::span::from_data<ice::InputActionSourceEntryInfo>(memory, layer_info->count_sources, offset);
         offset += ice::span::data_view(result.sources).size;
         result.actions = ice::span::from_data<ice::InputActionInfo>(memory, layer_info->count_actions, offset);
         offset += ice::span::data_view(result.actions).size;
@@ -86,14 +86,14 @@ namespace ice
             return "Default";
         }
 
-        auto sources() const noexcept -> ice::Span<ice::InputActionSourceInfo const> override
+        auto sources() const noexcept -> ice::Span<ice::InputActionSourceEntryInfo const> override
         {
             return _sources;
         }
 
-        auto source_name(ice::InputActionSourceInfo const& source) const noexcept -> ice::String override
+        auto source_name(ice::InputActionSourceEntryInfo const& source) const noexcept -> ice::String override
         {
-            return ice::string::substr(_strings, source.name_offset, source.name_length);
+            return ice::string::substr(_strings, source.name.offset, source.name.size);
         }
 
         auto actions() const noexcept -> ice::Span<ice::InputActionInfo const> override
@@ -121,7 +121,7 @@ namespace ice
                 ice::input::InputEvent const ev = input_events[index];
 
                 ice::i32 src_idx = -1;
-                for (ice::InputActionSourceInfo const& src : _sources)
+                for (ice::InputActionSourceEntryInfo const& src : _sources)
                 {
                     src_idx += 1;
 
@@ -140,22 +140,22 @@ namespace ice
 
                     if (ev.value_type == ice::input::InputValueType::Trigger)
                     {
-                        value = { InputActionSourceEvent::Trigger, ev.value.axis.value_f32, true };
+                        value = { InputActionSourceEvent::Trigger, true, ev.value.axis.value_f32 };
                     }
                     else if (ev.value_type == ice::input::InputValueType::AxisInt)
                     {
-                        value = { InputActionSourceEvent::Axis, ice::f32(ev.value.axis.value_i32), true };
+                        value = { InputActionSourceEvent::Axis, true, ice::f32(ev.value.axis.value_i32) };
                     }
                     else if (ev.value_type == ice::input::InputValueType::AxisFloat)
                     {
                         // Check for deadzone values
                         if (src.param < ev.value.axis.value_f32)
                         {
-                            value = { InputActionSourceEvent::Axis, ev.value.axis.value_f32, true };
+                            value = { InputActionSourceEvent::Axis, true, ev.value.axis.value_f32 };
                         }
                         else
                         {
-                            value = { InputActionSourceEvent::AxisDeadzone, ev.value.axis.value_f32, true };
+                            value = { InputActionSourceEvent::AxisDeadzone, true, ev.value.axis.value_f32 };
                         }
                     }
                     else
@@ -164,9 +164,9 @@ namespace ice
                             ev.value.button.state.released
                                 ? InputActionSourceEvent::KeyRelease
                                 : InputActionSourceEvent::KeyPress,
+                            /*changed*/ true,
                             ev.value.button.state.released
                                 ? 0.0f : 1.0f,
-                            /*changed*/ true
                         };
                     }
 
@@ -367,7 +367,7 @@ namespace ice
         ice::Allocator& _allocator;
         ice::Memory _rawdata;
 
-        ice::Span<ice::InputActionSourceInfo const> _sources;
+        ice::Span<ice::InputActionSourceEntryInfo const> _sources;
         ice::Span<ice::InputActionInfo const> _actions;
         ice::Span<ice::InputActionConditionData const> _conditions;
         ice::Span<ice::InputActionStepData const> _steps;

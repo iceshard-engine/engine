@@ -73,7 +73,7 @@ namespace ice
 
         auto source_runtime(
             ice::InputActionLayer const& layer,
-            ice::InputActionSourceInfo const& source_info
+            ice::InputActionSourceEntryInfo const& source_info
         ) const noexcept -> ice::InputActionSource const& override;
 
     private:
@@ -133,7 +133,7 @@ namespace ice
         ice::array::reserve(_sources_indices, offsets_offset + count_sources);
 
         // Go through each resource and assing the pointers.
-        for (ice::InputActionSourceInfo const& source : layer->sources())
+        for (ice::InputActionSourceEntryInfo const& source : layer->sources())
         {
             ice::String const source_name = layer->source_name(source);
 
@@ -179,7 +179,7 @@ namespace ice
                 ICE_ASSERT_CORE(final_name_ptr != nullptr);
 
                 // Save the pointer where the values are stored
-                ice::hashmap::set(_actions, action_hash, { .name = *final_name_ptr, .enabled = true });
+                ice::hashmap::set(_actions, action_hash, { .name = *final_name_ptr });
             }
         }
 
@@ -335,7 +335,7 @@ namespace ice
 
     auto SimpleInputActionStack::source_runtime(
         ice::InputActionLayer const& layer,
-        ice::InputActionSourceInfo const& source_info
+        ice::InputActionSourceEntryInfo const& source_info
     ) const noexcept -> ice::InputActionSource const&
     {
         static ice::InputActionSource invalid{};

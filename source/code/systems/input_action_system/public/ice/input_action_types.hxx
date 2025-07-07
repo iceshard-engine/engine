@@ -22,7 +22,7 @@ namespace ice
     enum class InputActionData : ice::u8;
 
     struct InputActionSource;
-    struct InputActionSourceInfo;
+    struct InputActionSourceEntryInfo;
     struct InputAction;
     struct InputActionInfo;
     struct InputActionRuntime;

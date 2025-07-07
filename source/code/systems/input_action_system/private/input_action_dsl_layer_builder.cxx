@@ -2,7 +2,7 @@
 #include "input_action_dsl_layer_builder.hxx"
 
 #include <ice/string_utils.hxx>
-#include <ice/input_action_definitions.hxx>
+#include <ice/input_action_info.hxx>
 #include <ice/log.hxx>
 
 namespace ice
