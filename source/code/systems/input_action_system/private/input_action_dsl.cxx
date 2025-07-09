@@ -74,6 +74,7 @@ namespace ice
         { "gamepad", ice::grammar::UCT_InputBindingPad },
         { "gp", ice::grammar::UCT_InputBindingPad },
         { "layer", ice::grammar::UCT_Layer },
+        { "object", ice::grammar::UCT_ActionTypeObject },
         { "or", ice::grammar::UCT_WhenOr },
         { "once", ice::grammar::UCT_ActionFlagOnce },
         { "pressed", ice::grammar::UCT_WhenPressed },

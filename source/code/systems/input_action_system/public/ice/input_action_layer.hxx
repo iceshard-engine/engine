@@ -14,8 +14,8 @@ namespace ice
 
         virtual auto name() const noexcept -> ice::String = 0;
 
-        virtual auto sources() const noexcept -> ice::Span<ice::InputActionSourceEntryInfo const> = 0;
-        virtual auto source_name(ice::InputActionSourceEntryInfo const& source) const noexcept -> ice::String = 0;
+        virtual auto sources() const noexcept -> ice::Span<ice::InputActionSourceInputInfo const> = 0;
+        virtual auto source_name(ice::InputActionSourceInputInfo const& source) const noexcept -> ice::String = 0;
 
         virtual auto actions() const noexcept -> ice::Span<ice::InputActionInfo const> = 0;
         virtual auto action_name(ice::InputActionInfo const& action) const noexcept -> ice::String = 0;

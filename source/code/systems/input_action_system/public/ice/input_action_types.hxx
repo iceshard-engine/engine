@@ -19,10 +19,10 @@ namespace ice
     enum class InputActionModifier : ice::u8;
 
     // TODO: Rename
-    enum class InputActionData : ice::u8;
+    enum class InputActionDataType : ice::u8;
 
     struct InputActionSource;
-    struct InputActionSourceEntryInfo;
+    struct InputActionSourceInputInfo;
     struct InputAction;
     struct InputActionInfo;
     struct InputActionRuntime;

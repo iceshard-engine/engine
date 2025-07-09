@@ -28,7 +28,7 @@ namespace ice
         , _layer{ }
     {
         context.bind<&InputActionsTrait::on_update>();
-        context.bind<&InputActionsTrait::on_click>("A:click`ice::InputAction const*"_shardid);
+        context.bind<&InputActionsTrait::on_click>("Click`ice::InputAction const*"_shardid);
     }
 
     auto InputActionsTrait::on_click(ice::InputAction const& action) noexcept -> ice::Task<>
@@ -65,7 +65,7 @@ namespace ice
         layerBuilder->define_source("S:click", InputActionSourceType::Button)
             .add_button(input::MouseInput::ButtonLeft);
 
-        layerBuilder->define_action("A:click", InputActionData::Float2)
+        layerBuilder->define_action("A:click", InputActionDataType::Float2)
             // .set_behavior(InputActionBehavior::ActiveOnce)
             .add_condition("S:click", InputActionCondition::Released, Final | RunSteps)
                 .add_step(InputActionStep::Deactivate)
@@ -74,7 +74,7 @@ namespace ice
                 .add_step("S:pos.x", InputActionStep::Set, ".x")
                 .add_step("S:pos.y", InputActionStep::Set, ".y");
 
-        layerBuilder->define_action("A:jump", InputActionData::Bool)
+        layerBuilder->define_action("A:jump", InputActionDataType::Bool)
             .set_behavior(InputActionBehavior::Accumulated)
             .add_condition("S:jump", InputActionCondition::Released, Final | RunSteps)
                 .add_step("S:jump", InputActionStep::Set)
@@ -85,7 +85,7 @@ namespace ice
             .add_modifier(InputActionModifier::Div, 15.f)
             .add_modifier(InputActionModifier::Max, 2.0);
 
-        layerBuilder->define_action("A:move", InputActionData::Float2)
+        layerBuilder->define_action("A:move", InputActionDataType::Float2)
             .add_condition("S:left", InputActionCondition::Pressed, RunSteps)
                 .add_step("S:left", InputActionStep::Sub, ".x")
             .add_condition("S:right", InputActionCondition::Pressed, RunSteps)
@@ -132,7 +132,7 @@ namespace ice
                     when .true // only executed if the previous condition series are not valid
                         .reset
 
-                action Click: bool, once
+                action Click: object, once
                     when Click.pressed
                         .x = Pos.x
                         .y = Pos.y
@@ -156,7 +156,7 @@ namespace ice
     void InputActionsTrait::build_content() noexcept
     {
         ImGui::SeparatorText("Sources");
-        for (ice::InputActionSourceEntryInfo const& source_info : _layer->sources())
+        for (ice::InputActionSourceInputInfo const& source_info : _layer->sources())
         {
             ice::InputActionSource const& source = _stack->source_runtime(*_layer, source_info);
             if (source_info.type == InputActionSourceType::Axis2d)

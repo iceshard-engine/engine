@@ -29,24 +29,25 @@ namespace ice::grammar
     static constexpr TokenType UCT_ActionTypeFloat1{ UCT_Base + 11 };
     static constexpr TokenType UCT_ActionTypeFloat2{ UCT_Base + 12 };
     static constexpr TokenType UCT_ActionTypeFloat3{ UCT_Base + 13 };
-    static constexpr TokenType UCT_ActionFlagOnce{ UCT_Base + 14 };
-    static constexpr TokenType UCT_ActionFlagToggled{ UCT_Base + 15 };
-    static constexpr TokenType UCT_ActionFlagAccumulated{ UCT_Base + 16 };
-    static constexpr TokenType UCT_When{ UCT_Base + 17 };
-    static constexpr TokenType UCT_WhenAnd{ UCT_Base + 18 };
-    static constexpr TokenType UCT_WhenOr{ UCT_Base + 19 };
-    static constexpr TokenType UCT_WhenPressed{ UCT_Base + 20 };
-    static constexpr TokenType UCT_WhenReleased{ UCT_Base + 21 };
-    static constexpr TokenType UCT_WhenActive{ UCT_Base + 22 };
-    static constexpr TokenType UCT_WhenInactive{ UCT_Base + 23 };
-    static constexpr TokenType UCT_WhenFlagCheckSeries{ UCT_Base + 24 };
-    static constexpr TokenType UCT_StepActivate{ UCT_Base + 25 };
-    static constexpr TokenType UCT_StepDeactivate{ UCT_Base + 26 };
-    static constexpr TokenType UCT_StepReset{ UCT_Base + 27 };
-    static constexpr TokenType UCT_StepTime{ UCT_Base + 28 };
-    static constexpr TokenType UCT_Modifier{ UCT_Base + 29 };
-    static constexpr TokenType UCT_ModifierOpMin{ UCT_Base + 30 };
-    static constexpr TokenType UCT_ModifierOpMax{ UCT_Base + 31 };
+    static constexpr TokenType UCT_ActionTypeObject{ UCT_Base + 14 };
+    static constexpr TokenType UCT_ActionFlagOnce{ UCT_Base + 15 };
+    static constexpr TokenType UCT_ActionFlagToggled{ UCT_Base + 16 };
+    static constexpr TokenType UCT_ActionFlagAccumulated{ UCT_Base + 17 };
+    static constexpr TokenType UCT_When{ UCT_Base + 18 };
+    static constexpr TokenType UCT_WhenAnd{ UCT_Base + 19 };
+    static constexpr TokenType UCT_WhenOr{ UCT_Base + 20 };
+    static constexpr TokenType UCT_WhenPressed{ UCT_Base + 21 };
+    static constexpr TokenType UCT_WhenReleased{ UCT_Base + 22 };
+    static constexpr TokenType UCT_WhenActive{ UCT_Base + 23 };
+    static constexpr TokenType UCT_WhenInactive{ UCT_Base + 24 };
+    static constexpr TokenType UCT_WhenFlagCheckSeries{ UCT_Base + 25 };
+    static constexpr TokenType UCT_StepActivate{ UCT_Base + 26 };
+    static constexpr TokenType UCT_StepDeactivate{ UCT_Base + 27 };
+    static constexpr TokenType UCT_StepReset{ UCT_Base + 28 };
+    static constexpr TokenType UCT_StepTime{ UCT_Base + 29 };
+    static constexpr TokenType UCT_Modifier{ UCT_Base + 30 };
+    static constexpr TokenType UCT_ModifierOpMin{ UCT_Base + 31 };
+    static constexpr TokenType UCT_ModifierOpMax{ UCT_Base + 32 };
 
     static constexpr SyntaxRule Rule_ColonOrCommaRules[]{ // , or :
         SyntaxRule{ TokenType::CT_Colon },
@@ -205,14 +206,14 @@ namespace ice::grammar
     };
 
     static constexpr SyntaxRule Rule_LayerActionWhenTargetComponentRules[]{
-        SyntaxRule{ Rule_LayerActionComponentListRules, MatchFirst, &syntax::LayerActionWhen::source_component },
+        SyntaxRule{ Rule_LayerActionComponentListRules, MatchFirst, &syntax::LayerActionWhen::source_name, arctic::SyntaxRule::store_value_extend<arctic::String> },
         SyntaxRule{ Rule_LayerActionWhenTargetComparisonListRules, MatchFirst, &syntax::LayerActionWhen::condition },
         SyntaxRule{ Rule_LayerActionWhenParamNumberTokenListRules, MatchFirst, &syntax::LayerActionWhen::param }
     };
 
     static constexpr SyntaxRule Rule_LayerActionWhenTargetActionConditionRules[]{
-        SyntaxRule{ Rule_LayerActionWhenTargetActionConditionListRules, MatchFirst, &syntax::LayerActionWhen::condition }, // TODO: Capture,
-        SyntaxRule{ Rule_LayerActionWhenTargetComponentRules, MatchAll }, // TODO: Capture,
+        SyntaxRule{ Rule_LayerActionWhenTargetActionConditionListRules, MatchFirst, &syntax::LayerActionWhen::condition },
+        SyntaxRule{ Rule_LayerActionWhenTargetComponentRules, MatchAll },
     };
 
     static constexpr SyntaxRule Rule_LayerActionWhenTargetActionRules[]{
@@ -292,6 +293,7 @@ namespace ice::grammar
         SyntaxRule{ UCT_ActionTypeFloat1 },
         SyntaxRule{ UCT_ActionTypeFloat2 },
         SyntaxRule{ UCT_ActionTypeFloat3 },
+        SyntaxRule{ UCT_ActionTypeObject },
     };
 
     static constexpr SyntaxRule Rule_LayerActionRules[]{ // action <name>: <native_type>

@@ -64,8 +64,8 @@ namespace ice::syntax
 
         arctic::Token type; // when/and(_when)/or(_when)
         arctic::Token source_type = {}; // source/action
-        arctic::String source_name; // alpha-num
-        arctic::String source_component; // x/y/z
+        arctic::String source_name; // alpha-num[.x/y/z]
+        //arctic::String source_component; // x/y/z
         arctic::Token condition; // .pressed/released/active/inactive/</>/==/>=/<=/!=
         arctic::Token param; // int/float
         bool flag_series = false;

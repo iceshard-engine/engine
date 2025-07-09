@@ -1,6 +1,6 @@
 #include <ice/input_action_stack.hxx>
 #include <ice/input_action_layer.hxx>
-#include <ice/input_action_definitions.hxx>
+#include <ice/input_action_info.hxx>
 #include <ice/input_action_executor.hxx>
 #include <ice/string/static_string.hxx>
 #include <ice/string/heap_string.hxx>
@@ -73,7 +73,7 @@ namespace ice
 
         auto source_runtime(
             ice::InputActionLayer const& layer,
-            ice::InputActionSourceEntryInfo const& source_info
+            ice::InputActionSourceInputInfo const& source_info
         ) const noexcept -> ice::InputActionSource const& override;
 
     private:
@@ -133,7 +133,7 @@ namespace ice
         ice::array::reserve(_sources_indices, offsets_offset + count_sources);
 
         // Go through each resource and assing the pointers.
-        for (ice::InputActionSourceEntryInfo const& source : layer->sources())
+        for (ice::InputActionSourceInputInfo const& source : layer->sources())
         {
             ice::String const source_name = layer->source_name(source);
 
@@ -153,7 +153,7 @@ namespace ice
                     // Add another one
                     ice::array::push_back(_sources_values, InputActionSource{});
                 }
-                ICE_ASSERT_CORE(source.storage < ice::count(_sources_values));
+                ICE_ASSERT_CORE(source.storage_offset < ice::count(_sources_values));
 
                 // Save the pointer where the values are stored
                 ice::hashmap::set(_sources, source_hash, { source_name, values_index });
@@ -179,7 +179,7 @@ namespace ice
                 ICE_ASSERT_CORE(final_name_ptr != nullptr);
 
                 // Save the pointer where the values are stored
-                ice::hashmap::set(_actions, action_hash, { .name = *final_name_ptr });
+                ice::hashmap::set(_actions, action_hash, { .name = *final_name_ptr, .type = action.type });
             }
         }
 
@@ -318,7 +318,26 @@ namespace ice
         {
             if (action.active)
             {
-                ice::shards::push_back(out_shards, ice::shardid(action.name) | (ice::InputAction const*)ice::addressof(action));
+                ice::ShardID const sid = ice::shardid(action.name);
+                switch (action.type)
+                {
+                    using enum InputActionDataType;
+                case Bool:
+                    ice::shards::push_back(out_shards, sid | bool(action.value.x > 0.0f));
+                    break;
+                case Float1:
+                    ice::shards::push_back(out_shards, sid | action.value.x);
+                    break;
+                case Float2:
+                    ice::shards::push_back(out_shards, sid | action.value);
+                    break;
+                case ActionObject:
+                    ice::shards::push_back(out_shards, sid | static_cast<ice::InputAction const*>(ice::addressof(action)));
+                    break;
+                default: ICE_ASSERT_CORE(false); break;
+                }
+
+                //ice::shards::push_back(out_shards, ice::shardid(action.name) | (ice::InputAction const*)ice::addressof(action));
             }
         }
     }
@@ -335,7 +354,7 @@ namespace ice
 
     auto SimpleInputActionStack::source_runtime(
         ice::InputActionLayer const& layer,
-        ice::InputActionSourceEntryInfo const& source_info
+        ice::InputActionSourceInputInfo const& source_info
     ) const noexcept -> ice::InputActionSource const&
     {
         static ice::InputActionSource invalid{};

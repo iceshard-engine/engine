@@ -43,6 +43,7 @@ namespace ice
             ice::InputActionCondition condition,
             ice::InputActionConditionFlags flags,
             ice::f32 param,
+            ice::u8 axis,
             bool from_action
         ) noexcept
             : condition{ condition }
@@ -50,6 +51,7 @@ namespace ice
             , source{ alloc, name }
             , steps{ alloc }
             , param{ param }
+            , axis{ axis }
             , from_action{ from_action }
         { }
 
@@ -67,7 +69,9 @@ namespace ice
 
         ice::f32 param;
 
-        //! \brief Contains info the the step source should be taken from an action instead.
+        ice::u8 axis;
+
+        //! \brief Contains info the the condition source should be taken from an action instead.
         bool from_action = false;
     };
 
@@ -78,11 +82,11 @@ namespace ice
         Internal(
             ice::Allocator& alloc,
             ice::String name,
-            ice::InputActionData presentation
+            ice::InputActionDataType type
         ) noexcept
             : allocator{ alloc }
             , name{ alloc, name }
-            , presentation{ presentation }
+            , type{ type }
             , conditions{ alloc }
             , modifiers{ alloc }
         {
@@ -92,7 +96,7 @@ namespace ice
 
         ice::Allocator& allocator;
         ice::HeapString<> name;
-        ice::InputActionData presentation;
+        ice::InputActionDataType type;
         ice::InputActionBehavior behavior;
         ice::Array<ice::ActionBuilderCondition> conditions;
         ice::Array<ice::ActionBuilderModifier> modifiers;
@@ -120,10 +124,10 @@ namespace ice
 
         auto define_action(
             ice::String name,
-            ice::InputActionData presentation
+            ice::InputActionDataType type
         ) noexcept -> ActionBuilder override
         {
-            ice::hashmap::set(_actions, ice::hash(name), {_allocator, name, presentation});
+            ice::hashmap::set(_actions, ice::hash(name), {_allocator, name, type});
             return { ice::hashmap::try_get(_actions, ice::hash(name)) };
         }
 
@@ -132,7 +136,7 @@ namespace ice
             ice::u16 count_storage_values = 0;
 
             ice::HeapString<> strings{ _allocator };
-            ice::Array<ice::InputActionSourceEntryInfo> final_sources{ _allocator };
+            ice::Array<ice::InputActionSourceInputInfo> final_sources{ _allocator };
             ice::Array<ice::InputActionStepData> final_steps{ _allocator };
             ice::Array<ice::InputActionConditionData> final_conditions{ _allocator };
             ice::Array<ice::InputActionModifierData> final_modifiers{ _allocator };
@@ -144,11 +148,11 @@ namespace ice
                 for (ice::input::InputID input_event : source.events)
                 {
                     ice::array::push_back(final_sources,
-                        InputActionSourceEntryInfo{
+                        InputActionSourceInputInfo{
                             .name = { ice::u16(ice::size(strings)), ice::u16(ice::size(source.name)) },
                             .input = input_event,
                             .type = source.type,
-                            .storage = count_storage_values,
+                            .storage_offset = count_storage_values,
                             .param = 0.0f,
                         }
                     );
@@ -174,7 +178,7 @@ namespace ice
                 bool const found = ice::search(
                     ice::array::slice(final_sources),
                     source_name,
-                    [&strings](ice::InputActionSourceEntryInfo const& source, ice::String expected) noexcept
+                    [&strings](ice::InputActionSourceInputInfo const& source, ice::String expected) noexcept
                     {
                         ice::String const source_name = ice::string::substr(
                             strings, source.name.offset, source.name.size
@@ -185,7 +189,7 @@ namespace ice
                 );
 
                 ICE_ASSERT_CORE(found && idx_found < ice::array::count(final_sources));
-                ice::u16 const source_storage_idx = final_sources[idx_found].storage;
+                ice::u16 const source_storage_idx = final_sources[idx_found].storage_offset;
                 return source_storage_idx;
             };
 
@@ -198,7 +202,7 @@ namespace ice
                     [&strings](ice::InputActionInfo const& action, ice::String expected) noexcept
                     {
                         ice::String const source_name = ice::string::substr(
-                            strings, action.name_offset, action.name_length
+                            strings, action.name.offset, action.name.size
                         );
                         return expected == source_name;
                     },
@@ -246,7 +250,7 @@ namespace ice
                         step_count += 1;
                     }
 
-                    ICE_ASSERT_CORE(action.presentation != InputActionData::Invalid);
+                    ICE_ASSERT_CORE(action.type != InputActionDataType::Invalid);
                     ice::InputActionIndex source_index = {.source_index = 0,.source_axis = 0};
                     if (condition.from_action)
                     {
@@ -254,7 +258,7 @@ namespace ice
                         if (ice::string::any(condition.source))
                         {
                             source_index.source_index = find_action_storage_index(condition.source);
-                            source_index.source_axis = ice::u8(static_cast<ice::u8>(action.presentation) - 1);
+                            source_index.source_axis = condition.axis;
                         }
                         else
                         {
@@ -266,7 +270,7 @@ namespace ice
                         && condition.condition != InputActionCondition::ActionInactive)*/
                     {
                         source_index.source_index = find_source_storage_index(condition.source);
-                        source_index.source_axis = ice::u8(static_cast<ice::u8>(action.presentation) - 1);
+                        source_index.source_axis = condition.axis;
                     }
 
                     ice::array::push_back(final_conditions,
@@ -288,9 +292,8 @@ namespace ice
 
                 ice::array::push_back(final_actions,
                     InputActionInfo{
-                        .name_offset = ice::u16(ice::size(strings)),
-                        .name_length = ice::u16(ice::size(action.name)),
-                        .presentation = action.presentation,
+                        .name = { ice::u16(ice::size(strings)), ice::u16(ice::size(action.name)) },
+                        .type = action.type,
                         .behavior = action.behavior,
                         .conditions = { condition_offset, condition_count },
                         .mods = { modifier_offset, modifier_count }
@@ -444,9 +447,24 @@ namespace ice
         bool from_action /*= false*/
     ) noexcept -> ActionBuilder&
     {
+        ice::u8 read_from = 0;
+        ice::u32 source_size = ice::size(source);
+        if (source_size > 1 && source[source_size - 2] == '.')
+        {
+            source_size -= 2;
+            read_from = source[source_size + 1] - 'x';
+            ICE_ASSERT_CORE(read_from >= 0 && read_from < 3);
+        }
+
         ice::array::push_back(_internal->conditions,
             ActionBuilderCondition{
-                _internal->allocator, source, condition, flags, param, from_action
+                _internal->allocator,
+                ice::string::substr(source, 0, source_size),
+                condition,
+                flags,
+                param,
+                read_from,
+                from_action
             }
         );
         _internal->current_condition = ice::addressof(ice::array::back(_internal->conditions));

@@ -14,6 +14,7 @@ namespace ice
         auto key_from_dsl(arctic::String value) noexcept -> ice::input::KeyboardKey;
         auto mouse_from_dsl(arctic::String value) noexcept -> ice::input::MouseInput;
 
+        auto datatype_from_dsl(arctic::Token token) noexcept -> ice::InputActionDataType;
         auto condition_from_dsl(arctic::Token token, bool action_condition) noexcept -> ice::InputActionCondition;
         auto step_from_dsl(arctic::Token token) noexcept -> ice::InputActionStep;
         auto modifier_from_dsl(arctic::Token token) noexcept -> ice::InputActionModifier;
@@ -96,12 +97,8 @@ namespace ice
 
     void InputActionDSLLayerBuilder::visit(arctic::SyntaxNode<ice::syntax::LayerAction> node) noexcept
     {
-        ice::InputActionData action_datatype = InputActionData::Bool;
         ice::syntax::LayerAction const& action_info = node.data();
-        if (action_info.type.type == ice::grammar::UCT_ActionTypeFloat2)
-        {
-            action_datatype = InputActionData::Float2;
-        }
+        ice::InputActionDataType const action_datatype = detail::datatype_from_dsl(action_info.type);
 
         ICE_LOG(LogSeverity::Info, LogTag::Engine, "Action: {}", action_info.name);
         ice::InputActionLayerBuilder::ActionBuilder action = _builder->define_action(action_info.name, action_datatype);
@@ -153,7 +150,7 @@ namespace ice
         using enum ice::InputActionCondition;
 
         ice::syntax::LayerActionWhen const& cond = node.to<ice::syntax::LayerActionWhen>().data();
-        ICE_LOG(LogSeverity::Debug, LogTag::Tool, "- {} {}.{}.{} {} {}", cond.type.value, cond.source_type.value, cond.source_name, cond.source_component, cond.condition.value, cond.param.value);
+        ICE_LOG(LogSeverity::Debug, LogTag::Tool, "- {} {}.{} {} {}", cond.type.value, cond.source_type.value, cond.source_name, cond.condition.value, cond.param.value);
 
         bool const from_action = cond.source_type.type == grammar::UCT_Action
             || (cond.source_type.type == arctic::TokenType::Invalid && cond.source_name.empty()); // "self"
@@ -304,6 +301,19 @@ namespace ice
             result = MouseInput::PositionX;
         }
         return result;
+    }
+
+    auto detail::datatype_from_dsl(arctic::Token token) noexcept -> ice::InputActionDataType
+    {
+        switch (token.type)
+        {
+            // Action conditions
+        case grammar::UCT_ActionTypeBool: return InputActionDataType::Bool;
+        case grammar::UCT_ActionTypeFloat1: return InputActionDataType::Float1;
+        case grammar::UCT_ActionTypeFloat2: return InputActionDataType::Float2;
+        case grammar::UCT_ActionTypeObject: return InputActionDataType::ActionObject;
+        default: ICE_ASSERT_CORE(false); return InputActionDataType::Invalid;
+        }
     }
 
     auto detail::condition_from_dsl(arctic::Token token, bool action_condition) noexcept -> ice::InputActionCondition

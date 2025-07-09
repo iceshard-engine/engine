@@ -29,7 +29,7 @@ namespace ice
         Axis2d
     };
 
-    struct InputActionSourceEntryInfo
+    struct InputActionSourceInputInfo
     {
         //! \brief Offset and size of the name in the data blob.
         ice::ref16 name;
@@ -44,23 +44,24 @@ namespace ice
         //!   `Axis` => `if <value> gt_or_eq <deadzone>` then `[deadzone, 1.0]`, else `0.0`
         ice::InputActionSourceType type;
 
-        //! \brief The storage offset where the input value should be stored.
-        ice::u16 storage;
+        //! \brief Layer relative offset where the values from the event should be stored.
+        ice::u16 storage_offset;
 
         //! \brief Additional param usable by some source types.
-        //! \note Currently only used by 'Axis' sources for deadzone checks.
-        ice::f32 param = 0.0;
+        //! \note Only used by 'Axis' sources for deadzone checks.
+        //! \todo This param is not set or used, however it's here for future work.
+        ice::f32 param;
     };
 
-    static_assert(sizeof(InputActionSourceEntryInfo) % 4 == 0);
+    static_assert(sizeof(InputActionSourceInputInfo) % 4 == 0);
 
     struct InputActionInfo
     {
-        //! \brief Where to find the name in the data blob.
-        ice::u16 name_offset, name_length;
+        //! \brief Offset and size of the name in the data blob.
+        ice::ref16 name;
 
-        //! \brief Presentation of the action data.
-        ice::InputActionData presentation;
+        //! \brief Data representation of the resulting Action. This defines with what type the resulting Shard will be sent.
+        ice::InputActionDataType type;
 
         ice::InputActionBehavior behavior;
 

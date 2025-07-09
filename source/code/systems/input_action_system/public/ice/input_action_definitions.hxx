@@ -51,6 +51,7 @@ namespace ice
         ice::vec3f raw_value;
         ice::String name;
 
+        ice::InputActionDataType type;
         ice::u8 state = 0;
         bool toggle_enabled = false;
         bool was_active = false;
@@ -174,13 +175,16 @@ namespace ice
         Max,
     };
 
-    enum class InputActionData : ice::u8
+    enum class InputActionDataType : ice::u8
     {
         Invalid = 0,
         Bool,
         Float1,
         Float2,
-        Float3,
+        ActionObject,
+
+        //! \todo Added for possible support of VR inputs in the future.
+        // Float3,
     };
 
 

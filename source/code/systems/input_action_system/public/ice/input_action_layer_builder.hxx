@@ -20,7 +20,7 @@ namespace ice
 
         virtual auto define_action(
             ice::String name,
-            ice::InputActionData presentation
+            ice::InputActionDataType type
         ) noexcept -> ActionBuilder = 0;
 
         virtual auto finalize(

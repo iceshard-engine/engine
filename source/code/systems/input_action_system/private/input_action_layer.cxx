@@ -19,7 +19,7 @@ namespace ice
 
     struct StandardInputActionLayerParams
     {
-        ice::Span<ice::InputActionSourceEntryInfo const> sources;
+        ice::Span<ice::InputActionSourceInputInfo const> sources;
         ice::Span<ice::InputActionInfo const> actions;
         ice::Span<ice::InputActionConditionData const> conditions;
         ice::Span<ice::InputActionStepData const> steps;
@@ -38,7 +38,7 @@ namespace ice
         ice::usize offset = ice::size_of<ice::InputActionLayerInfo>;
         ice::StandardInputActionLayerParams result{};
 
-        result.sources = ice::span::from_data<ice::InputActionSourceEntryInfo>(memory, layer_info->count_sources, offset);
+        result.sources = ice::span::from_data<ice::InputActionSourceInputInfo>(memory, layer_info->count_sources, offset);
         offset += ice::span::data_view(result.sources).size;
         result.actions = ice::span::from_data<ice::InputActionInfo>(memory, layer_info->count_actions, offset);
         offset += ice::span::data_view(result.actions).size;
@@ -86,12 +86,12 @@ namespace ice
             return "Default";
         }
 
-        auto sources() const noexcept -> ice::Span<ice::InputActionSourceEntryInfo const> override
+        auto sources() const noexcept -> ice::Span<ice::InputActionSourceInputInfo const> override
         {
             return _sources;
         }
 
-        auto source_name(ice::InputActionSourceEntryInfo const& source) const noexcept -> ice::String override
+        auto source_name(ice::InputActionSourceInputInfo const& source) const noexcept -> ice::String override
         {
             return ice::string::substr(_strings, source.name.offset, source.name.size);
         }
@@ -103,7 +103,7 @@ namespace ice
 
         auto action_name(ice::InputActionInfo const& action) const noexcept -> ice::String override
         {
-            return ice::string::substr(_strings, action.name_offset, action.name_length);
+            return ice::string::substr(_strings, action.name.offset, action.name.size);
         }
 
         bool process_inputs(
@@ -113,20 +113,20 @@ namespace ice
         {
             IPT_ZONE_SCOPED;
 
-            ice::ucount index = 0;
-            ice::ucount count = ice::count(input_events);
+            ice::ucount event_index = 0;
+            ice::ucount const event_count = ice::count(input_events);
 
-            while(index < count)
+            while(event_index < event_count)
             {
-                ice::input::InputEvent const ev = input_events[index];
+                ice::input::InputEvent const ev = input_events[event_index];
 
                 ice::i32 src_idx = -1;
-                for (ice::InputActionSourceEntryInfo const& src : _sources)
+                for (ice::InputActionSourceInputInfo const& src : _sources)
                 {
                     src_idx += 1;
 
-                    ICE_ASSERT_CORE(source_values[src.storage] != nullptr);
-                    ice::InputActionSource& value = source_values[src.storage][ev.axis_idx];
+                    ICE_ASSERT_CORE(source_values[src.storage_offset] != nullptr);
+                    ice::InputActionSource& value = source_values[src.storage_offset][ev.axis_idx];
 
                     if (src.input != ev.identifier)
                     {
@@ -180,10 +180,10 @@ namespace ice
                     // }
                 }
 
-                index += 1;
+                event_index += 1;
             }
 
-            return count != ice::count(input_events);
+            return event_count != ice::count(input_events);
         }
 
         bool update_actions(
@@ -197,7 +197,7 @@ namespace ice
 
             for (ice::InputActionInfo const& action : _actions)
             {
-                ice::String const action_name = ice::string::substr(_strings, action.name_offset, action.name_length);
+                ice::String const action_name = ice::string::substr(_strings, action.name.offset, action.name.size);
 
                 ice::InputActionRuntime* const runtime = ice::hashmap::try_get(actions, ice::hash(action_name));
                 if (action.behavior != InputActionBehavior::Accumulated)
@@ -217,7 +217,7 @@ namespace ice
                         {
                             ice::InputActionInfo const checked_action_info = _actions[cond.source.source_index];
                             ice::String const checked_action_name = ice::string::substr(
-                                _strings, checked_action_info.name_offset, checked_action_info.name_length
+                                _strings, checked_action_info.name.offset, checked_action_info.name.size
                             );
                             checked_action = ice::hashmap::try_get(actions, ice::hash(checked_action_name));
                         }
@@ -318,7 +318,7 @@ namespace ice
 
             for (ice::InputActionInfo const& action : _actions)
             {
-                ice::String const action_name = ice::string::substr(_strings, action.name_offset, action.name_length);
+                ice::String const action_name = ice::string::substr(_strings, action.name.offset, action.name.size);
                 ice::InputActionRuntime* const runtime = ice::hashmap::try_get(actions, ice::hash(action_name));
 
                 // Handles 'Toggle'. We only activate of the first press, which is `state == 1`.
@@ -367,7 +367,7 @@ namespace ice
         ice::Allocator& _allocator;
         ice::Memory _rawdata;
 
-        ice::Span<ice::InputActionSourceEntryInfo const> _sources;
+        ice::Span<ice::InputActionSourceInputInfo const> _sources;
         ice::Span<ice::InputActionInfo const> _actions;
         ice::Span<ice::InputActionConditionData const> _conditions;
         ice::Span<ice::InputActionStepData const> _steps;
