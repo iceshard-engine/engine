@@ -113,8 +113,8 @@ namespace ice
 
         // Action and Special conditions
         ActionEnabled,
-        ActionActive,
-        ActionInactive,
+        ActionToggleActive,
+        ActionToggleInactive,
         AlwaysTrue,
     };
 

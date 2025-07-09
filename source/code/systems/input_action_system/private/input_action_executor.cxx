@@ -14,8 +14,8 @@ namespace ice
         switch (condition)
         {
             using enum InputActionCondition;
-        case ActionActive: return action.active;
-        case ActionInactive: return action.active == false;
+        case ActionToggleActive: return action.toggle_enabled;
+        case ActionToggleInactive: return action.toggle_enabled == false;
         case AlwaysTrue: return true;
         default: ICE_ASSERT_CORE(false); return false;
         }

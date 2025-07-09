@@ -86,6 +86,9 @@ namespace ice
         constexpr auto subspan(ice::Span<Type> span, ice::ucount from_idx, ice::ucount count = ice::ucount_max) noexcept -> ice::Span<Type>;
 
         template<typename Type>
+        constexpr auto subspan(ice::Span<Type> span, ice::ref32 ref) noexcept -> ice::Span<Type>;
+
+        template<typename Type>
         constexpr auto begin(ice::Span<Type> span) noexcept -> typename ice::Span<Type>::Iterator;
 
         template<typename Type>
@@ -255,6 +258,12 @@ namespace ice
             ice::ucount const from_start = ice::min(from_idx, span._count);
             ice::ucount const new_count = ice::min(span._count - from_start, count);
             return { span._data + from_start, new_count };
+        }
+
+        template<typename Type>
+        constexpr auto subspan(ice::Span<Type> span, ice::ref32 ref) noexcept -> ice::Span<Type>
+        {
+            return ice::span::subspan(span, ref.offset, ref.size);
         }
 
         template<typename Type>

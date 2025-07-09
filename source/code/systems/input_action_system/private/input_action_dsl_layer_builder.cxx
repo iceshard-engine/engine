@@ -323,8 +323,8 @@ namespace ice
             // Action conditions
         case grammar::UCT_WhenPressed: return InputActionCondition::Pressed;
         case grammar::UCT_WhenReleased: return InputActionCondition::Released;
-        case grammar::UCT_WhenActive: return action_condition ? InputActionCondition::ActionActive : InputActionCondition::Active;
-        case grammar::UCT_WhenInactive: return InputActionCondition::ActionInactive;
+        case grammar::UCT_WhenActive: return action_condition ? InputActionCondition::ActionToggleActive : InputActionCondition::Active;
+        case grammar::UCT_WhenInactive: return InputActionCondition::ActionToggleInactive;
             // Arithmetic conditions
         case arctic::TokenType::OP_Equal: return InputActionCondition::Equal;
         case arctic::TokenType::OP_NotEqual: return InputActionCondition::NotEqual; // TODO

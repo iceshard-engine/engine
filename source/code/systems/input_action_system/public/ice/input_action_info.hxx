@@ -63,11 +63,21 @@ namespace ice
         //! \brief Data representation of the resulting Action. This defines with what type the resulting Shard will be sent.
         ice::InputActionDataType type;
 
+        //! \brief Allows to customize behavior for actions.
+        //! \details With the following:
+        //!   * 'Default' - Action is active as long as it's activation condition is 'true'.
+        //!   * 'Toggled' - Action is active after the activation condition was successful, and deactivated on the next success.
+        //!   * 'Once' - Action is active only for a single frame after activation condition was successful.
+        //!
+        //! \note When defining actions in '.ias' scripts, it's better to use '.toggle' step instead of '.activate'
+        //!   for additional readability, however the '.toggle' step is only allowed in 'toggled' input actions.
         ice::InputActionBehavior behavior;
 
-        ice::arr<2, ice::u16> conditions; // offset, count, steps_offset
+        //! \brief Offset and count of conditions this action has defined.
+        ice::ref16 conditions;
 
-        ice::arr<2, ice::u8> mods; // offset, count
+        //! \brief Offset and count of modifiers this action has defined.
+        ice::ref8 mods;
     };
 
     static_assert(sizeof(InputActionInfo) % 4 == 0);

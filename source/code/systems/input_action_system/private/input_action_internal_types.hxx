@@ -20,7 +20,7 @@ namespace ice
         ice::InputActionIndex source;
         ice::InputActionCondition id;
         ice::InputActionConditionFlags flags;
-        ice::arr<2, ice::u16> steps;
+        ice::ref16 steps;
         ice::f32 param;
     };
 

@@ -180,6 +180,12 @@ namespace ice
         }
 
         template<typename CharType>
+        constexpr auto substr(ice::BasicString<CharType> str, ice::ref32 ref) noexcept -> ice::BasicString<CharType>
+        {
+            return ice::string::substr(str, ref.offset, ref.size);
+        }
+
+        template<typename CharType>
         constexpr auto starts_with(ice::BasicString<CharType> str, ice::BasicString<CharType> prefix) noexcept
         {
             return ice::string::substr(str, 0, ice::string::size(prefix)) == prefix;

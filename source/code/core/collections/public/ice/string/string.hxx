@@ -41,6 +41,9 @@ namespace ice::string
     constexpr auto substr(ice::BasicString<CharType> str, ice::ucount pos, ice::ucount len = ice::String_NPos) noexcept -> ice::BasicString<CharType>;
 
     template<typename CharType>
+    constexpr auto substr(ice::BasicString<CharType> str, ice::ref32 ref) noexcept -> ice::BasicString<CharType>;
+
+    template<typename CharType>
     constexpr auto starts_with(ice::BasicString<CharType> str, ice::BasicString<CharType> prefix) noexcept;
 
     template<typename CharType>

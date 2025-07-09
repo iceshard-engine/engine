@@ -93,7 +93,7 @@ namespace ice
 
         auto source_name(ice::InputActionSourceInputInfo const& source) const noexcept -> ice::String override
         {
-            return ice::string::substr(_strings, source.name.offset, source.name.size);
+            return ice::string::substr(_strings, source.name);
         }
 
         auto actions() const noexcept -> ice::Span<ice::InputActionInfo const> override
@@ -103,7 +103,7 @@ namespace ice
 
         auto action_name(ice::InputActionInfo const& action) const noexcept -> ice::String override
         {
-            return ice::string::substr(_strings, action.name.offset, action.name.size);
+            return ice::string::substr(_strings, action.name);
         }
 
         bool process_inputs(
@@ -197,7 +197,7 @@ namespace ice
 
             for (ice::InputActionInfo const& action : _actions)
             {
-                ice::String const action_name = ice::string::substr(_strings, action.name.offset, action.name.size);
+                ice::String const action_name = ice::string::substr(_strings, action.name);
 
                 ice::InputActionRuntime* const runtime = ice::hashmap::try_get(actions, ice::hash(action_name));
                 if (action.behavior != InputActionBehavior::Accumulated)
@@ -206,7 +206,7 @@ namespace ice
                 }
 
                 bool series_success = false;
-                ice::Span const conditions = ice::span::subspan(_conditions, action.conditions.x, action.conditions.y);
+                ice::Span const conditions = ice::span::subspan(_conditions, action.conditions);
                 for (ice::InputActionConditionData const& cond : conditions)
                 {
                     bool cond_result = false;
@@ -216,9 +216,7 @@ namespace ice
                         if (cond.source.source_index != InputActionIndex::SelfIndex)
                         {
                             ice::InputActionInfo const checked_action_info = _actions[cond.source.source_index];
-                            ice::String const checked_action_name = ice::string::substr(
-                                _strings, checked_action_info.name.offset, checked_action_info.name.size
-                            );
+                            ice::String const checked_action_name = ice::string::substr(_strings, checked_action_info.name);
                             checked_action = ice::hashmap::try_get(actions, ice::hash(checked_action_name));
                         }
                         ICE_ASSERT_CORE(checked_action != nullptr);
@@ -255,7 +253,7 @@ namespace ice
 
                     if (ice::has_all(cond.flags, RunSteps) && check_success)
                     {
-                        ice::Span const steps = ice::span::subspan(_steps, cond.steps.x, cond.steps.y);
+                        ice::Span const steps = ice::span::subspan(_steps, cond.steps);
                         for (ice::InputActionStepData const& step : steps)
                         {
                             if (step.id < InputActionStep::Set)
@@ -318,7 +316,7 @@ namespace ice
 
             for (ice::InputActionInfo const& action : _actions)
             {
-                ice::String const action_name = ice::string::substr(_strings, action.name.offset, action.name.size);
+                ice::String const action_name = ice::string::substr(_strings, action.name);
                 ice::InputActionRuntime* const runtime = ice::hashmap::try_get(actions, ice::hash(action_name));
 
                 // Handles 'Toggle'. We only activate of the first press, which is `state == 1`.
@@ -354,7 +352,7 @@ namespace ice
                 // Update the final value and run modifiers over it.
                 runtime->value = { runtime->raw_value.x, runtime->raw_value.y };
 
-                ice::Span const mods = ice::span::subspan(_modifiers, action.mods.x, action.mods.y);
+                ice::Span const mods = ice::span::subspan(_modifiers, action.mods);
                 for (ice::InputActionModifierData const& mod : mods)
                 {
                     executor.execute_modifier(mod.id, runtime->value.v[0][mod.axis], mod.param);
