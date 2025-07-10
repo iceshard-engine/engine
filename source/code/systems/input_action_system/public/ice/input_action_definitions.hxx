@@ -147,34 +147,61 @@ namespace ice
         Final = 0x80 | SeriesFinish,
     };
 
+    //! \brief Steps that can be executed after a condition (or series of conditions) was evaluated successfuly.
     enum class InputActionStep : ice::u8
     {
         Invalid = 0,
 
-        // Action state change
-        Enable,
-        Disable,
+        //! \brief Activates an action for the current frame.
+        //! \note If used in a 'toggled' action, activation will still only activate it for a single frame.
+        //!   If the action is already 'active' via toggling, then nothing changes.
+        Activate,
+
+        //! \brief Deactivates an action for all following frames.
+        //! \note Generally not necessary to be added, since actions are only active for a single frame.
+        //!   If used on a 'toggled' it will deactivate the toggle.
+        Deactivate,
+
+        //! \brief Used to implement 'toggled' actions, allowing an action to be active even when no conditions are passed.
         Toggle,
 
-        // Action data and activation changes
-        Activate,
-        Deactivate,
+        //! \brief Resets internal input action values to their defaults.
         Reset,
+
+        //! \brief Sets the input actions value to "time passed since activation" (in seconds)
         Time,
 
-        // Data operations
+        //! \brief Sets the input actions value to the value reported by a given source.
         Set,
+
+        //! \brief Increases the input actions value by the value reported by a given source.
         Add,
+
+        //! \brief Reduces the input actions value by the value reported by a given source.
         Sub,
     };
 
+    //! \brief Modifiers that can be applied to action values before publishing.
+    //! \details Each modifier is re-evaluated every frame as long as the action is active.
+    //!   However because actions use a double-storage approach (raw -> final) the modifiers will not result in infinite
+    //!   divisions (or other actions) of the previous value.
     enum class InputActionModifier : ice::u8
     {
         Invalid = 0,
+
+        //! \brief Divides action value by a user provided param. `action_value / user_param`
         Div,
+
+        //! \brief Highest value between the actions value and a user provided param. `max(action_value, user_param)`
         Max,
     };
 
+    //! \brief Data representation of active input actions.
+    //! \details When using 'ActionObject' (or 'object' in scripts) the user will receive all available information on that specific
+    //!   action. However because values are stored internally as a 'ice::vec2f' interpretation needs to be done by the consumer.
+    //!
+    //! \note This value only affects how data is published to the rest of the engine (using a shard) once an action
+    //!   is active. It does not change the internal storage of actual action data.
     enum class InputActionDataType : ice::u8
     {
         Invalid = 0,

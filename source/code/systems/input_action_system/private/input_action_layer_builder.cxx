@@ -359,6 +359,18 @@ namespace ice
         return *this;
     }
 
+    auto InputActionLayerBuilder::SourceBuilder::add_keymod(ice::input::KeyboardMod keymod) noexcept -> SourceBuilder&
+    {
+        using ice::input::DeviceType;
+        using enum ice::InputActionSourceType;
+
+        ice::input::InputID const iid = input_identifier(DeviceType::Keyboard, keymod, ice::input::mod_identifier_base_value);
+
+        ICE_ASSERT_CORE(_internal->type == Key || _internal->type == Button);
+        ice::hashmap::set(_internal->events, ice::hash(iid), iid);
+        return *this;
+    }
+
     auto InputActionLayerBuilder::SourceBuilder::add_button(ice::input::MouseInput button) noexcept -> SourceBuilder&
     {
         using ice::input::DeviceType;

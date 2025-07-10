@@ -12,6 +12,7 @@ namespace ice
     {
 
         auto key_from_dsl(arctic::String value) noexcept -> ice::input::KeyboardKey;
+        auto mod_from_dsl(arctic::String value) noexcept -> ice::input::KeyboardMod;
         auto mouse_from_dsl(arctic::String value) noexcept -> ice::input::MouseInput;
 
         auto datatype_from_dsl(arctic::Token token) noexcept -> ice::InputActionDataType;
@@ -62,16 +63,26 @@ namespace ice
         {
             using ice::input::DeviceType;
             using ice::input::KeyboardKey;
+            using ice::input::KeyboardMod;
             using ice::input::MouseInput;
 
             if (binding.data().device.type == ice::grammar::UCT_InputBindingKeyboard)
             {
                 ICE_ASSERT_CORE(type == InputActionSourceType::Key || type == InputActionSourceType::Button);
 
-                KeyboardKey const key = detail::key_from_dsl(binding.data().source);
-                ICE_ASSERT_CORE(key != KeyboardKey::Unknown);
-
-                source.add_key(key);
+                //ice::u64 const valsize = binding.data().device.value.size();
+                //if (binding.data().device.value[valsize / 2] == 'm')
+                //{
+                //    KeyboardMod const mod = detail::mod_from_dsl(binding.data().source);
+                //    ICE_ASSERT_CORE(mod != KeyboardMod::None);
+                //    source.add_keymod(mod);
+                //}
+                //else
+                {
+                    KeyboardKey const key = detail::key_from_dsl(binding.data().source);
+                    ICE_ASSERT_CORE(key != KeyboardKey::Unknown);
+                    source.add_key(key);
+                }
             }
             else if (binding.data().device.type == ice::grammar::UCT_InputBindingMouse)
             {
@@ -231,6 +242,7 @@ namespace ice
     auto detail::key_from_dsl(arctic::String value) noexcept -> ice::input::KeyboardKey
     {
         using ice::input::KeyboardKey;
+        using ice::input::KeyboardMod;
 
         KeyboardKey result = KeyboardKey::Unknown;
         if (value.size() == 1)
@@ -277,8 +289,93 @@ namespace ice
         {
             result = KeyboardKey::Right;
         }
+        else if (strnicmp(value.data(), "mode", 4) == 0)
+        {
+            return KeyboardKey::KeyMode;
+        }
+        else if (strnicmp(value.data(), "numlock", 4) == 0)
+        {
+            return KeyboardKey::NumPadNumlockClear;
+        }
+        else if (strnicmp(value.data(), "capslock", 4) == 0)
+        {
+            return KeyboardKey::KeyCapsLock;
+        }
+        else if (value.size() >= 4 && (value[0] == 'l' || value[0] == 'r'))
+        {
+            ice::u8 const mod_left = value[0] == 'l';
+            value = value.substr(1);
+
+            if (strnicmp(value.data(), "shift", 5) == 0)
+            {
+                result = mod_left ? KeyboardKey::KeyLeftShift : KeyboardKey::KeyRightShift;
+            }
+            else if (strnicmp(value.data(), "ctrl", 4) == 0)
+            {
+                result = mod_left ? KeyboardKey::KeyLeftCtrl : KeyboardKey::KeyRightCtrl;
+            }
+            else if (strnicmp(value.data(), "alt", 3) == 0)
+            {
+                result = mod_left ? KeyboardKey::KeyLeftAlt : KeyboardKey::KeyRightAlt;
+            }
+            else if (strnicmp(value.data(), "gui", 3) == 0)
+            {
+                result = mod_left ? KeyboardKey::KeyLeftGui : KeyboardKey::KeyRightGui;
+            }
+        }
         return result;
     }
+
+#if 0
+    auto detail::mod_from_dsl(arctic::String value) noexcept -> ice::input::KeyboardMod
+    {
+        using ice::input::KeyboardMod;
+
+        if (strnicmp(value.data(), "mode", 4) == 0)
+        {
+            return KeyboardMod::Mode;
+        }
+        else if (strnicmp(value.data(), "numlock", 4) == 0)
+        {
+            return KeyboardMod::NumLock;
+        }
+        else if (strnicmp(value.data(), "capslock", 4) == 0)
+        {
+            return KeyboardMod::CapsLock;
+        }
+
+        // If left == 2, if right == 1, else 0
+        KeyboardMod result = KeyboardMod::None;
+        ICE_ASSERT_CORE(value.size() >= 3);
+
+        ice::u8 const mod_side = (value[0] == 'l' ? 2 : (value[0] == 'r' ? 1 : 0));
+        value = value.substr(ice::u32(mod_side != 0)); // We remove the prefix ('l' or 'r') from the remaining value.
+
+        switch (value[0])
+        {
+        case 's':
+        case 'S':
+            result = static_cast<KeyboardMod>(3 ^ mod_side);
+            break;
+        case 'c':
+        case 'C':
+            result = static_cast<KeyboardMod>((3 ^ mod_side) << 2);
+            break;
+        case 'a':
+        case 'A':
+            result = static_cast<KeyboardMod>((3 ^ mod_side) << 4);
+            break;
+        case 'g':
+        case 'G':
+            result = static_cast<KeyboardMod>((3 ^ mod_side) << 8);
+            break;
+        default:
+            break;
+        }
+
+        return result;
+    }
+#endif
 
     auto detail::mouse_from_dsl(arctic::String value) noexcept -> ice::input::MouseInput
     {
@@ -344,6 +441,7 @@ namespace ice
         {
         case grammar::UCT_StepActivate: return InputActionStep::Activate;
         case grammar::UCT_StepDeactivate: return InputActionStep::Deactivate;
+        case grammar::UCT_StepToggle: return InputActionStep::Toggle;
         case grammar::UCT_StepReset: return InputActionStep::Reset;
         case grammar::UCT_StepTime: return InputActionStep::Time;
             // Arithmetic steps

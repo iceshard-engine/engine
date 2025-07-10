@@ -322,14 +322,14 @@ namespace ice
                 // Handles 'Toggle'. We only activate of the first press, which is `state == 1`.
                 if (action.behavior == InputActionBehavior::Toggled)
                 {
-                    if (runtime->state == 1)
-                    {
-                        runtime->toggle_enabled = !runtime->toggle_enabled;
-                    }
-                    else
-                    {
-                        runtime->active = runtime->toggle_enabled;
-                    }
+                    runtime->active |= runtime->toggle_enabled;
+                    //if (runtime->state == 1)
+                    //{
+                    //    runtime->toggle_enabled = !runtime->toggle_enabled;
+                    //}
+                    //else
+                    //{
+                    //}
                 }
                 // Handles 'Once'. Once state is bigger than `1` we always deactivate the action.
                 else if (action.behavior == InputActionBehavior::ActiveOnce && runtime->state > 1)

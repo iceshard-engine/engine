@@ -42,6 +42,7 @@ namespace ice
         auto operator=(SourceBuilder const&) noexcept -> SourceBuilder& = delete;
 
         auto add_key(ice::input::KeyboardKey key) noexcept -> SourceBuilder&;
+        auto add_keymod(ice::input::KeyboardMod keymod) noexcept -> SourceBuilder&;
         auto add_button(ice::input::MouseInput button) noexcept -> SourceBuilder&;
         auto add_button(ice::input::ControllerInput button) noexcept -> SourceBuilder&;
         auto add_axis(ice::input::MouseInput axisx) noexcept -> SourceBuilder&;

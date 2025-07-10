@@ -17,8 +17,6 @@ namespace ice
     enum class InputActionCondition : ice::u8;
     enum class InputActionStep : ice::u8;
     enum class InputActionModifier : ice::u8;
-
-    // TODO: Rename
     enum class InputActionDataType : ice::u8;
 
     struct InputActionSource;

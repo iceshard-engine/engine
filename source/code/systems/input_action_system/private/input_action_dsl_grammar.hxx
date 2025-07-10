@@ -43,11 +43,12 @@ namespace ice::grammar
     static constexpr TokenType UCT_WhenFlagCheckSeries{ UCT_Base + 25 };
     static constexpr TokenType UCT_StepActivate{ UCT_Base + 26 };
     static constexpr TokenType UCT_StepDeactivate{ UCT_Base + 27 };
-    static constexpr TokenType UCT_StepReset{ UCT_Base + 28 };
-    static constexpr TokenType UCT_StepTime{ UCT_Base + 29 };
-    static constexpr TokenType UCT_Modifier{ UCT_Base + 30 };
-    static constexpr TokenType UCT_ModifierOpMin{ UCT_Base + 31 };
-    static constexpr TokenType UCT_ModifierOpMax{ UCT_Base + 32 };
+    static constexpr TokenType UCT_StepToggle{ UCT_Base + 28 };
+    static constexpr TokenType UCT_StepReset{ UCT_Base + 29 };
+    static constexpr TokenType UCT_StepTime{ UCT_Base + 30 };
+    static constexpr TokenType UCT_Modifier{ UCT_Base + 31 };
+    static constexpr TokenType UCT_ModifierOpMin{ UCT_Base + 32 };
+    static constexpr TokenType UCT_ModifierOpMax{ UCT_Base + 33 };
 
     static constexpr SyntaxRule Rule_ColonOrCommaRules[]{ // , or :
         SyntaxRule{ TokenType::CT_Colon },
@@ -133,6 +134,7 @@ namespace ice::grammar
     static constexpr SyntaxRule Rule_LayerActionStepBuiltInListRules[]{
         SyntaxRule{ UCT_StepActivate },
         SyntaxRule{ UCT_StepDeactivate },
+        SyntaxRule{ UCT_StepToggle },
         SyntaxRule{ UCT_StepReset },
         SyntaxRule{ UCT_StepTime },
     };

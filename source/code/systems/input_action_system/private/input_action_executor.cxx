@@ -68,6 +68,14 @@ namespace ice
         case Deactivate:
             runtime.state = 0;
             runtime.active = false;
+            runtime.toggle_enabled = false;
+            break;
+        case Toggle:
+            runtime.state = runtime.state * 2 + 1;
+            if (runtime.state == 1)
+            {
+                runtime.toggle_enabled = !runtime.toggle_enabled;
+            }
             break;
         case Reset:
             runtime.value = ice::vec2f{};

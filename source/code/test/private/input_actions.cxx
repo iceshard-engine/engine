@@ -110,7 +110,16 @@ namespace ice
                 source axis2d Pos: mouse.pos
                 source button Click: mouse.lbutton
 
-                // <symbol>[(.pressed)|.released|.active|.inactive|[.[x|y|z] [<|>|<=|>=|==|!=] <param:number>]]
+                source button Sprint: kb.lshift
+                source button SprintToggle: kb.V
+
+                action Sprint: bool, toggled
+                    when SprintToggle.pressed
+                        .toggle
+                    when Sprint.pressed
+                        .activate
+                    when Sprint.released
+                        .deactivate
 
                 action Jump: float1
                     when Jump.pressed
