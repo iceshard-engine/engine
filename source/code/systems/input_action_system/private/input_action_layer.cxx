@@ -200,7 +200,8 @@ namespace ice
                 ice::String const action_name = ice::string::substr(_strings, action.name);
 
                 ice::InputActionRuntime* const runtime = ice::hashmap::try_get(actions, ice::hash(action_name));
-                if (action.behavior != InputActionBehavior::Accumulated)
+                // TODO: Check if we need this
+                //if (action.behavior != InputActionBehavior::Accumulated)
                 {
                     runtime->raw_value = {};
                 }

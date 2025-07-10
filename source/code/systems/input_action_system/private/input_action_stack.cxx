@@ -179,7 +179,7 @@ namespace ice
                 ICE_ASSERT_CORE(final_name_ptr != nullptr);
 
                 // Save the pointer where the values are stored
-                ice::hashmap::set(_actions, action_hash, { .name = *final_name_ptr, .type = action.type });
+                ice::hashmap::set(_actions, action_hash, { .type = action.type, .name = *final_name_ptr });
             }
         }
 

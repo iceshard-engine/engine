@@ -50,7 +50,7 @@ namespace ice
         { "action", ice::grammar::UCT_Action },
         { "active", ice::grammar::UCT_WhenActive },
         { "activate", ice::grammar::UCT_StepActivate },
-        { "accumulated", ice::grammar::UCT_ActionFlagAccumulated },
+        //{ "accumulated", ice::grammar::UCT_ActionFlagAccumulated },
         { "deactivate", ice::grammar::UCT_StepDeactivate },
         { "and", ice::grammar::UCT_WhenAnd },
         { "axis1d", ice::grammar::UCT_InputTypeAxis1D },

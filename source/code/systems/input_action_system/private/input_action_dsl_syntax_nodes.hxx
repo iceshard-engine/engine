@@ -54,7 +54,7 @@ namespace ice::syntax
         arctic::Token type;
         bool flag_toggled = false;
         bool flag_once = false;
-        bool flag_accumulated = false;
+        //bool flag_accumulated = false;
     };
 
     struct LayerActionWhen : SyntaxNodeData

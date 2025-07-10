@@ -122,10 +122,10 @@ namespace ice
         {
             behavior = InputActionBehavior::Toggled;
         }
-        else if (action_info.flag_accumulated)
-        {
-            behavior = InputActionBehavior::Accumulated;
-        }
+        //else if (action_info.flag_accumulated)
+        //{
+        //    behavior = InputActionBehavior::Accumulated;
+        //}
         action.set_behavior(behavior);
 
         arctic::SyntaxNode<> child = node.child();

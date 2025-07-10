@@ -439,18 +439,6 @@ namespace ice
         return *this;
     }
 
-    auto InputActionLayerBuilder::ActionBuilder::set_toggled(bool value /*= true*/) noexcept -> ActionBuilder&
-    {
-        _internal->behavior = value ? InputActionBehavior::Toggled : InputActionBehavior::Default;
-        return *this;
-    }
-
-    auto InputActionLayerBuilder::ActionBuilder::set_runonce(bool value /*= true*/) noexcept -> ActionBuilder&
-    {
-        _internal->behavior = value ? InputActionBehavior::ActiveOnce : InputActionBehavior::Default;
-        return *this;
-    }
-
     auto InputActionLayerBuilder::ActionBuilder::add_condition(
         ice::String source,
         ice::InputActionCondition condition,

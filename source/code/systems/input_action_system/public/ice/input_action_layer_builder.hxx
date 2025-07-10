@@ -65,10 +65,7 @@ namespace ice
         auto operator=(ActionBuilder&&) noexcept -> ActionBuilder& = delete;
         auto operator=(ActionBuilder const&) noexcept -> ActionBuilder& = delete;
 
-        // TODO: Refactor
         auto set_behavior(ice::InputActionBehavior behavior) noexcept -> ActionBuilder&;
-        auto set_toggled(bool value = true) noexcept -> ActionBuilder&;
-        auto set_runonce(bool value = true) noexcept -> ActionBuilder&;
 
         auto add_condition(
             ice::String source,

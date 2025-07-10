@@ -4,6 +4,8 @@
 namespace ice
 {
 
+    //! \brief Header-like structure for binarized version of an InputActionLayer.
+    //! \note This structure will be used for storing input actions in binary format for release builds.
     struct InputActionLayerInfo
     {
         ice::u16 count_sources;
@@ -54,6 +56,21 @@ namespace ice
     };
 
     static_assert(sizeof(InputActionSourceInputInfo) % 4 == 0);
+
+    //! \brief Adds additional behavior constraints or features to an action.
+    enum class InputActionBehavior : ice::u8
+    {
+        //! \brief Only active for as long the activation condition is true.
+        Default,
+
+        //! \brief Can be toggled to be active even when no 'activation' condition is true.
+        //! \note A toggled action will still be behave as `Default` one, if the '.toggle' step is not used.
+        Toggled,
+
+        //! \brief Is active for a single frame after activation.
+        //!   Requires the action to 'deactivate' before a new event will be sent.
+        ActiveOnce,
+    };
 
     struct InputActionInfo
     {

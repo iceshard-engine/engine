@@ -26,6 +26,38 @@ namespace ice
         ice::Timestamp timestamp;
     };
 
+    //! \brief Events input sources can be updated by.
+    enum class InputActionSourceEvent : ice::u8
+    {
+        //! \brief Input source was not updated in this frame.
+        None,
+
+        //! \brief Input source value was updated by a key press event.
+        KeyPress,
+
+        //! \brief Input source value was updated by a key release event.
+        KeyRelease,
+
+        //! \brief \copybrief KeyPress
+        //! \note Alias more suitable for controllers.
+        ButonPress = KeyPress,
+
+        //! \brief \copybrief KeyRelease
+        //! \note Alias more suitable for controllers.
+        ButonRelease = KeyRelease,
+
+        //! \brief Input source was updated by a controller trigger. (can represent any one-dimensional floating point input)
+        Trigger,
+
+        //! \brief Input source was updated by a controller stick input. (can represent any two-dimensional floating point input)
+        //! \note This event will only be captured if the value is \b outside the deadzone.
+        Axis,
+
+        //! \brief Input source was updated by a controller stick input. (can represent any two-dimensional floating point input)
+        //! \note This event will only be captured if the value is \b inside the deadzone.
+        AxisDeadzone
+    };
+
     //! \brief Developer defined "input source" for activating actions and processing their values.
     //! \details A source represents a single device input event. This can be a Button, Axis, Trigger, Key, Position on
     //!   any input device like a mouse, keyboard, controller or anything else.
@@ -46,75 +78,85 @@ namespace ice
         ice::f32 value;
     };
 
+    //! \brief Runtime representation of an action, required to handle internal state and value changes.
     struct InputActionRuntime : ice::InputAction
     {
-        ice::vec3f raw_value;
-        ice::String name;
-
+        //! \copydoc InputActionInfo::type
         ice::InputActionDataType type;
+
+        //! \brief Internal state value used to track action activation changes.
         ice::u8 state = 0;
+
+        //! \brief Tracks if the action is currently enabled. (only for toggled actions)
         bool toggle_enabled = false;
+
+        //! \brief Tracks if an action was enabled in the previous frame.
         bool was_active = false;
+
+        //! \brief The value stored before modifiers are applied.
+        ice::vec3f raw_value;
+
+        //! \brief Final name of the action, combined with the 'stack' prefix.
+        ice::String name;
     };
 
-    static_assert(sizeof(InputActionRuntime) == 64);
-
-
-    enum class InputActionCheck : ice::u8
-    {
-        None,
-        Exists = None,
-        Enabled,
-        Disabled,
-        Active,
-        Inactive,
-    };
-
-    enum class InputActionSourceEvent : ice::u8
-    {
-        None,
-        KeyPress,
-        KeyRelease,
-        ButonPress = KeyPress,
-        ButonRelease = KeyRelease,
-        Trigger,
-        Axis,
-        AxisDeadzone
-    };
-
-    enum class InputActionBehavior : ice::u8
-    {
-        Default,
-        Accumulated,
-        ActiveOnce,
-        Toggled,
-    };
-
+    //! \brief Conditions that can be executed by an action.
     enum class InputActionCondition : ice::u8
     {
         Invalid = 0,
 
-        // Source conditions
+        //! \brief Source is active. The source was updated by an input event this frame.
         Active,
+
+        //! \brief Source was updated by a key / button press.
         Pressed,
+
+        //! \brief Source was updated by a key / button release.
         Released,
 
+        //! \brief Source was updated by a change in the reported trigger value.
         Trigger,
+
+        //! \brief Source was updated by a change in the reported stick position. (outside of the deadzone)
         Axis,
+
+        //! \brief Source was updated by a change in the reported stick position. (inside of the deadzone)
         AxisDeadzone,
 
-        // Source param conditions
+
+        //! \brief Source value is greater than provided user value. _(source > param)_
         Greater,
+
+        //! \brief Source value is greater or equal to provided user value. _(source >= param)_
         GreaterOrEqual,
+
+        //! \brief Source value is lower than provided user value. _(source < param)_
         Lower,
+
+        //! \brief Source value is lower or equal to provided user value. _(source <= param)_
         LowerOrEqual,
+
+        //! \brief Source value is equal to provided user value. _(source == param)_
         Equal,
+
+        //! \brief Source value is different than provided user value. _(source != param)_
         NotEqual,
 
-        // Action and Special conditions
+
+        //! \brief Checks action if it's enabled and can be activated.
+        //! \note Does not check if action is currently active.
         ActionEnabled,
+
+        //! \brief Checks if action is active via a toggle.
+        //! \note Check is only valid on toggled actions.
         ActionToggleActive,
+
+        //! \brief Checks if action is inactive via a toggle.
+        //! \note Check is only valid on toggled actions.
         ActionToggleInactive,
+
+        //! \brief Always true, can be used to force some steps at the end of an action.
+        //! \note One use case would be to reset the action's values.
         AlwaysTrue,
     };
 
@@ -214,5 +256,16 @@ namespace ice
         // Float3,
     };
 
+    //! \brief The check to be performed on an existing action.
+    //! \note Only used as argument for 'InputActionStack::action_check'
+    enum class InputActionCheck : ice::u8
+    {
+        None = 0,
+        Exists = None,
+        Enabled,
+        Disabled,
+        Active,
+        Inactive,
+    };
 
 } // namespace ice

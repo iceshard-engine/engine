@@ -32,7 +32,7 @@ namespace ice::grammar
     static constexpr TokenType UCT_ActionTypeObject{ UCT_Base + 14 };
     static constexpr TokenType UCT_ActionFlagOnce{ UCT_Base + 15 };
     static constexpr TokenType UCT_ActionFlagToggled{ UCT_Base + 16 };
-    static constexpr TokenType UCT_ActionFlagAccumulated{ UCT_Base + 17 };
+    //static constexpr TokenType UCT_ActionFlagAccumulated{ UCT_Base + 17 };
     static constexpr TokenType UCT_When{ UCT_Base + 18 };
     static constexpr TokenType UCT_WhenAnd{ UCT_Base + 19 };
     static constexpr TokenType UCT_WhenOr{ UCT_Base + 20 };
@@ -232,7 +232,7 @@ namespace ice::grammar
     static constexpr SyntaxRule Rule_LayerActionFlagsListRules[]{
         SyntaxRule{ UCT_ActionFlagOnce, &syntax::LayerAction::flag_once },
         SyntaxRule{ UCT_ActionFlagToggled, &syntax::LayerAction::flag_toggled },
-        SyntaxRule{ UCT_ActionFlagAccumulated, &syntax::LayerAction::flag_accumulated },
+        //SyntaxRule{ UCT_ActionFlagAccumulated, &syntax::LayerAction::flag_accumulated },
     };
 
     static constexpr SyntaxRule Rule_LayerActionFlagsRules[]{

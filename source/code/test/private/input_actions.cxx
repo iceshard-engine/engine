@@ -75,7 +75,7 @@ namespace ice
                 .add_step("S:pos.y", InputActionStep::Set, ".y");
 
         layerBuilder->define_action("A:jump", InputActionDataType::Bool)
-            .set_behavior(InputActionBehavior::Accumulated)
+            //.set_behavior(InputActionBehavior::Accumulated)
             .add_condition("S:jump", InputActionCondition::Released, Final | RunSteps)
                 .add_step("S:jump", InputActionStep::Set)
                 .add_step(InputActionStep::Deactivate)
