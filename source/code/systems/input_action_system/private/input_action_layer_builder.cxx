@@ -107,13 +107,25 @@ namespace ice
     class SimpleInputActionLayerBuilder : public ice::InputActionLayerBuilder
     {
     public:
-        SimpleInputActionLayerBuilder(ice::Allocator& alloc) noexcept
+        SimpleInputActionLayerBuilder(
+            ice::Allocator& alloc,
+            ice::String name
+        ) noexcept
             : _allocator{ alloc }
             , _sources{ alloc }
             , _actions{ alloc }
+            , _name{ alloc, name }
         {
             ice::hashmap::reserve(_sources, 16);
             ice::hashmap::reserve(_actions, 10);
+        }
+
+        auto set_name(
+            ice::String name
+        ) noexcept -> ice::InputActionLayerBuilder& override
+        {
+            _name = name;
+            return *this;
         }
 
         auto define_source(ice::String name, ice::InputActionSourceType type) noexcept -> SourceBuilder override
@@ -141,6 +153,10 @@ namespace ice
             ice::Array<ice::InputActionConditionData> final_conditions{ _allocator };
             ice::Array<ice::InputActionModifierData> final_modifiers{ _allocator };
             ice::Array<ice::InputActionInfo> final_actions{ _allocator };
+
+            // Insert layer name as the first string
+            ice::string::push_back(strings, _name);
+            ice::string::push_back(strings, '\0');
 
             // Prepare data of all sources
             for (SourceBuilder::Internal const& source : _sources)
@@ -307,7 +323,8 @@ namespace ice
                 condition_offset += ice::exchange(condition_count, ice::u16_0);
             }
 
-            ice::InputActionLayerInfo final_info{
+            ice::InputActionLayerInfoHeader final_info{
+                .size_name = ice::u16(ice::size(_name)),
                 .count_sources = ice::u16(ice::count(final_sources)),
                 .count_actions = ice::u16(ice::count(final_actions)),
                 .count_conditions = ice::u16(ice::count(final_conditions)),
@@ -317,7 +334,7 @@ namespace ice
             };
 
             // Allocate memory and copy all data
-            ice::meminfo minfo_layer = ice::meminfo_of<ice::InputActionLayerInfo>;
+            ice::meminfo minfo_layer = ice::meminfo_of<ice::InputActionLayerInfoHeader>;
             ice::usize const offset_sources = minfo_layer += ice::array::meminfo(final_sources);
             ice::usize const offset_actions = minfo_layer += ice::array::meminfo(final_actions);
             ice::usize const offset_conditions = minfo_layer += ice::array::meminfo(final_conditions);
@@ -341,6 +358,7 @@ namespace ice
         ice::Allocator& _allocator;
         ice::HashMap<SourceBuilder::Internal> _sources;
         ice::HashMap<ActionBuilder::Internal> _actions;
+        ice::HeapString<> _name;
     };
 
 
@@ -550,9 +568,12 @@ namespace ice
         return *this;
     }
 
-    auto create_input_action_layer_builder(ice::Allocator& alloc) noexcept -> ice::UniquePtr<ice::InputActionLayerBuilder>
+    auto create_input_action_layer_builder(
+        ice::Allocator& alloc,
+        ice::String name
+    ) noexcept -> ice::UniquePtr<ice::InputActionLayerBuilder>
     {
-        return ice::make_unique<SimpleInputActionLayerBuilder>(alloc, alloc);
+        return ice::make_unique<SimpleInputActionLayerBuilder>(alloc, alloc, name);
     }
 
 } // namespace ice

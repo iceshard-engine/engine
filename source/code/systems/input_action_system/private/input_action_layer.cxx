@@ -17,8 +17,9 @@
 namespace ice
 {
 
-    struct StandardInputActionLayerParams
+    struct InputActionLayerInfo
     {
+        ice::String name;
         ice::Span<ice::InputActionSourceInputInfo const> sources;
         ice::Span<ice::InputActionInfo const> actions;
         ice::Span<ice::InputActionConditionData const> conditions;
@@ -27,30 +28,37 @@ namespace ice
         ice::String strings;
     };
 
-    auto params_from_data(ice::Data memory) noexcept -> ice::Expected<ice::StandardInputActionLayerParams>
+    template<typename T>
+    auto load_field_from_data(ice::Span<T const>& out_span, ice::Data data, ice::usize offset, ice::ucount count) noexcept
     {
-        ice::InputActionLayerInfo const* layer_info = reinterpret_cast<ice::InputActionLayerInfo const*>(memory.location);
-        if (layer_info == nullptr)
+        out_span = ice::span::from_data<T>(data, count, offset);
+        return ice::span::data_view(out_span).size;
+    }
+
+    auto load_from_data(ice::Data data) noexcept -> ice::Expected<ice::InputActionLayerInfo>
+    {
+        if (data.location == nullptr)
         {
-            return E_Fail;
+            return E_NullPointerData;
         }
 
-        ice::usize offset = ice::size_of<ice::InputActionLayerInfo>;
-        ice::StandardInputActionLayerParams result{};
+        ice::InputActionLayerInfoHeader const& header = *reinterpret_cast<ice::InputActionLayerInfoHeader const*>(data.location);
+        ice::usize offset = ice::size_of<ice::InputActionLayerInfoHeader>;
 
-        result.sources = ice::span::from_data<ice::InputActionSourceInputInfo>(memory, layer_info->count_sources, offset);
-        offset += ice::span::data_view(result.sources).size;
-        result.actions = ice::span::from_data<ice::InputActionInfo>(memory, layer_info->count_actions, offset);
-        offset += ice::span::data_view(result.actions).size;
-        result.conditions = ice::span::from_data<ice::InputActionConditionData>(memory, layer_info->count_conditions, offset);
-        offset += ice::span::data_view(result.conditions).size;
-        result.steps = ice::span::from_data<ice::InputActionStepData>(memory, layer_info->count_steps, offset);
-        offset += ice::span::data_view(result.steps).size;
-        result.modifiers = ice::span::from_data<ice::InputActionModifierData>(memory, layer_info->count_modifiers, offset);
-        offset += ice::span::data_view(result.modifiers).size;
+        ice::InputActionLayerInfo result{};
+        offset += load_field_from_data(result.sources, data, offset, header.count_sources);
+        offset += load_field_from_data(result.actions, data, offset, header.count_actions);
+        offset += load_field_from_data(result.conditions, data, offset, header.count_conditions);
+        offset += load_field_from_data(result.steps, data, offset, header.count_steps);
+        offset += load_field_from_data(result.modifiers, data, offset, header.count_modifiers);
 
-        ICE_ASSERT_CORE(offset == ice::usize{ layer_info->offset_strings });
-        result.strings = ice::string::from_data(memory, { layer_info->offset_strings }, ice::ucount(memory.size.value - layer_info->offset_strings));
+        ICE_ASSERT_CORE(offset == ice::usize{ header.offset_strings });
+        result.strings = ice::string::from_data(
+            data,
+            ice::usize{ header.offset_strings },
+            ice::ucount( data.size.value - header.offset_strings )
+        );
+        result.name = ice::string::substr(result.strings, 0, header.size_name);
         return result;
     }
 
@@ -60,21 +68,18 @@ namespace ice
         StandardInputActionLayer(
             ice::Allocator& alloc,
             ice::Memory memory,
-            ice::StandardInputActionLayerParams const& params
+            ice::InputActionLayerInfo const& info
         ) noexcept
             : _allocator{ alloc }
             , _rawdata{ memory }
-            , _sources{ params.sources }
-            , _actions{ params.actions }
-            , _conditions{ params.conditions }
-            , _steps{ params.steps }
-            , _modifiers{ params.modifiers }
-            , _strings{ params.strings }
-            , _runtime_sources{ alloc }
-        {
-            ice::array::resize(_runtime_sources, ice::count(_sources));
-            ice::array::memset(_runtime_sources, 0);
-        }
+            , _name{ info.name }
+            , _sources{ info.sources }
+            , _actions{ info.actions }
+            , _conditions{ info.conditions }
+            , _steps{ info.steps }
+            , _modifiers{ info.modifiers }
+            , _strings{ info.strings }
+        { }
 
         ~StandardInputActionLayer() noexcept override
         {
@@ -83,7 +88,7 @@ namespace ice
 
         auto name() const noexcept -> ice::String override
         {
-            return "Default";
+            return _name;
         }
 
         auto sources() const noexcept -> ice::Span<ice::InputActionSourceInputInfo const> override
@@ -106,14 +111,15 @@ namespace ice
             return ice::string::substr(_strings, action.name);
         }
 
-        bool process_inputs(
-            ice::Span<ice::input::InputEvent const> input_events,
+        auto process_inputs(
+            ice::Span<ice::input::InputEvent> input_events,
             ice::Span<ice::InputActionSource* const> source_values
-        ) const noexcept override
+        ) const noexcept -> ice::ucount override
         {
             IPT_ZONE_SCOPED;
 
             ice::ucount event_index = 0;
+            ice::ucount processed_count = 0;
             ice::ucount const event_count = ice::count(input_events);
 
             while(event_index < event_count)
@@ -170,20 +176,15 @@ namespace ice
                         };
                     }
 
-                    // ICE_LOG(LogSeverity::Debug, LogTag::Engine, "SRC: '{}', VAL = {}", ice::string::substr(_strings, src.name_offset, src.name_length), value.value);
-
-                    // Remove the processed input
-                    // if (ice::exchange(removed, true) == false)
-                    // {
-                    //     ice::array::remove_at(inputs, index);
-                    //     count -= 1;
-                    // }
+                    // Clear the processed event
+                    input_events[event_index] = ice::input::InputEvent{};
+                    processed_count += 1;
                 }
 
                 event_index += 1;
             }
 
-            return event_count != ice::count(input_events);
+            return processed_count;
         }
 
         bool update_actions(
@@ -366,14 +367,13 @@ namespace ice
         ice::Allocator& _allocator;
         ice::Memory _rawdata;
 
+        ice::String _name;
         ice::Span<ice::InputActionSourceInputInfo const> _sources;
         ice::Span<ice::InputActionInfo const> _actions;
         ice::Span<ice::InputActionConditionData const> _conditions;
         ice::Span<ice::InputActionStepData const> _steps;
         ice::Span<ice::InputActionModifierData const> _modifiers;
         ice::String _strings;
-
-        ice::Array<ice::InputActionSource> _runtime_sources;
     };
 
     auto create_input_action_layer(
@@ -384,7 +384,7 @@ namespace ice
         ice::Memory const data_copy = alloc.allocate({ layer_data.size, layer_data.alignment });
         ice::memcpy(data_copy, layer_data);
 
-        ice::Expected<ice::StandardInputActionLayerParams> params = ice::params_from_data(ice::data_view(data_copy));
+        ice::Expected<ice::InputActionLayerInfo> params = ice::load_from_data(ice::data_view(data_copy));
         if (params.succeeded() == false)
         {
             return {};
@@ -398,7 +398,7 @@ namespace ice
         ice::Memory layer_data
     ) noexcept -> ice::UniquePtr<ice::InputActionLayer>
     {
-        ice::Expected<ice::StandardInputActionLayerParams> params = ice::params_from_data(ice::data_view(layer_data));
+        ice::Expected<ice::InputActionLayerInfo> params = ice::load_from_data(ice::data_view(layer_data));
         if (params.succeeded() == false)
         {
             return {};
@@ -412,7 +412,7 @@ namespace ice
         ice::String definition
     ) noexcept -> ice::UniquePtr<ice::InputActionLayer>
     {
-        InputActionDSLLayerBuilder dsl_builder{ ice::create_input_action_layer_builder(alloc) };
+        InputActionDSLLayerBuilder dsl_builder{ ice::create_input_action_layer_builder(alloc, "") };
         if (ice::parse_action_input_definition(definition, dsl_builder))
         {
             return dsl_builder.finalize(alloc);

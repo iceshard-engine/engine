@@ -61,8 +61,10 @@ namespace ice
     //! \brief Developer defined "input source" for activating actions and processing their values.
     //! \details A source represents a single device input event. This can be a Button, Axis, Trigger, Key, Position on
     //!   any input device like a mouse, keyboard, controller or anything else.
+    //!
     //! \note When represeting an axis, only a single component is set each source.
     //!   So for a 2d axis you will need to define two sources.
+    //! \todo Try to remove the 23bit padding.
     struct InputActionSource
     {
         //! \brief The type of the event that triggered a value change for this source.
@@ -72,6 +74,8 @@ namespace ice
         //! \brief Tracks if the value actually changed between the action events.
         //! \note Since multiple events can trigger a value change, we want to act only once for multiple buttons.
         bool changed;
+
+        // 2 bytes of padding (23 bits in reality due to unused bool bits, 7 + 16)
 
         //! \brief The value of the input source.
         //! \details See \see InputActionSourceInfo::type for details.

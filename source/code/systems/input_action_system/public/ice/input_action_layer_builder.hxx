@@ -13,6 +13,10 @@ namespace ice
 
         virtual ~InputActionLayerBuilder() noexcept = default;
 
+        virtual auto set_name(
+            ice::String name
+        ) noexcept -> ice::InputActionLayerBuilder& = 0;
+
         virtual auto define_source(
             ice::String name,
             ice::InputActionSourceType type
@@ -96,7 +100,8 @@ namespace ice
     };
 
     auto create_input_action_layer_builder(
-        ice::Allocator& alloc
+        ice::Allocator& alloc,
+        ice::String layer_name
     ) noexcept -> ice::UniquePtr<ice::InputActionLayerBuilder>;
 
 } // namespace ice

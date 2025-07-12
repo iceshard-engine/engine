@@ -16,6 +16,8 @@ namespace ice
     static constexpr ice::ErrorCode E_InvalidArgument{ "E.0002:General:Invalid argument provided" };
     static constexpr ice::ErrorCode E_OutOfRange{ "E.0003:General:Accessing value out of range" };
     static constexpr ice::ErrorCode E_NotImplemented{ "E.0004:General:Function or method is not implemented" };
+    static constexpr ice::ErrorCode E_NullPointerData{ "E.0005:General:Passed 'Data{nullptr}' object to function expecting valid data." };
+    static constexpr ice::ErrorCode E_NullPointerMemory{ "E.0006:General:Passed 'Memory{nullptr}' object to function expecting valid memory." };
     static constexpr ice::ErrorCode E_TaskCanceled{ "E.1001:Tasks:Task canceled" };
 
     // Aliases are comparable

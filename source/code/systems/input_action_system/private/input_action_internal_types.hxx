@@ -5,6 +5,19 @@
 namespace ice
 {
 
+    //! \brief Header-like structure for binarized version of an InputActionLayer.
+    //! \note This structure will be used for storing input actions in binary format for release builds.
+    struct InputActionLayerInfoHeader
+    {
+        ice::u16 size_name;
+        ice::u16 count_sources;
+        ice::u16 count_actions;
+        ice::u16 count_conditions;
+        ice::u16 count_steps;
+        ice::u16 count_modifiers;
+        ice::u32 offset_strings;
+    };
+
     struct InputActionIndex
     {
         static constexpr ice::u16 SelfIndex = 8191;

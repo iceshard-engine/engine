@@ -32,6 +32,7 @@ namespace ice
     void InputActionDSLLayerBuilder::visit(arctic::SyntaxNode<ice::syntax::Layer> node) noexcept
     {
         ICE_LOG(LogSeverity::Info, LogTag::Engine, "Layer: {}", node.data().name);
+        _builder->set_name(node.data().name);
 
         arctic::SyntaxNode<> child = node.child();
         while(child != false)

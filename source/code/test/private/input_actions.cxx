@@ -46,7 +46,7 @@ namespace ice
 
         _stack = ice::addressof(world_update.engine.actions());
 
-        ice::UniquePtr<ice::InputActionLayerBuilder> layerBuilder = ice::create_input_action_layer_builder(_allocator);
+        ice::UniquePtr<ice::InputActionLayerBuilder> layerBuilder = ice::create_input_action_layer_builder(_allocator, "test");
 
         layerBuilder->define_source("S:jump", InputActionSourceType::Key)
             .add_key(KeyboardKey::Space);
@@ -164,6 +164,7 @@ namespace ice
 
     void InputActionsTrait::build_content() noexcept
     {
+        ImGui::SeparatorText(ice::string::begin(_layer->name()));
         ImGui::SeparatorText("Sources");
         for (ice::InputActionSourceInputInfo const& source_info : _layer->sources())
         {

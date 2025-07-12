@@ -278,6 +278,7 @@ namespace ice
     {
         IPT_ZONE_SCOPED;
 
+        ice::ucount remaining_events = ice::count(events);
         ice::Array<ice::input::InputEvent> events_copy{ _allocator, events };
         ice::Array<ice::InputActionSource*> source_values{ _allocator };
 
@@ -295,7 +296,15 @@ namespace ice
                 ice::array::push_back(source_values, ice::addressof(_sources_values[offset]));
             }
 
-            layer.layer->process_inputs(events_copy, source_values);
+            ice::ucount const processed_events = layer.layer->process_inputs(events_copy, source_values);
+            ICE_ASSERT_CORE(processed_events <= remaining_events);
+            remaining_events -= processed_events;
+
+            // TODO: further cleanup.
+            if (remaining_events == 0)
+            {
+                break;
+            }
         }
 
         ice::InputActionExecutor ex{};

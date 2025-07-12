@@ -43,19 +43,31 @@ namespace ice
             ice::f32 param
         ) const noexcept;
 
+        //! \brief Executes a step over the current actions runtime object, this is generally called for '.activate', '.toggle' and
+        //!   simmilar actions.
+        //! \param[in] step Action step to be executed.
+        //! \param[out] runtime Object to be modifed from the action step taken.
         void execute_step(
             ice::InputActionStep step,
             ice::InputActionRuntime& runtime
         ) const noexcept;
 
+        //! \brief Executes a step by taking a value from an input source and storing it at a specific input action value.
+        //! \param[in] step Action step to be executed.
+        //! \param[in] source_value Input source from which we want to take the new value.
+        //! \param[out] destination_value Destination value where we want to store the value from the input source.
         void execute_step(
             ice::InputActionStep step,
             ice::InputActionSource const& source_value,
             ice::f32& destination_value
         ) const noexcept;
 
+        //! \brief Executes an modifier with a user provided parameter over an action value.
+        //! \param modifier Modifier to be executed on the given value.
+        //! \param action_value The value to be modified (if necessary).
+        //! \param param User parameter that may be used by the selected modifier.
         void execute_modifier(
-            ice::InputActionModifier step,
+            ice::InputActionModifier modifier,
             ice::f32& action_value,
             ice::f32 param
         ) const noexcept;
