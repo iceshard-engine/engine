@@ -37,8 +37,8 @@ namespace ice
         virtual auto action_name(ice::InputActionInfo const& action) const noexcept -> ice::String = 0;
 
         //! \brief Updates all layer sources based on the input events passed.
-        //! \param[in,out] events List of input events to be processed. If an event was processed, the data at that index
-        //!   will be replaced with a value of `ice::input::InputEvent{}`.
+        //! \param[in,out] events List of input events to be processed. If an event was processed it will be swapped with an
+        //!   event at the end of the list and reset to `ice::input::InputEvent{}`.
         //! \param[in,out] source_values List of storage objects for each defined input source.
         //! \return Number of processed event's that have been consumed and reset.
         virtual auto process_inputs(

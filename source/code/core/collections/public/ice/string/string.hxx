@@ -44,7 +44,7 @@ namespace ice::string
     constexpr auto substr(ice::BasicString<CharType> str, ice::ref32 ref) noexcept -> ice::BasicString<CharType>;
 
     template<typename CharType>
-    constexpr auto starts_with(ice::BasicString<CharType> str, ice::BasicString<CharType> prefix) noexcept;
+    constexpr auto starts_with(ice::BasicString<CharType> str, ice::concepts::StringType<CharType> auto prefix) noexcept;
 
     template<typename CharType>
     constexpr auto find_first_of(

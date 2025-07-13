@@ -12,6 +12,7 @@
 #include <ice/container/hashmap.hxx>
 #include <ice/profiler.hxx>
 #include <ice/clock.hxx>
+#include <ice/sort.hxx>
 #include <ice/log.hxx>
 
 namespace ice
@@ -118,73 +119,83 @@ namespace ice
         {
             IPT_ZONE_SCOPED;
 
-            ice::ucount event_index = 0;
-            ice::ucount processed_count = 0;
-            ice::ucount const event_count = ice::count(input_events);
-
-            while(event_index < event_count)
-            {
-                ice::input::InputEvent const ev = input_events[event_index];
-
-                ice::i32 src_idx = -1;
-                for (ice::InputActionSourceInputInfo const& src : _sources)
+            // helpers
+            static auto comp_event_id = [](ice::input::InputEvent ev, ice::input::InputID id) noexcept -> bool
                 {
-                    src_idx += 1;
+                    return ev.identifier == id;
+                };
 
-                    ICE_ASSERT_CORE(source_values[src.storage_offset] != nullptr);
-                    ice::InputActionSource& value = source_values[src.storage_offset][ev.axis_idx];
+            ice::ucount count_processed = 0;
+            ice::ucount const count_events = ice::count(input_events);
 
-                    if (src.input != ev.identifier)
-                    {
-                        // Reset event after it changed to 'KeyRelease'
-                        if (value.event == InputActionSourceEvent::KeyRelease && value.changed == false)
-                        {
-                            value.event = InputActionSourceEvent::None;
-                        }
-                        continue;
-                    }
+            for (ice::InputActionSourceInputInfo const& src : _sources)
+            {
+                ice::InputActionSource* const values = source_values[src.storage_offset];
+                ice::u32 const count_values = 1 + ice::u32(src.type == InputActionSourceType::Axis2d);
 
-                    if (ev.value_type == ice::input::InputValueType::Trigger)
+                ice::ucount event_index = 0;
+                if (ice::search(input_events, src.input, comp_event_id, event_index) == false)
+                {
+                    // Reset any event that was a key-release event previously
+                    for (ice::u32 idx = 0; idx < count_values; ++idx)
                     {
-                        value = { InputActionSourceEvent::Trigger, true, ev.value.axis.value_f32 };
-                    }
-                    else if (ev.value_type == ice::input::InputValueType::AxisInt)
-                    {
-                        value = { InputActionSourceEvent::Axis, true, ice::f32(ev.value.axis.value_i32) };
-                    }
-                    else if (ev.value_type == ice::input::InputValueType::AxisFloat)
-                    {
-                        // Check for deadzone values
-                        if (src.param < ev.value.axis.value_f32)
+                        if (values[idx].event == InputActionSourceEvent::KeyRelease)
                         {
-                            value = { InputActionSourceEvent::Axis, true, ev.value.axis.value_f32 };
+                            values[idx].event = InputActionSourceEvent::None;
                         }
-                        else
-                        {
-                            value = { InputActionSourceEvent::AxisDeadzone, true, ev.value.axis.value_f32 };
-                        }
+                    }
+                    continue;
+                }
+
+                // We consume the event by placing the current last event at it's index.
+                count_processed += 1;
+                ice::input::InputEvent const ev = ice::exchange(
+                    input_events[event_index],
+                    input_events[count_events - count_processed]
+                );
+
+                // The actual value that is being updated
+                ICE_ASSERT_CORE(ev.axis_idx < count_values);
+                InputActionSource& value = values[ev.axis_idx];
+
+                if (ev.value_type == ice::input::InputValueType::Trigger)
+                {
+                    value = { InputActionSourceEvent::Trigger, ev.value.axis.value_f32 };
+                }
+                else if (ev.value_type == ice::input::InputValueType::AxisInt)
+                {
+                    value = { InputActionSourceEvent::Axis, ice::f32(ev.value.axis.value_i32) };
+                }
+                else if (ev.value_type == ice::input::InputValueType::AxisFloat)
+                {
+                    // Check for deadzone values
+                    if (src.param < ev.value.axis.value_f32)
+                    {
+                        value = { InputActionSourceEvent::Axis, ev.value.axis.value_f32 };
                     }
                     else
                     {
-                        value = {
-                            ev.value.button.state.released
-                                ? InputActionSourceEvent::KeyRelease
-                                : InputActionSourceEvent::KeyPress,
-                            /*changed*/ true,
-                            ev.value.button.state.released
-                                ? 0.0f : 1.0f,
-                        };
+                        value = { InputActionSourceEvent::AxisDeadzone, ev.value.axis.value_f32 };
                     }
-
-                    // Clear the processed event
-                    input_events[event_index] = ice::input::InputEvent{};
-                    processed_count += 1;
                 }
-
-                event_index += 1;
+                else
+                {
+                    value = {
+                        ev.value.button.state.released
+                            ? InputActionSourceEvent::KeyRelease
+                            : InputActionSourceEvent::KeyPress,
+                        ev.value.button.state.released
+                            ? 0.0f : 1.0f,
+                    };
+                }
             }
 
-            return processed_count;
+            // Clear the end of the events list
+            for (ice::u32 idx = 1; idx <= count_processed; ++idx)
+            {
+                input_events[count_events - idx] = ice::input::InputEvent{};
+            }
+            return count_processed;
         }
 
         bool update_actions(

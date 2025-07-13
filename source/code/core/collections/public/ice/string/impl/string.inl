@@ -186,9 +186,9 @@ namespace ice
         }
 
         template<typename CharType>
-        constexpr auto starts_with(ice::BasicString<CharType> str, ice::BasicString<CharType> prefix) noexcept
+        constexpr auto starts_with(ice::BasicString<CharType> str, ice::concepts::StringType<CharType> auto prefix) noexcept
         {
-            return ice::string::substr(str, 0, ice::string::size(prefix)) == prefix;
+            return ice::string::substr(str, 0, prefix._size) == prefix;
         }
 
 

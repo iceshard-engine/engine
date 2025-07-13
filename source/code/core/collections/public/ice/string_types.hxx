@@ -222,3 +222,15 @@ namespace ice
     }
 
 } // namespace ice
+
+namespace ice::concepts
+{
+
+    template<typename Type, typename CharType>
+    concept StringType = std::is_same_v<ice::BasicString<CharType>, Type>
+        || std::is_same_v<ice::HeapString<CharType>, Type>
+        && requires(Type t) {
+            { t._size } -> std::convertible_to<ice::ucount>;
+        };
+
+} // namespace ice::concepts

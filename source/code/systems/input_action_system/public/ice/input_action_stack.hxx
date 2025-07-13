@@ -8,6 +8,7 @@
 namespace ice
 {
 
+    static constexpr ice::ErrorCode S_LayerAlreadyRegistered{ "S.2300:InputAction:The passed input action layer is already registered."};
     static constexpr ice::ErrorCode E_UnknownInputAction{ "E.2300:InputAction:The requested input action does not exist." };
     static constexpr ice::ErrorCode E_InputActionDisabled{ "E.2301:InputAction:The requested input action is disabled and cannot be accessed." };
     static constexpr ice::ErrorCode E_InputActionInactive{ "E.2302:InputAction:The requested input action is inactive and cannot be accessed." };
@@ -17,11 +18,25 @@ namespace ice
     public:
         virtual ~InputActionStack() noexcept = default;
 
-        virtual auto get_layers(
-            ice::Array<ice::InputActionLayer const*> out_layers
+        virtual auto registered_layers(
+            ice::Array<ice::InputActionLayer const*>& out_layers
         ) const noexcept -> ice::ucount = 0;
 
-        virtual void register_layer(
+        virtual auto register_layer(
+            ice::InputActionLayer const* layer
+        ) noexcept -> ice::Result = 0;
+
+
+        virtual auto active_layers(
+            ice::Array<ice::InputActionLayer const*>& out_layers
+        ) const noexcept -> ice::ucount = 0;
+
+        virtual void push_layer(
+            ice::InputActionLayer const* layer,
+            ice::u32 priority
+        ) noexcept = 0;
+
+        virtual void pop_layer(
             ice::InputActionLayer const* layer
         ) noexcept = 0;
 

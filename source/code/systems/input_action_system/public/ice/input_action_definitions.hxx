@@ -73,7 +73,7 @@ namespace ice
 
         //! \brief Tracks if the value actually changed between the action events.
         //! \note Since multiple events can trigger a value change, we want to act only once for multiple buttons.
-        bool changed;
+        //bool changed;
 
         // 2 bytes of padding (23 bits in reality due to unused bool bits, 7 + 16)
 

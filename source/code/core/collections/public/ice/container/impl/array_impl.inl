@@ -466,9 +466,15 @@ namespace ice
         }
 
         template<typename Type, ice::ContainerLogic Logic>
-        inline auto slice(ice::Array<Type, Logic> const& arr, ice::ucount from_idx, ice::ucount to) noexcept -> ice::Span<Type const>
+        inline auto slice(ice::Array<Type, Logic> const& arr, ice::ucount from_idx, ice::ucount count) noexcept -> ice::Span<Type const>
         {
-            return ice::span::subspan<Type const>(arr, from_idx, to);
+            return ice::span::subspan<Type const>(arr, from_idx, count);
+        }
+
+        template<typename Type, ice::ContainerLogic Logic>
+        inline auto slice(ice::Array<Type, Logic> const& arr, ice::ref32 ref) noexcept -> ice::Span<Type const>
+        {
+            return ice::span::subspan<Type const>(arr, ref);
         }
 
         template<typename Type, ice::ContainerLogic Logic>
