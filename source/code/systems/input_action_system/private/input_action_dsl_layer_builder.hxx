@@ -14,20 +14,20 @@ namespace ice
 
         void visit(arctic::SyntaxNode<ice::syntax::Layer> node) noexcept override;
 
-        void visit(arctic::SyntaxNode<ice::syntax::LayerSource> node) noexcept;
-        void visit(arctic::SyntaxNode<ice::syntax::LayerAction> node) noexcept;
+        void visit_source(arctic::SyntaxNode<ice::syntax::LayerSource> node) noexcept;
+        void visit_layer(arctic::SyntaxNode<ice::syntax::LayerAction> node) noexcept;
 
-        void visit(
+        void visit_cond(
             ice::InputActionLayerBuilder::ActionBuilder& action,
             arctic::SyntaxNode<ice::syntax::LayerActionWhen> node
         ) noexcept;
 
-        void visit(
+        void visit_step(
             ice::InputActionLayerBuilder::ActionBuilder& action,
             arctic::SyntaxNode<ice::syntax::LayerActionStep> node
         ) noexcept;
 
-        void visit(
+        void visit_mod(
             ice::InputActionLayerBuilder::ActionBuilder& action,
             arctic::SyntaxNode<ice::syntax::LayerActionModifier> node
         ) noexcept;

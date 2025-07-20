@@ -29,7 +29,7 @@ namespace ice
             ActionInputParserEventsBase::visit(node);
         }
 
-        void visit(arctic::SyntaxNode<ice::syntax::Layer> node) noexcept = 0;
+        void visit(arctic::SyntaxNode<ice::syntax::Layer> node) noexcept override = 0;
     };
 
 } // namespace ice

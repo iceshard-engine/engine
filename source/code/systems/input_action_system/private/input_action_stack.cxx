@@ -25,11 +25,11 @@ namespace ice
             , _idprefix{ _allocator, actionid_prefix }
             , _layers{ _allocator }
             , _layers_active{ _allocator }
+            , _layers_sources_indices{ _allocator }
+            , _sources_runtime_values{ _allocator }
             , _sources{ _allocator }
             , _actions{ _allocator }
             , _action_names{ _allocator }
-            , _sources_runtime_values{ _allocator }
-            , _layers_sources_indices{ _allocator }
         {
         }
 
@@ -264,6 +264,8 @@ namespace ice
         // Check if we are already at the top of the stack.
         if (ice::array::any(_layers_active) && ice::array::back(_layers_active).index == idx)
         {
+            // Updated the priority (as it might have changed)
+            ice::array::back(_layers_active).priority = priority;
             return; // #TODO: Implement success with info.
         }
 
@@ -413,7 +415,7 @@ namespace ice
             remaining_events -= processed_events;
             current_processed_priority = active_layer.priority;
 
-            // TODO: further cleanup.
+            // TODO: Should we change how this loop is finishing?
             if (remaining_events == 0)
             {
                 break;
@@ -469,8 +471,6 @@ namespace ice
                     break;
                 default: ICE_ASSERT_CORE(false); break;
                 }
-
-                //ice::shards::push_back(out_shards, ice::shardid(action.name) | (ice::InputAction const*)ice::addressof(action));
             }
         }
     }

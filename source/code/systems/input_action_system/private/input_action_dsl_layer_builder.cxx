@@ -25,7 +25,8 @@ namespace ice
     InputActionDSLLayerBuilder::InputActionDSLLayerBuilder(
         ice::UniquePtr<ice::InputActionLayerBuilder> builder
     ) noexcept
-        : _builder{ ice::move(builder) }
+        : ActionInputParserEvents{ }
+        , _builder{ ice::move(builder) }
     {
     }
 
@@ -35,21 +36,21 @@ namespace ice
         _builder->set_name(node.data().name);
 
         arctic::SyntaxNode<> child = node.child();
-        while(child != false)
+        while (child != false)
         {
             if (child.type() == ice::syntax::SyntaxEntity_LayerSource)
             {
-                visit(child.to<ice::syntax::LayerSource>());
+                visit_source(child.to<ice::syntax::LayerSource>());
             }
             else if (child.type() == ice::syntax::SyntaxEntity_LayerAction)
             {
-                visit(child.to<ice::syntax::LayerAction>());
+                visit_layer(child.to<ice::syntax::LayerAction>());
             }
             child = child.sibling();
         }
     }
 
-    void InputActionDSLLayerBuilder::visit(arctic::SyntaxNode<ice::syntax::LayerSource> node) noexcept
+    void InputActionDSLLayerBuilder::visit_source(arctic::SyntaxNode<ice::syntax::LayerSource> node) noexcept
     {
         ice::InputActionSourceType type = InputActionSourceType::Key;
         switch(node.data().type.type)
@@ -107,7 +108,7 @@ namespace ice
         ICE_LOG(LogSeverity::Info, LogTag::Engine, "Source: {}", node.data().name);
     }
 
-    void InputActionDSLLayerBuilder::visit(arctic::SyntaxNode<ice::syntax::LayerAction> node) noexcept
+    void InputActionDSLLayerBuilder::visit_layer(arctic::SyntaxNode<ice::syntax::LayerAction> node) noexcept
     {
         ice::syntax::LayerAction const& action_info = node.data();
         ice::InputActionDataType const action_datatype = detail::datatype_from_dsl(action_info.type);
@@ -134,27 +135,27 @@ namespace ice
         {
             if (child.type() == ice::syntax::SyntaxEntity_LayerActionCondition)
             {
-                visit(action, child.to<ice::syntax::LayerActionWhen>());
+                visit_cond(action, child.to<ice::syntax::LayerActionWhen>());
 
                 arctic::SyntaxNode<> steps = child.child();
                 while (steps != false)
                 {
                     if (steps.type() == ice::syntax::SyntaxEntity_LayerActionStep)
                     {
-                        visit(action, steps.to<ice::syntax::LayerActionStep>());
+                        visit_step(action, steps.to<ice::syntax::LayerActionStep>());
                     }
                     steps = steps.sibling();
                 }
             }
             else if (child.type() == ice::syntax::SyntaxEntity_LayerActionModifier)
             {
-                visit(action, child.to<ice::syntax::LayerActionModifier>());
+                visit_mod(action, child.to<ice::syntax::LayerActionModifier>());
             }
             child = child.sibling();
         }
     }
 
-    void InputActionDSLLayerBuilder::visit(
+    void InputActionDSLLayerBuilder::visit_cond(
         ice::InputActionLayerBuilder::ActionBuilder& action,
         arctic::SyntaxNode<ice::syntax::LayerActionWhen> node
     ) noexcept
@@ -206,7 +207,7 @@ namespace ice
         action.add_condition(cond.source_name, condition, flags, param, from_action);
     }
 
-    void InputActionDSLLayerBuilder::visit(
+    void InputActionDSLLayerBuilder::visit_step(
         ice::InputActionLayerBuilder::ActionBuilder& action,
         arctic::SyntaxNode<ice::syntax::LayerActionStep> node
     ) noexcept
@@ -223,7 +224,7 @@ namespace ice
         }
     }
 
-    void InputActionDSLLayerBuilder::visit(
+    void InputActionDSLLayerBuilder::visit_mod(
         ice::InputActionLayerBuilder::ActionBuilder& action,
         arctic::SyntaxNode<ice::syntax::LayerActionModifier> node
     ) noexcept
@@ -270,7 +271,7 @@ namespace ice
                 result = static_cast<KeyboardKey>(static_cast<ice::u16>(KeyboardKey::Key0) + key_diff);
             }
         }
-        else if (strnicmp(value.data(), "space", 5) == 0)
+        else if (ice::compare(value, "space") == CompareResult::Equal)
         {
             result = KeyboardKey::Space;
         }
@@ -290,15 +291,15 @@ namespace ice
         {
             result = KeyboardKey::Right;
         }
-        else if (strnicmp(value.data(), "mode", 4) == 0)
+        else if (ice::compare(value, "mode") == CompareResult::Equal)
         {
             return KeyboardKey::KeyMode;
         }
-        else if (strnicmp(value.data(), "numlock", 4) == 0)
+        else if (ice::compare(value, "numlock") == CompareResult::Equal)
         {
             return KeyboardKey::NumPadNumlockClear;
         }
-        else if (strnicmp(value.data(), "capslock", 4) == 0)
+        else if (ice::compare(value, "capslock") == CompareResult::Equal)
         {
             return KeyboardKey::KeyCapsLock;
         }
@@ -307,19 +308,19 @@ namespace ice
             ice::u8 const mod_left = value[0] == 'l';
             value = value.substr(1);
 
-            if (strnicmp(value.data(), "shift", 5) == 0)
+            if (ice::compare(value, "shift") == CompareResult::Equal)
             {
                 result = mod_left ? KeyboardKey::KeyLeftShift : KeyboardKey::KeyRightShift;
             }
-            else if (strnicmp(value.data(), "ctrl", 4) == 0)
+            else if (ice::compare(value, "ctrl") == CompareResult::Equal)
             {
                 result = mod_left ? KeyboardKey::KeyLeftCtrl : KeyboardKey::KeyRightCtrl;
             }
-            else if (strnicmp(value.data(), "alt", 3) == 0)
+            else if (ice::compare(value, "alt") == CompareResult::Equal)
             {
                 result = mod_left ? KeyboardKey::KeyLeftAlt : KeyboardKey::KeyRightAlt;
             }
-            else if (strnicmp(value.data(), "gui", 3) == 0)
+            else if (ice::compare(value, "gui") == CompareResult::Equal)
             {
                 result = mod_left ? KeyboardKey::KeyLeftGui : KeyboardKey::KeyRightGui;
             }

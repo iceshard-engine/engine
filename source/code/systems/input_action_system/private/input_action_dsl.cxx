@@ -6,7 +6,9 @@
 #include <arctic/arctic_parser.hxx>
 #include <arctic/arctic_syntax_node_allocator.hxx>
 #include <arctic/arctic_word_matcher.hxx>
+#include <ice/string_utils.hxx>
 #include <ice/sort.hxx>
+#include <ice/log.hxx>
 
 namespace ice
 {
@@ -111,7 +113,7 @@ namespace ice
 
         static auto const pred = [](ice::TokenInfo const& hay, arctic::Word const& needle) noexcept
         {
-            return strnicmp(hay.value.data(), needle.value.data(), hay.value.size()) == 0;
+            return ice::compare(hay.value, needle.value, hay.value.size()) == CompareResult::Equal;
         };
 
         ice::ucount idx;
