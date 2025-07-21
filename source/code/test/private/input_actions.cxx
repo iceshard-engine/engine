@@ -149,7 +149,7 @@ namespace ice
         )__");
 
         world_update.engine.actions().register_layer(_layer.get());
-        world_update.engine.actions().push_layer(_layer.get(), 1000);
+        world_update.engine.actions().push_layer(_layer.get());
         co_return;
     }
 

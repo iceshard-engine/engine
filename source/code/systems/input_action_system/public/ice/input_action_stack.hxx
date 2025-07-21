@@ -13,6 +13,9 @@ namespace ice
     static constexpr ice::ErrorCode E_InputActionDisabled{ "E.2301:InputAction:The requested input action is disabled and cannot be accessed." };
     static constexpr ice::ErrorCode E_InputActionInactive{ "E.2302:InputAction:The requested input action is inactive and cannot be accessed." };
 
+    //! \brief Represents an stack of currently registered input layers.
+    //! \details Layers can be stacked on each other with a priority value, which starts at '0' and grows.
+    //!   If the stack contains a layer, which priority is lower than a layer processed previously, that layer will not be processed.
     class InputActionStack
     {
     public:
@@ -32,8 +35,7 @@ namespace ice
         ) const noexcept -> ice::ucount = 0;
 
         virtual void push_layer(
-            ice::InputActionLayer const* layer,
-            ice::u32 priority
+            ice::InputActionLayer const* layer
         ) noexcept = 0;
 
         virtual void pop_layer(

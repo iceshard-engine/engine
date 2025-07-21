@@ -376,6 +376,23 @@ namespace ice
             arr._count += ice::span::count(items);
         }
 
+        template<typename Type, ice::ContainerLogic Logic, typename Source>
+            requires std::copy_constructible<Type> && (std::is_same_v<Type, Source> == false)
+        inline void push_back(ice::Array<Type, Logic>& arr, ice::Span<Source const> items, Type(*fn)(Source const&) noexcept) noexcept
+        {
+            ice::ucount const required_capacity = arr._count + ice::span::count(items);
+            if (required_capacity > arr._capacity)
+            {
+                ice::array::grow(arr, required_capacity);
+            }
+
+            ice::ucount const missing_items = required_capacity - arr._count;
+            for (ice::u32 src_idx = 0; src_idx < missing_items; ++src_idx)
+            {
+                ice::array::push_back(arr, fn(items[src_idx]));
+            }
+        }
+
         template<typename Type, ice::ContainerLogic Logic>
         inline void pop_back(ice::Array<Type, Logic>& arr, ice::ucount count /*= 1*/) noexcept
         {

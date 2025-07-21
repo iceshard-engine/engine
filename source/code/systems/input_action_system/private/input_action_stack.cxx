@@ -47,8 +47,7 @@ namespace ice
         ) const noexcept -> ice::ucount override;
 
         void push_layer(
-            ice::InputActionLayer const* layer,
-            ice::u32 priority
+            ice::InputActionLayer const* layer
         ) noexcept override;
 
         void pop_layer(
@@ -104,7 +103,6 @@ namespace ice
         struct ActiveStackLayer
         {
             ice::u32 index;
-            ice::u32 priority;
         };
 
         struct StackSourceIdx
@@ -233,25 +231,16 @@ namespace ice
         auto it = ice::array::rbegin(_layers_active);
         auto const end = ice::array::rend(_layers_active);
 
-        ice::u32 lowest_priority = 0;
         while (it != end)
         {
-            ActiveStackLayer const& active_layer = *it;
-
-            // Since we can push over layers with lower priorities, these will be ignored during runtime. And thus are considered "inactive"
-            if (active_layer.priority >= lowest_priority)
-            {
-                lowest_priority = active_layer.priority;
-                ice::array::push_back(out_layers, _layers[active_layer.index].layer);
-            }
+            ice::array::push_back(out_layers, _layers[it->index].layer);
             it += 1;
         }
         return ice::count(_layers_active);
     }
 
     void SimpleInputActionStack::push_layer(
-        ice::InputActionLayer const* layer,
-        ice::u32 priority
+        ice::InputActionLayer const* layer
     ) noexcept
     {
         ice::ucount idx;
@@ -264,13 +253,11 @@ namespace ice
         // Check if we are already at the top of the stack.
         if (ice::array::any(_layers_active) && ice::array::back(_layers_active).index == idx)
         {
-            // Updated the priority (as it might have changed)
-            ice::array::back(_layers_active).priority = priority;
             return; // #TODO: Implement success with info.
         }
 
         // Push back the new active layer.
-        ice::array::push_back(_layers_active, { idx, priority });
+        ice::array::push_back(_layers_active, { idx });
     }
 
     void SimpleInputActionStack::pop_layer(
@@ -386,22 +373,19 @@ namespace ice
     ) noexcept
     {
         IPT_ZONE_SCOPED;
+        using Iterator = ice::Array<ActiveStackLayer>::ConstReverseIterator;
 
         ice::ucount remaining_events = ice::count(events);
         ice::Array<ice::input::InputEvent> events_copy{ _allocator, events };
         ice::Array<ice::InputActionSource*> source_values{ _allocator };
 
-        // TODO: Implement priority and order logic
-        ice::u32 current_processed_priority = 0;
-        for (ActiveStackLayer const& active_layer : _layers_active)
-        {
-            // Skip layer if a layer with higher priority was already processed
-            if (current_processed_priority > active_layer.priority)
-            {
-                continue;
-            }
+        // We go in reverse order since, the recently pushed layers should be processed first as they might override inputs.
+        Iterator const start = ice::array::rbegin(_layers_active);
+        Iterator const end = ice::array::rend(_layers_active);
 
-            StackLayer const& layer = _layers[active_layer.index];
+        for (Iterator it = start; it != end; ++it)
+        {
+            StackLayer const& layer = _layers[it->index];
             for (ice::u32 offset : ice::array::slice(_layers_sources_indices, layer.sources_indices))
             {
                 ice::array::push_back(source_values, ice::addressof(_sources_runtime_values[offset]));
@@ -413,7 +397,6 @@ namespace ice
             );
             ICE_ASSERT_CORE(processed_events <= remaining_events);
             remaining_events -= processed_events;
-            current_processed_priority = active_layer.priority;
 
             // TODO: Should we change how this loop is finishing?
             if (remaining_events == 0)
@@ -422,26 +405,16 @@ namespace ice
             }
         }
 
-        // Reset priority helper
-        current_processed_priority = 0;
-
         ice::InputActionExecutor ex{};
-        for (ActiveStackLayer const& active_layer : _layers_active)
+        for (Iterator it = start; it != end; ++it)
         {
-            // Skip layer if a layer with higher priority was already processed
-            if (current_processed_priority > active_layer.priority)
-            {
-                continue;
-            }
-
-            StackLayer const& layer = _layers[active_layer.index];
+            StackLayer const& layer = _layers[it->index];
             for (ice::u32 offset : ice::array::slice(_layers_sources_indices, layer.sources_indices))
             {
                 ice::array::push_back(source_values, ice::addressof(_sources_runtime_values[offset]));
             }
 
             layer.layer->update_actions(ex, source_values, _actions);
-            current_processed_priority = active_layer.priority;
         }
     }
 
