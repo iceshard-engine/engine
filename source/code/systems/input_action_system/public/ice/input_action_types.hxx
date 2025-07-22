@@ -31,7 +31,6 @@ namespace ice
 
     class InputActionStack;
     class InputActionLayer;
-    class InputActionLayerBuilder;
     class InputActionExecutor;
 
 } // namespace ice

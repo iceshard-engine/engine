@@ -23,7 +23,7 @@ namespace ice
     } // namespace detail
 
     InputActionDSLLayerBuilder::InputActionDSLLayerBuilder(
-        ice::UniquePtr<ice::InputActionLayerBuilder> builder
+        ice::UniquePtr<ice::InputActionBuilder::Layer> builder
     ) noexcept
         : ActionInputParserEvents{ }
         , _builder{ ice::move(builder) }
@@ -60,7 +60,7 @@ namespace ice
         case ice::grammar::UCT_InputTypeAxis2D: type = InputActionSourceType::Axis2d; break;
         }
 
-        ice::InputActionLayerBuilder::SourceBuilder source = _builder->define_source(node.data().name, type);
+        ice::InputActionBuilder::Source source = _builder->define_source(node.data().name, type);
         if (arctic::SyntaxNode const binding = node.child<ice::syntax::LayerInputBinding>(); binding)
         {
             using ice::input::DeviceType;
@@ -114,7 +114,7 @@ namespace ice
         ice::InputActionDataType const action_datatype = detail::datatype_from_dsl(action_info.type);
 
         ICE_LOG(LogSeverity::Info, LogTag::Engine, "Action: {}", action_info.name);
-        ice::InputActionLayerBuilder::ActionBuilder action = _builder->define_action(action_info.name, action_datatype);
+        ice::InputActionBuilder::Action action = _builder->define_action(action_info.name, action_datatype);
         ice::InputActionBehavior behavior = InputActionBehavior::Default;
         if (action_info.flag_once)
         {
@@ -156,7 +156,7 @@ namespace ice
     }
 
     void InputActionDSLLayerBuilder::visit_cond(
-        ice::InputActionLayerBuilder::ActionBuilder& action,
+        ice::InputActionBuilder::Action& action,
         arctic::SyntaxNode<ice::syntax::LayerActionWhen> node
     ) noexcept
     {
@@ -208,7 +208,7 @@ namespace ice
     }
 
     void InputActionDSLLayerBuilder::visit_step(
-        ice::InputActionLayerBuilder::ActionBuilder& action,
+        ice::InputActionBuilder::Action& action,
         arctic::SyntaxNode<ice::syntax::LayerActionStep> node
     ) noexcept
     {
@@ -225,7 +225,7 @@ namespace ice
     }
 
     void InputActionDSLLayerBuilder::visit_mod(
-        ice::InputActionLayerBuilder::ActionBuilder& action,
+        ice::InputActionBuilder::Action& action,
         arctic::SyntaxNode<ice::syntax::LayerActionModifier> node
     ) noexcept
     {

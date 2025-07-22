@@ -9,7 +9,7 @@ namespace ice
     {
     public:
         InputActionDSLLayerBuilder(
-            ice::UniquePtr<ice::InputActionLayerBuilder> builder
+            ice::UniquePtr<ice::InputActionBuilder::Layer> builder
         ) noexcept;
 
         void visit(arctic::SyntaxNode<ice::syntax::Layer> node) noexcept override;
@@ -18,24 +18,24 @@ namespace ice
         void visit_layer(arctic::SyntaxNode<ice::syntax::LayerAction> node) noexcept;
 
         void visit_cond(
-            ice::InputActionLayerBuilder::ActionBuilder& action,
+            ice::InputActionBuilder::Action& action,
             arctic::SyntaxNode<ice::syntax::LayerActionWhen> node
         ) noexcept;
 
         void visit_step(
-            ice::InputActionLayerBuilder::ActionBuilder& action,
+            ice::InputActionBuilder::Action& action,
             arctic::SyntaxNode<ice::syntax::LayerActionStep> node
         ) noexcept;
 
         void visit_mod(
-            ice::InputActionLayerBuilder::ActionBuilder& action,
+            ice::InputActionBuilder::Action& action,
             arctic::SyntaxNode<ice::syntax::LayerActionModifier> node
         ) noexcept;
 
         auto finalize(ice::Allocator& alloc) noexcept { return _builder->finalize(alloc); }
 
     private:
-        ice::UniquePtr<ice::InputActionLayerBuilder> _builder;
+        ice::UniquePtr<ice::InputActionBuilder::Layer> _builder;
     };
 
 

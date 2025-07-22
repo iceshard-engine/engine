@@ -1,75 +1,81 @@
 #pragma once
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/input_action_definitions.hxx>
+#include <ice/concept/pimpl_type.hxx>
 
 namespace ice
 {
 
-    class InputActionLayerBuilder
+    struct InputActionBuilder
+    {
+        //! \brief Builder for input action layer objects. Allows to define Sources and Actions.
+        class Layer;
+
+        //! \brief Builder for input action sources. Allows to define a source and associated input events.
+        class Source;
+
+        //! \brief Builder for input actions. Allows to define an action, along with it's conditions and modifiers.
+        class Action;
+
+        //! \brief Builder for input action conditions. Allows to define conditions and steps of an input action. Used
+        //!   to drive the logic of an action.
+        class ActionCondition;
+
+        //! \brief Utility base class is a pimpl type.
+        using BuilderBase = ice::concepts::PimplType;
+    };
+
+    //! \brief Builder object for input action layers. Allows to easily define actions and sources without
+    //!   the need to understand the underlying binary representation.
+    class InputActionBuilder::Layer : public BuilderBase
     {
     public:
-        class SourceBuilder;
-        class ActionBuilder;
+        using BuilderBase::BuilderBase;
 
-        virtual ~InputActionLayerBuilder() noexcept = default;
+        virtual ~Layer() noexcept = default;
 
         virtual auto set_name(
             ice::String name
-        ) noexcept -> ice::InputActionLayerBuilder& = 0;
+        ) noexcept -> ice::InputActionBuilder::Layer& = 0;
 
         virtual auto define_source(
             ice::String name,
             ice::InputActionSourceType type
-        ) noexcept -> SourceBuilder = 0;
+        ) noexcept -> ice::InputActionBuilder::Source = 0;
 
         virtual auto define_action(
             ice::String name,
             ice::InputActionDataType type
-        ) noexcept -> ActionBuilder = 0;
+        ) noexcept -> ice::InputActionBuilder::Action = 0;
 
         virtual auto finalize(
             ice::Allocator& alloc
         ) noexcept -> ice::UniquePtr<ice::InputActionLayer> = 0;
     };
 
-    class InputActionLayerBuilder::SourceBuilder
+    class InputActionBuilder::Source : public BuilderBase
     {
     public:
-        struct Internal;
+        using BuilderBase::BuilderBase;
 
-        SourceBuilder(Internal* internal) noexcept;
-        ~SourceBuilder() noexcept = default;
+        ~Source() noexcept = default;
 
-        SourceBuilder(SourceBuilder&&) noexcept = delete;
-        SourceBuilder(SourceBuilder const&) noexcept = delete;
-        auto operator=(SourceBuilder&&) noexcept -> SourceBuilder& = delete;
-        auto operator=(SourceBuilder const&) noexcept -> SourceBuilder& = delete;
-
-        auto add_key(ice::input::KeyboardKey key) noexcept -> SourceBuilder&;
-        auto add_keymod(ice::input::KeyboardMod keymod) noexcept -> SourceBuilder&;
-        auto add_button(ice::input::MouseInput button) noexcept -> SourceBuilder&;
-        auto add_button(ice::input::ControllerInput button) noexcept -> SourceBuilder&;
-        auto add_axis(ice::input::MouseInput axisx) noexcept -> SourceBuilder&;
-        auto add_axis(ice::input::ControllerInput button) noexcept -> SourceBuilder&;
-
-    private:
-        Internal* _internal;
+        auto add_key(ice::input::KeyboardKey key) noexcept -> Source&;
+        auto add_keymod(ice::input::KeyboardMod keymod) noexcept -> Source&;
+        auto add_button(ice::input::MouseInput button) noexcept -> Source&;
+        auto add_button(ice::input::ControllerInput button) noexcept -> Source&;
+        auto add_axis(ice::input::MouseInput axisx) noexcept -> Source&;
+        auto add_axis(ice::input::ControllerInput button) noexcept -> Source&;
     };
 
-    class InputActionLayerBuilder::ActionBuilder
+    class InputActionBuilder::Action : public BuilderBase
     {
     public:
-        struct Internal;
+        using BuilderBase::BuilderBase;
 
-        ActionBuilder(Internal* internal) noexcept;
-        ~ActionBuilder() noexcept = default;
+        ~Action() noexcept = default;
 
-        ActionBuilder(ActionBuilder&&) noexcept = delete;
-        ActionBuilder(ActionBuilder const&) noexcept = delete;
-        auto operator=(ActionBuilder&&) noexcept -> ActionBuilder& = delete;
-        auto operator=(ActionBuilder const&) noexcept -> ActionBuilder& = delete;
-
-        auto set_behavior(ice::InputActionBehavior behavior) noexcept -> ActionBuilder&;
+        auto set_behavior(ice::InputActionBehavior behavior) noexcept -> Action&;
 
         auto add_condition(
             ice::String source,
@@ -77,31 +83,28 @@ namespace ice
             ice::InputActionConditionFlags flags = InputActionConditionFlags::None,
             ice::f32 param = 0.0f,
             bool from_action = false
-        ) noexcept -> ActionBuilder&;
+        ) noexcept -> Action&;
 
         auto add_step(
             ice::String source,
             ice::InputActionStep step,
             ice::String target_axis = ".x"
-        ) noexcept -> ActionBuilder&;
+        ) noexcept -> Action&;
 
         auto add_step(
             ice::InputActionStep step
-        ) noexcept -> ActionBuilder&;
+        ) noexcept -> Action&;
 
         auto add_modifier(
             ice::InputActionModifier modifier,
             ice::f32 param,
             ice::String target_axis = ".x"
-        ) noexcept -> ActionBuilder&;
-
-    private:
-        Internal* _internal;
+        ) noexcept -> Action&;
     };
 
     auto create_input_action_layer_builder(
         ice::Allocator& alloc,
         ice::String layer_name
-    ) noexcept -> ice::UniquePtr<ice::InputActionLayerBuilder>;
+    ) noexcept -> ice::UniquePtr<ice::InputActionBuilder::Layer>;
 
 } // namespace ice

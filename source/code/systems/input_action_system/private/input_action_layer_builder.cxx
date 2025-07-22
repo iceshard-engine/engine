@@ -8,20 +8,9 @@
 namespace ice
 {
 
-    struct InputActionLayerBuilder::SourceBuilder::Internal
-    {
-        Internal(ice::Allocator& alloc, ice::String name, ice::InputActionSourceType type) noexcept
-            : name{ alloc, name }
-            , type{ type }
-            , events{ alloc }
-        {
-            ice::hashmap::reserve(events, 2);
-        }
+    class SimpleInputActionLayerBuilder;
 
-        ice::HeapString<> name;
-        ice::InputActionSourceType type;
-        ice::HashMap<ice::input::InputID> events;
-    };
+    using ActionBuilderModifier = InputActionModifierData;
 
     struct ActionBuilderStep
     {
@@ -53,7 +42,8 @@ namespace ice
             , param{ param }
             , axis{ axis }
             , from_action{ from_action }
-        { }
+        {
+        }
 
         //! \brief The check to be performed.
         ice::InputActionCondition condition;
@@ -75,9 +65,39 @@ namespace ice
         bool from_action = false;
     };
 
-    using ActionBuilderModifier = InputActionModifierData;
+    template<>
+    struct InputActionBuilder::BuilderBase::Internal<InputActionBuilder::Layer>
+    {
 
-    struct InputActionLayerBuilder::ActionBuilder::Internal
+    };
+
+    template<>
+    struct InputActionBuilder::BuilderBase::Internal<SimpleInputActionLayerBuilder> : InputActionBuilder::BuilderBase::Internal<InputActionBuilder::Layer>
+    {
+        void destroy(ice::Allocator& alloc) noexcept
+        {
+            alloc.destroy(this);
+        }
+    };
+
+    template<>
+    struct InputActionBuilder::BuilderBase::Internal<InputActionBuilder::Source>
+    {
+        Internal(ice::Allocator& alloc, ice::String name, ice::InputActionSourceType type) noexcept
+            : name{ alloc, name }
+            , type{ type }
+            , events{ alloc }
+        {
+            ice::hashmap::reserve(events, 2);
+        }
+
+        ice::HeapString<> name;
+        ice::InputActionSourceType type;
+        ice::HashMap<ice::input::InputID> events;
+    };
+
+    template<>
+    struct InputActionBuilder::BuilderBase::Internal<InputActionBuilder::Action>
     {
         Internal(
             ice::Allocator& alloc,
@@ -104,14 +124,20 @@ namespace ice
         ice::ActionBuilderCondition* current_condition;
     };
 
-    class SimpleInputActionLayerBuilder : public ice::InputActionLayerBuilder
+    //InputActionBuilder::Layer::Layer(Internal<Layer>* internal) noexcept
+    //    : BuilderBase{ internal }
+    //{
+    //}
+
+    class SimpleInputActionLayerBuilder : public ice::InputActionBuilder::Layer
     {
     public:
         SimpleInputActionLayerBuilder(
             ice::Allocator& alloc,
             ice::String name
         ) noexcept
-            : _allocator{ alloc }
+            : Layer{ alloc.create<Internal<Layer>>() }
+            , _allocator{ alloc }
             , _sources{ alloc }
             , _actions{ alloc }
             , _name{ alloc, name }
@@ -120,15 +146,23 @@ namespace ice
             ice::hashmap::reserve(_actions, 10);
         }
 
+        ~SimpleInputActionLayerBuilder()
+        {
+            this->internal().destroy(_allocator);
+        }
+
         auto set_name(
             ice::String name
-        ) noexcept -> ice::InputActionLayerBuilder& override
+        ) noexcept -> ice::InputActionBuilder::Layer& override
         {
             _name = name;
             return *this;
         }
 
-        auto define_source(ice::String name, ice::InputActionSourceType type) noexcept -> SourceBuilder override
+        auto define_source(
+            ice::String name,
+            ice::InputActionSourceType type
+        ) noexcept -> ice::InputActionBuilder::Source override
         {
             ice::hashmap::set(_sources, ice::hash(name), {_allocator, name, type});
             return { ice::hashmap::try_get(_sources, ice::hash(name)) };
@@ -137,7 +171,7 @@ namespace ice
         auto define_action(
             ice::String name,
             ice::InputActionDataType type
-        ) noexcept -> ActionBuilder override
+        ) noexcept -> ice::InputActionBuilder::Action override
         {
             ice::hashmap::set(_actions, ice::hash(name), {_allocator, name, type});
             return { ice::hashmap::try_get(_actions, ice::hash(name)) };
@@ -159,7 +193,7 @@ namespace ice
             ice::string::push_back(strings, '\0');
 
             // Prepare data of all sources
-            for (SourceBuilder::Internal const& source : _sources)
+            for (Internal<InputActionBuilder::Source> const& source : _sources)
             {
                 for (ice::input::InputID input_event : source.events)
                 {
@@ -233,7 +267,7 @@ namespace ice
             ice::u16 step_offset = 0, step_count = 0;
             ice::u16 condition_offset = 0, condition_count = 0;
             ice::u8 modifier_offset = 0, modifier_count = 0;
-            for (ActionBuilder::Internal const& action : _actions)
+            for (Internal<InputActionBuilder::Action> const& action : _actions)
             {
                 for (ActionBuilderCondition const& condition : action.conditions)
                 {
@@ -356,114 +390,114 @@ namespace ice
 
     private:
         ice::Allocator& _allocator;
-        ice::HashMap<SourceBuilder::Internal> _sources;
-        ice::HashMap<ActionBuilder::Internal> _actions;
+        ice::HashMap<Internal<InputActionBuilder::Source>> _sources;
+        ice::HashMap<Internal<InputActionBuilder::Action>> _actions;
         ice::HeapString<> _name;
     };
 
 
-    InputActionLayerBuilder::SourceBuilder::SourceBuilder(Internal* internal) noexcept
-        : _internal{ internal }
-    {
-    }
+    //InputActionBuilder::Source::Source(Internal<Source>* internal) noexcept
+    //    : BuilderBase{ internal }
+    //{
+    //}
 
-    auto InputActionLayerBuilder::SourceBuilder::add_key(ice::input::KeyboardKey key) noexcept -> SourceBuilder&
+    auto InputActionBuilder::Source::add_key(ice::input::KeyboardKey key) noexcept -> Source&
     {
         using ice::input::DeviceType;
         using enum ice::InputActionSourceType;
 
-        ICE_ASSERT_CORE(_internal->type == Key || _internal->type == Button);
-        ice::hashmap::set(_internal->events, ice::hash(key), input_identifier(DeviceType::Keyboard, key));
+        ICE_ASSERT_CORE(internal().type == Key || internal().type == Button);
+        ice::hashmap::set(internal().events, ice::hash(key), input_identifier(DeviceType::Keyboard, key));
         return *this;
     }
 
-    auto InputActionLayerBuilder::SourceBuilder::add_keymod(ice::input::KeyboardMod keymod) noexcept -> SourceBuilder&
+    auto InputActionBuilder::Source::add_keymod(ice::input::KeyboardMod keymod) noexcept -> Source&
     {
         using ice::input::DeviceType;
         using enum ice::InputActionSourceType;
 
         ice::input::InputID const iid = input_identifier(DeviceType::Keyboard, keymod, ice::input::mod_identifier_base_value);
 
-        ICE_ASSERT_CORE(_internal->type == Key || _internal->type == Button);
-        ice::hashmap::set(_internal->events, ice::hash(iid), iid);
+        ICE_ASSERT_CORE(internal().type == Key || internal().type == Button);
+        ice::hashmap::set(internal().events, ice::hash(iid), iid);
         return *this;
     }
 
-    auto InputActionLayerBuilder::SourceBuilder::add_button(ice::input::MouseInput button) noexcept -> SourceBuilder&
+    auto InputActionBuilder::Source::add_button(ice::input::MouseInput button) noexcept -> Source&
     {
         using ice::input::DeviceType;
         using enum ice::InputActionSourceType;
 
-        ICE_ASSERT_CORE(_internal->type == Key || _internal->type == Button);
-        ice::hashmap::set(_internal->events, ice::hash(button), input_identifier(DeviceType::Mouse, button));
+        ICE_ASSERT_CORE(internal().type == Key || internal().type == Button);
+        ice::hashmap::set(internal().events, ice::hash(button), input_identifier(DeviceType::Mouse, button));
         return *this;
     }
 
-    auto InputActionLayerBuilder::SourceBuilder::add_button(ice::input::ControllerInput button) noexcept -> SourceBuilder&
+    auto InputActionBuilder::Source::add_button(ice::input::ControllerInput button) noexcept -> Source&
     {
         using ice::input::DeviceType;
         using enum ice::InputActionSourceType;
 
-        ICE_ASSERT_CORE(_internal->type == Key || _internal->type == Button);
-        ice::hashmap::set(_internal->events, ice::hash(button), input_identifier(DeviceType::Controller, button));
+        ICE_ASSERT_CORE(internal().type == Key || internal().type == Button);
+        ice::hashmap::set(internal().events, ice::hash(button), input_identifier(DeviceType::Controller, button));
         return *this;
     }
 
-    auto InputActionLayerBuilder::SourceBuilder::add_axis(ice::input::MouseInput axis) noexcept -> SourceBuilder&
+    auto InputActionBuilder::Source::add_axis(ice::input::MouseInput axis) noexcept -> Source&
     {
         using ice::input::DeviceType;
         using ice::input::MouseInput;
         using enum ice::InputActionSourceType;
 
-        ICE_ASSERT_CORE(_internal->type == Axis2d);
+        ICE_ASSERT_CORE(internal().type == Axis2d);
         ICE_ASSERT_CORE(axis == MouseInput::PositionX);
         if (axis == MouseInput::PositionX)
         {
-            ice::hashmap::set(_internal->events, ice::hash(MouseInput::PositionX), input_identifier(DeviceType::Mouse, MouseInput::PositionX));
-            ice::hashmap::set(_internal->events, ice::hash(MouseInput::PositionY), input_identifier(DeviceType::Mouse, MouseInput::PositionY));
+            ice::hashmap::set(internal().events, ice::hash(MouseInput::PositionX), input_identifier(DeviceType::Mouse, MouseInput::PositionX));
+            ice::hashmap::set(internal().events, ice::hash(MouseInput::PositionY), input_identifier(DeviceType::Mouse, MouseInput::PositionY));
         }
         return *this;
     }
 
-    auto InputActionLayerBuilder::SourceBuilder::add_axis(ice::input::ControllerInput axis) noexcept -> SourceBuilder&
+    auto InputActionBuilder::Source::add_axis(ice::input::ControllerInput axis) noexcept -> Source&
     {
         using ice::input::DeviceType;
         using ice::input::ControllerInput;
         using enum ice::InputActionSourceType;
 
-        ICE_ASSERT_CORE(_internal->type == Axis2d);
+        ICE_ASSERT_CORE(internal().type == Axis2d);
         ICE_ASSERT_CORE(axis == ControllerInput::LeftAxisX || axis == ControllerInput::RightAxisX);
         if (axis == ControllerInput::LeftAxisX)
         {
-            ice::hashmap::set(_internal->events, ice::hash(axis), input_identifier(DeviceType::Controller, ControllerInput::LeftAxisX));
-            ice::hashmap::set(_internal->events, ice::hash(axis), input_identifier(DeviceType::Controller, ControllerInput::LeftAxisY));
+            ice::hashmap::set(internal().events, ice::hash(axis), input_identifier(DeviceType::Controller, ControllerInput::LeftAxisX));
+            ice::hashmap::set(internal().events, ice::hash(axis), input_identifier(DeviceType::Controller, ControllerInput::LeftAxisY));
         }
         else if (axis == ControllerInput::RightAxisX)
         {
-            ice::hashmap::set(_internal->events, ice::hash(axis), input_identifier(DeviceType::Controller, ControllerInput::RightAxisX));
-            ice::hashmap::set(_internal->events, ice::hash(axis), input_identifier(DeviceType::Controller, ControllerInput::RightAxisY));
+            ice::hashmap::set(internal().events, ice::hash(axis), input_identifier(DeviceType::Controller, ControllerInput::RightAxisX));
+            ice::hashmap::set(internal().events, ice::hash(axis), input_identifier(DeviceType::Controller, ControllerInput::RightAxisY));
         }
         return *this;
     }
 
-    InputActionLayerBuilder::ActionBuilder::ActionBuilder(Internal *internal) noexcept
-        : _internal{ internal }
-    {
-    }
+    //InputActionBuilder::Action::Action(Internal<Action>* internal) noexcept
+    //    : BuilderBase{ internal }
+    //{
+    //}
 
-    auto InputActionLayerBuilder::ActionBuilder::set_behavior(ice::InputActionBehavior behavior) noexcept -> ActionBuilder&
+    auto InputActionBuilder::Action::set_behavior(ice::InputActionBehavior behavior) noexcept -> Action&
     {
-        _internal->behavior = behavior;
+        internal().behavior = behavior;
         return *this;
     }
 
-    auto InputActionLayerBuilder::ActionBuilder::add_condition(
+    auto InputActionBuilder::Action::add_condition(
         ice::String source,
         ice::InputActionCondition condition,
         ice::InputActionConditionFlags flags /*= None*/,
         ice::f32 param /*= 0.0f*/,
         bool from_action /*= false*/
-    ) noexcept -> ActionBuilder&
+    ) noexcept -> Action&
     {
         ice::u8 read_from = 0;
         ice::u32 source_size = ice::size(source);
@@ -474,9 +508,9 @@ namespace ice
             ICE_ASSERT_CORE(read_from >= 0 && read_from < 3);
         }
 
-        ice::array::push_back(_internal->conditions,
+        ice::array::push_back(internal().conditions,
             ActionBuilderCondition{
-                _internal->allocator,
+                internal().allocator,
                 ice::string::substr(source, 0, source_size),
                 condition,
                 flags,
@@ -485,7 +519,7 @@ namespace ice
                 from_action
             }
         );
-        _internal->current_condition = ice::addressof(ice::array::back(_internal->conditions));
+        internal().current_condition = ice::addressof(ice::array::back(internal().conditions));
 
         // if (ice::has_all(flags, InputActionConditionFlags::Activate))
         // {
@@ -498,27 +532,27 @@ namespace ice
         return *this;
     }
 
-    auto InputActionLayerBuilder::ActionBuilder::add_step(
+    auto InputActionBuilder::Action::add_step(
         ice::InputActionStep step
-    ) noexcept -> ActionBuilder&
+    ) noexcept -> Action&
     {
-        ice::array::push_back(_internal->current_condition->steps,
+        ice::array::push_back(internal().current_condition->steps,
             ActionBuilderStep{
                 .step = step,
-                .source = ice::HeapString<>{ _internal->allocator },
+                .source = ice::HeapString<>{ internal().allocator },
                 .axis = { 0, 0 }
             }
         );
         return *this;
     }
 
-    auto InputActionLayerBuilder::ActionBuilder::add_step(
+    auto InputActionBuilder::Action::add_step(
         ice::String source,
         ice::InputActionStep step,
         ice::String target_axis /*= ".x"*/
-    ) noexcept -> ActionBuilder&
+    ) noexcept -> Action&
     {
-        ICE_ASSERT_CORE(_internal->current_condition != nullptr);
+        ICE_ASSERT_CORE(internal().current_condition != nullptr);
 
         ice::ucount source_size = ice::size(source);
         ice::u8 read_from = 0;
@@ -536,21 +570,21 @@ namespace ice
             ICE_ASSERT_CORE(write_to >= 0 && write_to < 3);
         }
 
-        ice::array::push_back(_internal->current_condition->steps,
+        ice::array::push_back(internal().current_condition->steps,
             ActionBuilderStep{
                 .step = step,
-                .source = { _internal->allocator, ice::string::substr(source, 0, source_size) },
+                .source = { internal().allocator, ice::string::substr(source, 0, source_size) },
                 .axis = { read_from, write_to }
             }
         );
         return *this;
     }
 
-    auto InputActionLayerBuilder::ActionBuilder::add_modifier(
+    auto InputActionBuilder::Action::add_modifier(
         ice::InputActionModifier modifier,
         ice::f32 param,
         ice::String target_axis /*= ".x"*/
-    ) noexcept -> ActionBuilder&
+    ) noexcept -> Action&
     {
         ICE_ASSERT_CORE(ice::size(target_axis) >= 2 && target_axis[0] == '.');
         if (ice::size(target_axis) < 2 || target_axis[0] != '.')
@@ -563,7 +597,7 @@ namespace ice
             ICE_ASSERT_CORE(axis_component >= 'x' && axis_component <= 'z'); // .xyz
 
             ice::u8 const axis = axis_component - 'x';
-            ice::array::push_back(_internal->modifiers, { .id = modifier, .axis = axis, .param = param });
+            ice::array::push_back(internal().modifiers, { .id = modifier, .axis = axis, .param = param });
         }
         return *this;
     }
@@ -571,7 +605,7 @@ namespace ice
     auto create_input_action_layer_builder(
         ice::Allocator& alloc,
         ice::String name
-    ) noexcept -> ice::UniquePtr<ice::InputActionLayerBuilder>
+    ) noexcept -> ice::UniquePtr<ice::InputActionBuilder::Layer>
     {
         return ice::make_unique<SimpleInputActionLayerBuilder>(alloc, alloc, name);
     }
