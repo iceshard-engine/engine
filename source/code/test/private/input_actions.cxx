@@ -24,7 +24,7 @@ namespace ice
     InputActionsTrait::InputActionsTrait(ice::TraitContext& context, ice::Allocator& alloc) noexcept
         : ice::Trait{ context }
         , ice::TraitDevUI{ {.category="Engine/Traits", .name = trait_name()} }
-        , _allocator{ alloc }
+        , _allocator{ alloc, "trait :: input-actions" }
         , _layer{ }
     {
         context.bind<&InputActionsTrait::on_update>();
@@ -66,6 +66,7 @@ namespace ice
             .add_button(input::MouseInput::ButtonLeft);
 
         layerBuilder->define_action("A:click", InputActionDataType::Float2)
+            .add_condition_series()
             // .set_behavior(InputActionBehavior::ActiveOnce)
             .add_condition("S:click", InputActionCondition::Released, Final | RunSteps)
                 .add_step(InputActionStep::Deactivate)
@@ -74,18 +75,21 @@ namespace ice
                 .add_step("S:pos.x", InputActionStep::Set, ".x")
                 .add_step("S:pos.y", InputActionStep::Set, ".y");
 
-        layerBuilder->define_action("A:jump", InputActionDataType::Bool)
+        auto jump_action = layerBuilder->define_action("A:jump", InputActionDataType::Bool);
+        jump_action.add_condition_series()
             //.set_behavior(InputActionBehavior::Accumulated)
             .add_condition("S:jump", InputActionCondition::Released, Final | RunSteps)
                 .add_step("S:jump", InputActionStep::Set)
                 .add_step(InputActionStep::Deactivate)
             .add_condition("S:jump", InputActionCondition::Pressed, Final | RunSteps)
                 .add_step("S:jump", InputActionStep::Add)
-                .add_step(InputActionStep::Activate)
+                .add_step(InputActionStep::Activate);
+        jump_action
             .add_modifier(InputActionModifier::Div, 15.f)
             .add_modifier(InputActionModifier::Max, 2.0);
 
         layerBuilder->define_action("A:move", InputActionDataType::Float2)
+            .add_condition_series()
             .add_condition("S:left", InputActionCondition::Pressed, RunSteps)
                 .add_step("S:left", InputActionStep::Sub, ".x")
             .add_condition("S:right", InputActionCondition::Pressed, RunSteps)
@@ -102,10 +106,10 @@ namespace ice
             layer Test:
                 source button Jump: kb.Space
 
-                source button Left: kb.A
-                source button Right: kb.D
-                source button Up: kb.W
-                source button Down: kb.S
+                source button Left: kb.A, kb.Left
+                source button Right: kb.D, kb.Right
+                source button Up: kb.W, kb.Up
+                source button Down: kb.S, kb.Down
 
                 source axis2d Pos: mouse.pos
                 source button Click: mouse.lbutton
@@ -167,9 +171,16 @@ namespace ice
     {
         ImGui::SeparatorText(ice::string::begin(_layer->name()));
         ImGui::SeparatorText("Sources");
+
+        ice::u32 last_storage = 0;
         for (ice::InputActionSourceInputInfo const& source_info : _layer->sources())
         {
             ice::InputActionSource const& source = _stack->source_runtime(*_layer, source_info);
+            if (ice::exchange(last_storage, source_info.storage_offset) == source_info.storage_offset)
+            {
+                continue;
+            }
+
             if (source_info.type == InputActionSourceType::Axis2d)
             {
                 ImGui::TextT("Source: {}, value:{}x{}", _layer->source_name(source_info), source.value, (&source + 1)->value);

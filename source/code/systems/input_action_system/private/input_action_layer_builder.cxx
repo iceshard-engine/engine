@@ -8,6 +8,25 @@
 namespace ice
 {
 
+    namespace detail
+    {
+
+        auto parse_source(ice::String source) noexcept -> std::tuple<ice::String, ice::u8>
+        {
+            ice::u8 read_from = 0;
+            ice::ucount source_size = ice::size(source);
+            // We want to parse the following cases: <source>(.[xyz])
+            if (source_size > 1 && source[source_size - 2] == '.')
+            {
+                source_size -= 2;
+                read_from = source[source_size + 1] - 'x';
+                ICE_ASSERT_CORE(read_from >= 0 && read_from < 3);
+            }
+            return { ice::string::substr(source, 0, source_size), read_from };
+        }
+
+    } // namespace detail
+
     class SimpleInputActionLayerBuilder;
 
     using ActionBuilderModifier = InputActionModifierData;
@@ -97,6 +116,42 @@ namespace ice
     };
 
     template<>
+    struct InputActionBuilder::BuilderBase::Internal<InputActionBuilder::ConditionSeries>
+    {
+        Internal(ice::Allocator& alloc) noexcept
+            : allocator{ alloc }
+            , conditions{ alloc }
+        {
+            ice::array::reserve(conditions, 4);
+        }
+
+        void add_step(ActionBuilderStep&& step) noexcept
+        {
+            ice::array::push_back(
+                ice::array::back(conditions).steps,
+                ice::move(step)
+            );
+        }
+
+        void add_condition(ActionBuilderCondition&& condition) noexcept
+        {
+            ice::array::push_back(conditions, ice::move(condition));
+        }
+
+        void finalize() noexcept
+        {
+            ActionBuilderCondition& final_condition = ice::array::back(conditions);
+
+            // Ensure this series is finished after this condition.
+            final_condition.flags |= InputActionConditionFlags::SeriesFinish;
+        }
+
+    public:
+        ice::Allocator& allocator;
+        ice::Array<ActionBuilderCondition> conditions;
+    };
+
+    template<>
     struct InputActionBuilder::BuilderBase::Internal<InputActionBuilder::Action>
     {
         Internal(
@@ -107,10 +162,10 @@ namespace ice
             : allocator{ alloc }
             , name{ alloc, name }
             , type{ type }
-            , conditions{ alloc }
+            , cond_series{ alloc }
             , modifiers{ alloc }
         {
-            ice::array::reserve(conditions, 4);
+            ice::array::reserve(cond_series, 3);
             ice::array::reserve(modifiers, 2);
         }
 
@@ -118,16 +173,25 @@ namespace ice
         ice::HeapString<> name;
         ice::InputActionDataType type;
         ice::InputActionBehavior behavior;
-        ice::Array<ice::ActionBuilderCondition> conditions;
+        ice::Array<Internal<InputActionBuilder::ConditionSeries>> cond_series;
         ice::Array<ice::ActionBuilderModifier> modifiers;
 
-        ice::ActionBuilderCondition* current_condition;
+        auto add_condition_series() noexcept -> InputActionBuilder::ConditionSeries
+        {
+            ice::array::push_back(cond_series, Internal<InputActionBuilder::ConditionSeries>{ allocator });
+            Internal<InputActionBuilder::ConditionSeries>* const series_ptr = ice::addressof(ice::array::back(cond_series));
+            return { series_ptr };
+        }
+
+        void finalize()
+        {
+            for (Internal<InputActionBuilder::ConditionSeries>& series : this->cond_series)
+            {
+                series.finalize();
+            }
+        }
     };
 
-    //InputActionBuilder::Layer::Layer(Internal<Layer>* internal) noexcept
-    //    : BuilderBase{ internal }
-    //{
-    //}
 
     class SimpleInputActionLayerBuilder : public ice::InputActionBuilder::Layer
     {
@@ -263,79 +327,89 @@ namespace ice
                 return ice::u16(idx_found);
             };
 
+            // Run finalization on all internal action objects.
+            for (Internal<InputActionBuilder::Action>& action : ice::hashmap::values(_actions))
+            {
+                action.finalize();
+            }
+
             // Prepare data of all actions
             ice::u16 step_offset = 0, step_count = 0;
             ice::u16 condition_offset = 0, condition_count = 0;
             ice::u8 modifier_offset = 0, modifier_count = 0;
+
             for (Internal<InputActionBuilder::Action> const& action : _actions)
             {
-                for (ActionBuilderCondition const& condition : action.conditions)
+                for (Internal<InputActionBuilder::ConditionSeries> const& series : action.cond_series)
                 {
-                    for (ActionBuilderStep const& step : condition.steps)
+                    for (ActionBuilderCondition const& condition : series.conditions)
                     {
-                        if (step.step < InputActionStep::Set)
+                        for (ActionBuilderStep const& step : condition.steps)
                         {
-                            ice::array::push_back(final_steps,
-                                InputActionStepData{
-                                    .source = { 0, 0 },
-                                    .id = step.step,
-                                    .dst_axis = 0
-                                }
-                            );
-                        }
-                        else
-                        {
-                            ice::array::push_back(final_steps,
-                                InputActionStepData{
-                                    .source = {
-                                        .source_index = find_source_storage_index(step.source),
-                                        .source_axis = step.axis.x
-                                    },
-                                    .id = step.step,
-                                    .dst_axis = step.axis.y
-                                }
-                            );
+                            if (step.step < InputActionStep::Set)
+                            {
+                                ice::array::push_back(final_steps,
+                                    InputActionStepData{
+                                        .source = { 0, 0 },
+                                        .id = step.step,
+                                        .dst_axis = 0
+                                    }
+                                );
+                            }
+                            else
+                            {
+                                ice::array::push_back(final_steps,
+                                    InputActionStepData{
+                                        .source = {
+                                            .source_index = find_source_storage_index(step.source),
+                                            .source_axis = step.axis.x
+                                        },
+                                        .id = step.step,
+                                        .dst_axis = step.axis.y
+                                    }
+                                );
+                            }
+
+                            step_count += 1;
                         }
 
-                        step_count += 1;
-                    }
-
-                    ICE_ASSERT_CORE(action.type != InputActionDataType::Invalid);
-                    ice::InputActionIndex source_index = {.source_index = 0,.source_axis = 0};
-                    if (condition.from_action)
-                    {
-                        // If we are empty, it's a "self reference"
-                        if (ice::string::any(condition.source))
+                        ICE_ASSERT_CORE(action.type != InputActionDataType::Invalid);
+                        ice::InputActionIndex source_index = { .source_index = 0,.source_axis = 0 };
+                        if (condition.from_action)
                         {
-                            source_index.source_index = find_action_storage_index(condition.source);
+                            // If we are empty, it's a "self reference"
+                            if (ice::string::any(condition.source))
+                            {
+                                source_index.source_index = find_action_storage_index(condition.source);
+                                source_index.source_axis = condition.axis;
+                            }
+                            else
+                            {
+                                source_index.source_index = InputActionIndex::SelfIndex;
+                            }
+                        }
+                        else /*if (condition.condition != InputActionCondition::AlwaysTrue
+                            && condition.condition != InputActionCondition::ActionActive
+                            && condition.condition != InputActionCondition::ActionInactive)*/
+                        {
+                            source_index.source_index = find_source_storage_index(condition.source);
                             source_index.source_axis = condition.axis;
                         }
-                        else
-                        {
-                            source_index.source_index = InputActionIndex::SelfIndex;
-                        }
-                    }
-                    else /*if (condition.condition != InputActionCondition::AlwaysTrue
-                        && condition.condition != InputActionCondition::ActionActive
-                        && condition.condition != InputActionCondition::ActionInactive)*/
-                    {
-                        source_index.source_index = find_source_storage_index(condition.source);
-                        source_index.source_axis = condition.axis;
-                    }
 
-                    ice::array::push_back(final_conditions,
-                        InputActionConditionData{
-                            .source = source_index,
-                            .id = condition.condition,
-                            .flags = condition.flags,
-                            .steps = { step_offset, step_count },
-                            .param = condition.param
-                        }
-                    );
+                        ice::array::push_back(final_conditions,
+                            InputActionConditionData{
+                                .source = source_index,
+                                .id = condition.condition,
+                                .flags = condition.flags,
+                                .steps = { step_offset, step_count },
+                                .param = condition.param
+                            }
+                        );
 
-                    step_offset += ice::exchange(step_count, ice::u16_0);
-                    condition_count += 1;
-                }
+                        step_offset += ice::exchange(step_count, ice::u16_0);
+                        condition_count += 1;
+                    }
+                } // for (ConditionSeries& series : ...)
 
                 modifier_count = ice::u8(ice::count(action.modifiers));
                 ice::array::push_back(final_modifiers, action.modifiers);
@@ -351,7 +425,6 @@ namespace ice
                 );
 
                 ice::string::push_back(strings, action.name);
-                // ice::string::push_back(strings, '\0');
 
                 modifier_offset += modifier_count;
                 condition_offset += ice::exchange(condition_count, ice::u16_0);
@@ -394,12 +467,6 @@ namespace ice
         ice::HashMap<Internal<InputActionBuilder::Action>> _actions;
         ice::HeapString<> _name;
     };
-
-
-    //InputActionBuilder::Source::Source(Internal<Source>* internal) noexcept
-    //    : BuilderBase{ internal }
-    //{
-    //}
 
     auto InputActionBuilder::Source::add_key(ice::input::KeyboardKey key) noexcept -> Source&
     {
@@ -480,38 +547,32 @@ namespace ice
         return *this;
     }
 
-    //InputActionBuilder::Action::Action(Internal<Action>* internal) noexcept
-    //    : BuilderBase{ internal }
-    //{
-    //}
-
-    auto InputActionBuilder::Action::set_behavior(ice::InputActionBehavior behavior) noexcept -> Action&
+    void InputActionBuilder::ConditionSeries::set_finished(bool can_finalize_condition_checks) noexcept
     {
-        internal().behavior = behavior;
-        return *this;
+        if (can_finalize_condition_checks)
+        {
+            ice::array::back(internal().conditions).flags |= InputActionConditionFlags::Final;
+        }
+        else
+        {
+            ice::array::back(internal().conditions).flags |= InputActionConditionFlags::SeriesFinish;
+        }
     }
 
-    auto InputActionBuilder::Action::add_condition(
+    auto InputActionBuilder::ConditionSeries::add_condition(
         ice::String source,
         ice::InputActionCondition condition,
         ice::InputActionConditionFlags flags /*= None*/,
         ice::f32 param /*= 0.0f*/,
         bool from_action /*= false*/
-    ) noexcept -> Action&
+    ) noexcept -> ConditionSeries&
     {
-        ice::u8 read_from = 0;
-        ice::u32 source_size = ice::size(source);
-        if (source_size > 1 && source[source_size - 2] == '.')
-        {
-            source_size -= 2;
-            read_from = source[source_size + 1] - 'x';
-            ICE_ASSERT_CORE(read_from >= 0 && read_from < 3);
-        }
+        auto const[source_name, read_from] = detail::parse_source(source);
 
-        ice::array::push_back(internal().conditions,
+        internal().add_condition(
             ActionBuilderCondition{
                 internal().allocator,
-                ice::string::substr(source, 0, source_size),
+                source_name,
                 condition,
                 flags,
                 param,
@@ -519,64 +580,49 @@ namespace ice
                 from_action
             }
         );
-        internal().current_condition = ice::addressof(ice::array::back(internal().conditions));
 
-        // if (ice::has_all(flags, InputActionConditionFlags::Activate))
-        // {
-        //     this->add_step(InputActionStep::Activate);
-        // }
-        // else if (ice::has_all(flags, InputActionConditionFlags::Deactivate))
-        // {
-        //     this->add_step(InputActionStep::Deactivate);
-        // }
         return *this;
     }
 
-    auto InputActionBuilder::Action::add_step(
+    auto InputActionBuilder::ConditionSeries::add_step(
         ice::InputActionStep step
-    ) noexcept -> Action&
+    ) noexcept -> ConditionSeries&
     {
-        ice::array::push_back(internal().current_condition->steps,
-            ActionBuilderStep{
-                .step = step,
-                .source = ice::HeapString<>{ internal().allocator },
-                .axis = { 0, 0 }
-            }
-        );
+        internal().add_step({
+            .step = step,
+            .source = ice::HeapString<>{ internal().allocator },
+            .axis = { 0, 0 }
+        });
         return *this;
     }
 
-    auto InputActionBuilder::Action::add_step(
+    auto InputActionBuilder::ConditionSeries::add_step(
         ice::String source,
         ice::InputActionStep step,
         ice::String target_axis /*= ".x"*/
+    ) noexcept -> ConditionSeries&
+    {
+        auto const [source_name, read_from] = detail::parse_source(source);
+        auto const [_, write_to] = detail::parse_source(target_axis);
+
+        internal().add_step({
+            .step = step,
+            .source = { internal().allocator, source_name },
+            .axis = { read_from, write_to }
+        });
+        return *this;
+    }
+
+    auto InputActionBuilder::Action::add_condition_series() noexcept -> ConditionSeries
+    {
+        return internal().add_condition_series();
+    }
+
+    auto InputActionBuilder::Action::set_behavior(
+        ice::InputActionBehavior behavior
     ) noexcept -> Action&
     {
-        ICE_ASSERT_CORE(internal().current_condition != nullptr);
-
-        ice::ucount source_size = ice::size(source);
-        ice::u8 read_from = 0;
-        ice::u8 write_to = 0;
-
-        if (source[source_size - 2] == '.')
-        {
-            source_size -= 2;
-            read_from = source[source_size + 1] - 'x';
-            ICE_ASSERT_CORE(read_from >= 0 && read_from < 3);
-        }
-        if (ice::size(target_axis) == 2 && target_axis[0] == '.')
-        {
-            write_to = target_axis[1] - 'x';
-            ICE_ASSERT_CORE(write_to >= 0 && write_to < 3);
-        }
-
-        ice::array::push_back(internal().current_condition->steps,
-            ActionBuilderStep{
-                .step = step,
-                .source = { internal().allocator, ice::string::substr(source, 0, source_size) },
-                .axis = { read_from, write_to }
-            }
-        );
+        internal().behavior = behavior;
         return *this;
     }
 

@@ -128,6 +128,18 @@ namespace ice
             ice::ucount count_processed = 0;
             ice::ucount const count_events = ice::count(input_events);
 
+            // Reset the temporary events.
+            for (ice::InputActionSourceInputInfo const& src : _sources)
+            {
+                ice::InputActionSource* const values = source_values[src.storage_offset];
+                ice::u32 const count_values = 1 + ice::u32(src.type == InputActionSourceType::Axis2d);
+
+                for (ice::u32 idx = 0; idx < count_values; ++idx)
+                {
+                    values[idx].temp_event = InputActionSourceEvent::None;
+                }
+            }
+
             for (ice::InputActionSourceInputInfo const& src : _sources)
             {
                 ice::InputActionSource* const values = source_values[src.storage_offset];
@@ -160,33 +172,45 @@ namespace ice
 
                 if (ev.value_type == ice::input::InputValueType::Trigger)
                 {
-                    value = { InputActionSourceEvent::Trigger, ev.value.axis.value_f32 };
+                    value = { ev.value.axis.value_f32, InputActionSourceEvent::Trigger };
                 }
                 else if (ev.value_type == ice::input::InputValueType::AxisInt)
                 {
-                    value = { InputActionSourceEvent::Axis, ice::f32(ev.value.axis.value_i32) };
+                    value = { ice::f32(ev.value.axis.value_i32), InputActionSourceEvent::Axis };
                 }
                 else if (ev.value_type == ice::input::InputValueType::AxisFloat)
                 {
                     // Check for deadzone values
                     if (src.param < ev.value.axis.value_f32)
                     {
-                        value = { InputActionSourceEvent::Axis, ev.value.axis.value_f32 };
+                        value = { ev.value.axis.value_f32, InputActionSourceEvent::Axis };
                     }
                     else
                     {
-                        value = { InputActionSourceEvent::AxisDeadzone, ev.value.axis.value_f32 };
+                        value = { ev.value.axis.value_f32, InputActionSourceEvent::AxisDeadzone };
                     }
                 }
-                else
+                else if (value.temp_event != InputActionSourceEvent::KeyPress)
                 {
                     value = {
                         ev.value.button.state.released
+                            ? 0.0f : 1.0f,
+                        ev.value.button.state.released
                             ? InputActionSourceEvent::KeyRelease
                             : InputActionSourceEvent::KeyPress,
-                        ev.value.button.state.released
-                            ? 0.0f : 1.0f,
                     };
+                }
+            }
+
+            // Select the final events.
+            for (ice::InputActionSourceInputInfo const& src : _sources)
+            {
+                ice::InputActionSource* const values = source_values[src.storage_offset];
+                ice::u32 const count_values = 1 + ice::u32(src.type == InputActionSourceType::Axis2d);
+
+                for (ice::u32 idx = 0; idx < count_values; ++idx)
+                {
+                    values[idx].event = ice::exchange(values[idx].temp_event, InputActionSourceEvent::None);
                 }
             }
 
@@ -308,7 +332,7 @@ namespace ice
                     // If the series is not successful, just continue
                     if (series_success == false || runtime->enabled == false)
                     {
-                        // If the action finaly failes, we reset the state so we can again start counting from 0
+                        // If the action finaly fails, we reset the state so we can again start counting from 0
                         runtime->state = 0;
                         runtime->active = false;
                         continue;

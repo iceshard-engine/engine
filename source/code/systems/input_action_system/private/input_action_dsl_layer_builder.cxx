@@ -61,7 +61,8 @@ namespace ice
         }
 
         ice::InputActionBuilder::Source source = _builder->define_source(node.data().name, type);
-        if (arctic::SyntaxNode const binding = node.child<ice::syntax::LayerInputBinding>(); binding)
+        arctic::SyntaxNode binding = node.child<ice::syntax::LayerInputBinding>();
+        while (binding)
         {
             using ice::input::DeviceType;
             using ice::input::KeyboardKey;
@@ -103,6 +104,9 @@ namespace ice
                     source.add_button(mouseinput);
                 }
             }
+
+            // TODO: We need to fix building layers with sources having multiple inputs, before enabling this.
+            binding = binding.sibling<ice::syntax::LayerInputBinding>();
         }
 
         ICE_LOG(LogSeverity::Info, LogTag::Engine, "Source: {}", node.data().name);
@@ -135,17 +139,8 @@ namespace ice
         {
             if (child.type() == ice::syntax::SyntaxEntity_LayerActionCondition)
             {
-                visit_cond(action, child.to<ice::syntax::LayerActionWhen>());
-
-                arctic::SyntaxNode<> steps = child.child();
-                while (steps != false)
-                {
-                    if (steps.type() == ice::syntax::SyntaxEntity_LayerActionStep)
-                    {
-                        visit_step(action, steps.to<ice::syntax::LayerActionStep>());
-                    }
-                    steps = steps.sibling();
-                }
+                // Returns the final node of the series. The next sibling is either a: modifier, condition_series or action
+                child = visit_cond(action.add_condition_series(), child.to<ice::syntax::LayerActionWhen>());
             }
             else if (child.type() == ice::syntax::SyntaxEntity_LayerActionModifier)
             {
@@ -155,60 +150,86 @@ namespace ice
         }
     }
 
-    void InputActionDSLLayerBuilder::visit_cond(
-        ice::InputActionBuilder::Action& action,
+    auto InputActionDSLLayerBuilder::visit_cond(
+        ice::InputActionBuilder::ConditionSeries series,
         arctic::SyntaxNode<ice::syntax::LayerActionWhen> node
-    ) noexcept
+    ) noexcept -> arctic::SyntaxNode<>
     {
         using enum ice::InputActionCondition;
 
-        ice::syntax::LayerActionWhen const& cond = node.to<ice::syntax::LayerActionWhen>().data();
-        ICE_LOG(LogSeverity::Debug, LogTag::Tool, "- {} {}.{} {} {}", cond.type.value, cond.source_type.value, cond.source_name, cond.condition.value, cond.param.value);
+        arctic::SyntaxNode<ice::syntax::LayerActionWhen> cond_node = node;
+        ICE_ASSERT_CORE(cond_node.data().type.type == grammar::UCT_When);
 
-        bool const from_action = cond.source_type.type == grammar::UCT_Action
-            || (cond.source_type.type == arctic::TokenType::Invalid && cond.source_name.empty()); // "self"
-        ice::InputActionCondition const condition = detail::condition_from_dsl(cond.condition, from_action);
-        ice::InputActionConditionFlags flags = InputActionConditionFlags::None;
+        ICE_LOG(LogSeverity::Debug, LogTag::Tool, "New condition series");
+        do
+        {
+            node = cond_node; // Set the node to the current cond_node, necessary to return a valid node
+            ice::syntax::LayerActionWhen const& cond = cond_node.data();
+            ICE_LOG(LogSeverity::Debug, LogTag::Tool, "- {} {}.{} {} {}", cond.type.value, cond.source_type.value, cond.source_name, cond.condition.value, cond.param.value);
 
-        // No siblings or next sibling: "when" == "final" condition.
-        if (auto sib = node.sibling<ice::syntax::LayerActionWhen>(); !sib || sib.data().type.type == grammar::UCT_When)
+            bool const from_action = cond.source_type.type == grammar::UCT_Action
+                || (cond.source_type.type == arctic::TokenType::Invalid && cond.source_name.empty()); // "self"
+            ice::InputActionCondition const condition = detail::condition_from_dsl(cond.condition, from_action);
+
+            ice::InputActionConditionFlags flags = InputActionConditionFlags::None;
+            if (cond_node.child<syntax::LayerActionStep>())
+            {
+                flags |= InputActionConditionFlags::RunSteps;
+            }
+            if (cond.flag_series)
+            {
+                flags |= InputActionConditionFlags::SeriesCheck;
+            }
+
+            if (cond.type.type == grammar::UCT_WhenAnd)
+            {
+                flags |= InputActionConditionFlags::SeriesAnd;
+            }
+            // If we are When or WhenOr, we default to 'SeriesOr'
+            else
+            {
+                flags |= InputActionConditionFlags::SeriesOr;
+            }
+
+            ice::f32 param = 0.0f;
+            bool const is_param_condition = condition == Equal || condition == NotEqual
+                || condition == Greater || condition == GreaterOrEqual
+                || condition == Lower || condition == LowerOrEqual;
+            if (is_param_condition)
+            {
+                ice::from_chars(cond.param.value, param);
+            }
+
+            // Adds the new condition
+            series.add_condition(
+                cond.source_name, condition, flags, param, from_action
+            );
+
+            // Move over all steps defined for this condition
+            arctic::SyntaxNode<> steps = cond_node.child();
+            while (steps != false)
+            {
+                if (steps.type() == ice::syntax::SyntaxEntity_LayerActionStep)
+                {
+                    visit_step(series, steps.to<ice::syntax::LayerActionStep>());
+                }
+                steps = steps.sibling();
+            }
+
+            cond_node = cond_node.sibling<ice::syntax::LayerActionWhen>();
+        } while (cond_node && cond_node.data().type.type != grammar::UCT_When);
+
+        // TODO: Check for '.continue' flag to skip setting 'Final' flag here
+        //if (/* DOES NOT HAVE '.continue' flag */)
         {
-            flags |= InputActionConditionFlags::Final;
-        }
-        if (node.child<syntax::LayerActionStep>()) // Only steps can introduce children.
-        {
-            flags |= InputActionConditionFlags::RunSteps;
-        }
-        if (cond.flag_series)
-        {
-            flags |= InputActionConditionFlags::SeriesCheck;
-        }
-        if (cond.type.type == grammar::UCT_WhenAnd) // Only steps can introduce children.
-        {
-            flags |= InputActionConditionFlags::SeriesAnd;
-        }
-        else // if (cond.type.type == grammar::UCT_WhenOr) // Only steps can introduce children.
-        {
-            flags |= InputActionConditionFlags::SeriesOr;
+            series.set_finished();
         }
 
-        // TODO: SeriesCheck
-        // TODO: non-Final
-
-        ice::f32 param = 0.0f;
-        bool const is_param_condition = condition == Equal || condition == NotEqual
-            || condition == Greater || condition == GreaterOrEqual
-            || condition == Lower || condition == LowerOrEqual;
-        if (is_param_condition)
-        {
-            ice::from_chars(cond.param.value, param);
-        }
-
-        action.add_condition(cond.source_name, condition, flags, param, from_action);
+        return node;
     }
 
     void InputActionDSLLayerBuilder::visit_step(
-        ice::InputActionBuilder::Action& action,
+        ice::InputActionBuilder::ConditionSeries& condition_series,
         arctic::SyntaxNode<ice::syntax::LayerActionStep> node
     ) noexcept
     {
@@ -216,11 +237,11 @@ namespace ice
         ice::InputActionStep const step = detail::step_from_dsl(info.step);
         if (step == InputActionStep::Set || step == InputActionStep::Add || step == InputActionStep::Sub)
         {
-            action.add_step(info.source, step, info.destination);
+            condition_series.add_step(info.source, step, info.destination);
         }
         else
         {
-            action.add_step(step);
+            condition_series.add_step(step);
         }
     }
 
@@ -275,19 +296,19 @@ namespace ice
         {
             result = KeyboardKey::Space;
         }
-        else if (value == "up")
+        else if (ice::compare(value, "up") == CompareResult::Equal)
         {
             result = KeyboardKey::Up;
         }
-        else if (value == "down")
+        else if (ice::compare(value, "down") == CompareResult::Equal)
         {
             result = KeyboardKey::Down;
         }
-        else if (value == "left")
+        else if (ice::compare(value, "left") == CompareResult::Equal)
         {
             result = KeyboardKey::Left;
         }
-        else if (value == "right")
+        else if (ice::compare(value, "right") == CompareResult::Equal)
         {
             result = KeyboardKey::Right;
         }
@@ -327,57 +348,6 @@ namespace ice
         }
         return result;
     }
-
-#if 0
-    auto detail::mod_from_dsl(arctic::String value) noexcept -> ice::input::KeyboardMod
-    {
-        using ice::input::KeyboardMod;
-
-        if (strnicmp(value.data(), "mode", 4) == 0)
-        {
-            return KeyboardMod::Mode;
-        }
-        else if (strnicmp(value.data(), "numlock", 4) == 0)
-        {
-            return KeyboardMod::NumLock;
-        }
-        else if (strnicmp(value.data(), "capslock", 4) == 0)
-        {
-            return KeyboardMod::CapsLock;
-        }
-
-        // If left == 2, if right == 1, else 0
-        KeyboardMod result = KeyboardMod::None;
-        ICE_ASSERT_CORE(value.size() >= 3);
-
-        ice::u8 const mod_side = (value[0] == 'l' ? 2 : (value[0] == 'r' ? 1 : 0));
-        value = value.substr(ice::u32(mod_side != 0)); // We remove the prefix ('l' or 'r') from the remaining value.
-
-        switch (value[0])
-        {
-        case 's':
-        case 'S':
-            result = static_cast<KeyboardMod>(3 ^ mod_side);
-            break;
-        case 'c':
-        case 'C':
-            result = static_cast<KeyboardMod>((3 ^ mod_side) << 2);
-            break;
-        case 'a':
-        case 'A':
-            result = static_cast<KeyboardMod>((3 ^ mod_side) << 4);
-            break;
-        case 'g':
-        case 'G':
-            result = static_cast<KeyboardMod>((3 ^ mod_side) << 8);
-            break;
-        default:
-            break;
-        }
-
-        return result;
-    }
-#endif
 
     auto detail::mouse_from_dsl(arctic::String value) noexcept -> ice::input::MouseInput
     {

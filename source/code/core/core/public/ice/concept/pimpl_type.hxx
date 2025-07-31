@@ -26,9 +26,9 @@ namespace ice::concepts
 
         // TODO: Move this somewhere else!
         PimplType(PimplType&& other) noexcept = delete;
-        auto operator=(PimplType&& other) noexcept -> PimplType & = delete;
+        auto operator=(PimplType&& other) noexcept -> PimplType& = delete;
         PimplType(PimplType const& other) noexcept = delete;
-        auto operator=(PimplType const& other) noexcept -> PimplType & = delete;
+        auto operator=(PimplType const& other) noexcept -> PimplType& = delete;
 
     protected:
         template<typename Self>
@@ -51,4 +51,4 @@ namespace ice::concepts
         return *reinterpret_cast<Internal<Self>*>(self._internal);
     }
 
-}
+} // namespace ice::concepts

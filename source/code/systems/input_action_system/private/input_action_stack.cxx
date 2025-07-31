@@ -188,10 +188,15 @@ namespace ice
 
                 // Save the index where we store the runtime value(s)
                 ice::hashmap::set(_sources, source_name_hash, { values_index });
-            }
 
-            // Stores the index for the source
-            ice::array::push_back(_layers_sources_indices, values_index);
+                // Stores the index for the source
+                ice::array::push_back(_layers_sources_indices, values_index);
+
+                if (source.type == InputActionSourceType::Axis2d)
+                {
+                    ice::array::push_back(_layers_sources_indices, values_index);
+                }
+            }
         }
 
         // Go through each resource and assing the pointers.

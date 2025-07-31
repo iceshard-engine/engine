@@ -17,13 +17,13 @@ namespace ice
         void visit_source(arctic::SyntaxNode<ice::syntax::LayerSource> node) noexcept;
         void visit_layer(arctic::SyntaxNode<ice::syntax::LayerAction> node) noexcept;
 
-        void visit_cond(
-            ice::InputActionBuilder::Action& action,
+        auto visit_cond(
+            ice::InputActionBuilder::ConditionSeries series,
             arctic::SyntaxNode<ice::syntax::LayerActionWhen> node
-        ) noexcept;
+        ) noexcept -> arctic::SyntaxNode<>;
 
         void visit_step(
-            ice::InputActionBuilder::Action& action,
+            ice::InputActionBuilder::ConditionSeries& condition_series,
             arctic::SyntaxNode<ice::syntax::LayerActionStep> node
         ) noexcept;
 

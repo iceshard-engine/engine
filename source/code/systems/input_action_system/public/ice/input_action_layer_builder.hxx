@@ -19,7 +19,7 @@ namespace ice
 
         //! \brief Builder for input action conditions. Allows to define conditions and steps of an input action. Used
         //!   to drive the logic of an action.
-        class ActionCondition;
+        class ConditionSeries;
 
         //! \brief Utility base class is a pimpl type.
         using BuilderBase = ice::concepts::PimplType;
@@ -32,7 +32,7 @@ namespace ice
     public:
         using BuilderBase::BuilderBase;
 
-        virtual ~Layer() noexcept = default;
+        virtual ~Layer() = default;
 
         virtual auto set_name(
             ice::String name
@@ -58,8 +58,6 @@ namespace ice
     public:
         using BuilderBase::BuilderBase;
 
-        ~Source() noexcept = default;
-
         auto add_key(ice::input::KeyboardKey key) noexcept -> Source&;
         auto add_keymod(ice::input::KeyboardMod keymod) noexcept -> Source&;
         auto add_button(ice::input::MouseInput button) noexcept -> Source&;
@@ -68,14 +66,12 @@ namespace ice
         auto add_axis(ice::input::ControllerInput button) noexcept -> Source&;
     };
 
-    class InputActionBuilder::Action : public BuilderBase
+    class InputActionBuilder::ConditionSeries : public BuilderBase
     {
     public:
         using BuilderBase::BuilderBase;
 
-        ~Action() noexcept = default;
-
-        auto set_behavior(ice::InputActionBehavior behavior) noexcept -> Action&;
+        void set_finished(bool can_finalize_condition_checks = true) noexcept;
 
         auto add_condition(
             ice::String source,
@@ -83,16 +79,28 @@ namespace ice
             ice::InputActionConditionFlags flags = InputActionConditionFlags::None,
             ice::f32 param = 0.0f,
             bool from_action = false
-        ) noexcept -> Action&;
+        ) noexcept -> ConditionSeries&;
+
+        auto add_step(
+            ice::InputActionStep step
+        ) noexcept -> ConditionSeries&;
 
         auto add_step(
             ice::String source,
             ice::InputActionStep step,
             ice::String target_axis = ".x"
-        ) noexcept -> Action&;
+        ) noexcept -> ConditionSeries&;
+    };
 
-        auto add_step(
-            ice::InputActionStep step
+    class InputActionBuilder::Action : public BuilderBase
+    {
+    public:
+        using BuilderBase::BuilderBase;
+
+        auto add_condition_series() noexcept -> ConditionSeries;
+
+        auto set_behavior(
+            ice::InputActionBehavior behavior
         ) noexcept -> Action&;
 
         auto add_modifier(

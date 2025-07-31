@@ -26,7 +26,7 @@ namespace ice
         void build_content() noexcept override;
 
     private:
-        ice::Allocator& _allocator;
+        ice::ProxyAllocator _allocator;
         ice::InputActionStack* _stack;
         ice::UniquePtr<ice::InputActionLayer> _layer;
     };

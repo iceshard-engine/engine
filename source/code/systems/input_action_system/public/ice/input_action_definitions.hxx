@@ -40,11 +40,11 @@ namespace ice
 
         //! \brief \copybrief KeyPress
         //! \note Alias more suitable for controllers.
-        ButonPress = KeyPress,
+        ButtonPress = KeyPress,
 
         //! \brief \copybrief KeyRelease
         //! \note Alias more suitable for controllers.
-        ButonRelease = KeyRelease,
+        ButtonRelease = KeyRelease,
 
         //! \brief Input source was updated by a controller trigger. (can represent any one-dimensional floating point input)
         Trigger,
@@ -67,20 +67,22 @@ namespace ice
     //! \todo Try to remove the 23bit padding.
     struct InputActionSource
     {
-        //! \brief The type of the event that triggered a value change for this source.
-        //! \note It might be possible for multiple events of different types, to trigger an event.
-        ice::InputActionSourceEvent event;
-
-        //! \brief Tracks if the value actually changed between the action events.
-        //! \note Since multiple events can trigger a value change, we want to act only once for multiple buttons.
-        //bool changed;
-
-        // 2 bytes of padding (23 bits in reality due to unused bool bits, 7 + 16)
-
         //! \brief The value of the input source.
         //! \details See \see InputActionSourceInfo::type for details.
         ice::f32 value;
+
+        //! \brief The most recent event that triggered a value change for this source.
+        //! \note It might be possible for multiple events of different types, to trigger an event.
+        ice::InputActionSourceEvent temp_event;
+
+        //! \brief The final type of the event that triggered a value change for this source.
+        //! \note It might be possible for multiple events of different types, to trigger an event.
+        ice::InputActionSourceEvent event;
+
+        // 2 bytes of padding
     };
+
+    static_assert(sizeof(InputActionSource) == 8);
 
     //! \brief Runtime representation of an action, required to handle internal state and value changes.
     struct InputActionRuntime : ice::InputAction
