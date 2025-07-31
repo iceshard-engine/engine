@@ -1,8 +1,8 @@
 #pragma once
+#include <ice/base.hxx>
 #include <arctic/arctic_token.hxx>
 #include <arctic/arctic_syntax_node_types.hxx>
 #include <arctic/arctic_syntax_entity.hxx>
-#include <ice/base.hxx>
 
 namespace ice::syntax
 {

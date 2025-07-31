@@ -11,25 +11,19 @@
 namespace ice
 {
 
-    struct ActionInputParserEvents;
+    struct ActionInputParserEvents : arctic::SyntaxVisitorGroup<ice::syntax::Layer>
+    {
+        void visit(arctic::SyntaxNode<> node) noexcept override final
+        {
+            SyntaxVisitorGroup::visit(node);
+        }
+
+        void visit(arctic::SyntaxNode<ice::syntax::Layer> node) noexcept override = 0;
+    };
 
     bool parse_action_input_definition(
         ice::String definition,
         ice::ActionInputParserEvents& handler
     ) noexcept;
-
-    using ActionInputParserEventsBase = arctic::SyntaxVisitorGroup<
-        ice::syntax::Layer
-    >;
-
-    struct ActionInputParserEvents : ice::ActionInputParserEventsBase
-    {
-        void visit(arctic::SyntaxNode<> node) noexcept override final
-        {
-            ActionInputParserEventsBase::visit(node);
-        }
-
-        void visit(arctic::SyntaxNode<ice::syntax::Layer> node) noexcept override = 0;
-    };
 
 } // namespace ice

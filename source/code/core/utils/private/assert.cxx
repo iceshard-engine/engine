@@ -56,7 +56,7 @@ namespace ice::detail
             header_buffer_raw,
             128,
             LogFormat_AssertLineHeader,
-            fmt::localtime(std::time(nullptr))
+            ice::detail::local_time()
         );
 
         if (LogState::minimal_header_length < format_result.size)

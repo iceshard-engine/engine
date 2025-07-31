@@ -17,11 +17,11 @@ namespace ice
         //! \brief Builder for input actions. Allows to define an action, along with it's conditions and modifiers.
         class Action;
 
-        //! \brief Builder for input action conditions. Allows to define conditions and steps of an input action. Used
-        //!   to drive the logic of an action.
+        //! \brief Builder for input action condition series. Defines multiple conditions with steps to run when
+        //!   evaluated as 'true'.
         class ConditionSeries;
 
-        //! \brief Utility base class is a pimpl type.
+        //! \brief Utility base class for Builder types.
         using BuilderBase = ice::concepts::PimplType;
     };
 

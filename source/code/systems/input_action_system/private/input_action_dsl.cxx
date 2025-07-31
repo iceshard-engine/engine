@@ -48,16 +48,18 @@ namespace ice
         arctic::TokenType type;
     };
 
+    using TokenType = ice::asl::TokenType;
+
     static constexpr ice::TokenInfo Constant_Tokens[]{
-        { "action", ice::grammar::UCT_Action },
+        { "action", TokenType::ASL_KW_Action },
         { "active", ice::grammar::UCT_WhenActive },
         { "activate", ice::grammar::UCT_StepActivate },
         //{ "accumulated", ice::grammar::UCT_ActionFlagAccumulated },
         { "deactivate", ice::grammar::UCT_StepDeactivate },
         { "and", ice::grammar::UCT_WhenAnd },
-        { "axis1d", ice::grammar::UCT_InputTypeAxis1D },
-        { "axis2d", ice::grammar::UCT_InputTypeAxis2D },
-        { "axis3d", ice::grammar::UCT_InputTypeAxis3D },
+        { "axis1d", TokenType::ASL_NT_Axis1D },
+        { "axis2d", TokenType::ASL_NT_Axis2D },
+        { "axis3d", TokenType::ASL_NT_Axis3D },
         { "bool", ice::grammar::UCT_ActionTypeBool },
         { "button", ice::grammar::UCT_InputTypeButton },
         { "inactive", ice::grammar::UCT_WhenInactive },
@@ -77,13 +79,13 @@ namespace ice
         { "mp", ice::grammar::UCT_InputBindingMouse },
         { "gamepad", ice::grammar::UCT_InputBindingPad },
         { "gp", ice::grammar::UCT_InputBindingPad },
-        { "layer", ice::grammar::UCT_Layer },
+        { "layer", TokenType::ASL_KW_Layer },
         { "object", ice::grammar::UCT_ActionTypeObject },
         { "or", ice::grammar::UCT_WhenOr },
         { "once", ice::grammar::UCT_ActionFlagOnce },
         { "pressed", ice::grammar::UCT_WhenPressed },
         { "released", ice::grammar::UCT_WhenReleased },
-        { "source", ice::grammar::UCT_Source },
+        { "source", TokenType::ASL_KW_Source },
         { "toggled", ice::grammar::UCT_ActionFlagToggled },
         { "toggle", ice::grammar::UCT_StepToggle },
         { "when", ice::grammar::UCT_When },

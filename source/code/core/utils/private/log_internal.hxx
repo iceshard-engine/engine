@@ -10,6 +10,7 @@
 #include <ice/log.hxx>
 
 #include <fmt/format.h>
+#include <fmt/chrono.h>
 
 namespace ice::detail
 {
@@ -135,5 +136,21 @@ namespace ice::detail
 
         "DEBG",
     };
+
+#if ISP_WEBAPP || ISP_ANDROID
+    auto local_time() noexcept -> std::tm
+    {
+        std::chrono::system_clock::time_point const now = std::chrono::system_clock::now();
+        std::time_t const current_time = std::chrono::system_clock::to_time_t(now);
+        std::tm const* localtime = std::localtime(&current_time);
+        return *localtime;
+    }
+#else
+    auto local_time() noexcept
+    {
+        static auto const current_timezone = std::chrono::current_zone();
+        return current_timezone->to_local(std::chrono::system_clock::now());
+    }
+#endif
 
 } // namespace ice::detail

@@ -8,6 +8,8 @@
 namespace ice
 {
 
+    using TokenType = ice::asl::TokenType;
+
     namespace detail
     {
 
@@ -56,8 +58,8 @@ namespace ice
         switch(node.data().type.type)
         {
         case ice::grammar::UCT_InputTypeButton: type = InputActionSourceType::Button; break;
-        case ice::grammar::UCT_InputTypeAxis1D: type = InputActionSourceType::Axis1d; break;
-        case ice::grammar::UCT_InputTypeAxis2D: type = InputActionSourceType::Axis2d; break;
+        case TokenType::ASL_NT_Axis1D: type = InputActionSourceType::Axis1d; break;
+        case TokenType::ASL_NT_Axis2D: type = InputActionSourceType::Axis2d; break;
         }
 
         ice::InputActionBuilder::Source source = _builder->define_source(node.data().name, type);
@@ -167,7 +169,7 @@ namespace ice
             ice::syntax::LayerActionWhen const& cond = cond_node.data();
             ICE_LOG(LogSeverity::Debug, LogTag::Tool, "- {} {}.{} {} {}", cond.type.value, cond.source_type.value, cond.source_name, cond.condition.value, cond.param.value);
 
-            bool const from_action = cond.source_type.type == grammar::UCT_Action
+            bool const from_action = cond.source_type.type == TokenType::ASL_KW_Action
                 || (cond.source_type.type == arctic::TokenType::Invalid && cond.source_name.empty()); // "self"
             ice::InputActionCondition const condition = detail::condition_from_dsl(cond.condition, from_action);
 
