@@ -27,9 +27,9 @@ namespace ice::grammar
     };
 
     static constexpr SyntaxRule Rule_LayerSourceBindingDeviceRules[]{
-        SyntaxRule{ UCT_InputBindingKeyboard },
-        SyntaxRule{ UCT_InputBindingMouse },
-        SyntaxRule{ UCT_InputBindingPad },
+        SyntaxRule{ TokenType::ASL_KW_Controller },
+        SyntaxRule{ TokenType::ASL_KW_Keyboard },
+        SyntaxRule{ TokenType::ASL_KW_Mouse },
     };
 
     static constexpr SyntaxRule Rule_LayerSourceBindingRules[]{ // ': <dev>.<src>' or ', <dev>.<src>'
@@ -40,7 +40,7 @@ namespace ice::grammar
     };
 
     static constexpr SyntaxRule Rule_LayerInputTypeRules[]{ // button, axis1d, axis2d or axis3d
-        SyntaxRule{ UCT_InputTypeButton },
+        SyntaxRule{ TokenType::ASL_NT_Button },
         SyntaxRule{ TokenType::ASL_NT_Axis1D },
         SyntaxRule{ TokenType::ASL_NT_Axis2D },
         SyntaxRule{ TokenType::ASL_NT_Axis3D },
@@ -98,11 +98,11 @@ namespace ice::grammar
     };
 
     static constexpr SyntaxRule Rule_LayerActionStepBuiltInListRules[]{
-        SyntaxRule{ UCT_StepActivate },
-        SyntaxRule{ UCT_StepDeactivate },
-        SyntaxRule{ UCT_StepToggle },
-        SyntaxRule{ UCT_StepReset },
-        SyntaxRule{ UCT_StepTime },
+        SyntaxRule{ TokenType::ASL_OP_Activate },
+        SyntaxRule{ TokenType::ASL_OP_Deactivate },
+        SyntaxRule{ TokenType::ASL_OP_Toggle },
+        SyntaxRule{ TokenType::ASL_OP_Reset },
+        SyntaxRule{ TokenType::ASL_OP_Time },
     };
 
     static constexpr SyntaxRule Rule_LayerActionStepArithmeticOperationRules[]{
@@ -152,10 +152,10 @@ namespace ice::grammar
     };
 
     static constexpr SyntaxRule Rule_LayerActionWhenTargetActionConditionListRules[]{
-        SyntaxRule{ UCT_WhenPressed },
-        SyntaxRule{ UCT_WhenReleased },
-        SyntaxRule{ UCT_WhenActive },
-        SyntaxRule{ UCT_WhenInactive },
+        SyntaxRule{ TokenType::ASL_OP_IsPressed },
+        SyntaxRule{ TokenType::ASL_OP_IsReleased },
+        SyntaxRule{ TokenType::ASL_OP_IsActive },
+        SyntaxRule{ TokenType::ASL_OP_IsInactive },
         SyntaxRule{ TokenType::KW_True },
     };
 
@@ -190,28 +190,27 @@ namespace ice::grammar
     };
 
     static constexpr SyntaxRule Rule_LayerActionWhenBlockRules[]{
-        SyntaxRule{ UCT_When },
-        SyntaxRule{ UCT_WhenAnd },
-        SyntaxRule{ UCT_WhenOr },
+        SyntaxRule{ TokenType::ASL_KW_When },
+        SyntaxRule{ TokenType::ASL_KW_WhenAnd },
+        SyntaxRule{ TokenType::ASL_KW_WhenOr },
     };
 
     static constexpr SyntaxRule Rule_LayerActionFlagsListRules[]{
-        SyntaxRule{ UCT_ActionFlagOnce, &syntax::LayerAction::flag_once },
-        SyntaxRule{ UCT_ActionFlagToggled, &syntax::LayerAction::flag_toggled },
-        //SyntaxRule{ UCT_ActionFlagAccumulated, &syntax::LayerAction::flag_accumulated },
+        SyntaxRule{ TokenType::ASL_KWF_Once, &syntax::LayerAction::flag_once },
+        SyntaxRule{ TokenType::ASL_KWF_Toggled, &syntax::LayerAction::flag_toggled },
     };
 
     static constexpr SyntaxRule Rule_LayerActionFlagsRules[]{
-        SyntaxRule{ grammar::TokenType::CT_Comma },
+        SyntaxRule{ TokenType::CT_Comma },
         SyntaxRule{ Rule_LayerActionFlagsListRules, MatchFirst }
     };
 
     static constexpr SyntaxRule Rule_LayerActionWhenFlagsListRules[]{
-        SyntaxRule{ UCT_WhenFlagCheckSeries, &syntax::LayerActionWhen::flag_series }
+        SyntaxRule{ TokenType::ASL_KWF_CheckSeries, &syntax::LayerActionWhen::flag_series }
     };
 
     static constexpr SyntaxRule Rule_LayerActionWhenFlagsRules[]{
-        SyntaxRule{ grammar::TokenType::CT_Comma },
+        SyntaxRule{ TokenType::CT_Comma },
         SyntaxRule{ Rule_LayerActionWhenFlagsListRules, MatchFirst }
     };
 
@@ -240,12 +239,12 @@ namespace ice::grammar
         SyntaxRule{ TokenType::OP_Mul },
         SyntaxRule{ TokenType::OP_Plus },
         SyntaxRule{ TokenType::OP_Minus },
-        SyntaxRule{ UCT_ModifierOpMin },
-        SyntaxRule{ UCT_ModifierOpMax },
+        SyntaxRule{ TokenType::ASL_OP_Min },
+        SyntaxRule{ TokenType::ASL_OP_Max },
     };
 
     static constexpr SyntaxRule Rule_LayerActionModifierRules[]{
-        SyntaxRule{ UCT_Modifier },
+        SyntaxRule{ TokenType::ASL_KW_Modifier },
         SyntaxRule{ Rule_LayerActionModifierComponentRules, MatchAll },
         SyntaxRule{ Rule_LayerActionModifierOperationListRules, MatchFirst, &syntax::LayerActionModifier::operation },
         SyntaxRule{ Rule_LayerActionWhenParamNumberTokenListRules, MatchFirst, &syntax::LayerActionModifier::param },
@@ -257,11 +256,11 @@ namespace ice::grammar
     ////////////////////////////////////////////////////////////////
 
     static constexpr SyntaxRule Rule_LayerActionTypeRules[]{ // button, axis1d, axis2d or axis3d
-        SyntaxRule{ UCT_ActionTypeBool },
-        SyntaxRule{ UCT_ActionTypeFloat1 },
-        SyntaxRule{ UCT_ActionTypeFloat2 },
-        SyntaxRule{ UCT_ActionTypeFloat3 },
-        SyntaxRule{ UCT_ActionTypeObject },
+        SyntaxRule{ TokenType::ASL_NT_Bool },
+        SyntaxRule{ TokenType::ASL_NT_Float1 },
+        SyntaxRule{ TokenType::ASL_NT_Float2 },
+        SyntaxRule{ TokenType::ASL_NT_Float3 },
+        SyntaxRule{ TokenType::ASL_NT_Object },
     };
 
     static constexpr SyntaxRule Rule_LayerActionRules[]{ // action <name>: <native_type>

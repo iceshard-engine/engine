@@ -57,9 +57,10 @@ namespace ice
         ice::InputActionSourceType type = InputActionSourceType::Key;
         switch(node.data().type.type)
         {
-        case ice::grammar::UCT_InputTypeButton: type = InputActionSourceType::Button; break;
+        case TokenType::ASL_NT_Button: type = InputActionSourceType::Button; break;
         case TokenType::ASL_NT_Axis1D: type = InputActionSourceType::Axis1d; break;
         case TokenType::ASL_NT_Axis2D: type = InputActionSourceType::Axis2d; break;
+        default: ICE_ASSERT_CORE(false); type = InputActionSourceType::Axis2d; break;
         }
 
         ice::InputActionBuilder::Source source = _builder->define_source(node.data().name, type);
@@ -71,25 +72,15 @@ namespace ice
             using ice::input::KeyboardMod;
             using ice::input::MouseInput;
 
-            if (binding.data().device.type == ice::grammar::UCT_InputBindingKeyboard)
+            if (binding.data().device.type == TokenType::ASL_KW_Keyboard)
             {
                 ICE_ASSERT_CORE(type == InputActionSourceType::Key || type == InputActionSourceType::Button);
 
-                //ice::u64 const valsize = binding.data().device.value.size();
-                //if (binding.data().device.value[valsize / 2] == 'm')
-                //{
-                //    KeyboardMod const mod = detail::mod_from_dsl(binding.data().source);
-                //    ICE_ASSERT_CORE(mod != KeyboardMod::None);
-                //    source.add_keymod(mod);
-                //}
-                //else
-                {
-                    KeyboardKey const key = detail::key_from_dsl(binding.data().source);
-                    ICE_ASSERT_CORE(key != KeyboardKey::Unknown);
-                    source.add_key(key);
-                }
+                KeyboardKey const key = detail::key_from_dsl(binding.data().source);
+                ICE_ASSERT_CORE(key != KeyboardKey::Unknown);
+                source.add_key(key);
             }
-            else if (binding.data().device.type == ice::grammar::UCT_InputBindingMouse)
+            else if (binding.data().device.type == TokenType::ASL_KW_Mouse)
             {
                 MouseInput const mouseinput = detail::mouse_from_dsl(binding.data().source);
                 ICE_ASSERT_CORE(
@@ -160,7 +151,7 @@ namespace ice
         using enum ice::InputActionCondition;
 
         arctic::SyntaxNode<ice::syntax::LayerActionWhen> cond_node = node;
-        ICE_ASSERT_CORE(cond_node.data().type.type == grammar::UCT_When);
+        ICE_ASSERT_CORE(cond_node.data().type.type == TokenType::ASL_KW_When);
 
         ICE_LOG(LogSeverity::Debug, LogTag::Tool, "New condition series");
         do
@@ -183,7 +174,7 @@ namespace ice
                 flags |= InputActionConditionFlags::SeriesCheck;
             }
 
-            if (cond.type.type == grammar::UCT_WhenAnd)
+            if (cond.type.type == TokenType::ASL_KW_WhenAnd)
             {
                 flags |= InputActionConditionFlags::SeriesAnd;
             }
@@ -219,7 +210,7 @@ namespace ice
             }
 
             cond_node = cond_node.sibling<ice::syntax::LayerActionWhen>();
-        } while (cond_node && cond_node.data().type.type != grammar::UCT_When);
+        } while (cond_node && cond_node.data().type.type != TokenType::ASL_KW_When);
 
         // TODO: Check for '.continue' flag to skip setting 'Final' flag here
         //if (/* DOES NOT HAVE '.continue' flag */)
@@ -379,10 +370,10 @@ namespace ice
         switch (token.type)
         {
             // Action conditions
-        case grammar::UCT_ActionTypeBool: return InputActionDataType::Bool;
-        case grammar::UCT_ActionTypeFloat1: return InputActionDataType::Float1;
-        case grammar::UCT_ActionTypeFloat2: return InputActionDataType::Float2;
-        case grammar::UCT_ActionTypeObject: return InputActionDataType::ActionObject;
+        case TokenType::ASL_NT_Bool: return InputActionDataType::Bool;
+        case TokenType::ASL_NT_Float1: return InputActionDataType::Float1;
+        case TokenType::ASL_NT_Float2: return InputActionDataType::Float2;
+        case TokenType::ASL_NT_Object: return InputActionDataType::ActionObject;
         default: ICE_ASSERT_CORE(false); return InputActionDataType::Invalid;
         }
     }
@@ -392,19 +383,19 @@ namespace ice
         switch(token.type)
         {
             // Action conditions
-        case grammar::UCT_WhenPressed: return InputActionCondition::Pressed;
-        case grammar::UCT_WhenReleased: return InputActionCondition::Released;
-        case grammar::UCT_WhenActive: return action_condition ? InputActionCondition::ActionToggleActive : InputActionCondition::Active;
-        case grammar::UCT_WhenInactive: return InputActionCondition::ActionToggleInactive;
+        case TokenType::ASL_OP_IsPressed: return InputActionCondition::Pressed;
+        case TokenType::ASL_OP_IsReleased: return InputActionCondition::Released;
+        case TokenType::ASL_OP_IsActive: return action_condition ? InputActionCondition::ActionToggleActive : InputActionCondition::Active;
+        case TokenType::ASL_OP_IsInactive: return InputActionCondition::ActionToggleInactive;
             // Arithmetic conditions
-        case arctic::TokenType::OP_Equal: return InputActionCondition::Equal;
-        case arctic::TokenType::OP_NotEqual: return InputActionCondition::NotEqual; // TODO
-        case arctic::TokenType::OP_Greater: return InputActionCondition::Greater;
-        case arctic::TokenType::OP_GreaterOrEqual: return InputActionCondition::GreaterOrEqual;
-        case arctic::TokenType::OP_Less: return InputActionCondition::Lower;
-        case arctic::TokenType::OP_LessOrEqual: return InputActionCondition::LowerOrEqual;
+        case TokenType::OP_Equal: return InputActionCondition::Equal;
+        case TokenType::OP_NotEqual: return InputActionCondition::NotEqual; // TODO
+        case TokenType::OP_Greater: return InputActionCondition::Greater;
+        case TokenType::OP_GreaterOrEqual: return InputActionCondition::GreaterOrEqual;
+        case TokenType::OP_Less: return InputActionCondition::Lower;
+        case TokenType::OP_LessOrEqual: return InputActionCondition::LowerOrEqual;
             // Special conditions
-        case arctic::TokenType::KW_True: return InputActionCondition::AlwaysTrue;
+        case TokenType::KW_True: return InputActionCondition::AlwaysTrue;
         default: ICE_ASSERT_CORE(false); return InputActionCondition::Invalid;
         }
     }
@@ -413,15 +404,15 @@ namespace ice
     {
         switch(token.type)
         {
-        case grammar::UCT_StepActivate: return InputActionStep::Activate;
-        case grammar::UCT_StepDeactivate: return InputActionStep::Deactivate;
-        case grammar::UCT_StepToggle: return InputActionStep::Toggle;
-        case grammar::UCT_StepReset: return InputActionStep::Reset;
-        case grammar::UCT_StepTime: return InputActionStep::Time;
+        case TokenType::ASL_OP_Activate: return InputActionStep::Activate;
+        case TokenType::ASL_OP_Deactivate: return InputActionStep::Deactivate;
+        case TokenType::ASL_OP_Toggle: return InputActionStep::Toggle;
+        case TokenType::ASL_OP_Reset: return InputActionStep::Reset;
+        case TokenType::ASL_OP_Time: return InputActionStep::Time;
             // Arithmetic steps
-        case arctic::TokenType::OP_Assign: return InputActionStep::Set;
-        case arctic::TokenType::OP_Plus: return InputActionStep::Add;
-        case arctic::TokenType::OP_Minus: return InputActionStep::Sub;
+        case TokenType::OP_Assign: return InputActionStep::Set;
+        case TokenType::OP_Plus: return InputActionStep::Add;
+        case TokenType::OP_Minus: return InputActionStep::Sub;
         default: ICE_ASSERT_CORE(false); break;
         }
         return InputActionStep::Invalid;
@@ -431,13 +422,13 @@ namespace ice
     {
         switch (token.type)
         {
-        case grammar::UCT_ModifierOpMax: return InputActionModifier::Max;
-        case arctic::TokenType::OP_Div: return InputActionModifier::Div;
+        case TokenType::ASL_OP_Max: return InputActionModifier::Max;
+        case TokenType::OP_Div: return InputActionModifier::Div;
             // Not implemented yet
-        case grammar::UCT_ModifierOpMin:
-        case arctic::TokenType::OP_Mul:
-        case arctic::TokenType::OP_Plus:
-        case arctic::TokenType::OP_Minus:
+        case TokenType::ASL_OP_Min:
+        case TokenType::OP_Mul:
+        case TokenType::OP_Plus:
+        case TokenType::OP_Minus:
         default: ICE_ASSERT_CORE("Not Implemented!" && false); return InputActionModifier::Invalid;
         }
     }

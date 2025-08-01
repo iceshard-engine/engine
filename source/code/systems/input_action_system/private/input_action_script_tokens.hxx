@@ -14,49 +14,55 @@ namespace ice::asl
     {
         using enum arctic::TokenType;
 
+        // General ASL keywords
         static constexpr arctic::TokenType ASL_KW_Layer{ ASLT_Keywords + 0 };
         static constexpr arctic::TokenType ASL_KW_Source{ ASLT_Keywords + 1 };
         static constexpr arctic::TokenType ASL_KW_Action{ ASLT_Keywords + 2 };
+        static constexpr arctic::TokenType ASL_KW_Modifier{ ASLT_Keywords + 3 };
 
-        static constexpr arctic::TokenType ASL_OP_Pressed{ ASLT_Operators + 0 };
-        static constexpr arctic::TokenType ASL_OP_Released{ ASLT_Operators + 1 };
-        static constexpr arctic::TokenType ASL_OP_Active{ ASLT_Operators + 2 };
-        static constexpr arctic::TokenType ASL_OP_Inactive{ ASLT_Operators + 3 };
+        static constexpr arctic::TokenType ASL_KW_When{ ASLT_Keywords + 4 };
+        static constexpr arctic::TokenType ASL_KW_WhenAnd{ ASLT_Keywords + 5 };
+        static constexpr arctic::TokenType ASL_KW_WhenOr{ ASLT_Keywords + 6 };
 
+        // Keywords for Device types
+        static constexpr arctic::TokenType ASL_KW_Mouse{ ASLT_Keywords + 10 };
+        static constexpr arctic::TokenType ASL_KW_Keyboard{ ASLT_Keywords + 11 };
+        static constexpr arctic::TokenType ASL_KW_Controller{ ASLT_Keywords + 12 };
+
+        // Keywords for Action and Condition flags
+        static constexpr arctic::TokenType ASL_KWF_Once{ ASLT_Keywords + 20 };
+        static constexpr arctic::TokenType ASL_KWF_Toggled{ ASLT_Keywords + 21 };
+        static constexpr arctic::TokenType ASL_KWF_CheckSeries{ ASLT_Keywords + 22 };
+
+        // Condition operators (checks)
+        static constexpr arctic::TokenType ASL_OP_IsPressed{ ASLT_Operators + 0 };
+        static constexpr arctic::TokenType ASL_OP_IsReleased{ ASLT_Operators + 1 };
+        static constexpr arctic::TokenType ASL_OP_IsActive{ ASLT_Operators + 2 };
+        static constexpr arctic::TokenType ASL_OP_IsInactive{ ASLT_Operators + 3 };
+
+        // Step operators (actions)
+        static constexpr arctic::TokenType ASL_OP_Activate{ ASLT_Operators + 10 };
+        static constexpr arctic::TokenType ASL_OP_Deactivate{ ASLT_Operators + 11 };
+        static constexpr arctic::TokenType ASL_OP_Toggle{ ASLT_Operators + 12 };
+        static constexpr arctic::TokenType ASL_OP_Reset{ ASLT_Operators + 13 };
+        static constexpr arctic::TokenType ASL_OP_Time{ ASLT_Operators + 14 };
+
+        // Modifier operators
+        static constexpr arctic::TokenType ASL_OP_Min{ ASLT_Operators + 20 };
+        static constexpr arctic::TokenType ASL_OP_Max{ ASLT_Operators + 21 };
+
+        // Native types representing input source
         static constexpr arctic::TokenType ASL_NT_Axis1D{ ASLT_NativeTypes + 0 };
         static constexpr arctic::TokenType ASL_NT_Axis2D{ ASLT_NativeTypes + 1 };
         static constexpr arctic::TokenType ASL_NT_Axis3D{ ASLT_NativeTypes + 2 };
+        static constexpr arctic::TokenType ASL_NT_Button{ ASLT_NativeTypes + 3 };
+
+        // Native types representing outputs
+        static constexpr arctic::TokenType ASL_NT_Bool{ ASLT_NativeTypes + 10 };
+        static constexpr arctic::TokenType ASL_NT_Float1{ ASLT_NativeTypes + 11 };
+        static constexpr arctic::TokenType ASL_NT_Float2{ ASLT_NativeTypes + 12 };
+        static constexpr arctic::TokenType ASL_NT_Float3{ ASLT_NativeTypes + 13 };
+        static constexpr arctic::TokenType ASL_NT_Object{ ASLT_NativeTypes + 14 };
     };
-
-
-    static constexpr ice::u32 UCT_Base = ASLT_Base;
-    static constexpr arctic::TokenType UCT_InputTypeButton{ UCT_Base + 2 };
-    static constexpr arctic::TokenType UCT_InputBindingKeyboard{ UCT_Base + 6 };
-    static constexpr arctic::TokenType UCT_InputBindingMouse{ UCT_Base + 7 };
-    static constexpr arctic::TokenType UCT_InputBindingPad{ UCT_Base + 8 };
-    static constexpr arctic::TokenType UCT_ActionTypeBool{ UCT_Base + 10 };
-    static constexpr arctic::TokenType UCT_ActionTypeFloat1{ UCT_Base + 11 };
-    static constexpr arctic::TokenType UCT_ActionTypeFloat2{ UCT_Base + 12 };
-    static constexpr arctic::TokenType UCT_ActionTypeFloat3{ UCT_Base + 13 };
-    static constexpr arctic::TokenType UCT_ActionTypeObject{ UCT_Base + 14 };
-    static constexpr arctic::TokenType UCT_ActionFlagOnce{ UCT_Base + 15 };
-    static constexpr arctic::TokenType UCT_ActionFlagToggled{ UCT_Base + 16 };
-    //static constexparctic::r TokenType UCT_ActionFlagAccumulated{ UCT_Base + 17 };
-    static constexpr arctic::TokenType UCT_When{ UCT_Base + 18 };
-    static constexpr arctic::TokenType UCT_WhenAnd{ UCT_Base + 19 };
-    static constexpr arctic::TokenType UCT_WhenOr{ UCT_Base + 20 };
-    static constexpr arctic::TokenType UCT_WhenPressed{ UCT_Base + 21 };
-    static constexpr arctic::TokenType UCT_WhenReleased{ UCT_Base + 22 };
-    static constexpr arctic::TokenType UCT_WhenActive{ UCT_Base + 23 };
-    static constexpr arctic::TokenType UCT_WhenInactive{ UCT_Base + 24 };
-    static constexpr arctic::TokenType UCT_WhenFlagCheckSeries{ UCT_Base + 25 };
-    static constexpr arctic::TokenType UCT_StepActivate{ UCT_Base + 26 };
-    static constexpr arctic::TokenType UCT_StepDeactivate{ UCT_Base + 27 };
-    static constexpr arctic::TokenType UCT_StepToggle{ UCT_Base + 28 };
-    static constexpr arctic::TokenType UCT_StepReset{ UCT_Base + 29 };
-    static constexpr arctic::TokenType UCT_StepTime{ UCT_Base + 30 };
-    static constexpr arctic::TokenType UCT_Modifier{ UCT_Base + 31 };
-    static constexpr arctic::TokenType UCT_ModifierOpMin{ UCT_Base + 32 };
-    static constexpr arctic::TokenType UCT_ModifierOpMax{ UCT_Base + 33 };
 
 } // namespace ice::asl
