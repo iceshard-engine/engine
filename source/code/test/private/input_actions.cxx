@@ -167,6 +167,21 @@ namespace ice
         co_return;
     }
 
+    auto evname(InputActionSourceEvent ev) -> char const*
+    {
+        switch(ev)
+        {
+            using enum InputActionSourceEvent;
+        case None: return "-";
+        case Trigger: return "trigger";
+        case ButtonPress: return "pressed";
+        case ButtonRelease: return "released";
+        case Axis: return "axis";
+        case AxisDeadzone: return "deadzone";
+        default: return "?";
+        }
+    }
+
     void InputActionsTrait::build_content() noexcept
     {
         ImGui::SeparatorText(ice::string::begin(_layer->name()));
@@ -187,7 +202,7 @@ namespace ice
             }
             else
             {
-                ImGui::TextT("Source: {}, value:{}", _layer->source_name(source_info), source.value);
+                ImGui::TextT("Source: {}, value:{} ({})", _layer->source_name(source_info), source.value, evname(source.event));
             }
         }
         ImGui::SeparatorText("Actions");

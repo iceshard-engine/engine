@@ -66,6 +66,7 @@
         '-Werror'
         // We use [[deprecated]] to keep track of some old API usage without the need to fix them asap.
         '-Wno-error=deprecated-declarations'
+        '-Wno-#pragma-messages'
         // Currently added to not fail on small issues
         '-Wno-unused-private-field'
         '-Wno-unused-const-variable'

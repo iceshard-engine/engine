@@ -210,7 +210,7 @@ namespace ice
 
                 for (ice::u32 idx = 0; idx < count_values; ++idx)
                 {
-                    values[idx].event = ice::exchange(values[idx].temp_event, InputActionSourceEvent::None);
+                    values[idx].event = values[idx].temp_event;
                 }
             }
 
@@ -448,7 +448,7 @@ namespace ice
     ) noexcept -> ice::UniquePtr<ice::InputActionLayer>
     {
         InputActionDSLLayerBuilder dsl_builder{ ice::create_input_action_layer_builder(alloc, "") };
-        if (ice::parse_action_input_definition(definition, dsl_builder))
+        if (ice::asl::parse_action_input_definition(alloc, definition, dsl_builder))
         {
             return dsl_builder.finalize(alloc);
         }

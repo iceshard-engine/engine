@@ -1,5 +1,5 @@
 #pragma once
-#include <ice/base.hxx>
+#include <ice/sort.hxx>
 #include <arctic/arctic_token.hxx>
 
 namespace ice::asl
@@ -64,5 +64,63 @@ namespace ice::asl
         static constexpr arctic::TokenType ASL_NT_Float3{ ASLT_NativeTypes + 13 };
         static constexpr arctic::TokenType ASL_NT_Object{ ASLT_NativeTypes + 14 };
     };
+
+    struct TokenDefinition
+    {
+        arctic::TokenType type;
+        arctic::String value;
+    };
+
+    static constexpr std::array<ice::asl::TokenDefinition, 36> Constant_TokenDefinitionsUnsorted{
+        TokenDefinition{ TokenType::ASL_KW_Action, "action" },
+        TokenDefinition{ TokenType::ASL_KW_Controller, "gamepad" },
+        TokenDefinition{ TokenType::ASL_KW_Controller, "gp" },
+        TokenDefinition{ TokenType::ASL_KW_Keyboard, "kb" },
+        TokenDefinition{ TokenType::ASL_KW_Keyboard, "key" },
+        TokenDefinition{ TokenType::ASL_KW_Layer, "layer" },
+        TokenDefinition{ TokenType::ASL_KW_Modifier, "mod" },
+        TokenDefinition{ TokenType::ASL_KW_Mouse, "mouse" },
+        TokenDefinition{ TokenType::ASL_KW_Mouse, "mp" },
+        TokenDefinition{ TokenType::ASL_KW_Source, "source" },
+        TokenDefinition{ TokenType::ASL_KW_When, "when" },
+        TokenDefinition{ TokenType::ASL_KW_WhenAnd, "and" },
+        TokenDefinition{ TokenType::ASL_KW_WhenOr, "or" },
+        TokenDefinition{ TokenType::ASL_KWF_CheckSeries, "series" },
+        TokenDefinition{ TokenType::ASL_KWF_Once, "once" },
+        TokenDefinition{ TokenType::ASL_KWF_Toggled, "toggled" },
+        TokenDefinition{ TokenType::ASL_NT_Axis1D, "axis1d" },
+        TokenDefinition{ TokenType::ASL_NT_Axis2D, "axis2d" },
+        TokenDefinition{ TokenType::ASL_NT_Axis3D, "axis3d" },
+        TokenDefinition{ TokenType::ASL_NT_Bool, "bool" },
+        TokenDefinition{ TokenType::ASL_NT_Button, "button" },
+        TokenDefinition{ TokenType::ASL_NT_Float1, "float1" },
+        TokenDefinition{ TokenType::ASL_NT_Float2, "float2" },
+        TokenDefinition{ TokenType::ASL_NT_Float3, "float3" },
+        TokenDefinition{ TokenType::ASL_NT_Object, "object" },
+        TokenDefinition{ TokenType::ASL_OP_Activate, "activate" },
+        TokenDefinition{ TokenType::ASL_OP_Deactivate, "deactivate" },
+        TokenDefinition{ TokenType::ASL_OP_IsActive, "active" },
+        TokenDefinition{ TokenType::ASL_OP_IsInactive, "inactive" },
+        TokenDefinition{ TokenType::ASL_OP_IsPressed, "pressed" },
+        TokenDefinition{ TokenType::ASL_OP_IsReleased, "released" },
+        TokenDefinition{ TokenType::ASL_OP_Max, "max" },
+        TokenDefinition{ TokenType::ASL_OP_Min, "min" },
+        TokenDefinition{ TokenType::ASL_OP_Reset, "reset" },
+        TokenDefinition{ TokenType::ASL_OP_Time, "time" },
+        TokenDefinition{ TokenType::ASL_OP_Toggle, "toggle" },
+    };
+
+    constexpr auto operator<=>(ice::asl::TokenDefinition left, ice::asl::TokenDefinition right) noexcept
+    {
+        return left.value <=> right.value;
+    }
+
+    constexpr bool operator==(ice::asl::TokenDefinition left, ice::asl::TokenDefinition right) noexcept
+    {
+        return left.value == right.value;
+    }
+
+    static constexpr std::array<ice::asl::TokenDefinition, 36> Constant_TokenDefinitions
+        = ice::constexpr_sort_stdarray(Constant_TokenDefinitionsUnsorted, 0);
 
 } // namespace ice::asl

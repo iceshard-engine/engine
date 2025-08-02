@@ -1,4 +1,4 @@
-#include "input_action_dsl_grammar.hxx"
+#include "input_action_script_grammar.hxx"
 #include "input_action_dsl_layer_builder.hxx"
 
 #include <ice/string_utils.hxx>
@@ -32,7 +32,7 @@ namespace ice
     {
     }
 
-    void InputActionDSLLayerBuilder::visit(arctic::SyntaxNode<ice::syntax::Layer> node) noexcept
+    void InputActionDSLLayerBuilder::visit(arctic::SyntaxNode<ice::asl::Layer> node) noexcept
     {
         ICE_LOG(LogSeverity::Info, LogTag::Engine, "Layer: {}", node.data().name);
         _builder->set_name(node.data().name);
@@ -40,19 +40,19 @@ namespace ice
         arctic::SyntaxNode<> child = node.child();
         while (child != false)
         {
-            if (child.type() == ice::syntax::SyntaxEntity_LayerSource)
+            if (child.type() == ice::asl::SyntaxEntity::ASL_D_LayerSource)
             {
-                visit_source(child.to<ice::syntax::LayerSource>());
+                visit_source(child.to<ice::asl::LayerSource>());
             }
-            else if (child.type() == ice::syntax::SyntaxEntity_LayerAction)
+            else if (child.type() == ice::asl::SyntaxEntity::ASL_D_LayerAction)
             {
-                visit_layer(child.to<ice::syntax::LayerAction>());
+                visit_layer(child.to<ice::asl::LayerAction>());
             }
             child = child.sibling();
         }
     }
 
-    void InputActionDSLLayerBuilder::visit_source(arctic::SyntaxNode<ice::syntax::LayerSource> node) noexcept
+    void InputActionDSLLayerBuilder::visit_source(arctic::SyntaxNode<ice::asl::LayerSource> node) noexcept
     {
         ice::InputActionSourceType type = InputActionSourceType::Key;
         switch(node.data().type.type)
@@ -64,7 +64,7 @@ namespace ice
         }
 
         ice::InputActionBuilder::Source source = _builder->define_source(node.data().name, type);
-        arctic::SyntaxNode binding = node.child<ice::syntax::LayerInputBinding>();
+        arctic::SyntaxNode binding = node.child<ice::asl::LayerSourceBinding>();
         while (binding)
         {
             using ice::input::DeviceType;
@@ -99,15 +99,15 @@ namespace ice
             }
 
             // TODO: We need to fix building layers with sources having multiple inputs, before enabling this.
-            binding = binding.sibling<ice::syntax::LayerInputBinding>();
+            binding = binding.sibling<ice::asl::LayerSourceBinding>();
         }
 
         ICE_LOG(LogSeverity::Info, LogTag::Engine, "Source: {}", node.data().name);
     }
 
-    void InputActionDSLLayerBuilder::visit_layer(arctic::SyntaxNode<ice::syntax::LayerAction> node) noexcept
+    void InputActionDSLLayerBuilder::visit_layer(arctic::SyntaxNode<ice::asl::LayerAction> node) noexcept
     {
-        ice::syntax::LayerAction const& action_info = node.data();
+        ice::asl::LayerAction const& action_info = node.data();
         ice::InputActionDataType const action_datatype = detail::datatype_from_dsl(action_info.type);
 
         ICE_LOG(LogSeverity::Info, LogTag::Engine, "Action: {}", action_info.name);
@@ -130,14 +130,14 @@ namespace ice
         arctic::SyntaxNode<> child = node.child();
         while(child != false)
         {
-            if (child.type() == ice::syntax::SyntaxEntity_LayerActionCondition)
+            if (child.type() == ice::asl::SyntaxEntity::ASL_E_LayerActionCondition)
             {
                 // Returns the final node of the series. The next sibling is either a: modifier, condition_series or action
-                child = visit_cond(action.add_condition_series(), child.to<ice::syntax::LayerActionWhen>());
+                child = visit_cond(action.add_condition_series(), child.to<ice::asl::LayerActionCondition>());
             }
-            else if (child.type() == ice::syntax::SyntaxEntity_LayerActionModifier)
+            else if (child.type() == ice::asl::SyntaxEntity::ASL_E_LayerActionModifier)
             {
-                visit_mod(action, child.to<ice::syntax::LayerActionModifier>());
+                visit_mod(action, child.to<ice::asl::LayerActionModifier>());
             }
             child = child.sibling();
         }
@@ -145,19 +145,19 @@ namespace ice
 
     auto InputActionDSLLayerBuilder::visit_cond(
         ice::InputActionBuilder::ConditionSeries series,
-        arctic::SyntaxNode<ice::syntax::LayerActionWhen> node
+        arctic::SyntaxNode<ice::asl::LayerActionCondition> node
     ) noexcept -> arctic::SyntaxNode<>
     {
         using enum ice::InputActionCondition;
 
-        arctic::SyntaxNode<ice::syntax::LayerActionWhen> cond_node = node;
+        arctic::SyntaxNode<ice::asl::LayerActionCondition> cond_node = node;
         ICE_ASSERT_CORE(cond_node.data().type.type == TokenType::ASL_KW_When);
 
         ICE_LOG(LogSeverity::Debug, LogTag::Tool, "New condition series");
         do
         {
             node = cond_node; // Set the node to the current cond_node, necessary to return a valid node
-            ice::syntax::LayerActionWhen const& cond = cond_node.data();
+            ice::asl::LayerActionCondition const& cond = cond_node.data();
             ICE_LOG(LogSeverity::Debug, LogTag::Tool, "- {} {}.{} {} {}", cond.type.value, cond.source_type.value, cond.source_name, cond.condition.value, cond.param.value);
 
             bool const from_action = cond.source_type.type == TokenType::ASL_KW_Action
@@ -165,7 +165,7 @@ namespace ice
             ice::InputActionCondition const condition = detail::condition_from_dsl(cond.condition, from_action);
 
             ice::InputActionConditionFlags flags = InputActionConditionFlags::None;
-            if (cond_node.child<syntax::LayerActionStep>())
+            if (cond_node.child<asl::LayerActionStep>())
             {
                 flags |= InputActionConditionFlags::RunSteps;
             }
@@ -202,14 +202,14 @@ namespace ice
             arctic::SyntaxNode<> steps = cond_node.child();
             while (steps != false)
             {
-                if (steps.type() == ice::syntax::SyntaxEntity_LayerActionStep)
+                if (steps.type() == ice::asl::SyntaxEntity::ASL_E_LayerActionStep)
                 {
-                    visit_step(series, steps.to<ice::syntax::LayerActionStep>());
+                    visit_step(series, steps.to<ice::asl::LayerActionStep>());
                 }
                 steps = steps.sibling();
             }
 
-            cond_node = cond_node.sibling<ice::syntax::LayerActionWhen>();
+            cond_node = cond_node.sibling<ice::asl::LayerActionCondition>();
         } while (cond_node && cond_node.data().type.type != TokenType::ASL_KW_When);
 
         // TODO: Check for '.continue' flag to skip setting 'Final' flag here
@@ -223,10 +223,10 @@ namespace ice
 
     void InputActionDSLLayerBuilder::visit_step(
         ice::InputActionBuilder::ConditionSeries& condition_series,
-        arctic::SyntaxNode<ice::syntax::LayerActionStep> node
+        arctic::SyntaxNode<ice::asl::LayerActionStep> node
     ) noexcept
     {
-        ice::syntax::LayerActionStep const& info = node.data();
+        ice::asl::LayerActionStep const& info = node.data();
         ice::InputActionStep const step = detail::step_from_dsl(info.step);
         if (step == InputActionStep::Set || step == InputActionStep::Add || step == InputActionStep::Sub)
         {
@@ -240,10 +240,10 @@ namespace ice
 
     void InputActionDSLLayerBuilder::visit_mod(
         ice::InputActionBuilder::Action& action,
-        arctic::SyntaxNode<ice::syntax::LayerActionModifier> node
+        arctic::SyntaxNode<ice::asl::LayerActionModifier> node
     ) noexcept
     {
-        ice::syntax::LayerActionModifier const& info = node.data();
+        ice::asl::LayerActionModifier const& info = node.data();
         ice::InputActionModifier const modifier = detail::modifier_from_dsl(info.operation);
 
         ice::f32 param_value = 0.0f;

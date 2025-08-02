@@ -259,6 +259,19 @@ namespace ice
             // Prepare data of all sources
             for (Internal<InputActionBuilder::Source> const& source : _sources)
             {
+                if (ice::hashmap::empty(source.events))
+                {
+                    ice::array::push_back(final_sources,
+                        InputActionSourceInputInfo{
+                            .name = { ice::u16(ice::size(strings)), ice::u16(ice::size(source.name)) },
+                            .input = ice::input::InputID::Invalid,
+                            .type = source.type,
+                            .storage_offset = count_storage_values,
+                            .param = 0.0f,
+                        }
+                    );
+                }
+
                 for (ice::input::InputID input_event : source.events)
                 {
                     ice::array::push_back(final_sources,
