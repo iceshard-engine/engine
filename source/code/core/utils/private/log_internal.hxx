@@ -137,7 +137,7 @@ namespace ice::detail
         "DEBG",
     };
 
-#if ISP_WEBAPP || ISP_ANDROID
+#if ISP_WEBAPP || ISP_ANDROID || ISP_LINUX
     auto local_time() noexcept -> std::tm
     {
         std::chrono::system_clock::time_point const now = std::chrono::system_clock::now();
