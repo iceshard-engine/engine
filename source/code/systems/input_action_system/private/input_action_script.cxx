@@ -64,6 +64,8 @@ namespace ice::asl
             .location = location
         };
 
+        ICE_LOG(LogSeverity::Debug, LogTag::Core, "{}", word.value[0] == '\n' ? "<nl>" : word.value);
+
         ice::ucount idx;
         ice::asl::TokenDefinition const needle{ .value = word.value };
         if (ice::binary_search(ice::span::from_std_const(Constant_TokenDefinitions), needle, idx))
@@ -95,7 +97,7 @@ namespace ice::asl
         );
 
         std::unique_ptr<arctic::Parser> parser = arctic::create_default_parser(
-            { .rules = ice::asl::grammar::Rule_GlobalRules }
+            { .rules = ice::asl::grammar::ScriptRules }
         );
 
         arctic::SyntaxVisitor* visitors[]{ &handler };

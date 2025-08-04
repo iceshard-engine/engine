@@ -51,6 +51,11 @@ namespace ice::asl
         static constexpr arctic::TokenType ASL_OP_Min{ ASLT_Operators + 20 };
         static constexpr arctic::TokenType ASL_OP_Max{ ASLT_Operators + 21 };
 
+        // Get axis component operators
+        static constexpr arctic::TokenType ASL_OP_CmpX{ ASLT_Operators + 30 };
+        static constexpr arctic::TokenType ASL_OP_CmpY{ ASLT_Operators + 31 };
+        static constexpr arctic::TokenType ASL_OP_CmpZ{ ASLT_Operators + 32 };
+
         // Native types representing input source
         static constexpr arctic::TokenType ASL_NT_Axis1D{ ASLT_NativeTypes + 0 };
         static constexpr arctic::TokenType ASL_NT_Axis2D{ ASLT_NativeTypes + 1 };

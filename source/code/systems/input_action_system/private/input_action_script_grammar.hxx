@@ -1,7 +1,6 @@
 #pragma once
 #include "input_action_script_syntax_data.hxx"
 #include "input_action_script_tokens.hxx"
-
 #include <arctic/arctic_token.hxx>
 #include <arctic/arctic_syntax_rule_matchers.hxx>
 
@@ -15,6 +14,12 @@ namespace ice::asl::grammar
 
     struct TokenList
     {
+
+        static constexpr SyntaxRule NumberTypes[]{
+            SyntaxRule{ TokenType::CT_Number },
+            SyntaxRule{ TokenType::CT_NumberFloat },
+        };
+
         static constexpr SyntaxRule DeviceKeywords[]{
             SyntaxRule{ TokenType::ASL_KW_Controller },
             SyntaxRule{ TokenType::ASL_KW_Keyboard },
@@ -39,6 +44,14 @@ namespace ice::asl::grammar
             SyntaxRule{ TokenType::ASL_OP_Toggle },
             SyntaxRule{ TokenType::ASL_OP_Reset },
             SyntaxRule{ TokenType::ASL_OP_Time },
+        };
+
+        static constexpr SyntaxRule ActionTypes[]{ // button, axis1d, axis2d or axis3d
+            SyntaxRule{ TokenType::ASL_NT_Bool },
+            SyntaxRule{ TokenType::ASL_NT_Float1 },
+            SyntaxRule{ TokenType::ASL_NT_Float2 },
+            SyntaxRule{ TokenType::ASL_NT_Float3 },
+            SyntaxRule{ TokenType::ASL_NT_Object },
         };
 
         static constexpr SyntaxRule StepValueOperations[]{
@@ -125,7 +138,7 @@ namespace ice::asl::grammar
         static constexpr SyntaxRule Rules[]{
             SyntaxRule{ TokenType::CT_Colon },
             SyntaxRule{ SourceBindingInfo, MatchAll },
-            SyntaxRule{ SourceBindingNext, MatchSibling<LayerSourceBinding> }.optional().repeat()
+            SyntaxRule{ SourceBindingNext, MatchSibling<LayerSourceBinding> }.optional().repeat(),
         };
     };
 
@@ -143,17 +156,17 @@ namespace ice::asl::grammar
             SyntaxRule{ SymbolType::FullName, MatchAll }
         };
 
-        static constexpr SyntaxRule OperationList[]{ // button, axis1d, axis2d or axis3d
+        static constexpr SyntaxRule OperationList[]{
             SyntaxRule{ CommandOperation, MatchAll },
             SyntaxRule{ ArithmeticOperation, MatchAll },
         };
 
-        static constexpr SyntaxRule Operation[]{
+        static constexpr SyntaxRule Rules[]{
             // If we don't end up using the destination string it's fine
             //   but we require the '.' character to be used when setting destinations via builder.
             SyntaxRule{ TokenType::CT_Dot, &LayerActionStep::destination },
-            SyntaxRule{ OperationList, MatchFirst }, // TODO: Capture,
-            SyntaxRule{ TokenType::ST_EndOfLine },
+            SyntaxRule{ OperationList, MatchFirst },
+            SyntaxRule{ TokenType::ST_EndOfLine }, // We need to start and end with newlines
         };
     };
 
@@ -161,201 +174,148 @@ namespace ice::asl::grammar
     {
         using SymbolType = Symbol<&LayerActionCondition::source_name, &LayerActionCondition::source_type>;
 
-        static constexpr SyntaxRule ConditionAndOr[]{
+        static constexpr SyntaxRule StateCheck[]{
+            SyntaxRule{ TokenType::ASL_OP_IsPressed },
+            SyntaxRule{ TokenType::ASL_OP_IsReleased },
+            SyntaxRule{ TokenType::ASL_OP_IsActive },
+            SyntaxRule{ TokenType::ASL_OP_IsInactive },
+            SyntaxRule{ TokenType::KW_True },
+        };
+
+        static constexpr SyntaxRule ValueConditions[]{
+            SyntaxRule{ TokenType::OP_Equal },
+            SyntaxRule{ TokenType::OP_NotEqual },
+            SyntaxRule{ TokenType::OP_Less },
+            SyntaxRule{ TokenType::OP_LessOrEqual },
+            SyntaxRule{ TokenType::OP_Greater },
+            SyntaxRule{ TokenType::OP_GreaterOrEqual },
+        };
+
+        static constexpr SyntaxRule ValueCheck[]{
+            SyntaxRule{ TokenList::XYZ, MatchFirst, &LayerActionCondition::source_name, arctic::SyntaxRule::store_value_extend<arctic::String> },
+            SyntaxRule{ ValueConditions, MatchFirst, &LayerActionCondition::condition },
+            SyntaxRule{ TokenList::NumberTypes, MatchFirst, &LayerActionCondition::param }
+        };
+
+        static constexpr SyntaxRule ConditionChecks[]{
+            SyntaxRule{ StateCheck, MatchFirst, &LayerActionCondition::condition },
+            SyntaxRule{ ValueCheck, MatchAll },
+        };
+
+        static constexpr SyntaxRule ConditionExpression[]{
+            SyntaxRule{ TokenType::CT_Dot },
+            SyntaxRule{ ConditionChecks, MatchFirst },
+        };
+
+        static constexpr SyntaxRule FlagList[]{
+            SyntaxRule{ TokenType::ASL_KWF_CheckSeries, &LayerActionCondition::flag_series }
+        };
+
+        static constexpr SyntaxRule ConditionFlags[]{
+            SyntaxRule{ TokenType::CT_Comma },
+            SyntaxRule{ FlagList, MatchFirst },
+            SyntaxRule{ TokenType::ST_EndOfLine }.noadvance(),
+        };
+
+        static constexpr SyntaxRule AndOrTokens[]{
             SyntaxRule{ TokenType::ASL_KW_WhenAnd },
             SyntaxRule{ TokenType::ASL_KW_WhenOr },
         };
 
-        static constexpr SyntaxRule ConditionStart[]{
+        static constexpr SyntaxRule WhenCondition[]{
             SyntaxRule{ TokenType::ASL_KW_When, &LayerActionCondition::type },
+            SyntaxRule{ SymbolType::NameWithCategory, MatchAll }.optional(),
+            SyntaxRule{ ConditionExpression, MatchAll },
+        };
+
+        static constexpr SyntaxRule AndOrCondition[]{
+            SyntaxRule{ AndOrTokens, MatchFirst, &LayerActionCondition::type },
             SyntaxRule{ SymbolType::NameWithCategory, MatchAll },
+            SyntaxRule{ ConditionExpression, MatchAll },
+        };
+
+        static auto internal_condition_matcher(
+            arctic::SyntaxRule const&,
+            arctic::MatchContext& ctx
+        ) noexcept -> arctic::ParseState;
+
+        static constexpr SyntaxRule Rules[]{
+            SyntaxRule{ internal_condition_matcher }.optional().repeat().noadvance()
+        };
+    };
+
+    struct Modifier
+    {
+        static constexpr SyntaxRule Rule_LayerActionModifierComponentRules[]{
+            SyntaxRule{ TokenType::CT_Dot, &LayerActionModifier::component },
+            SyntaxRule{ TokenList::XYZ, MatchFirst, &LayerActionModifier::component, arctic::SyntaxRule::store_value_extend<arctic::String> }
+        };
+
+        static constexpr SyntaxRule Rule_LayerActionModifierOperationListRules[]{
+            SyntaxRule{ TokenType::OP_Div },
+            SyntaxRule{ TokenType::OP_Mul },
+            SyntaxRule{ TokenType::OP_Plus },
+            SyntaxRule{ TokenType::OP_Minus },
+            SyntaxRule{ TokenType::ASL_OP_Min },
+            SyntaxRule{ TokenType::ASL_OP_Max },
+        };
+
+        static constexpr SyntaxRule Rules[]{
+            SyntaxRule{ TokenType::ASL_KW_Modifier },
+            SyntaxRule{ Rule_LayerActionModifierComponentRules, MatchAll },
+            SyntaxRule{ Rule_LayerActionModifierOperationListRules, MatchFirst, &LayerActionModifier::operation },
+            SyntaxRule{ TokenList::NumberTypes, MatchFirst, &LayerActionModifier::param },
+            SyntaxRule{ TokenType::ST_EndOfLine },
+        };
+    };
+
+    struct Action
+    {
+        static constexpr SyntaxRule ActionFlagList[]{
+            SyntaxRule{ TokenType::ASL_KWF_Once, &LayerAction::flag_once },
+            SyntaxRule{ TokenType::ASL_KWF_Toggled, &LayerAction::flag_toggled },
+        };
+
+        static constexpr SyntaxRule ActionFlags[]{
+            SyntaxRule{ TokenType::CT_Comma },
+            SyntaxRule{ ActionFlagList, MatchFirst },
+        };
+
+        static constexpr SyntaxRule Rules[]{
+            SyntaxRule{ TokenType::ASL_KW_Action },
+            SyntaxRule{ TokenType::CT_Symbol, &LayerAction::name },
+            SyntaxRule{ TokenType::CT_Colon },
+            SyntaxRule{ TokenList::ActionTypes, MatchFirst, &LayerAction::type },
+            SyntaxRule{ ActionFlags, MatchAll }.optional(),
+            SyntaxRule{ TokenType::ST_EndOfLine }.repeat(),
+            SyntaxRule{ Condition::Rules, MatchAll }.optional(),
+            SyntaxRule{ Modifier::Rules, MatchChild<LayerActionModifier> }.repeat().optional(),
         };
     };
 
     struct Definition
     {
-        static constexpr SyntaxRule LayerSource[]{
+        static constexpr SyntaxRule LayerSourceRules[]{
             SyntaxRule{ TokenType::ASL_KW_Source },
             SyntaxRule{ TokenList::InputNativeTypes, MatchFirst, &LayerSource::type },
             SyntaxRule{ TokenType::CT_Symbol, &LayerSource::name },
             SyntaxRule{ SourceBinding::Rules, MatchChild<LayerSourceBinding> }.optional(),
-            SyntaxRule{ TokenType::ST_EndOfLine },
+            SyntaxRule{ TokenType::ST_EndOfLine }.repeat(),
+        };
+
+        static constexpr SyntaxRule LayerRules[]{
+            SyntaxRule{ TokenType::ASL_KW_Layer },
+            SyntaxRule{ TokenType::CT_Symbol, &Layer::name },
+            SyntaxRule{ TokenType::CT_Colon },
+            SyntaxRule{ TokenType::ST_EndOfLine }.repeat(),
+            SyntaxRule{ LayerSourceRules, MatchChild<LayerSource> }.repeat().optional(),
+            SyntaxRule{ Action::Rules, MatchChild<LayerAction> }.repeat().optional(),
         };
     };
 
-    ////////////////////////////////////////////////////////////////
-    // Action utility rules
-    ////////////////////////////////////////////////////////////////
-
-
-    ////////////////////////////////////////////////////////////////
-    // Action Step rules
-    ////////////////////////////////////////////////////////////////
-
-
-    static constexpr SyntaxRule Rule_LayerActionStepRules[]{
-        // If we don't end up using the destination string it's fine
-        //   but we require the '.' character to be used when setting destinations via builder.
-        SyntaxRule{ TokenType::CT_Dot, &LayerActionStep::destination },
-        SyntaxRule{ ActionStep::Operation, MatchFirst }, // TODO: Capture,
-        SyntaxRule{ TokenType::ST_EndOfLine }.repeat(),
-    };
-
-    ////////////////////////////////////////////////////////////////
-    // Action Condition rules
-    ////////////////////////////////////////////////////////////////
-
-    static constexpr SyntaxRule Rule_LayerActionWhenTargetTypeRules[]{
-        SyntaxRule{ TokenType::ASL_KW_Source },
-        SyntaxRule{ TokenType::ASL_KW_Action },
-    };
-
-    static constexpr SyntaxRule Rule_LayerActionWhenTargetExplicitRules[]{
-        SyntaxRule{ Rule_LayerActionWhenTargetTypeRules, MatchFirst, &LayerActionCondition::source_type },
-        SyntaxRule{ TokenType::CT_Dot },
-    };
-
-    static constexpr SyntaxRule Rule_LayerActionWhenTargetRules[]{
-        SyntaxRule{ Rule_LayerActionWhenTargetExplicitRules, MatchAll }.optional(),
-        SyntaxRule{ TokenType::CT_Symbol, &LayerActionCondition::source_name }.optional(), // Capture name
-    };
-
-    static constexpr SyntaxRule Rule_LayerActionWhenTargetActionConditionListRules[]{
-        SyntaxRule{ TokenType::ASL_OP_IsPressed },
-        SyntaxRule{ TokenType::ASL_OP_IsReleased },
-        SyntaxRule{ TokenType::ASL_OP_IsActive },
-        SyntaxRule{ TokenType::ASL_OP_IsInactive },
-        SyntaxRule{ TokenType::KW_True },
-    };
-
-    static constexpr SyntaxRule Rule_LayerActionWhenTargetComparisonListRules[]{
-        SyntaxRule{ TokenType::OP_Equal },
-        SyntaxRule{ TokenType::OP_NotEqual },
-        SyntaxRule{ TokenType::OP_Less },
-        SyntaxRule{ TokenType::OP_LessOrEqual },
-        SyntaxRule{ TokenType::OP_Greater },
-        SyntaxRule{ TokenType::OP_GreaterOrEqual },
-    };
-
-    static constexpr SyntaxRule Rule_LayerActionWhenParamNumberTokenListRules[]{
-        SyntaxRule{ TokenType::CT_Number },
-        SyntaxRule{ TokenType::CT_NumberFloat },
-    };
-
-    static constexpr SyntaxRule Rule_LayerActionWhenTargetComponentRules[]{
-        SyntaxRule{ TokenList::XYZ, MatchFirst, &LayerActionCondition::source_name, arctic::SyntaxRule::store_value_extend<arctic::String> },
-        SyntaxRule{ Rule_LayerActionWhenTargetComparisonListRules, MatchFirst, &LayerActionCondition::condition },
-        SyntaxRule{ Rule_LayerActionWhenParamNumberTokenListRules, MatchFirst, &LayerActionCondition::param }
-    };
-
-    static constexpr SyntaxRule Rule_LayerActionWhenTargetActionConditionRules[]{
-        SyntaxRule{ Rule_LayerActionWhenTargetActionConditionListRules, MatchFirst, &LayerActionCondition::condition },
-        SyntaxRule{ Rule_LayerActionWhenTargetComponentRules, MatchAll },
-    };
-
-    static constexpr SyntaxRule Rule_LayerActionWhenTargetActionRules[]{
-        SyntaxRule{ TokenType::CT_Dot },
-        SyntaxRule{ Rule_LayerActionWhenTargetActionConditionRules, MatchFirst }, // TODO: Capture,
-    };
-
-    static constexpr SyntaxRule Rule_LayerActionWhenBlockRules[]{
-        SyntaxRule{ TokenType::ASL_KW_When },
-        SyntaxRule{ TokenType::ASL_KW_WhenAnd },
-        SyntaxRule{ TokenType::ASL_KW_WhenOr },
-    };
-
-    static constexpr SyntaxRule Rule_LayerActionFlagsListRules[]{
-        SyntaxRule{ TokenType::ASL_KWF_Once, &LayerAction::flag_once },
-        SyntaxRule{ TokenType::ASL_KWF_Toggled, &LayerAction::flag_toggled },
-    };
-
-    static constexpr SyntaxRule Rule_LayerActionFlagsRules[]{
-        SyntaxRule{ TokenType::CT_Comma },
-        SyntaxRule{ Rule_LayerActionFlagsListRules, MatchFirst }
-    };
-
-    static constexpr SyntaxRule Rule_LayerActionWhenFlagsListRules[]{
-        SyntaxRule{ TokenType::ASL_KWF_CheckSeries, &LayerActionCondition::flag_series }
-    };
-
-    static constexpr SyntaxRule Rule_LayerActionWhenFlagsRules[]{
-        SyntaxRule{ TokenType::CT_Comma },
-        SyntaxRule{ Rule_LayerActionWhenFlagsListRules, MatchFirst }
-    };
-
-    static constexpr SyntaxRule Rule_LayerActionWhenRules[]{
-        // Just to create the child node we need to succeed once.
-        SyntaxRule{ [](auto const&, auto& ctx) noexcept{ return arctic::ParseState::Success; } }.noadvance(),
-        SyntaxRule{ Rule_LayerActionWhenBlockRules, MatchFirst, &LayerActionCondition::type },
-        SyntaxRule{ Rule_LayerActionWhenTargetRules, MatchAll },
-        SyntaxRule{ Rule_LayerActionWhenTargetActionRules, MatchAll },
-        SyntaxRule{ Rule_LayerActionWhenFlagsRules, MatchAll }.optional(),
-        SyntaxRule{ TokenType::ST_EndOfLine }.repeat(),
-        SyntaxRule{ ActionStep::Operation, MatchChild<LayerActionStep> }.optional().repeat(),
-    };
-
-    ////////////////////////////////////////////////////////////////
-    // Action modifier rules
-    ////////////////////////////////////////////////////////////////
-
-    static constexpr SyntaxRule Rule_LayerActionModifierComponentRules[]{
-        SyntaxRule{ TokenType::CT_Dot, &LayerActionModifier::component },
-        SyntaxRule{ TokenList::XYZ, MatchFirst, &LayerActionModifier::component, arctic::SyntaxRule::store_value_extend<arctic::String> }
-    };
-
-    static constexpr SyntaxRule Rule_LayerActionModifierOperationListRules[]{
-        SyntaxRule{ TokenType::OP_Div },
-        SyntaxRule{ TokenType::OP_Mul },
-        SyntaxRule{ TokenType::OP_Plus },
-        SyntaxRule{ TokenType::OP_Minus },
-        SyntaxRule{ TokenType::ASL_OP_Min },
-        SyntaxRule{ TokenType::ASL_OP_Max },
-    };
-
-    static constexpr SyntaxRule Rule_LayerActionModifierRules[]{
-        SyntaxRule{ TokenType::ASL_KW_Modifier },
-        SyntaxRule{ Rule_LayerActionModifierComponentRules, MatchAll },
-        SyntaxRule{ Rule_LayerActionModifierOperationListRules, MatchFirst, &LayerActionModifier::operation },
-        SyntaxRule{ Rule_LayerActionWhenParamNumberTokenListRules, MatchFirst, &LayerActionModifier::param },
-        SyntaxRule{ TokenType::ST_EndOfLine }.repeat(),
-    };
-
-    ////////////////////////////////////////////////////////////////
-    // Action rules
-    ////////////////////////////////////////////////////////////////
-
-    static constexpr SyntaxRule Rule_LayerActionTypeRules[]{ // button, axis1d, axis2d or axis3d
-        SyntaxRule{ TokenType::ASL_NT_Bool },
-        SyntaxRule{ TokenType::ASL_NT_Float1 },
-        SyntaxRule{ TokenType::ASL_NT_Float2 },
-        SyntaxRule{ TokenType::ASL_NT_Float3 },
-        SyntaxRule{ TokenType::ASL_NT_Object },
-    };
-
-    static constexpr SyntaxRule Rule_LayerActionRules[]{ // action <name>: <native_type>
-        SyntaxRule{ TokenType::ASL_KW_Action },
-        SyntaxRule{ TokenType::CT_Symbol, &LayerAction::name },
-        SyntaxRule{ TokenType::CT_Colon },
-        SyntaxRule{ Rule_LayerActionTypeRules, MatchFirst, &LayerAction::type },
-        SyntaxRule{ Rule_LayerActionFlagsRules, MatchAll }.optional(),
-        SyntaxRule{ TokenType::ST_EndOfLine }.repeat(),
-        SyntaxRule{ Rule_LayerActionWhenRules, MatchChild<LayerActionCondition> }.repeat().optional(),
-        SyntaxRule{ Rule_LayerActionModifierRules, MatchChild<LayerActionModifier> }.repeat().optional(),
-        // SyntaxRule{ Rule_LayerActionRules, MatchChild<syntax::LayerAction> }.repeat().optional(),
-    };
-
-    static constexpr SyntaxRule Rule_LayerRules[]{ // layer <name>: <sources...> <actions...>
-        SyntaxRule{ TokenType::ASL_KW_Layer },
-        SyntaxRule{ TokenType::CT_Symbol, &Layer::name },
-        SyntaxRule{ TokenType::CT_Colon },
-        SyntaxRule{ TokenType::ST_EndOfLine }.repeat(),
-        SyntaxRule{ Definition::LayerSource, MatchChild<LayerSource> }.repeat().optional(),
-        SyntaxRule{ Rule_LayerActionRules, MatchChild<LayerAction> }.repeat().optional(),
-    };
-
-    static constexpr SyntaxRule Rule_GlobalRules[]{ // <layers>...
-        SyntaxRule{ Rule_LayerRules, MatchSibling<Layer> },
-        SyntaxRule{ TokenType::ST_EndOfLine },
+    static constexpr SyntaxRule ScriptRules[]{
+        SyntaxRule{ Definition::LayerRules, MatchSibling<Layer> },
+        SyntaxRule{ TokenType::ST_EndOfLine }, // consume any outstanding newlines
     };
 
 } // namespace ice::grammar
