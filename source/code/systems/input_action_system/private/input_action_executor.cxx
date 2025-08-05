@@ -1,9 +1,16 @@
 #include <ice/input_action_executor.hxx>
 #include <ice/input_action_definitions.hxx>
+#include <ice/input_action_layer.hxx>
+#include <ice/input_action_info.hxx>
 #include <ice/clock.hxx>
 
 namespace ice
 {
+
+    auto constant_at(ice::InputActionConstant id, ice::Span<ice::f32 const> values) noexcept -> ice::f32
+    {
+        return values[ice::u32(id)];
+    }
 
     bool InputActionExecutor::execute_condition(
         ice::InputActionCondition condition,
@@ -21,12 +28,21 @@ namespace ice
         }
     }
 
+    void InputActionExecutor::prepare_constants(
+        ice::InputActionLayer const& layer
+    ) noexcept
+    {
+        layer.load_constants(_constants);
+    }
+
     bool InputActionExecutor::execute_condition(
         ice::InputActionCondition condition,
         ice::InputActionSource const& val,
         ice::f32 param
     ) const noexcept
     {
+        ice::f32 const deadzone_cutoff = constant_at(InputActionConstant::ControllerAxisDeadzone, _constants);
+
         switch (condition)
         {
             using enum InputActionCondition;
@@ -35,8 +51,9 @@ namespace ice
         case Pressed: return val.event == InputActionSourceEvent::KeyPress;
         case Released: return val.event == InputActionSourceEvent::KeyRelease;
         case Trigger: return val.event == InputActionSourceEvent::Trigger;
-        case Axis: return val.event == InputActionSourceEvent::Axis;
-        case AxisDeadzone: return val.event == InputActionSourceEvent::AxisDeadzone;
+            // Deadzone comparisons
+        case Axis: return val.value >= deadzone_cutoff;
+        case AxisDeadzone: return val.value < deadzone_cutoff;
             // Source and Parameter comparisons
         case Equal: return val.value == param;
         case NotEqual: return val.value != param;

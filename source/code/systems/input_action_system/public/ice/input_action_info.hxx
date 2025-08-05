@@ -4,6 +4,29 @@
 namespace ice
 {
 
+    //! \brief Predefined list of that can be set from input action scripts.
+    enum class InputActionConstant : ice::u8
+    {
+        //! \brief Float value used to determine if axis is outside of the deazone.
+        //! \details The logic will consider values btween `[0, X)` to be inside the deadzone.
+        ControllerAxisDeadzone,
+
+        //! \brief Represents an unknown / invalid constnat.
+        Invalid = ice::u8_max,
+    };
+
+    static_assert(ice::u32(InputActionConstant::ControllerAxisDeadzone) < Constant_CountInputActionConstants);
+
+    //! \brief Defines a single constant value.
+    struct InputActionConstantInfo
+    {
+        //! \brief Identifies the constant this value is bound to.
+        ice::InputActionConstant identifier;
+
+        //! \brief Identifiers the offset at which the constant is stored in the binary blob.
+        ice::u8 offset;
+    };
+
     //! \brief Source types which determine how events are processed to create action values.
     //!
     //! \note Behavior definitions:

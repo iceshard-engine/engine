@@ -10,28 +10,32 @@
 namespace ice
 {
 
+    enum class InputActionBehavior : ice::u8;
     enum class InputActionCheck : ice::u8;
+    enum class InputActionCondition : ice::u8;
+    enum class InputActionConstant : ice::u8;
+    enum class InputActionDataType : ice::u8;
+    enum class InputActionModifier : ice::u8;
     enum class InputActionSourceEvent : ice::u8;
     enum class InputActionSourceType : ice::u8;
-    enum class InputActionBehavior : ice::u8;
-    enum class InputActionCondition : ice::u8;
     enum class InputActionStep : ice::u8;
-    enum class InputActionModifier : ice::u8;
-    enum class InputActionDataType : ice::u8;
 
-    struct InputActionSource;
-    struct InputActionSourceInputInfo;
     struct InputAction;
+    struct InputActionConstantInfo;
     struct InputActionInfo;
     struct InputActionRuntime;
+    struct InputActionSource;
+    struct InputActionSourceInputInfo;
 
-    struct InputActionModifierData;
     struct InputActionConditionData;
+    struct InputActionModifierData;
     struct InputActionStepData;
 
-    class InputActionStack;
-    class InputActionLayer;
     class InputActionExecutor;
+    class InputActionLayer;
+    class InputActionStack;
+
+    static constexpr ice::u32 Constant_CountInputActionConstants = 1;
 
 } // namespace ice
 

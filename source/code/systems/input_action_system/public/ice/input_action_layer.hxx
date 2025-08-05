@@ -36,6 +36,12 @@ namespace ice
         //! \return Fetches the name of the given action, based on it's definition.
         virtual auto action_name(ice::InputActionInfo const& action) const noexcept -> ice::String = 0;
 
+        //! \brief Loads all defined constants into the given span.
+        //! \note The span needs to hold at least `ice::Constant_CountInputActionConstants` number of entries.
+        //! \param[in,out] constants_span The span into which individual constant values will be loaded.
+        //! \returns Number of loaded constants or `0` if no constants are defined in this layer.
+        virtual auto load_constants(ice::Span<ice::f32> constants_span) const noexcept -> ice::ucount = 0;
+
         //! \brief Updates all layer sources based on the input events passed.
         //! \param[in,out] events List of input events to be processed. If an event was processed it will be swapped with an
         //!   event at the end of the list and reset to `ice::input::InputEvent{}`.

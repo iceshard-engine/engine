@@ -9,7 +9,8 @@ namespace ice
     //! \note This structure will be used for storing input actions in binary format for release builds.
     struct InputActionLayerInfoHeader
     {
-        ice::u16 size_name;
+        ice::u8 size_name;
+        ice::u8 count_constants;
         ice::u16 count_sources;
         ice::u16 count_actions;
         ice::u16 count_conditions;

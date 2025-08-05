@@ -16,6 +16,13 @@ namespace ice
     public:
         ~InputActionExecutor() noexcept = default;
 
+        //! \brief Prepares the executor to use constant values defined by the specific layer.
+        //! \details If a layer does not define constants for themselfs, the previous values will be used.
+        //! \param layer Layer to load constants from.
+        void prepare_constants(
+            ice::InputActionLayer const& layer
+        ) noexcept;
+
         //! \brief Checks given condition against the input source and provided user value.
         //! \details This method is only called for conditions that are called on input sources.
         //! \param[in] condition ID of the condition to be executed.
@@ -71,6 +78,9 @@ namespace ice
             ice::f32& action_value,
             ice::f32 param
         ) const noexcept;
+
+    private:
+        ice::f32 _constants[Constant_CountInputActionConstants];
     };
 
 } // namespace ice

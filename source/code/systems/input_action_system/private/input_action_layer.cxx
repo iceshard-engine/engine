@@ -26,6 +26,8 @@ namespace ice
         ice::Span<ice::InputActionConditionData const> conditions;
         ice::Span<ice::InputActionStepData const> steps;
         ice::Span<ice::InputActionModifierData const> modifiers;
+        ice::Span<ice::InputActionConstantInfo const> constants;
+        ice::Span<ice::f32 const> constant_values;
         ice::String strings;
     };
 
@@ -52,6 +54,8 @@ namespace ice
         offset += load_field_from_data(result.conditions, data, offset, header.count_conditions);
         offset += load_field_from_data(result.steps, data, offset, header.count_steps);
         offset += load_field_from_data(result.modifiers, data, offset, header.count_modifiers);
+        offset += load_field_from_data(result.constant_values, data, offset, header.count_constants);
+        offset += load_field_from_data(result.constants, data, offset, header.count_constants);
 
         ICE_ASSERT_CORE(offset == ice::usize{ header.offset_strings });
         result.strings = ice::string::from_data(
@@ -79,6 +83,8 @@ namespace ice
             , _conditions{ info.conditions }
             , _steps{ info.steps }
             , _modifiers{ info.modifiers }
+            , _constants{ info.constants }
+            , _constant_values{ info.constant_values }
             , _strings{ info.strings }
         { }
 
@@ -110,6 +116,17 @@ namespace ice
         auto action_name(ice::InputActionInfo const& action) const noexcept -> ice::String override
         {
             return ice::string::substr(_strings, action.name);
+        }
+
+        auto load_constants(ice::Span<ice::f32> constants_span) const noexcept -> ice::ucount override
+        {
+            ICE_ASSERT_CORE(ice::count(constants_span) >= Constant_CountInputActionConstants);
+            for (ice::InputActionConstantInfo const constant : _constants)
+            {
+                ice::u32 const idx = ice::u32(constant.identifier);
+                constants_span[idx] = _constant_values[constant.offset];
+            }
+            return ice::count(_constants);
         }
 
         auto process_inputs(
@@ -408,6 +425,8 @@ namespace ice
         ice::Span<ice::InputActionConditionData const> _conditions;
         ice::Span<ice::InputActionStepData const> _steps;
         ice::Span<ice::InputActionModifierData const> _modifiers;
+        ice::Span<ice::InputActionConstantInfo const> _constants;
+        ice::Span<ice::f32 const> _constant_values;
         ice::String _strings;
     };
 

@@ -443,8 +443,17 @@ namespace ice
                 condition_offset += ice::exchange(condition_count, ice::u16_0);
             }
 
+            ice::Array<ice::f32> final_constant_values{ alloc };
+            ice::array::push_back(final_constant_values, 0.3f);
+            ice::Array<ice::InputActionConstantInfo> final_constants{ alloc };
+            ice::array::push_back(
+                final_constants,
+                { .identifier = InputActionConstant::ControllerAxisDeadzone, .offset = 0 }
+            );
+
             ice::InputActionLayerInfoHeader final_info{
-                .size_name = ice::u16(ice::size(_name)),
+                .size_name = ice::u8(ice::size(_name)),
+                .count_constants = 1,
                 .count_sources = ice::u16(ice::count(final_sources)),
                 .count_actions = ice::u16(ice::count(final_actions)),
                 .count_conditions = ice::u16(ice::count(final_conditions)),
@@ -460,6 +469,8 @@ namespace ice
             ice::usize const offset_conditions = minfo_layer += ice::array::meminfo(final_conditions);
             ice::usize const offset_steps = minfo_layer += ice::array::meminfo(final_steps);
             ice::usize const offset_modifiers = minfo_layer += ice::array::meminfo(final_modifiers);
+            ice::usize const offset_constant_values = minfo_layer += ice::meminfo_of<ice::f32> * ice::count(final_constant_values);
+            ice::usize const offset_constants = minfo_layer += ice::array::meminfo(final_constants);
             ice::usize const offset_strings = minfo_layer += ice::string::meminfo(ice::String{strings});
             final_info.offset_strings = ice::u32(offset_strings.value);
 
@@ -470,6 +481,8 @@ namespace ice
             ice::memcpy(ice::ptr_add(final_memory, offset_conditions), ice::array::data_view(final_conditions));
             ice::memcpy(ice::ptr_add(final_memory, offset_steps), ice::array::data_view(final_steps));
             ice::memcpy(ice::ptr_add(final_memory, offset_modifiers), ice::array::data_view(final_modifiers));
+            ice::memcpy(ice::ptr_add(final_memory, offset_constant_values), ice::array::data_view(final_constant_values));
+            ice::memcpy(ice::ptr_add(final_memory, offset_constants), ice::array::data_view(final_constants));
             ice::memcpy(ice::ptr_add(final_memory, offset_strings), ice::string::data_view(strings));
             return ice::create_input_action_layer(alloc, final_memory);
         }

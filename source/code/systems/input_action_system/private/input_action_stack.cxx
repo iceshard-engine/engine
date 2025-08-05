@@ -419,6 +419,7 @@ namespace ice
                 ice::array::push_back(source_values, ice::addressof(_sources_runtime_values[offset]));
             }
 
+            ex.prepare_constants(*layer.layer);
             layer.layer->update_actions(ex, source_values, _actions);
         }
     }
