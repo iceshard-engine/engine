@@ -14,7 +14,6 @@ namespace ice
     {
 
         auto key_from_dsl(arctic::String value) noexcept -> ice::input::KeyboardKey;
-        auto mod_from_dsl(arctic::String value) noexcept -> ice::input::KeyboardMod;
         auto mouse_from_dsl(arctic::String value) noexcept -> ice::input::MouseInput;
 
         auto datatype_from_dsl(arctic::Token token) noexcept -> ice::InputActionDataType;
@@ -24,35 +23,44 @@ namespace ice
 
     } // namespace detail
 
-    InputActionDSLLayerBuilder::InputActionDSLLayerBuilder(
-        ice::UniquePtr<ice::InputActionBuilder::Layer> builder
-    ) noexcept
+    InputActionScriptParser::InputActionScriptParser(ice::Allocator& alloc) noexcept
         : ActionInputParserEvents{ }
-        , _builder{ ice::move(builder) }
-    {
-    }
+        , _allocator{ alloc }
+    { }
 
-    void InputActionDSLLayerBuilder::visit(arctic::SyntaxNode<ice::asl::Layer> node) noexcept
+    void InputActionScriptParser::visit(arctic::SyntaxNode<ice::asl::Layer> node) noexcept
     {
         ICE_LOG(LogSeverity::Info, LogTag::Engine, "Layer: {}", node.data().name);
-        _builder->set_name(node.data().name);
+
+        ice::UniquePtr<ice::InputActionBuilder::Layer> builder = ice::create_input_action_layer_builder(
+            _allocator, node.data().name
+        );
 
         arctic::SyntaxNode<> child = node.child();
         while (child != false)
         {
             if (child.type() == ice::asl::SyntaxEntity::ASL_D_LayerSource)
             {
-                visit_source(child.to<ice::asl::LayerSource>());
+                visit_source(*builder, child.to<ice::asl::LayerSource>());
             }
             else if (child.type() == ice::asl::SyntaxEntity::ASL_D_LayerAction)
             {
-                visit_layer(child.to<ice::asl::LayerAction>());
+                visit_action(*builder, child.to<ice::asl::LayerAction>());
             }
             child = child.sibling();
         }
+
+        ice::UniquePtr<ice::InputActionLayer> layer = builder->finalize(_allocator);
+        if (layer != nullptr)
+        {
+            on_layer_parsed(ice::move(layer));
+        }
     }
 
-    void InputActionDSLLayerBuilder::visit_source(arctic::SyntaxNode<ice::asl::LayerSource> node) noexcept
+    void InputActionScriptParser::visit_source(
+        ice::InputActionBuilder::Layer& layer,
+        arctic::SyntaxNode<ice::asl::LayerSource> node
+    ) noexcept
     {
         ice::InputActionSourceType type = InputActionSourceType::Key;
         switch(node.data().type.type)
@@ -63,7 +71,7 @@ namespace ice
         default: ICE_ASSERT_CORE(false); type = InputActionSourceType::Axis2d; break;
         }
 
-        ice::InputActionBuilder::Source source = _builder->define_source(node.data().name, type);
+        ice::InputActionBuilder::Source source = layer.define_source(node.data().name, type);
         arctic::SyntaxNode binding = node.child<ice::asl::LayerSourceBinding>();
         while (binding)
         {
@@ -105,13 +113,16 @@ namespace ice
         ICE_LOG(LogSeverity::Info, LogTag::Engine, "Source: {}", node.data().name);
     }
 
-    void InputActionDSLLayerBuilder::visit_layer(arctic::SyntaxNode<ice::asl::LayerAction> node) noexcept
+    void InputActionScriptParser::visit_action(
+        ice::InputActionBuilder::Layer& layer,
+        arctic::SyntaxNode<ice::asl::LayerAction> node
+    ) noexcept
     {
         ice::asl::LayerAction const& action_info = node.data();
         ice::InputActionDataType const action_datatype = detail::datatype_from_dsl(action_info.type);
 
         ICE_LOG(LogSeverity::Info, LogTag::Engine, "Action: {}", action_info.name);
-        ice::InputActionBuilder::Action action = _builder->define_action(action_info.name, action_datatype);
+        ice::InputActionBuilder::Action action = layer.define_action(action_info.name, action_datatype);
         ice::InputActionBehavior behavior = InputActionBehavior::Default;
         if (action_info.flag_once)
         {
@@ -143,7 +154,7 @@ namespace ice
         }
     }
 
-    auto InputActionDSLLayerBuilder::visit_cond(
+    auto InputActionScriptParser::visit_cond(
         ice::InputActionBuilder::ConditionSeries series,
         arctic::SyntaxNode<ice::asl::LayerActionCondition> node
     ) noexcept -> arctic::SyntaxNode<>
@@ -221,7 +232,7 @@ namespace ice
         return node;
     }
 
-    void InputActionDSLLayerBuilder::visit_step(
+    void InputActionScriptParser::visit_step(
         ice::InputActionBuilder::ConditionSeries& condition_series,
         arctic::SyntaxNode<ice::asl::LayerActionStep> node
     ) noexcept
@@ -238,7 +249,7 @@ namespace ice
         }
     }
 
-    void InputActionDSLLayerBuilder::visit_mod(
+    void InputActionScriptParser::visit_mod(
         ice::InputActionBuilder::Action& action,
         arctic::SyntaxNode<ice::asl::LayerActionModifier> node
     ) noexcept

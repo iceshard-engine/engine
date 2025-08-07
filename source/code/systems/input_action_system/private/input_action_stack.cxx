@@ -110,6 +110,12 @@ namespace ice
             ice::u32 index;
         };
 
+        //struct SourceValueIndex
+        //{
+        //    ice::u32 index;
+        //    ice::u32 initial_layer;
+        //};
+
         // Helpers
         static bool compare_layers(StackLayer const& slayer, ice::InputActionLayer const* layer) noexcept
         {
@@ -151,11 +157,13 @@ namespace ice
             return E_NullPointer;
         }
 
-        ice::ucount idx;
-        if (ice::search(ice::Span{ _layers }, layer, compare_layers, idx))
+        ice::ucount layer_idx;
+        if (ice::search(ice::Span{ _layers }, layer, compare_layers, layer_idx))
         {
             return S_LayerAlreadyRegistered;
         }
+
+        layer_idx = ice::count(_layers);
 
         // We reserve enough space to store all actual indices for accessed layer sources.
         ice::u32 const layer_sources_count = ice::count(layer->sources());
@@ -163,8 +171,12 @@ namespace ice
         ice::array::reserve(_layers_sources_indices, layer_sources_offset + layer_sources_count);
 
         // Go through each resource and set the indices
-        for (ice::InputActionSourceInputInfo const& source : layer->sources())
+        ice::u64 prev_name_hash = 0;
+        ice::Span<ice::InputActionSourceInputInfo const> sources = layer->sources();
+        ice::ucount const count_sources = ice::count(sources);
+        for (ice::u32 idx = 0; idx < count_sources; ++idx)
         {
+            ice::InputActionSourceInputInfo const& source = sources[idx];
             ice::String const source_name = layer->source_name(source);
             ice::u64 const source_name_hash = ice::hash(source_name);
 
@@ -173,7 +185,19 @@ namespace ice
             ice::u32 values_index = 0;
             if (ice::hashmap::has(_sources, source_name_hash))
             {
-                values_index = ice::hashmap::try_get(_sources, source_name_hash)->index;
+                if (prev_name_hash != source_name_hash)
+                {
+                    values_index = ice::hashmap::try_get(_sources, source_name_hash)->index;
+
+                    // Stores the index for the source
+                    ice::array::push_back(_layers_sources_indices, values_index);
+
+                    if (source.type == InputActionSourceType::Axis2d)
+                    {
+                        // Stores the index for the source
+                        ice::array::push_back(_layers_sources_indices, values_index);
+                    }
+                }
             }
             else
             {
@@ -194,9 +218,12 @@ namespace ice
 
                 if (source.type == InputActionSourceType::Axis2d)
                 {
+                    // Stores the index for the source
                     ice::array::push_back(_layers_sources_indices, values_index);
                 }
             }
+
+            prev_name_hash = source_name_hash;
         }
 
         // Go through each resource and assing the pointers.
@@ -224,7 +251,7 @@ namespace ice
         // Stores the layer along with a ref where it's indices for all sources are stored.
         ice::array::push_back(
             _layers,
-            StackLayer{ layer, { ice::u16(layer_sources_offset), ice::u16(layer_sources_count) } }
+            StackLayer{ layer, { ice::u16(layer_sources_offset), ice::u16(ice::count(_layers_sources_indices) - layer_sources_offset) } }
         );
         return S_Ok;
     }
@@ -403,6 +430,8 @@ namespace ice
             ICE_ASSERT_CORE(processed_events <= remaining_events);
             remaining_events -= processed_events;
 
+            ice::array::clear(source_values);
+
             // TODO: Should we change how this loop is finishing?
             if (remaining_events == 0)
             {
@@ -421,6 +450,8 @@ namespace ice
 
             ex.prepare_constants(*layer.layer);
             layer.layer->update_actions(ex, source_values, _actions);
+
+            ice::array::clear(source_values);
         }
     }
 

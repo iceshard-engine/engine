@@ -25,7 +25,7 @@ namespace ice
         : ice::Trait{ context }
         , ice::TraitDevUI{ {.category="Engine/Traits", .name = trait_name()} }
         , _allocator{ alloc, "trait :: input-actions" }
-        , _layer{ }
+        , _layers{ _allocator }
     {
         context.bind<&InputActionsTrait::on_update>();
         context.bind<&InputActionsTrait::on_click>("Click`ice::InputAction const*"_shardid);
@@ -46,63 +46,17 @@ namespace ice
 
         _stack = ice::addressof(world_update.engine.actions());
 
-        ice::UniquePtr<ice::InputActionBuilder::Layer> layerBuilder = ice::create_input_action_layer_builder(_allocator, "test");
+        _layers = ice::parse_input_action_layer(_allocator, R"__(
+            layer Base:
+                source button RClick: mouse.rbutton
+                source axis2d Pos: mouse.pos
 
-        layerBuilder->define_source("S:jump", InputActionSourceType::Key)
-            .add_key(KeyboardKey::Space);
+                action RClick: float2
+                    when RClick.pressed
+                        .x = Pos.x
+                        .y = Pos.y
+                        .activate
 
-        layerBuilder->define_source("S:left", InputActionSourceType::Key)
-            .add_key(KeyboardKey::KeyA);
-        layerBuilder->define_source("S:right", InputActionSourceType::Key)
-            .add_key(KeyboardKey::KeyD);
-        layerBuilder->define_source("S:up", InputActionSourceType::Key)
-            .add_key(KeyboardKey::KeyW);
-        layerBuilder->define_source("S:down", InputActionSourceType::Key)
-            .add_key(KeyboardKey::KeyS);
-
-        layerBuilder->define_source("S:pos", InputActionSourceType::Axis2d)
-            .add_axis(input::MouseInput::PositionX);
-        layerBuilder->define_source("S:click", InputActionSourceType::Button)
-            .add_button(input::MouseInput::ButtonLeft);
-
-        layerBuilder->define_action("A:click", InputActionDataType::Float2)
-            .add_condition_series()
-            // .set_behavior(InputActionBehavior::ActiveOnce)
-            .add_condition("S:click", InputActionCondition::Released, Final | RunSteps)
-                .add_step(InputActionStep::Deactivate)
-            .add_condition("S:click", InputActionCondition::Pressed, Final | RunSteps)
-                .add_step(InputActionStep::Activate)
-                .add_step("S:pos.x", InputActionStep::Set, ".x")
-                .add_step("S:pos.y", InputActionStep::Set, ".y");
-
-        auto jump_action = layerBuilder->define_action("A:jump", InputActionDataType::Bool);
-        jump_action.add_condition_series()
-            //.set_behavior(InputActionBehavior::Accumulated)
-            .add_condition("S:jump", InputActionCondition::Released, Final | RunSteps)
-                .add_step("S:jump", InputActionStep::Set)
-                .add_step(InputActionStep::Deactivate)
-            .add_condition("S:jump", InputActionCondition::Pressed, Final | RunSteps)
-                .add_step("S:jump", InputActionStep::Add)
-                .add_step(InputActionStep::Activate);
-        jump_action
-            .add_modifier(InputActionModifier::Div, 15.f)
-            .add_modifier(InputActionModifier::Max, 2.0);
-
-        layerBuilder->define_action("A:move", InputActionDataType::Float2)
-            .add_condition_series()
-            .add_condition("S:left", InputActionCondition::Pressed, RunSteps)
-                .add_step("S:left", InputActionStep::Sub, ".x")
-            .add_condition("S:right", InputActionCondition::Pressed, RunSteps)
-                .add_step("S:right", InputActionStep::Add, ".x")
-            .add_condition("S:down", InputActionCondition::Pressed, RunSteps)
-                .add_step("S:down", InputActionStep::Sub, ".y")
-            .add_condition("S:up", InputActionCondition::Pressed, Final | RunSteps | SeriesCheck)
-                .add_step("S:up", InputActionStep::Add, ".y")
-                .add_step(InputActionStep::Activate);
-
-
-        _layer = layerBuilder->finalize(_allocator);
-        _layer = ice::parse_input_action_layer(_allocator, R"__(
             layer Test:
                 source button Jump: kb.Space
 
@@ -111,7 +65,7 @@ namespace ice
                 source button Up: kb.W, kb.Up
                 source button Down: kb.S, kb.Down
 
-                source axis2d Pos: mouse.pos
+                source axis2d Pos
                 source button Click: mouse.lbutton
 
                 source button Sprint: kb.lshift
@@ -152,8 +106,12 @@ namespace ice
                         .activate
         )__");
 
-        world_update.engine.actions().register_layer(_layer.get());
-        world_update.engine.actions().push_layer(_layer.get());
+
+        for (ice::UniquePtr<ice::InputActionLayer> const& layer : _layers)
+        {
+            _stack->register_layer(layer.get());
+            _stack->push_layer(layer.get());
+        }
         co_return;
     }
 
@@ -184,32 +142,36 @@ namespace ice
 
     void InputActionsTrait::build_content() noexcept
     {
-        ImGui::SeparatorText(ice::string::begin(_layer->name()));
-        ImGui::SeparatorText("Sources");
-
-        ice::u32 last_storage = 0;
-        for (ice::InputActionSourceInputInfo const& source_info : _layer->sources())
+        for (ice::UniquePtr<ice::InputActionLayer> const& layer : _layers)
         {
-            ice::InputActionSource const& source = _stack->source_runtime(*_layer, source_info);
-            if (ice::exchange(last_storage, source_info.storage_offset) == source_info.storage_offset)
-            {
-                continue;
-            }
+            ImGui::Separator();
+            ImGui::Text(ice::string::begin(layer->name()));
+            ImGui::SeparatorText("Sources");
 
-            if (source_info.type == InputActionSourceType::Axis2d)
+            ice::u32 last_storage = ice::u32_max;
+            for (ice::InputActionSourceInputInfo const& source_info : layer->sources())
             {
-                ImGui::TextT("Source: {}, value:{}x{}", _layer->source_name(source_info), source.value, (&source + 1)->value);
+                ice::InputActionSource const& source = _stack->source_runtime(*layer, source_info);
+                if (ice::exchange(last_storage, source_info.storage_offset) == source_info.storage_offset)
+                {
+                    continue;
+                }
+
+                if (source_info.type == InputActionSourceType::Axis2d)
+                {
+                    ImGui::TextT("Source: {}, value:{}x{}", layer->source_name(source_info), source.value, (&source + 1)->value);
+                }
+                else
+                {
+                    ImGui::TextT("Source: {}, value:{} ({})", layer->source_name(source_info), source.value, evname(source.event));
+                }
             }
-            else
+            ImGui::SeparatorText("Actions");
+            for (ice::InputActionInfo const& action_info : layer->actions())
             {
-                ImGui::TextT("Source: {}, value:{} ({})", _layer->source_name(source_info), source.value, evname(source.event));
+                ice::InputActionRuntime const& action = _stack->action_runtime(*layer, action_info);
+                ImGui::TextT("Action: {}, active:{}, value:{},{}", layer->action_name(action_info), action.active, action.value.x, action.value.y);
             }
-        }
-        ImGui::SeparatorText("Actions");
-        for (ice::InputActionInfo const& action_info : _layer->actions())
-        {
-            ice::InputActionRuntime const& action = _stack->action_runtime(*_layer, action_info);
-            ImGui::TextT("Action: {}, active:{}, value:{},{}", _layer->action_name(action_info), action.active, action.value.x, action.value.y);
         }
     }
 

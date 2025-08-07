@@ -28,7 +28,7 @@ namespace ice
     private:
         ice::ProxyAllocator _allocator;
         ice::InputActionStack* _stack;
-        ice::UniquePtr<ice::InputActionLayer> _layer;
+        ice::Array<ice::UniquePtr<ice::InputActionLayer>> _layers;
     };
 
 } // namespace ice

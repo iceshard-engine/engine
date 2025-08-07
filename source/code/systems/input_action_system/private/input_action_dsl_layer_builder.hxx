@@ -5,17 +5,25 @@
 namespace ice
 {
 
-    class InputActionDSLLayerBuilder : public ice::asl::ActionInputParserEvents
+    class InputActionScriptParser : public ice::asl::ActionInputParserEvents
     {
     public:
-        InputActionDSLLayerBuilder(
-            ice::UniquePtr<ice::InputActionBuilder::Layer> builder
-        ) noexcept;
+        InputActionScriptParser(ice::Allocator& alloc) noexcept;
+
+        virtual void on_layer_parsed(ice::UniquePtr<ice::InputActionLayer> layer) noexcept = 0;
 
         void visit(arctic::SyntaxNode<ice::asl::Layer> node) noexcept override;
 
-        void visit_source(arctic::SyntaxNode<ice::asl::LayerSource> node) noexcept;
-        void visit_layer(arctic::SyntaxNode<ice::asl::LayerAction> node) noexcept;
+    private:
+        void visit_source(
+            ice::InputActionBuilder::Layer& layer,
+            arctic::SyntaxNode<ice::asl::LayerSource> node
+        ) noexcept;
+
+        void visit_action(
+            ice::InputActionBuilder::Layer& layer,
+            arctic::SyntaxNode<ice::asl::LayerAction> node
+        ) noexcept;
 
         auto visit_cond(
             ice::InputActionBuilder::ConditionSeries series,
@@ -32,10 +40,8 @@ namespace ice
             arctic::SyntaxNode<ice::asl::LayerActionModifier> node
         ) noexcept;
 
-        auto finalize(ice::Allocator& alloc) noexcept { return _builder->finalize(alloc); }
-
     private:
-        ice::UniquePtr<ice::InputActionBuilder::Layer> _builder;
+        ice::Allocator& _allocator;
     };
 
 } // namespace ice

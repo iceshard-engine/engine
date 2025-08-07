@@ -92,7 +92,7 @@ namespace ice
     auto parse_input_action_layer(
         ice::Allocator& alloc,
         ice::String definition
-    ) noexcept -> ice::UniquePtr<ice::InputActionLayer>;
+    ) noexcept -> ice::Array<UniquePtr<ice::InputActionLayer>>;
 
     //! \brief Creates a binary representation of an InputActionLayer object that can be loaded again later.
     //! \param alloc Allocator used to allocate the final Memory object.

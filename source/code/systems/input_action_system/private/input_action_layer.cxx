@@ -464,14 +464,27 @@ namespace ice
     auto parse_input_action_layer(
         ice::Allocator& alloc,
         ice::String definition
-    ) noexcept -> ice::UniquePtr<ice::InputActionLayer>
+    ) noexcept -> ice::Array<UniquePtr<ice::InputActionLayer>>
     {
-        InputActionDSLLayerBuilder dsl_builder{ ice::create_input_action_layer_builder(alloc, "") };
-        if (ice::asl::parse_action_input_definition(alloc, definition, dsl_builder))
+        struct MultiLayerScriptParser : InputActionScriptParser
         {
-            return dsl_builder.finalize(alloc);
-        }
-        return {};
+            ice::Array<UniquePtr<ice::InputActionLayer>> results;
+
+            MultiLayerScriptParser(ice::Allocator& alloc) noexcept
+                : InputActionScriptParser{ alloc }
+                , results{ alloc }
+            {
+            }
+
+            void on_layer_parsed(ice::UniquePtr<ice::InputActionLayer> layer) noexcept override
+            {
+                ice::array::push_back(results, ice::move(layer));
+            }
+        } parser{ alloc };
+
+        bool const parse_success = ice::asl::parse_action_input_definition(alloc, definition, parser);
+        ICE_LOG_IF(parse_success == false, LogSeverity::Warning, LogTag::Engine, "Failed to parse input action layer script!");
+        return ice::move(parser.results);
     }
 
     auto save_input_action_layer(
