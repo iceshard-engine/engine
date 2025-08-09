@@ -16,23 +16,24 @@ namespace ice::asl
 
         // General ASL keywords
         static constexpr arctic::TokenType ASL_KW_Layer{ ASLT_Keywords + 0 };
-        static constexpr arctic::TokenType ASL_KW_Source{ ASLT_Keywords + 1 };
-        static constexpr arctic::TokenType ASL_KW_Action{ ASLT_Keywords + 2 };
-        static constexpr arctic::TokenType ASL_KW_Modifier{ ASLT_Keywords + 3 };
+        static constexpr arctic::TokenType ASL_KW_Constant{ ASLT_Keywords + 1 };
+        static constexpr arctic::TokenType ASL_KW_Source{ ASLT_Keywords + 2 };
+        static constexpr arctic::TokenType ASL_KW_Action{ ASLT_Keywords + 3 };
+        static constexpr arctic::TokenType ASL_KW_Modifier{ ASLT_Keywords + 4 };
 
-        static constexpr arctic::TokenType ASL_KW_When{ ASLT_Keywords + 4 };
-        static constexpr arctic::TokenType ASL_KW_WhenAnd{ ASLT_Keywords + 5 };
-        static constexpr arctic::TokenType ASL_KW_WhenOr{ ASLT_Keywords + 6 };
+        static constexpr arctic::TokenType ASL_KW_When{ ASLT_Keywords + 10 };
+        static constexpr arctic::TokenType ASL_KW_WhenAnd{ ASLT_Keywords + 11 };
+        static constexpr arctic::TokenType ASL_KW_WhenOr{ ASLT_Keywords + 12 };
 
         // Keywords for Device types
-        static constexpr arctic::TokenType ASL_KW_Mouse{ ASLT_Keywords + 10 };
-        static constexpr arctic::TokenType ASL_KW_Keyboard{ ASLT_Keywords + 11 };
-        static constexpr arctic::TokenType ASL_KW_Controller{ ASLT_Keywords + 12 };
+        static constexpr arctic::TokenType ASL_KW_Mouse{ ASLT_Keywords + 20 };
+        static constexpr arctic::TokenType ASL_KW_Keyboard{ ASLT_Keywords + 21 };
+        static constexpr arctic::TokenType ASL_KW_Controller{ ASLT_Keywords + 22 };
 
         // Keywords for Action and Condition flags
-        static constexpr arctic::TokenType ASL_KWF_Once{ ASLT_Keywords + 20 };
-        static constexpr arctic::TokenType ASL_KWF_Toggled{ ASLT_Keywords + 21 };
-        static constexpr arctic::TokenType ASL_KWF_CheckSeries{ ASLT_Keywords + 22 };
+        static constexpr arctic::TokenType ASL_KWF_Once{ ASLT_Keywords + 30 };
+        static constexpr arctic::TokenType ASL_KWF_Toggled{ ASLT_Keywords + 31 };
+        static constexpr arctic::TokenType ASL_KWF_CheckSeries{ ASLT_Keywords + 32 };
 
         // Condition operators (checks)
         static constexpr arctic::TokenType ASL_OP_IsPressed{ ASLT_Operators + 0 };
@@ -76,8 +77,9 @@ namespace ice::asl
         arctic::String value;
     };
 
-    static constexpr std::array<ice::asl::TokenDefinition, 36> Constant_TokenDefinitionsUnsorted{
+    static constexpr std::array<ice::asl::TokenDefinition, 37> Constant_TokenDefinitionsUnsorted{
         TokenDefinition{ TokenType::ASL_KW_Action, "action" },
+        TokenDefinition{ TokenType::ASL_KW_Constant, "constant" },
         TokenDefinition{ TokenType::ASL_KW_Controller, "gamepad" },
         TokenDefinition{ TokenType::ASL_KW_Controller, "gp" },
         TokenDefinition{ TokenType::ASL_KW_Keyboard, "kb" },
@@ -125,7 +127,7 @@ namespace ice::asl
         return left.value == right.value;
     }
 
-    static constexpr std::array<ice::asl::TokenDefinition, 36> Constant_TokenDefinitions
+    static constexpr std::array<ice::asl::TokenDefinition, 37> Constant_TokenDefinitions
         = ice::constexpr_sort_stdarray(Constant_TokenDefinitionsUnsorted, 0);
 
 } // namespace ice::asl

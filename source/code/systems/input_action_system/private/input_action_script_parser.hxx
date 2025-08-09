@@ -15,6 +15,11 @@ namespace ice
         void visit(arctic::SyntaxNode<ice::asl::Layer> node) noexcept override;
 
     private:
+        void visit_constant(
+            ice::InputActionBuilder::Layer& layer,
+            arctic::SyntaxNode<ice::asl::LayerConstant> node
+        ) noexcept;
+
         void visit_source(
             ice::InputActionBuilder::Layer& layer,
             arctic::SyntaxNode<ice::asl::LayerSource> node

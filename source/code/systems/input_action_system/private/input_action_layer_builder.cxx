@@ -202,12 +202,14 @@ namespace ice
         ) noexcept
             : Layer{ alloc.create<Internal<Layer>>() }
             , _allocator{ alloc }
-            , _sources{ alloc }
-            , _actions{ alloc }
-            , _name{ alloc, name }
+            , _constants{ _allocator }
+            , _sources{ _allocator }
+            , _actions{ _allocator }
+            , _name{ _allocator, name }
         {
             ice::hashmap::reserve(_sources, 16);
             ice::hashmap::reserve(_actions, 10);
+            ice::array::push_back(_constants, { InputActionConstant::Nil, 0.0f });
         }
 
         ~SimpleInputActionLayerBuilder()
@@ -221,6 +223,14 @@ namespace ice
         {
             _name = name;
             return *this;
+        }
+
+        void set_constant(
+            ice::InputActionConstant constant,
+            ice::f32 value
+        ) noexcept override
+        {
+            ice::array::push_back(_constants, { constant, value });
         }
 
         auto define_source(
@@ -444,16 +454,17 @@ namespace ice
             }
 
             ice::Array<ice::f32> final_constant_values{ alloc };
-            ice::array::push_back(final_constant_values, 0.3f);
             ice::Array<ice::InputActionConstantInfo> final_constants{ alloc };
-            ice::array::push_back(
-                final_constants,
-                { .identifier = InputActionConstant::ControllerAxisDeadzone, .offset = 0 }
-            );
+            for (auto [constant, value] : _constants)
+            {
+                ice::u8 const offset = (ice::u8) ice::count(final_constant_values);
+                ice::array::push_back(final_constants, { .identifier = constant, .offset = offset });
+                ice::array::push_back(final_constant_values, value);
+            }
 
             ice::InputActionLayerInfoHeader final_info{
                 .size_name = ice::u8(ice::size(_name)),
-                .count_constants = 1,
+                .count_constants = ice::u8(ice::count(final_constants)),
                 .count_sources = ice::u16(ice::count(final_sources)),
                 .count_actions = ice::u16(ice::count(final_actions)),
                 .count_conditions = ice::u16(ice::count(final_conditions)),
@@ -489,6 +500,7 @@ namespace ice
 
     private:
         ice::Allocator& _allocator;
+        ice::Array<std::tuple<ice::InputActionConstant, ice::f32>> _constants;
         ice::HashMap<Internal<InputActionBuilder::Source>> _sources;
         ice::HashMap<Internal<InputActionBuilder::Action>> _actions;
         ice::HeapString<> _name;

@@ -16,8 +16,9 @@ namespace ice::asl
     struct SyntaxEntity
     {
         static constexpr arctic::SyntaxEntity ASL_D_Layer{ ASLE_Definitions + 0 };
-        static constexpr arctic::SyntaxEntity ASL_D_LayerSource{ ASLE_Definitions + 1 };
-        static constexpr arctic::SyntaxEntity ASL_D_LayerAction{ ASLE_Definitions + 2 };
+        static constexpr arctic::SyntaxEntity ASL_D_LayerConstant{ ASLE_Definitions + 1 };
+        static constexpr arctic::SyntaxEntity ASL_D_LayerSource{ ASLE_Definitions + 2 };
+        static constexpr arctic::SyntaxEntity ASL_D_LayerAction{ ASLE_Definitions + 3 };
 
         static constexpr arctic::SyntaxEntity ASL_E_LayerSourceBinding{ ASLE_Expressions + 0 };
         static constexpr arctic::SyntaxEntity ASL_E_LayerActionStep{ ASLE_Expressions + 1 };
@@ -34,6 +35,14 @@ namespace ice::asl
         NodeData(SyntaxEntity::ASL_D_Layer);
 
         arctic::String name;
+    };
+
+    struct LayerConstant : SyntaxNodeData
+    {
+        NodeData(SyntaxEntity::ASL_D_LayerConstant);
+
+        arctic::String name;
+        arctic::Token param;
     };
 
     struct LayerSource : SyntaxNodeData

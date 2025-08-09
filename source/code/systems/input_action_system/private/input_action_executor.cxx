@@ -134,13 +134,17 @@ namespace ice
         switch(modifier)
         {
             using enum InputActionModifier;
-            case Max: action_value = ice::min(action_value, param); break;
-            case Div:
-                ICE_ASSERT_CORE(param != 0.0f);
-                action_value /= param;
-                break;
-            default:
-                break;
+        case Add: action_value += param;
+        case Sub: action_value -= param;
+        case Mul: action_value *= param;
+        case Div:
+            ICE_ASSERT_CORE(param != 0.0f);
+            action_value /= param;
+            break;
+        case MaxOf: action_value = ice::max(action_value, param); break;
+        case MinOf: action_value = ice::min(action_value, param); break;
+        default:
+            break;
         }
     }
 

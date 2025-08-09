@@ -1,5 +1,5 @@
 #include "input_action_script_grammar.hxx"
-#include "input_action_dsl_layer_builder.hxx"
+#include "input_action_script_parser.hxx"
 
 #include <ice/string_utils.hxx>
 #include <ice/input_action_info.hxx>
@@ -47,6 +47,10 @@ namespace ice
             {
                 visit_action(*builder, child.to<ice::asl::LayerAction>());
             }
+            else if (child.type() == ice::asl::SyntaxEntity::ASL_D_LayerConstant)
+            {
+                visit_constant(*builder, child.to<ice::asl::LayerConstant>());
+            }
             child = child.sibling();
         }
 
@@ -54,6 +58,26 @@ namespace ice
         if (layer != nullptr)
         {
             on_layer_parsed(ice::move(layer));
+        }
+    }
+
+    void InputActionScriptParser::visit_constant(
+        ice::InputActionBuilder::Layer& layer,
+        arctic::SyntaxNode<ice::asl::LayerConstant> node
+    ) noexcept
+    {
+        ice::asl::LayerConstant const& data = node.data();
+        ICE_LOG(LogSeverity::Debug, LogTag::Core, "Constant '{}' = {}", data.name, data.param.value);
+
+        ice::f32 param;
+        if (ice::from_chars(data.param.value, param) == false)
+        {
+            return;
+        }
+
+        if (ice::compare(data.name, "axis.deadzone") == ice::CompareResult::Equal)
+        {
+            layer.set_constant(InputActionConstant::ControllerAxisDeadzone, param);
         }
     }
 
@@ -274,26 +298,38 @@ namespace ice
         KeyboardKey result = KeyboardKey::Unknown;
         if (value.size() == 1)
         {
-            if (value[0] >= 'a')
+            if (value[0] >= 'a' && value[0] <= 'z')
             {
-                ICE_ASSERT_CORE(value[0] <= 'z');
                 char const key_diff = value[0] - 'a';
-
                 result = static_cast<KeyboardKey>(static_cast<ice::u16>(KeyboardKey::KeyA) + key_diff);
             }
-            else if (value[0] >= 'A')
+            else if (value[0] >= 'A' && value[0] <= 'Z')
             {
                 ICE_ASSERT_CORE(value[0] <= 'Z');
                 char const key_diff = value[0] - 'A';
 
                 result = static_cast<KeyboardKey>(static_cast<ice::u16>(KeyboardKey::KeyA) + key_diff);
             }
-            else if (value[0] >= '0')
+            else if (value[0] >= '0' && value[0] <= '9')
             {
-                ICE_ASSERT_CORE(value[0] <= '9');
                 char const key_diff = value[0] - '0';
-
                 result = static_cast<KeyboardKey>(static_cast<ice::u16>(KeyboardKey::Key0) + key_diff);
+            }
+        }
+        else if (value.size() == 2 && (value[0] == 'f' || value[0] == 'F'))
+        {
+            if (value[1] >= '1' && value[1] <= '9')
+            {
+                char const key_diff = value[1] - '1';
+                result = static_cast<KeyboardKey>(static_cast<ice::u16>(KeyboardKey::KeyF1) + key_diff);
+            }
+        }
+        else if (value.size() == 3)
+        {
+            if ((value[0] == 'f' || value[0] == 'F') && value[1] == '1' && value[2] >= '0' && value[2] <= '2')
+            {
+                char const key_diff = value[2] - '0';
+                result = static_cast<KeyboardKey>(static_cast<ice::u16>(KeyboardKey::KeyF10) + key_diff);
             }
         }
         else if (ice::compare(value, "space") == CompareResult::Equal)
@@ -433,13 +469,12 @@ namespace ice
     {
         switch (token.type)
         {
-        case TokenType::ASL_OP_Max: return InputActionModifier::Max;
+        case TokenType::OP_Plus: return InputActionModifier::Add;
+        case TokenType::OP_Minus: return InputActionModifier::Sub;
+        case TokenType::OP_Mul: return InputActionModifier::Mul;
         case TokenType::OP_Div: return InputActionModifier::Div;
-            // Not implemented yet
-        case TokenType::ASL_OP_Min:
-        case TokenType::OP_Mul:
-        case TokenType::OP_Plus:
-        case TokenType::OP_Minus:
+        case TokenType::ASL_OP_Max: return InputActionModifier::MaxOf;
+        case TokenType::ASL_OP_Min: return InputActionModifier::MinOf;
         default: ICE_ASSERT_CORE("Not Implemented!" && false); return InputActionModifier::Invalid;
         }
     }

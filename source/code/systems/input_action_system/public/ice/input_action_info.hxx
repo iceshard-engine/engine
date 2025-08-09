@@ -7,6 +7,9 @@ namespace ice
     //! \brief Predefined list of that can be set from input action scripts.
     enum class InputActionConstant : ice::u8
     {
+        //! \brief Represents the '0.0' value, can't be set from script.
+        Nil,
+
         //! \brief Float value used to determine if axis is outside of the deazone.
         //! \details The logic will consider values btween `[0, X)` to be inside the deadzone.
         ControllerAxisDeadzone,

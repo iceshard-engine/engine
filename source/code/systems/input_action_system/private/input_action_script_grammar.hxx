@@ -105,6 +105,10 @@ namespace ice::asl::grammar
             SyntaxRule{ TokenList::XYZ, MatchFirst, NameField, SyntaxRule::store_value_extend<arctic::String> }
         };
 
+        static constexpr SyntaxRule NameExtended[]{
+            SyntaxRule{ TokenType::CT_Symbol, NameField, SyntaxRule::store_value_extend<arctic::String> },
+        };
+
         static constexpr SyntaxRule NameWithCategory[]{
             SyntaxRule{ Category, MatchAll }.optional(),
             SyntaxRule{ TokenType::CT_Symbol, NameField, StoreFn },
@@ -119,6 +123,21 @@ namespace ice::asl::grammar
             SyntaxRule{ Category, MatchAll }.optional(),
             SyntaxRule{ TokenType::CT_Symbol, NameField, StoreFn },
             SyntaxRule{ AxisComponent, MatchAll }.optional()
+        };
+    };
+
+    struct Constant
+    {
+        using SymbolType = Symbol<&LayerConstant::name>;
+
+        static constexpr SyntaxRule Rules[]{
+            SyntaxRule{ TokenType::ASL_KW_Constant },
+            SyntaxRule{ TokenType::CT_Symbol, &LayerConstant::name },
+            SyntaxRule{ TokenType::CT_Dot },
+            SyntaxRule{ SymbolType::NameExtended, MatchAll },
+            SyntaxRule{ TokenType::OP_Assign },
+            SyntaxRule{ TokenList::NumberTypes, MatchFirst, &LayerConstant::param },
+            SyntaxRule{ TokenType::ST_EndOfLine },
         };
     };
 
@@ -308,8 +327,9 @@ namespace ice::asl::grammar
             SyntaxRule{ TokenType::CT_Symbol, &Layer::name },
             SyntaxRule{ TokenType::CT_Colon },
             SyntaxRule{ TokenType::ST_EndOfLine }.repeat(),
-            SyntaxRule{ LayerSourceRules, MatchChild<LayerSource> }.repeat().optional(),
-            SyntaxRule{ Action::Rules, MatchChild<LayerAction> }.repeat().optional(),
+            SyntaxRule{ Constant::Rules, MatchChild<LayerConstant> }.optional().repeat(),
+            SyntaxRule{ LayerSourceRules, MatchChild<LayerSource> }.optional().repeat(),
+            SyntaxRule{ Action::Rules, MatchChild<LayerAction> }.optional().repeat(),
         };
     };
 

@@ -237,11 +237,21 @@ namespace ice
     {
         Invalid = 0,
 
-        //! \brief Divides action value by a user provided param. `action_value / user_param`
+        //! \brief Adds param-value from action-value. `action_value - user_param`
+        Add,
+        //! \brief Subtracts param-value from action-value. `action_value - user_param`
+        Sub,
+        //! \brief Multiplies action-value by param-value. `action_value * user_param`
+        Mul,
+        //! \brief Divides action-value by param-value. `action_value / user_param`
+        //! \note The value cannot be '0'!
         Div,
 
-        //! \brief Highest value between the actions value and a user provided param. `max(action_value, user_param)`
-        Max,
+        //! \brief Higher value of the actions value and a user provided param. `max(action_value, user_param)`
+        MaxOf,
+
+        //! \brief Lower value of the actions value and a user provided param. `min(action_value, user_param)`
+        MinOf,
     };
 
     //! \brief Data representation of active input actions.

@@ -38,6 +38,11 @@ namespace ice
             ice::String name
         ) noexcept -> ice::InputActionBuilder::Layer& = 0;
 
+        virtual void set_constant(
+            ice::InputActionConstant constant,
+            ice::f32 value
+        ) noexcept = 0;
+
         virtual auto define_source(
             ice::String name,
             ice::InputActionSourceType type

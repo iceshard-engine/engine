@@ -110,12 +110,6 @@ namespace ice
             ice::u32 index;
         };
 
-        //struct SourceValueIndex
-        //{
-        //    ice::u32 index;
-        //    ice::u32 initial_layer;
-        //};
-
         // Helpers
         static bool compare_layers(StackLayer const& slayer, ice::InputActionLayer const* layer) noexcept
         {

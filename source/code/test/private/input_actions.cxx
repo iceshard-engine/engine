@@ -83,7 +83,7 @@ namespace ice
                     when Jump.pressed
                         .time
                         .activate
-                    mod .x max 1.0
+                    mod .x min 1.0
 
                 action Move: float2
                     when Left.pressed
@@ -104,6 +104,9 @@ namespace ice
                         .x = Pos.x
                         .y = Pos.y
                         .activate
+
+            layer Constants:
+                constant axis.deadzone = 0.25
         )__");
 
 

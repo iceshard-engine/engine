@@ -35,7 +35,7 @@ namespace ice
     class InputActionLayer;
     class InputActionStack;
 
-    static constexpr ice::u32 Constant_CountInputActionConstants = 1;
+    static constexpr ice::u32 Constant_CountInputActionConstants = 2;
 
 } // namespace ice
 

@@ -1,6 +1,6 @@
 
 #include "input_action_internal_types.hxx"
-#include "input_action_dsl_layer_builder.hxx"
+#include "input_action_script_parser.hxx"
 
 #include <ice/input/input_keyboard.hxx>
 #include <ice/input/input_mouse.hxx>
