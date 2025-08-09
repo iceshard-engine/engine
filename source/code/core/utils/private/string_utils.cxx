@@ -8,6 +8,46 @@
 namespace ice
 {
 
+    auto compare(
+        ice::String left,
+        ice::String right,
+        ice::u64 count,
+        ice::CaseSensitive check_case /*= CaseSensitive::No*/
+    ) noexcept -> ice::CompareResult
+    {
+#if ISP_WINDOWS
+        ice::u32 const comp_result = check_case == CaseSensitive::Yes
+            ? strncmp(ice::string::begin(left), ice::string::begin(right), count)
+            : strnicmp(ice::string::begin(left), ice::string::begin(right), count);
+#elif ISP_UNIX
+        ice::u32 const comp_result = check_case == CaseSensitive::Yes
+            ? strncmp(ice::string::begin(left), ice::string::begin(right), count)
+            : strncasecmp(ice::string::begin(left), ice::string::begin(right), count);
+#endif
+        return comp_result == 0 ? CompareResult::Equal :
+            (comp_result < 0 ? CompareResult::Smaller : CompareResult::Larger);
+    }
+
+    auto compare(
+        ice::String left,
+        ice::String right,
+        ice::CaseSensitive check_case /*= CaseSensitive::No*/
+    ) noexcept -> ice::CompareResult
+    {
+        ice::u32 const max_size = ice::min(ice::size(left), ice::size(right));
+#if ISP_WINDOWS
+        ice::u32 const comp_result = check_case == CaseSensitive::Yes
+            ? strncmp(ice::string::begin(left), ice::string::begin(right), max_size)
+            : strnicmp(ice::string::begin(left), ice::string::begin(right), max_size);
+#elif ISP_UNIX
+        ice::u32 const comp_result = check_case == CaseSensitive::Yes
+            ? strncmp(ice::string::begin(left), ice::string::begin(right), max_size)
+            : strncasecmp(ice::string::begin(left), ice::string::begin(right), max_size);
+#endif
+        return comp_result == 0 ? CompareResult::Equal :
+            (comp_result < 0 ? CompareResult::Smaller : CompareResult::Larger);
+    }
+
     auto utf8_to_wide_size(
         ice::String utf8_str
     ) noexcept -> ice::u32

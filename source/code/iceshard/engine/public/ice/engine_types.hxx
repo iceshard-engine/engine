@@ -8,6 +8,7 @@
 #include <ice/resource_handle.hxx>
 #include <ice/stringid.hxx>
 #include <ice/task_types.hxx>
+#include <ice/input_action_types.hxx>
 
 namespace ice
 {

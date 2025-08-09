@@ -29,7 +29,9 @@ namespace ice
     {
         DefaultModuleRegister* module_register;
         DefaultModuleEntry current_module;
+        bool in_app_context;
 
+        static bool from_app(ModuleNegotiatorAPIContext*) noexcept;
         static bool get_module_api(ModuleNegotiatorAPIContext*, ice::StringID_Hash, ice::u32, ice::ModuleAPI*) noexcept;
         static bool get_module_apis(ModuleNegotiatorAPIContext*, ice::StringID_Hash, ice::u32, ice::ModuleAPI*, ice::ucount*) noexcept;
         static bool register_module(ModuleNegotiatorAPIContext*, ice::StringID_Hash, FnModuleSelectAPI*) noexcept;
@@ -49,7 +51,8 @@ namespace ice
         bool load_module(
             ice::Allocator& alloc,
             ice::FnModuleLoad* load_fn,
-            ice::FnModuleUnload* unload_fn
+            ice::FnModuleUnload* unload_fn,
+            bool from_shared_library
         ) noexcept override;
 
         auto api_count(
@@ -117,7 +120,8 @@ namespace ice
                 load_module(
                     alloc,
                     reinterpret_cast<ice::FnModuleLoad*>(load_proc),
-                    reinterpret_cast<ice::FnModuleUnload*>(unload_proc)
+                    reinterpret_cast<ice::FnModuleUnload*>(unload_proc),
+                    /* is_app_context */ false
                 );
 
                 ice::array::push_back(_module_handles, ice::move(module_handle));
@@ -130,7 +134,8 @@ namespace ice
     bool DefaultModuleRegister::load_module(
         ice::Allocator& alloc,
         ice::FnModuleLoad* load_fn,
-        ice::FnModuleUnload* unload_fn
+        ice::FnModuleUnload* unload_fn,
+        bool from_shared_library
     ) noexcept
     {
         DefaultModuleEntry module_entry{
@@ -142,9 +147,11 @@ namespace ice
         ModuleNegotiatorAPIContext negotiator_context{
             .module_register = this,
             .current_module = module_entry,
+            .in_app_context = from_shared_library
         };
 
         ModuleNegotiatorAPI negotiator{
+            .fn_is_app_context = ModuleNegotiatorAPIContext::from_app,
             .fn_select_apis = ModuleNegotiatorAPIContext::get_module_apis,
             .fn_register_api = ModuleNegotiatorAPIContext::register_module,
         };
@@ -218,6 +225,11 @@ namespace ice
         ice::u64 const name_hash = ice::hash(entry.name);
         ice::multi_hashmap::insert(_modules, name_hash, entry);
         return true;
+    }
+
+    bool ModuleNegotiatorAPIContext::from_app(ModuleNegotiatorAPIContext* ctx) noexcept
+    {
+        return ctx->in_app_context;
     }
 
     bool ModuleNegotiatorAPIContext::get_module_apis(

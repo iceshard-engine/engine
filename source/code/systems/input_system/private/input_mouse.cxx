@@ -147,6 +147,8 @@ namespace ice::input
             ice::array::push_back(events_out, event);
         }
 
+        // All other events have an axis_idx == 0
+        event.axis_idx = 0;
         if (_wheel != 0)
         {
             event.identifier = input_identifier(DeviceType::Mouse, MouseInput::Wheel);

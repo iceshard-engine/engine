@@ -180,9 +180,15 @@ namespace ice
         }
 
         template<typename CharType>
-        constexpr auto starts_with(ice::BasicString<CharType> str, ice::BasicString<CharType> prefix) noexcept
+        constexpr auto substr(ice::BasicString<CharType> str, ice::ref32 ref) noexcept -> ice::BasicString<CharType>
         {
-            return ice::string::substr(str, 0, ice::string::size(prefix)) == prefix;
+            return ice::string::substr(str, ref.offset, ref.size);
+        }
+
+        template<typename CharType>
+        constexpr auto starts_with(ice::BasicString<CharType> str, ice::concepts::StringType<CharType> auto prefix) noexcept
+        {
+            return ice::string::substr(str, 0, prefix._size) == prefix;
         }
 
 
@@ -381,6 +387,14 @@ namespace ice
                 .location = str._data,
                 .size = ice::size_of<CharType> * str._size,
                 .alignment = ice::align_of<CharType>
+            };
+        }
+
+        template<typename CharType>
+        constexpr auto meminfo(ice::BasicString<CharType> str) noexcept -> ice::meminfo
+        {
+            return ice::meminfo{
+                ice::meminfo_of<CharType> * ice::string::size(str)
             };
         }
 

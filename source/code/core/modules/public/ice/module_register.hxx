@@ -38,13 +38,14 @@ namespace ice
         virtual bool load_module(
             ice::Allocator& alloc,
             ice::FnModuleLoad* load_fn,
-            ice::FnModuleUnload* unload_fn
+            ice::FnModuleUnload* unload_fn,
+            bool from_shared_library
         ) noexcept = 0;
 
         //! \brief Loads a module using a module info structure.
         virtual bool load_module(ice::Allocator& alloc, ice::ModuleInfo const& module_info) noexcept
         {
-            return this->load_module(alloc, module_info.fn_load, module_info.fn_unload);
+            return this->load_module(alloc, module_info.fn_load, module_info.fn_unload, true);
         }
 
         //! \brief Loads a module using a module type. This is the preferred way of loading modules implicitly.

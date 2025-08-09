@@ -128,6 +128,6 @@ namespace ice
 } // namespace ice
 
 template<>
-constexpr ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::RenderUIRequest const*> = ice::shard_payloadid("ice::RenderUIRequest const*");
+constexpr inline ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::RenderUIRequest const*> = ice::shard_payloadid("ice::RenderUIRequest const*");
 
 #endif

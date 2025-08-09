@@ -63,5 +63,6 @@ namespace ice
 #else
 #   define IS_WORKAROUND_MODULE_INITIALIZATION(type)
 #endif
+#define ICE_WORKAROUND_MODULE_INITIALIZATION(type) IS_WORKAROUND_MODULE_INITIALIZATION(type)
 
 } // namespace ice

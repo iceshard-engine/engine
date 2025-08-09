@@ -95,7 +95,7 @@ namespace ice
 } // namespace ice
 
 template<>
-constexpr ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::DebugDrawCommandList const*> = ice::shard_payloadid("ice::DebugDrawCommandList const*");
+constexpr inline ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::DebugDrawCommandList const*> = ice::shard_payloadid("ice::DebugDrawCommandList const*");
 
 template<>
-constexpr ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::DrawTextCommand const*> = ice::shard_payloadid("ice::DrawTextCommand const*");
+constexpr inline ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::DrawTextCommand const*> = ice::shard_payloadid("ice::DrawTextCommand const*");

@@ -194,6 +194,7 @@ namespace ice
 
     AllocatorBase<true>::~AllocatorBase() noexcept
     {
+        // TODO: Introduce low-level logger just for debug and dev builds.
         ICE_ASSERT_CORE(allocation_count() == 0);
     }
 

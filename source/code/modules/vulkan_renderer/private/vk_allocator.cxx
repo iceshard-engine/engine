@@ -233,7 +233,11 @@ namespace ice::render::vk
 
     auto VulkanAllocator::vulkan_callbacks() const noexcept -> VkAllocationCallbacks const*
     {
+#if 0
         return &_vulkan_callbacks;
+#else
+        return nullptr;
+#endif
     }
 
 } // namespace ice::render::vk
