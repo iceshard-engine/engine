@@ -57,7 +57,7 @@ namespace ice::render::vk
     ) noexcept
     {
 #if ISP_WINDOWS || ISP_LINUX
-        static ice::String constexpr extensions[]{ ".asl", ".glsl",".spv" };
+        static ice::String constexpr extensions[]{ ".asl", ".glsl", ".spv" };
 #else
         static ice::String constexpr extensions[]{ ".spv" };
 #endif
@@ -69,9 +69,22 @@ namespace ice::render::vk
         };
 
 #if ISP_WINDOWS || ISP_LINUX
-        ice::ResourceCompiler compiler{ };
-        module_query.query_api(compiler);
-        asset_category_archive.register_category(ice::render::AssetCategory_Shader, definition, &compiler);
+        static ice::HostAllocator host_alloc;
+
+        ice::ResourceCompiler const* selected_compiler = nullptr;
+        ice::Array<ice::ResourceCompiler> compilers{ host_alloc };
+        module_query.query_apis(compilers);
+
+        for (ice::ResourceCompiler const& compiler : compilers)
+        {
+            if (compiler.id_category == "ice/shader-resource"_sid)
+            {
+                selected_compiler = ice::addressof(compiler);
+                break;
+            }
+        }
+
+        asset_category_archive.register_category(ice::render::AssetCategory_Shader, definition, selected_compiler);
 #else
         asset_category_archive.register_category(ice::render::AssetCategory_Shader, definition, nullptr);
 #endif

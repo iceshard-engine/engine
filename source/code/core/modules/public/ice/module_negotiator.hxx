@@ -15,6 +15,12 @@ namespace ice
     //! \details Allows to register and query APIs independent if the module is dynamically or statically linked.
     struct ModuleNegotiatorAPI
     {
+        //! \returns 'true' if the module is loaded from a shared library.
+        //!   Can be used to load system modules only from the executable.
+        using FnModuleInAppContext = bool(*)(
+            ice::ModuleNegotiatorAPIContext*
+        ) noexcept;
+
         //! \brief Used to return API pointers into the given array.
         //! \note If the array pointer is null, the size pointer will be set to the required size.
         //! \note If the array is not large enough, the returned elements will be truncated without a specific order.
@@ -34,6 +40,7 @@ namespace ice
             ice::FnModuleSelectAPI* fn_api_selector
         ) noexcept;
 
+        FnModuleInAppContext fn_is_app_context;
         FnModuleSelectAPIs fn_select_apis;
         FnModuleRegisterAPI fn_register_api;
     };
@@ -47,6 +54,9 @@ namespace ice
             ice::ModuleNegotiatorAPI* negotiator_api,
             ice::ModuleNegotiatorAPIContext* negotiator_context
         ) noexcept;
+
+        //! \returns 'true' when the module is loaded in the main application context.
+        bool from_app() const noexcept;
 
         //! \copy ice::ModuleQuery::query_apis
         bool query_apis(

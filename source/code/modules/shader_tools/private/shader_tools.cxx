@@ -46,7 +46,7 @@ namespace ice
 
     auto compiler_supported_shader_resources(
         ice::Span<ice::Shard const> params
-    ) noexcept -> ice::Span<ice::String>
+    ) noexcept -> ice::Span<ice::String const>
     {
         if constexpr (ice::build::is_windows)
         {
@@ -144,6 +144,7 @@ namespace ice
         static void v1_compiler_api(ice::api::resource_compiler::v1::ResourceCompilerAPI& api) noexcept
         {
 #if ISP_WINDOWS || ISP_LINUX || ISP_WEBAPP
+            api.id_category = "ice/shader-resource"_sid;
             api.fn_prepare_context = compiler_context_prepare;
             api.fn_cleanup_context = compiler_context_cleanup;
             api.fn_supported_resources = compiler_supported_shader_resources;

@@ -39,75 +39,27 @@ namespace ice
         co_return;
     }
 
-    auto InputActionsTrait::activate(ice::WorldStateParams const& world_update) noexcept -> ice::Task<>
+    auto InputActionsTrait::activate(
+        ice::WorldStateParams const& world_update
+    ) noexcept -> ice::Task<>
     {
         using namespace ice::input;
         using enum ice::InputActionConditionFlags;
-
         _stack = ice::addressof(world_update.engine.actions());
 
-        _layers = ice::parse_input_action_layer(_allocator, R"__(
-            layer Base:
-                source button RClick: mouse.rbutton
-                source axis2d Pos: mouse.pos
+        ice::AssetStorage& assets = world_update.assets;
+        ice::Asset script = assets.bind(ice::AssetCategory_InputActionsScript, "core/example_input_actions");
+        if (script.valid() == false)
+        {
+            co_return;
+        }
 
-                action RClick: float2
-                    when RClick.pressed
-                        .x = Pos.x
-                        .y = Pos.y
-                        .activate
+        ice::Data const data = co_await script[AssetState::Raw];
+        if (data.location != nullptr)
+        {
+            _layers = ice::parse_input_action_layer(_allocator, ice::string::from_data(data));
+        }
 
-            layer Test:
-                source button Jump: kb.Space
-
-                source button Left: kb.A, kb.Left
-                source button Right: kb.D, kb.Right
-                source button Up: kb.W, kb.Up
-                source button Down: kb.S, kb.Down
-
-                source axis2d Pos
-                source button Click: mouse.lbutton
-
-                source button Sprint: kb.lshift
-                source button SprintToggle: kb.V
-
-                action Sprint: bool, toggled
-                    when SprintToggle.pressed
-                        .toggle
-                    when Sprint.pressed
-                        .activate
-                    when Sprint.released
-                        .deactivate
-
-                action Jump: float1
-                    when Jump.pressed
-                        .time
-                        .activate
-                    mod .x min 1.0
-
-                action Move: float2
-                    when Left.pressed
-                        .x - Left.x
-                      or Right.pressed
-                        .x + Right.x
-                      or Up.pressed
-                        .y + Up.x
-                      or Down.pressed, series
-                        .y - Down.x
-                        .activate
-
-                    when .true // only executed if the previous condition series are not valid
-                        .reset
-
-                action Click: object, once
-                    when Click.pressed
-                        .x = Pos.x
-                        .y = Pos.y
-                        .activate
-
-            layer Constants:
-                constant axis.deadzone = 0.25
-        )__");
 
 
         for (ice::UniquePtr<ice::InputActionLayer> const& layer : _layers)
@@ -148,7 +100,7 @@ namespace ice
         for (ice::UniquePtr<ice::InputActionLayer> const& layer : _layers)
         {
             ImGui::Separator();
-            ImGui::Text(ice::string::begin(layer->name()));
+            ImGui::TextT("{}", layer->name());
             ImGui::SeparatorText("Sources");
 
             ice::u32 last_storage = ice::u32_max;

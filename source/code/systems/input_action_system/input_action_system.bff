@@ -17,6 +17,7 @@
         .Uses = {
             'utils'
             'input_system'
+            'asset_system'
         }
     ]
 

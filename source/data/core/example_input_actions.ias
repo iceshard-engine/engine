@@ -1,0 +1,60 @@
+layer Base:
+    source button RClick: mouse.rbutton
+    source axis2d Pos: mouse.pos
+
+    action RClick: float2
+        when RClick.pressed
+            .x = Pos.x
+            .y = Pos.y
+            .activate
+
+layer Test:
+    source button Jump: kb.Space
+
+    source button Left: kb.A, kb.Left
+    source button Right: kb.D, kb.Right
+    source button Up: kb.W, kb.Up
+    source button Down: kb.S, kb.Down
+
+    source axis2d Pos
+    source button Click: mouse.lbutton
+
+    source button Sprint: kb.lshift
+    source button SprintToggle: kb.V
+
+    action Sprint: bool, toggled
+        when SprintToggle.pressed
+            .toggle
+        when Sprint.pressed
+            .activate
+        when Sprint.released
+            .deactivate
+
+    action Jump: float1
+        when Jump.pressed
+            .time
+            .activate
+        mod .x min 1.0
+
+    action Move: float2
+        when Left.pressed
+            .x - Left.x
+            or Right.pressed
+            .x + Right.x
+            or Up.pressed
+            .y + Up.x
+            or Down.pressed, series
+            .y - Down.x
+            .activate
+
+        when .true // only executed if the previous condition series are not valid
+            .reset
+
+    action Click: object, once
+        when Click.pressed
+            .x = Pos.x
+            .y = Pos.y
+            .activate
+
+layer Constants:
+    constant axis.deadzone = 0.25

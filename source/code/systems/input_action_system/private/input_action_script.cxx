@@ -6,6 +6,7 @@
 #include <arctic/arctic_parser.hxx>
 #include <arctic/arctic_syntax_node_allocator.hxx>
 #include <arctic/arctic_word_matcher.hxx>
+
 #include <ice/string_utils.hxx>
 #include <ice/sort.hxx>
 #include <ice/log.hxx>
@@ -63,8 +64,6 @@ namespace ice::asl
             .type = arctic::TokenType::Invalid,
             .location = location
         };
-
-        ICE_LOG(LogSeverity::Debug, LogTag::Core, "{}", word.value[0] == '\n' ? "<nl>" : word.value);
 
         ice::ucount idx;
         ice::asl::TokenDefinition const needle{ .value = word.value };
