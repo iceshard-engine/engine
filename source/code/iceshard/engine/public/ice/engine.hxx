@@ -17,7 +17,7 @@ namespace ice
         ice::UniquePtr<ice::TraitArchive> traits;
         ice::UniquePtr<ice::EngineStateTracker> states;
         ice::UniquePtr<ice::ecs::ArchetypeIndex> archetypes;
-
+        ice::UniquePtr<ice::InputActionStack> action_stack;
     };
 
     struct Engine
@@ -32,6 +32,8 @@ namespace ice
         virtual auto entity_archetypes() noexcept -> ice::ecs::ArchetypeIndex& = 0;
         virtual auto entity_index() noexcept -> ice::ecs::EntityIndex& = 0;
         virtual auto entity_storage() noexcept -> ice::ecs::EntityStorage& = 0;
+
+        virtual auto actions() noexcept -> ice::InputActionStack& = 0;
     };
 
 } // namespace ice

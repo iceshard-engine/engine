@@ -92,7 +92,7 @@ namespace ice::detail
             header_buffer_raw,
             256,
             fmt_string(LogFormat_LogLineHeader),
-            fmt::localtime(std::time(nullptr)),
+            ice::detail::local_time(),
             fmt_string(detail::severity_value[static_cast<ice::u32>(severity)]),
             fmt_string(base_tag_name),
             fmt_string(ice::string::empty(tag_name) || ice::string::empty(base_tag_name) ? "" : " | "),

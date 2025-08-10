@@ -28,11 +28,11 @@ namespace ice::ecs
             return base_offset;
         }
 
-        auto contains_required_components(
+        bool contains_required_components(
             ice::Span<ice::ecs::detail::QueryTypeInfo const> in_conditions,
             ice::Span<ice::StringID const> in_required_tags,
             ice::Span<ice::StringID const> checked_identifiers
-        ) noexcept -> ice::u32
+        ) noexcept
         {
             using QueryTypeInfo = ice::ecs::detail::QueryTypeInfo;
 
@@ -65,6 +65,7 @@ namespace ice::ecs
             }
 
             // As long as we have something to check and we did not fail search for the next ID
+            [[maybe_unused]]
             ice::u32 matched_components = 0;
 
             // Reset for checking the remaining conditions
@@ -93,7 +94,7 @@ namespace ice::ecs
                 matched_components += (identifier_hash == condition_hash);
             }
 
-            return result ? matched_components : 0;
+            return result;
         }
 
     } // namespace detail
@@ -367,7 +368,7 @@ namespace ice::ecs
                 continue;
             }
 
-            ice::u32 const matched_components = ice::ecs::detail::contains_required_components(
+            bool const was_matched = ice::ecs::detail::contains_required_components(
                 query_info,
                 query_tags,
                 archetype_info.component_identifiers
@@ -375,7 +376,7 @@ namespace ice::ecs
 
             // If we don't match any component in a full optional query, we still skip this archetype.
             //  #todo: we should probably also check for the existance of the EntityHandle in the query. Then the check should be `> 1`
-            if (matched_components > 0)
+            if (was_matched)
             {
                 ice::array::push_back(out_archetypes, entry->archetype_identifier);
             }

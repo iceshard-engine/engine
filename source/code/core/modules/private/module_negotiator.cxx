@@ -6,6 +6,11 @@
 namespace ice
 {
 
+    bool ModuleNegotiatorBase::from_app() const noexcept
+    {
+        return negotiator_api->fn_is_app_context(negotiator_context);
+    }
+
     bool ModuleNegotiatorBase::query_apis(
         ice::StringID_Arg api_name,
         ice::u32 api_version,

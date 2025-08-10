@@ -104,58 +104,59 @@ namespace ice::platform::linux::sdl2
         return KeyboardKey::Unknown;
     }
 
-    auto map_sdl_mod_scancode(SDL_Scancode scancode) noexcept -> ice::input::KeyboardMod
+    auto map_sdl_mod_scancode(SDL_Scancode scancode) noexcept -> std::tuple<ice::input::KeyboardMod, ice::input::KeyboardKey>
     {
         using ice::input::KeyboardMod;
+        using ice::input::KeyboardKey;
 
         if (scancode == SDL_Scancode::SDL_SCANCODE_LCTRL)
         {
-            return KeyboardMod::CtrlLeft;
+            return { KeyboardMod::CtrlLeft, KeyboardKey::KeyLeftCtrl };
         }
         if (scancode == SDL_Scancode::SDL_SCANCODE_LSHIFT)
         {
-            return KeyboardMod::ShiftLeft;
+            return { KeyboardMod::ShiftLeft, KeyboardKey::KeyLeftShift };
         }
         if (scancode == SDL_Scancode::SDL_SCANCODE_LALT)
         {
-            return KeyboardMod::AltLeft;
+            return { KeyboardMod::AltLeft, KeyboardKey::KeyLeftAlt };
         }
         if (scancode == SDL_Scancode::SDL_SCANCODE_LGUI)
         {
-            return KeyboardMod::GuiLeft;
+            return { KeyboardMod::GuiLeft, KeyboardKey::KeyLeftGui };
         }
 
         if (scancode == SDL_Scancode::SDL_SCANCODE_RCTRL)
         {
-            return KeyboardMod::CtrlRight;
+            return { KeyboardMod::CtrlRight, KeyboardKey::KeyRightCtrl };
         }
         if (scancode == SDL_Scancode::SDL_SCANCODE_RSHIFT)
         {
-            return KeyboardMod::ShiftRight;
+            return { KeyboardMod::ShiftRight, KeyboardKey::KeyRightShift };
         }
         if (scancode == SDL_Scancode::SDL_SCANCODE_RALT)
         {
-            return KeyboardMod::AltRight;
+            return { KeyboardMod::AltRight, KeyboardKey::KeyRightAlt };
         }
         if (scancode == SDL_Scancode::SDL_SCANCODE_RGUI)
         {
-            return KeyboardMod::GuiRight;
+            return { KeyboardMod::GuiRight, KeyboardKey::KeyRightGui };
         }
 
         if (scancode == SDL_Scancode::SDL_SCANCODE_MODE)
         {
-            return KeyboardMod::Mode;
+            return { KeyboardMod::Mode, KeyboardKey::KeyMode };
         }
         if (scancode == SDL_Scancode::SDL_SCANCODE_NUMLOCKCLEAR)
         {
-            return KeyboardMod::NumLock;
+            return { KeyboardMod::NumLock, KeyboardKey::NumPadNumlockClear };
         }
         if (scancode == SDL_Scancode::SDL_SCANCODE_CAPSLOCK)
         {
-            return KeyboardMod::CapsLock;
+            return { KeyboardMod::CapsLock, KeyboardKey::KeyCapsLock };
         }
 
-        return KeyboardMod::None;
+        return { KeyboardMod::None, KeyboardKey::Unknown };
     }
 
 
@@ -252,11 +253,16 @@ namespace ice::platform::linux::sdl2
         }
         else
         {
-            KeyboardMod const mod = map_sdl_mod_scancode(sdl_event.key.keysym.scancode);
+            auto const [mod, modkey] = map_sdl_mod_scancode(sdl_event.key.keysym.scancode);
             if (mod != KeyboardMod::None)
             {
                 if (sdl_event.key.type == SDL_KEYDOWN)
                 {
+                    input_queue.push(
+                        device,
+                        DeviceMessage::KeyboardButtonDown,
+                        modkey
+                    );
                     input_queue.push(
                         device,
                         DeviceMessage::KeyboardModifierDown,
@@ -265,6 +271,11 @@ namespace ice::platform::linux::sdl2
                 }
                 else if (sdl_event.key.type == SDL_KEYUP)
                 {
+                    input_queue.push(
+                        device,
+                        DeviceMessage::KeyboardButtonUp,
+                        modkey
+                    );
                     input_queue.push(
                         device,
                         DeviceMessage::KeyboardModifierUp,

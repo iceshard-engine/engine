@@ -16,6 +16,15 @@ namespace ice::devui
 
     class ImGuiSystem;
 
+    struct ImGuiStats
+    {
+        ice::u32 draw_calls;
+        ice::u32 draw_vertices;
+        ice::u32 draw_indices;
+        ice::Tns draw_processtime;
+        ice::usize draw_datasize;
+    };
+
     class ImGuiTrait final
         : public ice::Trait
         , public ice::TraitDevUI

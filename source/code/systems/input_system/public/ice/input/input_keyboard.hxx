@@ -140,6 +140,9 @@ namespace ice::input
         KeyRightAlt,
         KeyRightGui,
 
+        KeyMode,
+        KeyCapsLock,
+
         NumPadNumlockClear,
         NumPadDivide,
         NumPadMultiply,

@@ -19,6 +19,7 @@
             'modules'
             'platform'
             'input_system'
+            'input_action_system'
             'render_system'
         }
     ]

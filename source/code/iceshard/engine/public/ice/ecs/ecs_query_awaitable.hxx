@@ -72,7 +72,8 @@ namespace ice::ecs
 
         template<typename MainPart, typename... RefParts>
         inline auto entity_count(
-            ice::ecs::QueryObject<MainPart, RefParts...> const& query
+            ice::ecs::QueryObject<MainPart, RefParts...> const& query,
+            ice::ecs::detail::DataBlockFilter::QueryFilter filter
         ) noexcept -> ice::ucount;
 
     } // namespace query
@@ -169,12 +170,16 @@ namespace ice::ecs
                 return internal_query_is_resumable(internal_get_query(userdata), self._awaited_access_stage);
             }
 
-            constexpr QueryAwaitableBase(QueryArg const& query, ice::TaskQueue& task_queue) noexcept
+            constexpr QueryAwaitableBase(
+                QueryArg const& query,
+                ice::ecs::detail::DataBlockFilter::QueryFilter filter,
+                ice::TaskQueue& task_queue
+            ) noexcept
                 : ice::TaskAwaitableBase{ ._params = {.modifier = ice::TaskAwaitableModifier::CustomResumer } }
                 , _task_queue{ ice::addressof(task_queue) }
                 , _custom_resumer{ }
                 , _awaited_access_stage{ }
-                , _is_empty{ ice::ecs::query::entity_count(query) == 0 }
+                , _is_empty{ ice::ecs::query::entity_count(query, filter) == 0 }
             {
                 _custom_resumer.ud_resumer = (void*)ice::addressof(query);
                 _custom_resumer.fn_resumer = internal_query_resumer;

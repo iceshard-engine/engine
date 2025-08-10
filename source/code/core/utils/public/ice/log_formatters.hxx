@@ -161,6 +161,22 @@ struct fmt::formatter<ice::usize>
 };
 
 template<>
+struct fmt::formatter<ice::isize> : fmt::formatter<ice::usize>
+{
+    template<typename FormatContext>
+    constexpr auto format(ice::isize value, FormatContext& ctx) const noexcept
+    {
+        auto output = ctx.out();
+        if (value.value < 0)
+        {
+            output = fmt::format_to(ctx.out(), "-");
+            value = -value;
+        }
+        return fmt::formatter<ice::usize>::format(value.to_usize(), ctx);
+    }
+};
+
+template<>
 struct fmt::formatter<ice::ErrorCode>
 {
     template<typename ParseContext>

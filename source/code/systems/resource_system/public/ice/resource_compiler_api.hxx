@@ -26,7 +26,7 @@ namespace ice
 
         using FnSupportedResources = auto(*)(
             ice::Span<ice::Shard const> params
-        ) noexcept -> ice::Span<ice::String>;
+        ) noexcept -> ice::Span<ice::String const>;
 
         using FnPrepareContext = auto(*)(
             ice::Allocator& alloc,
@@ -140,6 +140,7 @@ namespace ice
             static constexpr ice::StringID Constant_APIName = "ice.api.resource-compiler.v1"_sid;
             static constexpr ice::u32 Constant_APIVersion = 1;
 
+            StringID id_category;
             FnSupportedResources fn_supported_resources = nullptr;
             FnPrepareContext fn_prepare_context = nullptr;
             FnCleanupContext fn_cleanup_context = nullptr;

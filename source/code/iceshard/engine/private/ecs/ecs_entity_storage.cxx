@@ -317,9 +317,9 @@ namespace ice::ecs
         void batch_remove_entities(
             ice::ecs::ArchetypeIndex const& archetypes,
             ice::HashMap<ice::ecs::detail::EntityDestructor> const& destructors,
+            ice::Span<ice::ecs::EntityDataSlot> data_slots,
             ice::Span<ice::ecs::Entity const> entities_to_remove,
-            ice::Span<ice::ecs::detail::DataBlock*> data_blocks,
-            ice::Span<ice::ecs::EntityDataSlot> data_slots
+            ice::Span<ice::ecs::detail::DataBlock*> data_blocks
         ) noexcept
         {
             auto const* it = ice::span::begin(entities_to_remove);
@@ -446,7 +446,7 @@ namespace ice::ecs
                 if (next_valid_block_idx != archetype_block->block_entity_count)
                 {
                     // Find how many entities we can move into the newly created hole.
-                    ice::ecs::detail::OperationDetails dst_data_details{
+                    ice::ecs::detail::OperationDetails src_data_details{
                         .block_offset = archetype_block->block_entity_count - 1, // Initial index (last entity)
                         .block_data = archetype_block->block_data, // The actual data
                     };
@@ -456,9 +456,9 @@ namespace ice::ecs
                     while(movable_entities < span_size)
                     {
                         // If we did not reach below the valid index, get the next entity to be moved
-                        if (dst_data_details.block_offset > next_valid_block_idx)
+                        if (src_data_details.block_offset > next_valid_block_idx)
                         {
-                            dst_data_details.block_offset -= 1;
+                            src_data_details.block_offset -= 1;
                             movable_entities += 1;
                         }
                     }
@@ -470,7 +470,7 @@ namespace ice::ecs
 
                     // Get moved entity array
                     ice::Span<ice::ecs::Entity const> moved_entities = ice::ecs::detail::get_entity_array(
-                        component_info, dst_data_details, movable_entities
+                        component_info, src_data_details, movable_entities
                     );
 
                     // Execute the move
@@ -481,8 +481,8 @@ namespace ice::ecs
                         first_slot_info, // The initially removed slot
                         component_info,
                         component_info,
-                        del_data_details, /* src data block */
-                        dst_data_details /* dst data block */
+                        src_data_details, /* src data block */
+                        del_data_details /* dst data block */
                     );
                 }
 
@@ -490,6 +490,14 @@ namespace ice::ecs
                 archetype_block->block_entity_count -= span_size;
 
             } while(it != end);
+
+            // Clear all references
+            // TODO: We might not need this later once we extend Operations with a "type" flag.
+            for (ice::ecs::Entity entity : entities_to_remove)
+            {
+                ice::ecs::EntityInfo const ei = ice::ecs::entity_info(entity);
+                data_slots[ei.index] = {}; // Reset the slot info!
+            }
         }
 
         auto default_filter(void const*, void const*) noexcept
@@ -755,10 +763,10 @@ namespace ice::ecs
                     }
                 }
 
-                // #todo allow different archetypes maybe?
-                ICE_ASSERT(
+                ICE_LOG_IF(
                     same_archetype == true,
-                    "Entities in operation have different archetypes, operation is illformed!"
+                    LogSeverity::Warning, LogTag::Engine,
+                    "Entities in operation have different archetypes, not all operations can handle this yet! Check for possible bugs!"
                 );
             }
 
@@ -976,6 +984,7 @@ namespace ice::ecs
                         }
 
                         // Update the remianing count
+                        processed_count += entities_stored;
                         remaining_count -= entities_stored;
                         data_block_it->block_entity_count += entities_stored;
                     }
@@ -1063,9 +1072,9 @@ namespace ice::ecs
                     ice::ecs::detail::batch_remove_entities(
                         _archetype_index,
                         _destructors,
+                        _data_slots,
                         entities,
-                        _data_blocks,
-                        _data_slots
+                        _data_blocks
                     );
                 }
             }

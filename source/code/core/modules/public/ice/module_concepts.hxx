@@ -32,6 +32,7 @@ namespace ice::concepts
     concept ModuleNegotiator = requires(T const& t, ice::StringID_Arg id, ice::FnModuleSelectAPI* api) {
         { t.query_apis(id, ice::u32{}, (ice::ModuleAPI*) nullptr, (ice::ucount*)nullptr) } -> std::convertible_to<bool>;
         { t.register_api(id, api) } -> std::convertible_to<bool>;
+        { t.from_app() } -> std::convertible_to<bool>;
     } && requires(T const& t, ice::ProcAPIQuickRegisterFunc<APIConceptStruct> func) {
         { t.register_api(func) } -> std::convertible_to<bool>;
     };

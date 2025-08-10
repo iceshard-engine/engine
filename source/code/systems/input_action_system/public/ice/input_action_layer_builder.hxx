@@ -1,0 +1,123 @@
+#pragma once
+#include <ice/mem_unique_ptr.hxx>
+#include <ice/input_action_definitions.hxx>
+#include <ice/concept/pimpl_type.hxx>
+
+namespace ice
+{
+
+    struct InputActionBuilder
+    {
+        //! \brief Builder for input action layer objects. Allows to define Sources and Actions.
+        class Layer;
+
+        //! \brief Builder for input action sources. Allows to define a source and associated input events.
+        class Source;
+
+        //! \brief Builder for input actions. Allows to define an action, along with it's conditions and modifiers.
+        class Action;
+
+        //! \brief Builder for input action condition series. Defines multiple conditions with steps to run when
+        //!   evaluated as 'true'.
+        class ConditionSeries;
+
+        //! \brief Utility base class for Builder types.
+        using BuilderBase = ice::concepts::PimplType;
+    };
+
+    //! \brief Builder object for input action layers. Allows to easily define actions and sources without
+    //!   the need to understand the underlying binary representation.
+    class InputActionBuilder::Layer : public BuilderBase
+    {
+    public:
+        using BuilderBase::BuilderBase;
+
+        virtual ~Layer() = default;
+
+        virtual auto set_name(
+            ice::String name
+        ) noexcept -> ice::InputActionBuilder::Layer& = 0;
+
+        virtual void set_constant(
+            ice::InputActionConstant constant,
+            ice::f32 value
+        ) noexcept = 0;
+
+        virtual auto define_source(
+            ice::String name,
+            ice::InputActionSourceType type
+        ) noexcept -> ice::InputActionBuilder::Source = 0;
+
+        virtual auto define_action(
+            ice::String name,
+            ice::InputActionDataType type
+        ) noexcept -> ice::InputActionBuilder::Action = 0;
+
+        virtual auto finalize(
+            ice::Allocator& alloc
+        ) noexcept -> ice::UniquePtr<ice::InputActionLayer> = 0;
+    };
+
+    class InputActionBuilder::Source : public BuilderBase
+    {
+    public:
+        using BuilderBase::BuilderBase;
+
+        auto add_key(ice::input::KeyboardKey key) noexcept -> Source&;
+        auto add_keymod(ice::input::KeyboardMod keymod) noexcept -> Source&;
+        auto add_button(ice::input::MouseInput button) noexcept -> Source&;
+        auto add_button(ice::input::ControllerInput button) noexcept -> Source&;
+        auto add_axis(ice::input::MouseInput axisx) noexcept -> Source&;
+        auto add_axis(ice::input::ControllerInput button) noexcept -> Source&;
+    };
+
+    class InputActionBuilder::ConditionSeries : public BuilderBase
+    {
+    public:
+        using BuilderBase::BuilderBase;
+
+        void set_finished(bool can_finalize_condition_checks = true) noexcept;
+
+        auto add_condition(
+            ice::String source,
+            ice::InputActionCondition condition,
+            ice::InputActionConditionFlags flags = InputActionConditionFlags::None,
+            ice::f32 param = 0.0f,
+            bool from_action = false
+        ) noexcept -> ConditionSeries&;
+
+        auto add_step(
+            ice::InputActionStep step
+        ) noexcept -> ConditionSeries&;
+
+        auto add_step(
+            ice::String source,
+            ice::InputActionStep step,
+            ice::String target_axis = ".x"
+        ) noexcept -> ConditionSeries&;
+    };
+
+    class InputActionBuilder::Action : public BuilderBase
+    {
+    public:
+        using BuilderBase::BuilderBase;
+
+        auto add_condition_series() noexcept -> ConditionSeries;
+
+        auto set_behavior(
+            ice::InputActionBehavior behavior
+        ) noexcept -> Action&;
+
+        auto add_modifier(
+            ice::InputActionModifier modifier,
+            ice::f32 param,
+            ice::String target_axis = ".x"
+        ) noexcept -> Action&;
+    };
+
+    auto create_input_action_layer_builder(
+        ice::Allocator& alloc,
+        ice::String layer_name
+    ) noexcept -> ice::UniquePtr<ice::InputActionBuilder::Layer>;
+
+} // namespace ice

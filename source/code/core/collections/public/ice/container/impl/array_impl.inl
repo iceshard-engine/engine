@@ -376,6 +376,23 @@ namespace ice
             arr._count += ice::span::count(items);
         }
 
+        template<typename Type, ice::ContainerLogic Logic, typename Source>
+            requires std::copy_constructible<Type> && (std::is_same_v<Type, Source> == false)
+        inline void push_back(ice::Array<Type, Logic>& arr, ice::Span<Source const> items, Type(*fn)(Source const&) noexcept) noexcept
+        {
+            ice::ucount const required_capacity = arr._count + ice::span::count(items);
+            if (required_capacity > arr._capacity)
+            {
+                ice::array::grow(arr, required_capacity);
+            }
+
+            ice::ucount const missing_items = required_capacity - arr._count;
+            for (ice::u32 src_idx = 0; src_idx < missing_items; ++src_idx)
+            {
+                ice::array::push_back(arr, fn(items[src_idx]));
+            }
+        }
+
         template<typename Type, ice::ContainerLogic Logic>
         inline void pop_back(ice::Array<Type, Logic>& arr, ice::ucount count /*= 1*/) noexcept
         {
@@ -466,9 +483,15 @@ namespace ice
         }
 
         template<typename Type, ice::ContainerLogic Logic>
-        inline auto slice(ice::Array<Type, Logic> const& arr, ice::ucount from_idx, ice::ucount to) noexcept -> ice::Span<Type const>
+        inline auto slice(ice::Array<Type, Logic> const& arr, ice::ucount from_idx, ice::ucount count) noexcept -> ice::Span<Type const>
         {
-            return ice::span::subspan<Type const>(arr, from_idx, to);
+            return ice::span::subspan<Type const>(arr, from_idx, count);
+        }
+
+        template<typename Type, ice::ContainerLogic Logic>
+        inline auto slice(ice::Array<Type, Logic> const& arr, ice::ref32 ref) noexcept -> ice::Span<Type const>
+        {
+            return ice::span::subspan<Type const>(arr, ref);
         }
 
         template<typename Type, ice::ContainerLogic Logic>
@@ -537,6 +560,12 @@ namespace ice
             ice::Memory const mem = ice::array::memory(arr);
             ice::memset(mem.location, value, mem.size.value);
             return mem;
+        }
+
+        template<typename Type, ice::ContainerLogic Logic>
+        inline auto meminfo(ice::Array<Type, Logic> const& arr) noexcept -> ice::meminfo
+        {
+            return ice::meminfo_of<Type> * ice::array::count(arr);
         }
 
     } // namespace array

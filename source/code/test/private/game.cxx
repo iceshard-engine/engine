@@ -2,6 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #include "game.hxx"
+#include "input_actions.hxx"
 
 #include <ice/framework_module.hxx>
 
@@ -135,8 +136,6 @@ struct TestTrait : public ice::Trait
     ice::Allocator& _alloc;
     ice::Timer timer;
 
-    ice::ecs::Archetype _arch_test;
-
     ice::ecs::EntityOperations* _ops;
     ice::ecs::Entity _my_entity[10000];
 
@@ -145,8 +144,7 @@ struct TestTrait : public ice::Trait
 
         update.engine.entity_index().create_many(_my_entity);
         _ops = ice::addressof(update.world.entity_operations());
-
-        ice::ecs::queue_set_archetype(*_ops, _my_entity, _arch_test);
+        _ops->set("test-arch", _my_entity);
 
         ICE_LOG(LogSeverity::Retail, LogTag::Game, "Test Activated!");
         timer = ice::timer::create_timer(update.clock, 100_Tms);
@@ -160,7 +158,7 @@ struct TestTrait : public ice::Trait
         query<ice::ecs::Entity>().tags<C1, C2>().for_each_block(
             [&](ice::ucount count, ice::ecs::Entity const* entities) noexcept
             {
-                ice::ecs::queue_batch_remove_entities(*_ops, { entities, count });
+                _ops->destroy({ entities, count });
             }
         );
 
@@ -227,11 +225,16 @@ auto test_factory(ice::Allocator& alloc, ice::TraitContext& context, void*) noex
 {
     return ice::make_unique<TestTrait>(alloc, alloc, context);
 }
+auto actions_factory(ice::Allocator& alloc, ice::TraitContext& context, void*) noexcept -> UniquePtr<ice::Trait>
+{
+    return context.make_unique<ice::InputActionsTrait>(alloc, alloc);
+}
 
 bool test_reg_traits(ice::TraitArchive& arch) noexcept
 {
     arch.register_trait({ .name = "act"_sid, .fn_factory = act_factory });
     arch.register_trait({ .name = "test"_sid, .fn_factory = test_factory });
+    arch.register_trait({ .name = "actions"_sid, .fn_factory = actions_factory });
     return true;
 }
 
@@ -295,6 +298,7 @@ void TestGame::on_resume(ice::Engine& engine) noexcept
         ice::StringID traits[]{
             "act"_sid,
             "test2"_sid,
+            "actions"_sid,
             ice::devui_trait_name(),
             ice::TraitID_GfxShaderStorage
         };
