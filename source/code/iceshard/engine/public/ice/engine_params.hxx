@@ -32,7 +32,7 @@ namespace ice
         ice::Clock const& clock;
         ice::ResourceTracker& resources;
         ice::AssetStorage& assets;
-        ice::TaskScheduler& scheduler;
+        ice::EngineSchedulers schedulers;
     };
 
     struct GfxTaskParams : EngineParamsBase

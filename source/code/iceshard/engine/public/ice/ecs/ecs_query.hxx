@@ -167,4 +167,7 @@ namespace ice::ecs
     template<typename... Parts> Query(QueryObject<Parts...>&&) noexcept -> Query<QueryType::Unchecked, Parts...>;
     template<typename... Parts> Query(QueryObject<Parts...> const&) noexcept -> Query<QueryType::Unchecked, Parts...>;
 
+    template<ice::ecs::Component... Components>
+    using SimpleQuery = Query<QueryType::Unchecked, ice::ecs::detail::QueryObjectPart<0, Components...>>;
+
 } // namespace ice::ecs

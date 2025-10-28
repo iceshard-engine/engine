@@ -86,6 +86,8 @@ namespace ice::ecs
         //! \copydoc ArchetypeDefinition::component_alignments
         ice::Span<ice::u32 const> component_alignments;
 
+        constexpr inline ArchetypeInfo() noexcept = default;
+
         template<ice::ecs::Component... Components>
         constexpr inline ArchetypeInfo(
             ice::ecs::ArchetypeDefinition<Components...> const& archetype_info

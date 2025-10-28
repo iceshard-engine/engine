@@ -88,6 +88,18 @@ struct ice::detail::ArgMapper<ice::AssetStorage&>
 };
 
 template<>
+struct ice::detail::ArgMapper<ice::EngineSchedulers>
+{
+    using ShardType = ice::EngineSchedulers;
+
+    template<typename Source>
+    static auto select(ice::LogicTaskParams const& params, Source&&) noexcept -> ice::EngineSchedulers
+    {
+        return params.schedulers;
+    }
+};
+
+template<>
 struct ice::detail::ArgMapper<ice::TaskScheduler>
 {
     using ShardType = ice::TaskScheduler;
@@ -95,7 +107,7 @@ struct ice::detail::ArgMapper<ice::TaskScheduler>
     template<typename Source>
     static auto select(ice::LogicTaskParams const& params, Source&&) noexcept -> ice::TaskScheduler
     {
-        return params.scheduler;
+        return params.schedulers.main;
     }
     template<typename Source>
     static auto select(ice::GfxTaskParams const& params, Source&&) noexcept -> ice::TaskScheduler
