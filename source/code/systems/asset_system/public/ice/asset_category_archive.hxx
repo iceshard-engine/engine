@@ -31,8 +31,14 @@ namespace ice
             ice::Memory&
         ) noexcept;
 
+        auto(*fn_extension_for_state)(
+            void*,
+            ice::AssetState
+        ) noexcept -> ice::String;
+
         void* ud_asset_state;
         void* ud_asset_loader;
+        void* ud_asset_extension;
     };
 
     class AssetCategoryArchive
