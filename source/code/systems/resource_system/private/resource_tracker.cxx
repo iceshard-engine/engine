@@ -249,6 +249,11 @@ namespace ice
             it = ice::multi_hashmap::find_next(_resource_writers, it);
         }
 
+        if (writer == nullptr)
+        {
+            co_return E_FailedToFindValidResourceWriter;
+        }
+
         ice::Resource* resource = writer->find_resource(resource_uri);
         if (resource == nullptr)
         {
@@ -267,7 +272,7 @@ namespace ice
         ice::URI const& uri,
         ice::Data data,
         ice::usize write_offset
-    ) noexcept -> ice::Task<bool>
+    ) noexcept -> ice::TaskExpected<bool>
     {
         ice::ResourceHandle resource = co_await create_resource(uri);
         ice::ResourceWriter* const writer = static_cast<ice::ResourceWriter*>(ice::internal_provider(resource));
@@ -278,7 +283,7 @@ namespace ice
         ice::ResourceHandle const& resource,
         ice::Data data,
         ice::usize write_offset
-    ) noexcept -> ice::Task<bool>
+    ) noexcept -> ice::TaskExpected<bool>
     {
         ice::ResourceWriter* const writer = static_cast<ice::ResourceWriter*>(ice::internal_provider(resource));
         co_return co_await writer->write_resource(resource, data, write_offset);

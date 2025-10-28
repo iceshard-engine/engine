@@ -108,13 +108,13 @@ namespace ice
             ice::URI const& uri,
             ice::Data data,
             ice::usize write_offset = 0_B
-        ) noexcept -> ice::Task<bool> = 0;
+        ) noexcept -> ice::TaskExpected<bool> = 0;
 
         virtual auto write_resource(
             ice::ResourceHandle const& handle,
             ice::Data data,
             ice::usize write_offset = 0_B
-        ) noexcept -> ice::Task<bool> = 0;
+        ) noexcept -> ice::TaskExpected<bool> = 0;
     };
 
     auto resource_uri(ice::ResourceHandle const& handle) noexcept -> ice::URI const&;

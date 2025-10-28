@@ -7,6 +7,8 @@
 namespace ice
 {
 
+    static constexpr ice::ErrorCode E_FailedToFindValidResourceWriter{ "E.4350:Resources:Failed to find a valid resource writer for the given URI scheme." };
+
     enum class ResourceCreationFlags : ice::u8
     {
         None,
