@@ -317,7 +317,6 @@ namespace ice::ecs
         void batch_remove_entities(
             ice::ecs::ArchetypeIndex const& archetypes,
             ice::HashMap<ice::ecs::detail::EntityDestructor> const& destructors,
-            ice::Span<ice::ecs::EntityDataSlot> dst_data_slots,
             ice::Span<ice::ecs::Entity const> entities_to_remove,
             ice::Span<ice::ecs::detail::DataBlock*> data_blocks,
             ice::Span<ice::ecs::EntityDataSlot> data_slots
@@ -497,8 +496,52 @@ namespace ice::ecs
             for (ice::ecs::Entity entity : entities_to_remove)
             {
                 ice::ecs::EntityInfo const ei = ice::ecs::entity_info(entity);
-                dst_data_slots[ei.index] = {}; // Reset the slot info!
+                data_slots[ei.index] = {}; // Reset the slot info!
             }
+        }
+
+        auto default_filter(void const*, void const*) noexcept
+        {
+            return true;
+        }
+
+        auto select_block(
+            ice::ecs::detail::ArchetypeInstanceInfo const& info,
+            ice::ecs::detail::DataBlockPool& pool,
+            ice::ecs::detail::DataBlock* head,
+            ice::ecs::EntityOperation const& operation,
+            ice::u32& out_block_idx
+        ) noexcept -> ice::ecs::detail::DataBlock*
+        {
+            ice::ecs::detail::DataBlock* result = head;
+            ice::ecs::detail::DataBlockFilter filter = info.data_block_filter;
+            ice::ecs::detail::DataBlockFilter::FilterFn fn_filter = ice::value_or_default(filter.fn_filter, default_filter);
+
+            // Get the next block
+            while (result->block_entity_count == result->block_entity_count_max
+                || fn_filter(result->block_filter_data, operation.filter_data) == false)
+            {
+                if (result->next == nullptr)
+                {
+                    result->next = pool.request_block(info);
+                    result = result->next;
+
+                    if (filter.enabled)
+                    {
+                        filter.fn_data_setup(result->block_filter_data, operation.filter_data);
+                    }
+                }
+                else
+                {
+                    result = result->next;
+                }
+
+                out_block_idx += 1;
+            }
+
+            ICE_ASSERT_CORE(result->block_entity_count_max > 0);
+            ICE_ASSERT_CORE(result->block_entity_count <= result->block_entity_count_max);
+            return result;
         }
 
         auto default_filter(void const*, void const*) noexcept
@@ -1073,7 +1116,6 @@ namespace ice::ecs
                     ice::ecs::detail::batch_remove_entities(
                         _archetype_index,
                         _destructors,
-                        _data_slots,
                         entities,
                         _data_blocks,
                         _data_slots
