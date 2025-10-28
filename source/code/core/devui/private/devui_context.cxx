@@ -38,7 +38,8 @@ namespace ice
     }
 
     bool devui_register_widget(
-        ice::DevUIWidget* widget
+        ice::DevUIWidget* widget,
+        ice::DevUIWidget* owning_widget
     ) noexcept
     {
         if (global_context_register_widget == nullptr)
@@ -50,7 +51,7 @@ namespace ice
             return false;
         }
 
-        global_context_register_widget(widget);
+        global_context_register_widget(widget, owning_widget);
         return true;
     }
 
