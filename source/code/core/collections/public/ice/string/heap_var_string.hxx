@@ -18,6 +18,12 @@ namespace ice::string
     inline auto end(ice::HeapVarString<CharType>& str) noexcept -> typename ice::HeapVarString<CharType>::Iterator;
 
     template<typename CharType>
+    inline auto cbegin(ice::HeapVarString<CharType> const& str) noexcept -> typename ice::HeapVarString<CharType>::ConstIterator;
+
+    template<typename CharType>
+    inline auto cend(ice::HeapVarString<CharType> const& str) noexcept -> typename ice::HeapVarString<CharType>::ConstIterator;
+
+    template<typename CharType>
     inline auto rbegin(ice::HeapVarString<CharType>& str) noexcept -> typename ice::HeapVarString<CharType>::ReverseIterator;
 
     template<typename CharType>

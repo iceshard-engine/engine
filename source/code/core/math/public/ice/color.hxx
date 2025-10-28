@@ -32,6 +32,10 @@ namespace ice
 
         constexpr explicit Color(ice::u32 rgba) noexcept;
         constexpr explicit Color(ice::u8 r, ice::u8 g, ice::u8 b, ice::u8 a = 255) noexcept;
+        constexpr explicit Color(ice::i32 r, ice::i32 g, ice::i32 b, ice::i32 a = 255) noexcept;
+        constexpr explicit Color(ice::f32 r, ice::f32 g, ice::f32 b, ice::f32 a = 1.0f) noexcept;
+
+        constexpr auto unorm() const noexcept -> ice::u32;
     };
 
     namespace detail
@@ -55,13 +59,14 @@ namespace ice
         template<typename From, typename To>
         static constexpr auto color_convert(From from) noexcept -> To
         {
+            // Support u16 and u32 better? Store colors using all 16/32 bits?
             if constexpr (std::is_same_v<From, To>)
             {
                 return from;
             }
             else if constexpr (std::is_floating_point_v<From> == false && std::is_floating_point_v<To> == false)
             {
-                ice::f32 const to_f32 = static_cast<ice::f32>(static_cast<ice::f32>(from) / static_cast<ice::f32>(std::numeric_limits<From>::max()));
+                ice::f32 const to_f32 = static_cast<ice::f32>(static_cast<ice::f32>(from) / static_cast<ice::f32>(255));
                 return static_cast<To>(static_cast<From>(std::numeric_limits<To>::max()) * to_f32 + 0.5f);
             }
             else if constexpr (std::is_same_v<To, ice::u8> || std::is_same_v<To, ice::u16>)
@@ -70,7 +75,7 @@ namespace ice
             }
             else if constexpr (std::is_same_v<From, ice::u8> || std::is_same_v<From, ice::u16>)
             {
-                return static_cast<To>(static_cast<To>(from) / static_cast<To>(std::numeric_limits<From>::max()));
+                return static_cast<To>(static_cast<To>(from) / static_cast<To>(255));
             }
             else
             {
@@ -102,6 +107,30 @@ namespace ice
         , g{ ice::detail::color_convert<u8, T>((argb >> 8) & 0xff) }
         , b{ ice::detail::color_convert<u8, T>((argb >> 0) & 0xff) }
         , a{ ice::detail::color_convert<u8, T>((argb >> 24) & 0xff) }
+    { }
+
+    template<typename T>
+    constexpr Color<T>::Color(ice::u8 r, ice::u8 g, ice::u8 b, ice::u8 a) noexcept
+        : r{ ice::detail::color_convert<u8, T>(r) }
+        , g{ ice::detail::color_convert<u8, T>(g) }
+        , b{ ice::detail::color_convert<u8, T>(b) }
+        , a{ ice::detail::color_convert<u8, T>(a) }
+    { }
+
+    template<typename T>
+    constexpr Color<T>::Color(ice::i32 r, ice::i32 g, ice::i32 b, ice::i32 a) noexcept
+        : r{ ice::detail::color_convert<i32, T>(r) }
+        , g{ ice::detail::color_convert<i32, T>(g) }
+        , b{ ice::detail::color_convert<i32, T>(b) }
+        , a{ ice::detail::color_convert<i32, T>(a) }
+    { }
+
+    template<typename T>
+    constexpr Color<T>::Color(ice::f32 r, ice::f32 g, ice::f32 b, ice::f32 a) noexcept
+        : r{ ice::detail::color_convert<f32, T>(r) }
+        , g{ ice::detail::color_convert<f32, T>(g) }
+        , b{ ice::detail::color_convert<f32, T>(b) }
+        , a{ ice::detail::color_convert<f32, T>(a) }
     { }
 
     constexpr auto operator""_argb(unsigned long long value) noexcept -> ice::Color<u8>

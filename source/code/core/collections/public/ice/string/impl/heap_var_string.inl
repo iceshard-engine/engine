@@ -148,6 +148,20 @@ namespace ice
         }
 
         template<typename CharType>
+        inline auto cbegin(ice::HeapVarString<CharType>& str) noexcept -> typename ice::HeapVarString<CharType>::ConstIterator
+        {
+            return ice::string::detail::data_varstring(str._data);
+        }
+
+        template<typename CharType>
+        inline auto cend(ice::HeapVarString<CharType>& str) noexcept -> typename ice::HeapVarString<CharType>::ConstIterator
+        {
+            ice::ucount bytes;
+            ice::ucount const size = ice::string::detail::read_varstring_size(str._data, bytes);
+            return str._data + bytes + size;
+        }
+
+        template<typename CharType>
         auto deserialize(ice::HeapVarString<CharType>& str, ice::Data data) noexcept -> ice::Data
         {
             ICE_ASSERT_CORE(data.size >= 2_B); // 1 byte for size + 1 for a single character

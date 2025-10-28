@@ -10,7 +10,7 @@ namespace ice
 
     //! \brief Small value object able to pass up to 8 bytes of data accross the engine.
     //!
-    //! \detail A single shard is always 16 bytes in size.
+    //! \details A single shard is always 16 bytes in size.
     //!   The first 4 bytes represent the name <em>(ice::ShardID)</em> and the next four the typeid <em>(ice::ShardPayloadID)</em> of the carried data.
     //!   Because this object is designed to only pass small values it's mostly used to carry pointers to constant objects living in a frame.
     //!
@@ -29,7 +29,7 @@ namespace ice
 
     //! \brief Creates a ice::ShardID value from a utf8 string.
     //!
-    //! \detail The passed value can contain the name and typeid.
+    //! \details The passed value can contain the name and typeid.
     //!   To do so the names need to be separated by a '`' <em>(backquote)</em> character. For example.: `my-shard`ice::u32`
     //!
     //! \note Even if you create a ice::ShardID with a typeid that is not enabled, it will not allow you to create a shard with such a value.
@@ -40,7 +40,7 @@ namespace ice
 
     //! \brief Creates a ice::Shard value from a utf8 string and the given value.
     //!
-    //! \detail The function returns the final shard if both the definition and the typeid of the given value match.
+    //! \details The function returns the final shard if both the definition and the typeid of the given value match.
     //!   Otherwise the shard fails to create.
     //!
     //! \param[in] definition Follows the same rules described in ice::shardid(std::u8_string_view).
@@ -50,7 +50,7 @@ namespace ice
 
     //! \brief Creates a ice::Shard value from ice::ShardID and the given value.
     //!
-    //! \detail The function returns the final shard if both the shardid and the typeid of the given value match.
+    //! \details The function returns the final shard if both the shardid and the typeid of the given value match.
     //!   Otherwise the shard fails to create.
     //!
     //! \param[in] id ShardID used to create the shard.

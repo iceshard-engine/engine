@@ -43,7 +43,7 @@ namespace ice::platform::webasm
             alloc, queue_tasks,
             TaskThreadPoolCreateInfo {
                 .thread_count = tp_size,
-                .debug_name_format = "ice.thread {}",
+                .debug_name_format = "ice.worker {}",
             }
         );
     }
