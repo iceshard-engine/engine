@@ -367,11 +367,11 @@ auto ice_setup(
     }
     state.resources->sync_resources();
 
-    ice::HeapString<> imgui_module = ice::resolve_dynlib_path(*state.resources, alloc, "imgui_module");
-    state.modules->load_module(state.modules_alloc, imgui_module);
-
     if (ice::build::is_debug || ice::build::is_develop)
     {
+        ice::HeapString<> imgui_module = ice::resolve_dynlib_path(*state.resources, alloc, "imgui_module");
+        state.modules->load_module(state.modules_alloc, imgui_module);
+
         state.debug.devui = ice::create_devui_context(state.modules_alloc, *state.modules);
     }
 
