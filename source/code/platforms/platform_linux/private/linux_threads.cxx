@@ -55,7 +55,7 @@ namespace ice::platform::linux
             TaskThreadPoolCreateInfo {
                 .thread_count = tp_size,
                 .aioport = _aioport,
-                .debug_name_format = "ice.thread {}",
+                .debug_name_format = "ice.worker {}",
             }
         );
 

@@ -105,21 +105,6 @@ namespace ice::ecs
             return result;
         }
 
-        auto filtered(ice::ecs::Archetype arch) noexcept -> ice::ecs::Query<QueryType::Unchecked, Parts...>
-        {
-            Query result = ice::ecs::Query<QueryType::Unchecked, Parts...>{ query_object() };
-            result.filtered(arch);
-            return result;
-        }
-
-        template<ice::ecs::detail::FilterType T>
-        auto filtered(T const& filter) noexcept -> ice::ecs::Query<QueryType::Unchecked, Parts...>
-        {
-            Query result = ice::ecs::Query<QueryType::Unchecked, Parts...>{ query_object() };
-            result.filtered(filter);
-            return result;
-        }
-
         operator ice::ecs::Query<QueryType::Unchecked, Parts...> () const noexcept
         {
             return ice::ecs::Query{ query_object() };

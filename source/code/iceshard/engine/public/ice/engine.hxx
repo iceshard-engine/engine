@@ -2,11 +2,15 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/ecs/ecs_types.hxx>
-#include <ice/engine_types.hxx>
-#include <ice/mem_unique_ptr.hxx>
 #include <ice/asset_storage.hxx>
+#include <ice/input_action_stack.hxx>
+#include <ice/mem_unique_ptr.hxx>
+#include <ice/ecs/ecs_types.hxx>
+#include <ice/ecs/ecs_archetype_index.hxx>
+#include <ice/engine_types.hxx>
+#include <ice/engine_state_tracker.hxx>
 #include <ice/world/world_trait.hxx>
+#include <ice/world/world_trait_archive.hxx>
 
 namespace ice
 {

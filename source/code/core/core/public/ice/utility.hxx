@@ -7,6 +7,8 @@
 namespace ice
 {
 
+    using std::tuple;
+
     template<typename... Tuples>
     struct tuples_merged;
 
@@ -50,5 +52,38 @@ namespace ice
 
     template<typename T>
     using make_unique_tuple = typename make_unique_tuple_helper<T>::type;
+
+
+    // common functions
+
+    namespace concepts
+    {
+        template<typename Fn, typename T, typename O>
+        concept ComparisonFunction = requires(T&& a, O&& b) {
+            { std::forward<Fn>(std::declval<Fn>())(std::forward<T>(a), std::forward<O>(b)) } -> std::convertible_to<bool>;
+        };
+    }
+
+    template<typename Left, typename Right = Left>
+    constexpr auto equal(Left&& left, Right&& right) noexcept -> bool
+    {
+        return std::forward<Left>(left) == std::forward<Left>(right);
+    }
+
+    template<typename Left, typename Right = Left>
+    constexpr auto less(Left const& left, Right const& right) noexcept -> bool
+    {
+        return left < right;
+    }
+
+    // others
+
+    template <typename Field, typename Class>
+    constexpr auto offset_of(Field Class::* member) noexcept -> ice::uptr
+    {
+        return reinterpret_cast<ice::uptr>(
+            &(((Class*)0)->*member)
+        );
+    }
 
 } // namespace ice

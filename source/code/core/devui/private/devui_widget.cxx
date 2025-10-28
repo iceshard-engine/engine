@@ -9,7 +9,8 @@ namespace ice
 {
 
     DevUIWidget::DevUIWidget(ice::DevUIWidgetInfo const& info) noexcept
-        : widget_info{ info }
+        : IDevUIWidget{ }
+        , widget_info{ info }
     {
     }
 

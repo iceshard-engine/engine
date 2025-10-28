@@ -9,6 +9,7 @@ namespace ice
 
     struct DevUIWidgetState
     {
+        DevUIWidgetState const* const owner = nullptr;
         bool active = false;
     };
 

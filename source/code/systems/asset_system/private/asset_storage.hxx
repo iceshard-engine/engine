@@ -31,6 +31,11 @@ namespace ice
 
         ~DefaultAssetStorage() noexcept override;
 
+        auto categories() const noexcept -> ice::AssetCategoryArchive const& override
+        {
+            return *_asset_archive;
+        }
+
         auto resources() noexcept -> ice::ResourceTracker& override
         {
             return _info.resource_tracker;

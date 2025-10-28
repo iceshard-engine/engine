@@ -22,6 +22,9 @@ namespace ice::ecs
         inline auto for_entity(this Self&& self, ice::ecs::Entity entity) noexcept -> typename ice::clear_type_t<Self>::ResultType;
 
         template<typename Self>
+        inline auto try_entity(this Self&& self, ice::ecs::Entity entity) noexcept -> typename ice::clear_type_t<Self>::ResultType;
+
+        template<typename Self>
         inline auto for_each_entity(this Self&& self) noexcept -> ice::Generator<typename ice::clear_type_t<Self>::ResultType>;
 
         template<typename Self, typename Fn>
@@ -315,7 +318,8 @@ namespace ice::ecs
         template<typename MainPart, typename... RefParts>
         inline auto for_entity(
             ice::ecs::QueryObject<MainPart, RefParts...> const& query,
-            ice::ecs::Entity entity
+            ice::ecs::Entity entity,
+            bool allow_failure
         ) noexcept -> typename ice::ecs::QueryObject<MainPart, RefParts...>::ResultType
         {
             static constexpr ice::ucount component_count = MainPart::ComponentCount;
@@ -341,6 +345,12 @@ namespace ice::ecs
                     }
                     break;
                 }
+            }
+
+            // Return early with nullptrs (if allowed)
+            if ((arch == nullptr || block == nullptr) && allow_failure)
+            {
+                return {};
             }
 
             ICE_ASSERT_CORE(arch != nullptr && block != nullptr);
@@ -649,7 +659,15 @@ namespace ice::ecs
         this Self&& self, ice::ecs::Entity entity
     ) noexcept -> typename ice::clear_type_t<Self>::ResultType
     {
-        return ice::ecs::query::for_entity(self.query_object(), entity);
+        return ice::ecs::query::for_entity(self.query_object(), entity, false);
+    }
+
+    template<typename Self>
+    inline auto TraitQueryOperations::try_entity(
+        this Self&& self, ice::ecs::Entity entity
+    ) noexcept -> typename ice::clear_type_t<Self>::ResultType
+    {
+        return ice::ecs::query::for_entity(self.query_object(), entity, true);
     }
 
     template<typename Self>

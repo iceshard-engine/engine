@@ -154,6 +154,7 @@ namespace ice
             }
             else
             {
+                //static_assert(ice::is_type_complete<T>);
                 ICE_ASSERT_CORE(_deleter != nullptr); // MEMORY LEAK INBOUND! Cannot delete object of incomplete type!
             }
         }

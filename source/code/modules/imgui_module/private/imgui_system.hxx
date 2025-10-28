@@ -11,6 +11,7 @@
 
 #include "widgets/imgui_devui_manager.hxx"
 #include "widgets/imgui_logger.hxx"
+#include "widgets/imgui_style_palette.hxx"
 
 namespace ice::devui
 {
@@ -33,7 +34,10 @@ namespace ice::devui
 
         void setup_mainmenu(ice::Span<ice::String> categories) noexcept;
 
-        void register_widget(ice::DevUIWidget* widget) noexcept;
+        void register_widget(
+            ice::DevUIWidget* widget,
+            ice::DevUIWidget* owning_widget
+        ) noexcept;
         void unregister_widget(ice::DevUIWidget* widget) noexcept;
 
         void update_widgets() noexcept override;
@@ -52,6 +56,7 @@ namespace ice::devui
         ice::devui::ImGuiDevUIManager _widget_manager;
         ice::devui::ImGuiWidgetFrame _widget_frame;
         ice::devui::ImGuiLogger _widget_logger;
+        ice::devui::ImGuiStylePalette _widget_style;
     };
 
 } // namespace ice::devui

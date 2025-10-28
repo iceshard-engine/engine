@@ -3,6 +3,7 @@
 
 #pragma once
 #include <ice/string/string.hxx>
+#include <ice/string/static_string.hxx>
 #include <ice/string/heap_string.hxx>
 #include <ice/log_formatters.hxx>
 #include <ice/expected.hxx>
@@ -19,6 +20,13 @@ namespace ice
         template<typename... Args>
         constexpr void push_format(
             ice::HeapString<char>& str,
+            fmt::format_string<Args...> format,
+            Args&&... args
+        ) noexcept;
+
+        template<ice::u32 Capacity, typename... Args>
+        constexpr void push_format(
+            ice::StaticString<Capacity, char>& str,
             fmt::format_string<Args...> format,
             Args&&... args
         ) noexcept;
@@ -191,6 +199,24 @@ namespace ice
             }
             fmt::format_to_n(ice::string::end(str), size, format, ice::forward<Args>(args)...);
             str._size += size;
+            str._data[str._size] = '\0';
+        }
+
+        template<ice::u32 Capacity, typename... Args>
+        constexpr void push_format(
+            ice::StaticString<Capacity, char>& str,
+            fmt::format_string<Args...> format,
+            Args&&... args
+        ) noexcept
+        {
+            ice::u32 const size = ice::u32(fmt::formatted_size(format, ice::forward<Args>(args)...));
+            ice::u32 new_size = ice::string::size(str) + size;
+            if (new_size + 1 >= Capacity)
+            {
+                new_size = Capacity - 1;
+            }
+            fmt::format_to_n(ice::string::end(str), new_size, format, ice::forward<Args>(args)...);
+            str._size += new_size;
             str._data[str._size] = '\0';
         }
 

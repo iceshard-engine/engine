@@ -34,7 +34,8 @@ namespace ice
     auto devui_trait_name() noexcept -> ice::StringID;
 
     bool devui_register_widget(
-        ice::DevUIWidget* widget
+        ice::DevUIWidget* widget,
+        ice::DevUIWidget* owning_widget = nullptr
     ) noexcept;
 
     bool devui_remove_widget(

@@ -162,6 +162,35 @@ namespace ice
             return i + 1;
         }
 
+        template<typename Pred, typename Key, typename... Values>
+        inline auto qsort_partition_many(
+            Pred&& pred,
+            ice::i32 left,
+            ice::i32 right,
+            ice::Span<Key> keys,
+            ice::Span<Values>... values
+        ) noexcept -> ice::i32
+        {
+            Key* pivot = &keys[right];
+
+            ice::i32 i = left - 1;
+            ice::i32 j = left;
+
+            while (j < right)
+            {
+                if (ice::forward<Pred>(pred)(keys[j], *pivot))
+                {
+                    ++i;
+                    ice::swap(keys[i], keys[j]);
+                    (ice::swap(values[i], values[j]), ...);
+                }
+                ++j;
+            }
+            ice::swap(keys[i + 1], keys[right]);
+            (ice::swap(values[i + 1], values[right]), ...);
+            return i + 1;
+        }
+
         template<typename K, typename Pred>
         inline auto qsort_partition_indices(ice::Span<K> keys, ice::Span<ice::u32>& indices, Pred&& pred, ice::i32 left, ice::i32 right) noexcept -> ice::i32
         {
@@ -195,6 +224,27 @@ namespace ice
                 ice::i32 const pi = qsort_partition(keys, values, ice::forward<Pred>(pred), left, right);
 
                 ice::detail::qsort(keys, values, ice::forward<Pred>(pred), left, pi - 1);
+
+                left = pi + 1;
+            }
+        }
+
+        template<typename Pred, typename Key, typename... Values>
+        inline void qsort_many(
+            Pred&& pred,
+            ice::i32 left,
+            ice::i32 right,
+            ice::Span<Key> keys,
+            ice::Span<Values>... values
+        ) noexcept
+        {
+            while (left < right)
+            {
+                ice::i32 const pi = qsort_partition_many<Pred, Key, Values...>(
+                    ice::forward<Pred>(pred), left, right, keys, values...
+                );
+
+                ice::detail::qsort_many(ice::forward<Pred>(pred), left, pi - 1, keys, values...);
 
                 left = pi + 1;
             }
@@ -234,6 +284,16 @@ namespace ice
         ice::i32 const last_index = ice::count(keys) - 1;
 
         ice::detail::qsort(keys, values, std::forward<Pred>(pred), first_index, last_index);
+    }
+
+    template<typename Key, typename Pred, typename... Values>
+        requires ice::concepts::ComparisonFunction<Pred, Key, Key>
+    inline void sort_many(ice::Span<Key> keys, Pred&& pred, ice::Span<Values>... values) noexcept
+    {
+        ice::i32 const first_index = 0;
+        ice::i32 const last_index = ice::count(keys) - 1;
+
+        ice::detail::qsort_many(std::forward<Pred>(pred), first_index, last_index, keys, values...);
     }
 
     template<typename K, typename Pred>

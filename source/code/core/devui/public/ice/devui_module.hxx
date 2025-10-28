@@ -26,7 +26,7 @@ namespace ice::api
             using FnContextSetupCallback = ice::FnDevUIContextSetupCallback;
             using FnContextSetup = void(*)(FnContextSetupCallback callback, void* userdata) noexcept;
             using FnContextSetupMenu = void(*)(ice::Span<ice::String> categories) noexcept;
-            using FnContextRegisterWidget = void(*)(ice::DevUIWidget* widget) noexcept;
+            using FnContextRegisterWidget = void(*)(ice::DevUIWidget* widget, ice::DevUIWidget* owning_widget) noexcept;
             using FnContextRemoveWidget = void(*)(ice::DevUIWidget* widget) noexcept;
             using FnContextTraitName = auto(*)() noexcept -> ice::StringID;
 

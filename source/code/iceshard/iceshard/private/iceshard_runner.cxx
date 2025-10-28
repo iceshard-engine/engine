@@ -129,7 +129,7 @@ namespace ice
             .clock = _clock,
             .resources = _engine.assets().resources(),
             .assets = _engine.assets(),
-            .scheduler = _schedulers.main,
+            .schedulers = _schedulers,
         };
         task_params.task_type = TraitTaskType::Logic;
 

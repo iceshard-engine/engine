@@ -6,8 +6,10 @@
 #include <ice/shard_container.hxx>
 #include <ice/ecs/ecs_entity.hxx>
 #include <ice/ecs/ecs_archetype.hxx>
+#include <ice/ecs/ecs_archetype_index.hxx>
 #include <ice/ecs/ecs_entity_index.hxx>
 #include <ice/ecs/ecs_query_operations.hxx>
+#include <ice/ecs/ecs_query_storage.hxx>
 
 namespace ice::ecs
 {
@@ -171,6 +173,9 @@ namespace ice::ecs
                         );
 
                         destroy({ entities, block->block_entity_count });
+
+                        // We want to 'unalive' entities when using this method
+                        _entities.destroy_many({ entities, block->block_entity_count });
                     }
                     block = block->next;
                 }

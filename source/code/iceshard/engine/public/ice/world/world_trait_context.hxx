@@ -11,11 +11,20 @@ namespace ice
 
     static constexpr ice::ErrorCode E_TraitContextNotInitialized{ "E.1100:Worlds:World trait context was not initialized!" };
 
+    class ToolsContext
+    {
+    public:
+        virtual ~ToolsContext() noexcept = default;
+
+        virtual auto engine() const noexcept -> ice::Engine& = 0;
+    };
+
     class TraitContext
     {
     public:
         virtual ~TraitContext() noexcept = default;
 
+        virtual auto tools() noexcept -> ice::ToolsContext* { return nullptr; }
         virtual auto world() noexcept -> ice::World& = 0;
 
         virtual void send(ice::detail::TraitEvent event) noexcept = 0;

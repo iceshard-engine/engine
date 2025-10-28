@@ -93,7 +93,7 @@ namespace ice::platform::win32
             TaskThreadPoolCreateInfo {
                 .thread_count = tp_size,
                 .aioport = _aioport,
-                .debug_name_format = "ice.thread {}",
+                .debug_name_format = "ice.worker {}",
             }
         );
 

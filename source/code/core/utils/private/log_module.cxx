@@ -102,7 +102,7 @@ namespace ice
         alloc->destroy(detail::internal_log_state);
     }
 
-    void log_module_init(ice::Allocator &alloc, ice::ModuleNegotiatorBase const &negotiator) noexcept
+    void log_module_init(ice::Allocator& alloc, ice::ModuleNegotiatorBase const& negotiator) noexcept
     {
         detail::LogAPI new_api{ };
         if (negotiator.query_api(new_api))
@@ -114,8 +114,6 @@ namespace ice
             *current_api.log_fn = *new_api.log_fn;
             *current_api.assert_fn = *new_api.assert_fn;
         }
-
-        initialize_log_module(negotiator.negotiator_context, negotiator.negotiator_api);
     }
 
     auto log_module_register_sink(LogSinkFn fn_sink, void* userdata) noexcept -> ice::LogSinkID
