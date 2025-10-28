@@ -14,15 +14,27 @@ namespace ice
         ice::String name;
     };
 
-    class DevUIWidget
+    class IDevUIWidget
+    {
+    public:
+        virtual ~IDevUIWidget() noexcept = default;
+
+        virtual void build_content() noexcept = 0;
+        virtual auto name() const noexcept -> ice::String = 0;
+        virtual auto category() const noexcept -> ice::String = 0;
+    };
+
+    // TODO: Rename to Window
+    class DevUIWidget : public IDevUIWidget
     {
     public:
         DevUIWidget(ice::DevUIWidgetInfo const& info) noexcept;
         virtual ~DevUIWidget() noexcept = default;
 
-        virtual void update_state(ice::DevUIWidgetState& state) noexcept { }
+        virtual auto name() const noexcept -> ice::String override { return widget_info.name; }
+        virtual auto category() const noexcept -> ice::String override { return widget_info.category; }
 
-        virtual void build_content() noexcept = 0;
+        virtual void update_state(ice::DevUIWidgetState& state) noexcept { }
 
         virtual void build_widget(ice::DevUIFrame& frame, ice::DevUIWidgetState& state) noexcept;
 

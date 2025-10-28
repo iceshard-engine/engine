@@ -145,7 +145,7 @@ namespace ice::ecs
         ice::queue::push_back(_free_indices, info.index);
     }
 
-    void EntityIndex::destroy_many(ice::Span<ice::ecs::Entity> entities) noexcept
+    void EntityIndex::destroy_many(ice::Span<ice::ecs::Entity const> entities) noexcept
     {
         for (ice::ecs::Entity entity : entities)
         {

@@ -25,29 +25,30 @@ namespace ice
             ice::EngineCreateInfo create_info
         ) noexcept;
 
+        auto actions() noexcept -> ice::InputActionStack& override { return *_inputactions; }
         auto assets() noexcept -> ice::AssetStorage& override;
-        auto worlds() noexcept -> ice::WorldAssembly& override;
-        auto worlds_updater() noexcept -> ice::WorldUpdater& override;
         auto states() noexcept -> ice::EngineStateTracker& override { return *_states; }
 
         auto entity_archetypes() noexcept -> ice::ecs::ArchetypeIndex& override { return *_entity_archetypes; }
         auto entity_index() noexcept -> ice::ecs::EntityIndex& override { return _entity_storage.entities(); }
         auto entity_storage() noexcept -> ice::ecs::EntityStorage& override { return _entity_storage; }
 
-        auto actions() noexcept -> ice::InputActionStack& override { return *_inputactions; }
+        auto worlds() noexcept -> ice::WorldAssembly& override;
+        auto worlds_updater() noexcept -> ice::WorldUpdater& override;
+        auto world_manager() noexcept -> ice::IceshardWorldManager& { return _worlds; }
 
         void destroy() noexcept;
-
-        auto world_manager() noexcept -> ice::IceshardWorldManager& { return _worlds; }
 
     private:
         ice::Allocator& _allocator;
 
+        ice::UniquePtr<ice::InputActionStack> _inputactions;
         ice::UniquePtr<ice::AssetStorage> _assets;
         ice::UniquePtr<ice::EngineStateTracker> _states;
+
         ice::UniquePtr<ice::ecs::ArchetypeIndex> _entity_archetypes;
         ice::ecs::EntityStorage _entity_storage;
-        ice::UniquePtr<ice::InputActionStack> _inputactions;
+
         ice::IceshardWorldManager _worlds;
     };
 

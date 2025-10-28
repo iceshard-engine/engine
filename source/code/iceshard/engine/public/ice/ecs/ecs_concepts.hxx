@@ -3,6 +3,7 @@
 
 #pragma once
 #include <ice/stringid.hxx>
+#include <ice/string/string.hxx>
 
 namespace ice::ecs
 {

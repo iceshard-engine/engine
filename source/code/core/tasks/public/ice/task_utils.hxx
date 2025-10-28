@@ -8,6 +8,7 @@
 #include <ice/sync_manual_events.hxx>
 #include <ice/span.hxx>
 #include <ice/profiler.hxx>
+#include <ice/expected.hxx>
 
 namespace ice
 {

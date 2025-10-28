@@ -34,7 +34,7 @@ namespace ice::ecs
         bool create_many(ice::Span<ice::ecs::Entity> out_entities) noexcept;
 
         void destroy(ice::ecs::Entity entity) noexcept;
-        void destroy_many(ice::Span<ice::ecs::Entity> entities) noexcept;
+        void destroy_many(ice::Span<ice::ecs::Entity const> entities) noexcept;
 
         bool recreate(ice::Array<ice::ecs::Entity>& entity, ice::u32 new_count) noexcept;
 

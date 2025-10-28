@@ -317,10 +317,9 @@ namespace ice::ecs
         void batch_remove_entities(
             ice::ecs::ArchetypeIndex const& archetypes,
             ice::HashMap<ice::ecs::detail::EntityDestructor> const& destructors,
-            ice::Span<ice::ecs::EntityDataSlot> dst_data_slots,
+            ice::Span<ice::ecs::EntityDataSlot> data_slots,
             ice::Span<ice::ecs::Entity const> entities_to_remove,
-            ice::Span<ice::ecs::detail::DataBlock*> data_blocks,
-            ice::Span<ice::ecs::EntityDataSlot> data_slots
+            ice::Span<ice::ecs::detail::DataBlock*> data_blocks
         ) noexcept
         {
             auto const* it = ice::span::begin(entities_to_remove);
@@ -447,7 +446,7 @@ namespace ice::ecs
                 if (next_valid_block_idx != archetype_block->block_entity_count)
                 {
                     // Find how many entities we can move into the newly created hole.
-                    ice::ecs::detail::OperationDetails dst_data_details{
+                    ice::ecs::detail::OperationDetails src_data_details{
                         .block_offset = archetype_block->block_entity_count - 1, // Initial index (last entity)
                         .block_data = archetype_block->block_data, // The actual data
                     };
@@ -457,9 +456,9 @@ namespace ice::ecs
                     while(movable_entities < span_size)
                     {
                         // If we did not reach below the valid index, get the next entity to be moved
-                        if (dst_data_details.block_offset > next_valid_block_idx)
+                        if (src_data_details.block_offset > next_valid_block_idx)
                         {
-                            dst_data_details.block_offset -= 1;
+                            src_data_details.block_offset -= 1;
                             movable_entities += 1;
                         }
                     }
@@ -471,7 +470,7 @@ namespace ice::ecs
 
                     // Get moved entity array
                     ice::Span<ice::ecs::Entity const> moved_entities = ice::ecs::detail::get_entity_array(
-                        component_info, dst_data_details, movable_entities
+                        component_info, src_data_details, movable_entities
                     );
 
                     // Execute the move
@@ -482,7 +481,7 @@ namespace ice::ecs
                         first_slot_info, // The initially removed slot
                         component_info,
                         component_info,
-                        dst_data_details, /* src data block */
+                        src_data_details, /* src data block */
                         del_data_details /* dst data block */
                     );
                 }
@@ -497,7 +496,7 @@ namespace ice::ecs
             for (ice::ecs::Entity entity : entities_to_remove)
             {
                 ice::ecs::EntityInfo const ei = ice::ecs::entity_info(entity);
-                dst_data_slots[ei.index] = {}; // Reset the slot info!
+                data_slots[ei.index] = {}; // Reset the slot info!
             }
         }
 
@@ -1075,8 +1074,7 @@ namespace ice::ecs
                         _destructors,
                         _data_slots,
                         entities,
-                        _data_blocks,
-                        _data_slots
+                        _data_blocks
                     );
                 }
             }

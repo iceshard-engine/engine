@@ -62,6 +62,12 @@ namespace ice
             inline auto await_suspend(
                 CoroutineType awaiting_coroutine
             ) const noexcept -> ice::coroutine_handle<>;
+
+            template<typename ResultType>
+            inline auto await_suspend(
+                ice::coroutine_handle<TaskExpectedPromise<ResultType, ErrorType>> awaiting_coroutine
+            ) const noexcept -> ice::coroutine_handle<>;
+
             inline auto await_suspend(
                 ice::coroutine_handle<> awaiting_coroutine
             ) const noexcept -> ice::coroutine_handle<>;
@@ -90,6 +96,18 @@ namespace ice
     template<typename Result, typename ErrorType>
     inline auto TaskExpected<Result, ErrorType>::AwaitableBase::await_suspend(
         CoroutineType awaiting_coroutine
+    ) const noexcept -> ice::coroutine_handle<>
+    {
+        _coroutine.promise().set_continuation(awaiting_coroutine);
+        _coroutine.promise()._error_continuation = awaiting_coroutine.promise()._error_continuation;
+        _coroutine.promise()._error_pointer = awaiting_coroutine.promise()._error_pointer;
+        return _coroutine;
+    }
+
+    template<typename Result, typename ErrorType>
+    template<typename ResultType>
+    inline auto TaskExpected<Result, ErrorType>::AwaitableBase::await_suspend(
+        ice::coroutine_handle<TaskExpectedPromise<ResultType, ErrorType>> awaiting_coroutine
     ) const noexcept -> ice::coroutine_handle<>
     {
         _coroutine.promise().set_continuation(awaiting_coroutine);

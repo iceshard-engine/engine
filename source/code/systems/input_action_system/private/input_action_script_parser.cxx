@@ -3,6 +3,7 @@
 
 #include <ice/string_utils.hxx>
 #include <ice/input_action_info.hxx>
+#include <ice/input_action_layer.hxx>
 #include <ice/log.hxx>
 
 namespace ice

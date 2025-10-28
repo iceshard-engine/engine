@@ -136,7 +136,7 @@ namespace ice
 
         inline operator Value&() & noexcept { return this->value(); }
         inline operator Value&&() && noexcept { return ice::move(*this).value(); }
-        inline operator Value() const noexcept { return this->value(); }
+        //inline operator Value() const & noexcept { return this->value(); }
 
     private:
         union

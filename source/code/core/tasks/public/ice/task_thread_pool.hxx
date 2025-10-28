@@ -20,7 +20,7 @@ namespace ice
         ice::native_aio::AIOPort aioport = nullptr;
 
         //! \brief May be ignored in some builds.
-        ice::String debug_name_format = "ice.thread {}";
+        ice::String debug_name_format = "ice.worker {}";
     };
 
     class TaskThreadPool

@@ -32,7 +32,7 @@ namespace ice
 
         virtual auto entities() noexcept -> ice::ecs::EntityIndex& = 0;
         virtual auto entity_queries() noexcept -> ice::ecs::QueryProvider const& = 0;
-        virtual auto entity_queries_storage() noexcept -> ice::ecs::QueryStorage & = 0;
+        virtual auto entity_queries_storage() noexcept -> ice::ecs::QueryStorage& = 0;
         virtual auto entity_operations() noexcept -> ice::ecs::EntityOperations& = 0;
     };
 

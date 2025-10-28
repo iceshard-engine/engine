@@ -138,7 +138,7 @@ namespace ice::detail
     };
 
 #if ISP_WEBAPP || ISP_ANDROID || ISP_LINUX
-    auto local_time() noexcept -> std::tm
+    inline auto local_time() noexcept -> std::tm
     {
         std::chrono::system_clock::time_point const now = std::chrono::system_clock::now();
         std::time_t const current_time = std::chrono::system_clock::to_time_t(now);
@@ -146,7 +146,7 @@ namespace ice::detail
         return *localtime;
     }
 #else
-    auto local_time() noexcept
+    inline auto local_time() noexcept
     {
         static auto const current_timezone = std::chrono::current_zone();
         return current_timezone->to_local(std::chrono::system_clock::now());
