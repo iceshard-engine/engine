@@ -175,7 +175,7 @@ namespace ice::ecs
                         destroy({ entities, block->block_entity_count });
 
                         // We want to 'unalive' entities when using this method
-                        _entities.destroy_many({ entities, block->block_entity_count });
+                        _entities.destroy_many(ice::Span{ entities, block->block_entity_count });
                     }
                     block = block->next;
                 }

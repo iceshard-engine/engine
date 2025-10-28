@@ -58,7 +58,7 @@ namespace ice::detail
 
     void RefCounted::rc_add_internal() noexcept
     {
-        ICE_ASSERT_CORE(_strong < 255);
+        ICE_ASSERT_CORE(_strong < 127);
         _strong += 1;
     }
 
