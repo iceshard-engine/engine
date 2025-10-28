@@ -3,6 +3,8 @@
 
 #include "imgui_system.hxx"
 #include "imgui_trait.hxx"
+#include "widgets/imgui_devui_manager.hxx"
+#include "widgets/imgui_style_palette.hxx"
 
 #include <ice/mem_allocator.hxx>
 #include <ice/log_module.hxx>
@@ -88,7 +90,7 @@ namespace ice::devui
         }
     }
 
-    void imgui_register_widget(ice::DevUIWidget* widget) noexcept
+    void imgui_register_widget(ice::DevUIWidget* widget, ice::DevUIWidget* owning_widget) noexcept
     {
         ICE_LOG_IF(
             global_ImGuiContext != nullptr,
@@ -97,7 +99,7 @@ namespace ice::devui
         );
         if (global_ImGuiContext != nullptr)
         {
-            global_ImGuiContext->register_widget(widget);
+            global_ImGuiContext->register_widget(widget, owning_widget);
         }
     }
 
@@ -137,13 +139,16 @@ namespace ice::devui
 #if ISP_WINDOWS
             ImGuizmo::Initialize();
 #endif
-
+            ice::devui::styles::apply_color_theme(ice::devui::styles::Theme::Dark);
+            ice::devui::styles::apply_stylesheet();
             ice::LogModule::init(alloc, negotiator);
             return negotiator.register_api(v1_devui_system);
         }
 
         static void on_unload(ice::Allocator& alloc) noexcept
         {
+            ice::devui::styles::pop_stylesheet();
+            ice::devui::styles::pop_color_theme();
 #if ISP_WINDOWS
             ImGuizmo::Shutdown();
 #endif

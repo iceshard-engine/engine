@@ -21,7 +21,7 @@ namespace ice::devui
 {
 
     // TODO: Replace
-    static ice::HostAllocator alloc;
+    static ice::HostAllocator LoggerAlloc;
 
     struct ImGuiColorCtx
     {
@@ -63,8 +63,8 @@ namespace ice::devui
 
     ImGuiLogger::ImGuiLogger(ice::Allocator& a) noexcept
         : ice::DevUIWidget{ DevUIWidgetInfo{ .category = "Tools", .name = "Logger" } }
-        , _entries{ alloc }
-        , _entries_visible{ alloc }
+        , _entries{ LoggerAlloc }
+        , _entries_visible{ LoggerAlloc }
     {
         ice::array::reserve(_entries, 2000);
         ice::array::reserve(_entries_visible, 2000);
@@ -80,7 +80,7 @@ namespace ice::devui
     {
         std::lock_guard lk{ mtx };
         ice::array::push_back(_entries_visible, ice::array::count(_entries));
-        ice::array::push_back(_entries, { message.severity, message.tag, message.tag_name, {alloc,message.message} });
+        ice::array::push_back(_entries, { message.severity, message.tag, message.tag_name, {LoggerAlloc,message.message} });
     }
 
     static inline auto severity_color(ice::LogSeverity sev) noexcept -> ImGuiColorCtx

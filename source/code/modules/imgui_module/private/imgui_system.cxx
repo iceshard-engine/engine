@@ -76,6 +76,7 @@ namespace ice::devui
         , _widget_manager{ _allocator }
         , _widget_frame{ }
         , _widget_logger{ _allocator }
+        , _widget_style{ _allocator }
     {
         ice::array::push_back(_builtin_widgets, create_allocator_tree_widget(_allocator));
         // ice::array::push_back(_builtin_widgets, (ice::UniquePtr<ice::DevUIWidget>) ice::make_unique<ImGuiLogger>(_allocator, _allocator));
@@ -83,6 +84,7 @@ namespace ice::devui
         // Register all built-in's
         _widget_manager.add_widget(&_widget_manager); // Add self...
         _widget_manager.add_widget(&_widget_logger); // Add logger
+        _widget_manager.add_widget(&_widget_style); // Add style editor
         for (ice::UniquePtr<ice::DevUIWidget> const& widget : _builtin_widgets)
         {
             _widget_manager.add_widget(widget.get());
@@ -106,9 +108,12 @@ namespace ice::devui
         }
     }
 
-    void ImGuiSystem::register_widget(ice::DevUIWidget* widget) noexcept
+    void ImGuiSystem::register_widget(
+        ice::DevUIWidget* widget,
+        ice::DevUIWidget* owning_widget
+    ) noexcept
     {
-        _widget_manager.add_widget(widget);
+        _widget_manager.add_widget(widget, owning_widget);
     }
 
     void ImGuiSystem::unregister_widget(ice::DevUIWidget* widget) noexcept
@@ -141,12 +146,12 @@ namespace ice::devui
                 {
                     if (ImGui::BeginMenu(ice::string::begin(category)))
                     {
-                        for (ImGuiDevUIWidget& runtime : _widget_manager.widgets())
+                        for (auto const& runtime : _widget_manager.widgets())
                         {
-                            ice::DevUIWidgetInfo const& info = runtime.widget->widget_info;
-                            if (ice::string::starts_with(info.category, category) && runtime.widget->build_mainmenu(runtime))
+                            ice::DevUIWidgetInfo const& info = runtime->widget->widget_info;
+                            if (ice::string::starts_with(info.category, category) && runtime->widget->build_mainmenu(runtime->state))
                             {
-                                _widget_frame.mainmenu(info, runtime);
+                                _widget_frame.mainmenu(info, runtime->state);
                             }
                         }
 
@@ -168,12 +173,15 @@ namespace ice::devui
 
             ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 
-            for (ImGuiDevUIWidget& runtime : _widget_manager.widgets())
+            for (auto const& runtime : _widget_manager.widgets())
             {
-                runtime.widget->update_state(runtime);
-                if (runtime.active)
+                DevUIWidgetState const* const owner_state = runtime->state.owner;
+
+                runtime->widget->update_state(runtime->state);
+                if (runtime->state.active)
                 {
-                    runtime.widget->build_widget(_widget_frame, runtime);
+                    ICE_ASSERT(runtime->state.owner == owner_state, "It's prohibited to change the owner pointer!");
+                    runtime->widget->build_widget(_widget_frame, runtime->state);
                 }
             }
         }
