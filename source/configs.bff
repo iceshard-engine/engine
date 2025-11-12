@@ -216,6 +216,8 @@
         // Requires options for multithreading
         '-pthread'
         '-sSHARED_MEMORY=1'
+        // WebGPU (Dawn)
+        '--use-port=emdawnwebgpu'
     }
     .LinkLinkerOptions = {
         '-pthread'
@@ -228,9 +230,10 @@
         // '-sINITIAL_MEMORY=1073741824' // 1GiB
         '-sMALLOC=mimalloc'
         '-sABORTING_MALLOC=1'
-        '-sUSE_WEBGPU=1'
         '-sUSE_GLFW=3'
         '-sEXIT_RUNTIME'
+        // WebGPU (Dawn)
+        '--use-port=emdawnwebgpu'
     }
 ]
 
@@ -282,6 +285,24 @@
         // "-gseparate-dwarf=temp.debug.wasm"
         // TODO: Decide where memory growth might be necessary
         // "-sALLOW_MEMORY_GROWTH"
+    }
+]
+
+.Config_Profile_WebAsm =
+[
+    .Name = 'Config-Profile-WebAsm'
+    .Requires = { 'Profile', 'SDK-WebAsm', .Kind_WindowedApp }
+    .LinkLinkerOptions = {
+        // '--closure=1' (Fix access to Node from Emscpripted)
+    }
+]
+
+.Config_Release_WebAsm =
+[
+    .Name = 'Config-Release-WebAsm'
+    .Requires = { 'Release', 'SDK-WebAsm', .Kind_WindowedApp }
+    .LinkLinkerOptions = {
+        // '--closure=1' (Fix access to Node from Emscpripted)
     }
 ]
 
@@ -380,7 +401,9 @@
     .Config_Develop_MSVC
     .Config_Profile
     .Config_Profile_MSVC
+    .Config_Profile_WebAsm
     .Config_Release
     .Config_Release_MSVC
+    .Config_Release_WebAsm
     .Config_Vulkan
 }

@@ -49,7 +49,7 @@ namespace ice::render::webgpu
             webgpu_cmds->type = type;
 
             WGPUCommandEncoderDescriptor descriptor{};
-            descriptor.label = type == CommandBufferType::Primary ? "Primary Command Encoded" : "Secondary Command Encoder";
+            descriptor.label = wgpu_string(type == CommandBufferType::Primary ? "Primary Command Encoded" : "Secondary Command Encoder");
             webgpu_cmds->command_encoder = wgpuDeviceCreateCommandEncoder(_wgpu_device, &descriptor);
 
             out_buffer = WebGPUCommandBuffer::handle(webgpu_cmds);
@@ -73,7 +73,7 @@ namespace ice::render::webgpu
             wgpuCommandEncoderRelease(webgpu_cmds->command_encoder);
 
             WGPUCommandEncoderDescriptor descriptor{};
-            descriptor.label = type == CommandBufferType::Primary ? "Primary Command Encoded" : "Secondary Command Encoder";
+            descriptor.label = wgpu_string(type == CommandBufferType::Primary ? "Primary Command Encoded" : "Secondary Command Encoder");
             webgpu_cmds->command_encoder = wgpuDeviceCreateCommandEncoder(_wgpu_device, &descriptor);
 
             auto it = ice::multi_hashmap::find_first(_wgpu_command_buffers, pool_index);
@@ -120,11 +120,11 @@ namespace ice::render::webgpu
                 WGPUCommandEncoderDescriptor descriptor{};
                 if (it.value()->type == CommandBufferType::Secondary)
                 {
-                    descriptor.label = "Primary Command Encoded";
+                    descriptor.label = wgpu_string("Primary Command Encoded");
                 }
                 else
                 {
-                    descriptor.label = "Secondary Command Encoded";
+                    descriptor.label = wgpu_string("Secondary Command Encoded");
                 }
                 it.value()->command_encoder = wgpuDeviceCreateCommandEncoder(_wgpu_device, &descriptor);
 

@@ -9,8 +9,15 @@
 namespace ice::render::webgpu
 {
 
-    void wgpu_device_callback(WGPURequestDeviceStatus status, WGPUDevice device, char const* message, void* userdata)
+    void wgpu_device_callback(WGPURequestDeviceStatus status, WGPUDevice device, WGPUStringView message, void* userdata, void*)
     {
+        ICE_LOG_IF(
+            status != WGPURequestDeviceStatus::WGPURequestDeviceStatus_Success,
+            LogSeverity::Error, LogTag_WebGPU,
+            "Failed creation of WebGPU device with error: {}",
+            ice::String{ message.data, message.length }
+        );
+
         WebGPUDriver* driver = reinterpret_cast<WebGPUDriver*>(userdata);
         if (status == WGPURequestDeviceStatus_Success)
         {
@@ -18,8 +25,15 @@ namespace ice::render::webgpu
         }
     }
 
-    void wgpu_adapter_callback(WGPURequestAdapterStatus status, WGPUAdapter adapter, char const* message, void* userdata)
+    void wgpu_adapter_callback(WGPURequestAdapterStatus status, WGPUAdapter adapter, WGPUStringView message, void* userdata, void*)
     {
+        ICE_LOG_IF(
+            status != WGPURequestAdapterStatus_Success,
+            LogSeverity::Error, LogTag_WebGPU,
+            "Failed to create WebGPU Adapter with error: {}",
+            ice::String{ message.data, message.length }
+        );
+
         WebGPUDriver* driver = reinterpret_cast<WebGPUDriver*>(userdata);
         if (status == WGPURequestAdapterStatus_Success)
         {
@@ -30,15 +44,15 @@ namespace ice::render::webgpu
             // limits.limits.minUniformBufferOffsetAlignment = 256;
             // limits.limits.minStorageBufferOffsetAlignment = 256;
 
-            WGPUDeviceDescriptor descriptor{};
-            descriptor.label = "IceShard-WebGPU";
-            descriptor.defaultQueue.label = "Default Queue";
-            descriptor.deviceLostCallback = nullptr;
-            descriptor.deviceLostUserdata = nullptr;
-            descriptor.requiredFeatureCount = 0;
-            descriptor.requiredFeatures = nullptr;
-            descriptor.requiredLimits = nullptr; //&limits;
-            wgpuAdapterRequestDevice(adapter, &descriptor, wgpu_device_callback, driver);
+            WGPUDeviceDescriptor descriptor = WGPU_DEVICE_DESCRIPTOR_INIT;
+            descriptor.label = wgpu_string("IceShard-WebGPU");
+            descriptor.defaultQueue.label = wgpu_string("Default Queue");
+
+            WGPURequestDeviceCallbackInfo callback_info = WGPU_REQUEST_DEVICE_CALLBACK_INFO_INIT;
+            callback_info.callback = wgpu_device_callback;
+            callback_info.userdata1 = driver;
+            callback_info.mode = WGPUCallbackMode_AllowSpontaneous;
+            wgpuAdapterRequestDevice(adapter, &descriptor, callback_info);
         }
     }
 
@@ -52,7 +66,15 @@ namespace ice::render::webgpu
         , _wgpu_adapter{ nullptr }
         , _wgpu_device{ nullptr }
     {
+        WGPURequestAdapterOptions adapter_options = WGPU_REQUEST_ADAPTER_OPTIONS_INIT;
+        adapter_options.backendType = WGPUBackendType::WGPUBackendType_WebGPU;
+        adapter_options.powerPreference = WGPUPowerPreference_HighPerformance;
 
+        WGPURequestAdapterCallbackInfo adapter_callback = WGPU_REQUEST_ADAPTER_CALLBACK_INFO_INIT;
+        adapter_callback.callback = wgpu_adapter_callback;
+        adapter_callback.userdata1 = this;
+        adapter_callback.mode = WGPUCallbackMode_AllowSpontaneous;
+        wgpuInstanceRequestAdapter(_wgpu_instance, &adapter_options, adapter_callback);
     }
 
     WebGPUDriver::~WebGPUDriver() noexcept
@@ -90,24 +112,33 @@ namespace ice::render::webgpu
         ice::render::SurfaceInfo const& surface_info
     ) noexcept -> ice::render::RenderSurface*
     {
-        WGPUSurfaceDescriptorFromCanvasHTMLSelector canvas{
-            .chain = { .sType = WGPUSType_SurfaceDescriptorFromCanvasHTMLSelector },
-            .selector = surface_info.webgpu.selector
-        };
-        WGPUSurfaceDescriptor descriptor{};
-        descriptor.label = "Default Surface";
-        descriptor.nextInChain = &canvas.chain;
-        WGPUSurface surface = wgpuInstanceCreateSurface(_wgpu_instance, &descriptor);
-        WGPUTextureFormat surface_format = wgpuSurfaceGetPreferredFormat(surface, _wgpu_adapter);
+        WGPUEmscriptenSurfaceSourceCanvasHTMLSelector canvas = WGPU_EMSCRIPTEN_SURFACE_SOURCE_CANVAS_HTML_SELECTOR_INIT;
+        canvas.selector = wgpu_string(surface_info.webgpu.selector);
 
-        WGPURequestAdapterOptions adapter_options{};
-        adapter_options.backendType = WGPUBackendType::WGPUBackendType_WebGPU;
-        adapter_options.powerPreference = WGPUPowerPreference_HighPerformance;
-        adapter_options.compatibleSurface = surface;
-        wgpuInstanceRequestAdapter(_wgpu_instance, &adapter_options, wgpu_adapter_callback, this);
+        WGPUSurfaceDescriptor descriptor = WGPU_SURFACE_DESCRIPTOR_INIT;
+        descriptor.label = wgpu_string("HTML Canvas Surface");
+        descriptor.nextInChain = &canvas.chain;
+        WGPUSurface const surface = wgpuInstanceCreateSurface(_wgpu_instance, &descriptor);
+
+        WGPUSurfaceCapabilities capabilities = WGPU_SURFACE_CAPABILITIES_INIT;
+        wgpuSurfaceGetCapabilities(surface, _wgpu_adapter, &capabilities);
+        ICE_ASSERT(capabilities.formatCount > 0, "Failed to fetch surface capabilities!");
+
+        bool supportsMailbox = false;
+        for (size_t i = 0; i < capabilities.presentModeCount; i++)
+        {
+            if (capabilities.presentModes[i] == WGPUPresentMode_Mailbox)
+            {
+                supportsMailbox = true;
+            }
+        }
+
+        WGPUPresentMode const present_mode = supportsMailbox ? WGPUPresentMode_Mailbox : WGPUPresentMode_Fifo;
+        WGPUTextureFormat const surface_format = capabilities.formats[0];
+        wgpuSurfaceCapabilitiesFreeMembers(capabilities);
 
         ICE_ASSERT(surface_info.type == SurfaceType::HTML5_DOMCanvas, "Only 'HTML5 Canvas' surfaces are allowed!");
-        return _allocator.create<WebGPURenderSurface>(surface, surface_format, surface_info);
+        return _allocator.create<WebGPURenderSurface>(surface, surface_format, present_mode, surface_info);
     }
 
     void WebGPUDriver::destroy_surface(

@@ -41,21 +41,22 @@ namespace ice::render::webgpu
         ice::render::RenderSurface* surface
     ) noexcept -> ice::render::RenderSwapchain*
     {
-        WebGPURenderSurface* webgpu_surface = static_cast<WebGPURenderSurface*>(surface);
-        ice::platform::RenderSurface* render_surface = reinterpret_cast<ice::platform::RenderSurface*>(webgpu_surface->_surface_info.webgpu.internal);
-        ice::vec2u surface_dimensions = render_surface->get_dimensions();
+        WebGPURenderSurface* const webgpu_surface = static_cast<WebGPURenderSurface*>(surface);
+        ice::platform::RenderSurface* const render_surface = reinterpret_cast<ice::platform::RenderSurface*>(webgpu_surface->_surface_info.webgpu.internal);
+        ice::vec2u const surface_dimensions = render_surface->get_dimensions();
 
-        WGPUSwapChainDescriptor descriptor{};
-        descriptor.label = "Default Swapchain";
-        descriptor.presentMode = WGPUPresentMode_Fifo;
-        descriptor.usage = WGPUTextureUsage_RenderAttachment;
-        descriptor.width = surface_dimensions.x;
-        descriptor.height = surface_dimensions.y;
-        descriptor.format = webgpu_surface->_wgpu_surface_format;
-        WGPUSwapChain swapchain = wgpuDeviceCreateSwapChain(_wgpu_device, webgpu_surface->_wgpu_surface, &descriptor);
+        WGPUSurfaceConfiguration config = WGPU_SURFACE_CONFIGURATION_INIT;
+        config.device = _wgpu_device;
+        config.format = webgpu_surface->_wgpu_surface_format;
+        config.width = surface_dimensions.x;
+        config.height = surface_dimensions.y;
+        config.usage = WGPUTextureUsage_RenderAttachment;
+        config.presentMode = webgpu_surface->_wgpu_present_mode;
+        config.alphaMode = WGPUCompositeAlphaMode_Auto;
+        wgpuSurfaceConfigure(webgpu_surface->_wgpu_surface, &config);
 
         ICE_ASSERT(surface != nullptr, "Invalid render surface object!");
-        return _allocator.create<WebGPUSwapchain>(swapchain, webgpu_surface->_wgpu_surface_format, surface_dimensions);
+        return _allocator.create<WebGPUSwapchain>(webgpu_surface->_wgpu_surface, webgpu_surface->_wgpu_surface_format, surface_dimensions);
     }
 
     void WebGPUDevice::destroy_swapchain(
@@ -85,8 +86,8 @@ namespace ice::render::webgpu
     {
         WGPUBindGroupLayoutEntry entries[16]{};
 
-        WGPUBindGroupLayoutDescriptor descriptor{};
-        descriptor.label = "Resource Set Layout";
+        WGPUBindGroupLayoutDescriptor descriptor = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT;
+        descriptor.label = wgpu_string("Resource Set Layout");
         descriptor.entryCount = ice::count(bindings);
         descriptor.entries = entries;
         ICE_ASSERT_CORE(descriptor.entryCount <= 16);
@@ -166,8 +167,8 @@ namespace ice::render::webgpu
             if (current_set != set_info.resource_set)
             {
                 WebGPUResourceSet* native = WebGPUResourceSet::native(current_set);
-                WGPUBindGroupDescriptor descriptor{};
-                descriptor.label = "Resource Set";
+                WGPUBindGroupDescriptor descriptor = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
+                descriptor.label = wgpu_string("Resource Set");
                 descriptor.layout = native->_wgpu_group_layout;
                 descriptor.entries = entries;
                 descriptor.entryCount = idx;
@@ -186,7 +187,7 @@ namespace ice::render::webgpu
             for (ResourceUpdateInfo const& info : set_info.resources)
             {
                 WGPUBindGroupEntry& entry = entries[idx];
-                entry = WGPUBindGroupEntry{};
+                entry = WGPU_BIND_GROUP_ENTRY_INIT;
                 entry.binding = set_info.binding_index;
 
                 switch(set_info.resource_type)
@@ -216,8 +217,8 @@ namespace ice::render::webgpu
         if (idx > 0)
         {
             WebGPUResourceSet* native = WebGPUResourceSet::native(current_set);
-            WGPUBindGroupDescriptor descriptor{};
-            descriptor.label = "Resource Set";
+            WGPUBindGroupDescriptor descriptor = WGPU_BIND_GROUP_DESCRIPTOR_INIT;
+            descriptor.label = wgpu_string("Resource Set");
             descriptor.layout = native->_wgpu_group_layout;
             descriptor.entries = entries;
             descriptor.entryCount = idx;
@@ -262,8 +263,8 @@ namespace ice::render::webgpu
             count += 1;
         }
 
-        WGPUPipelineLayoutDescriptor descriptor{};
-        descriptor.label = "Pipeline Layout";
+        WGPUPipelineLayoutDescriptor descriptor = WGPU_PIPELINE_LAYOUT_DESCRIPTOR_INIT;
+        descriptor.label = wgpu_string("Pipeline Layout");
         descriptor.bindGroupLayoutCount = count;
         descriptor.bindGroupLayouts = layouts;
 
@@ -285,13 +286,11 @@ namespace ice::render::webgpu
         char const* code = reinterpret_cast<char const*>(shader_info.shader_data.location);
         ICE_ASSERT_CORE(code[shader_info.shader_data.size.value - 1] == '\0');
 
-        WGPUShaderModuleWGSLDescriptor wgsl_descriptor{};
-        wgsl_descriptor.chain.sType = WGPUSType_ShaderModuleWGSLDescriptor;
-        wgsl_descriptor.chain.next = nullptr;
-        wgsl_descriptor.code = code;
+        WGPUShaderSourceWGSL wgsl_descriptor = WGPU_SHADER_SOURCE_WGSL_INIT;
+        wgsl_descriptor.code = wgpu_string(code);
 
-        WGPUShaderModuleDescriptor descriptor{};
-        descriptor.label = "Shader";
+        WGPUShaderModuleDescriptor descriptor = WGPU_SHADER_MODULE_DESCRIPTOR_INIT;
+        descriptor.label = wgpu_string("Shader");
         descriptor.nextInChain = &wgsl_descriptor.chain;
 
         WGPUShaderModule shader = wgpuDeviceCreateShaderModule(_wgpu_device, &descriptor);
@@ -339,12 +338,12 @@ namespace ice::render::webgpu
             binding_count += 1;
         }
 
-        WGPUVertexState vertex{};
-        vertex.entryPoint = "main";
+        WGPUVertexState vertex = WGPU_VERTEX_STATE_INIT;
+        vertex.entryPoint = wgpu_string("main");
         vertex.bufferCount = binding_count;
         vertex.buffers = bindings;
 
-        WGPUBlendState blend{};
+        WGPUBlendState blend = WGPU_BLEND_STATE_INIT;
         blend.color.srcFactor = WGPUBlendFactor_SrcAlpha;
         blend.color.dstFactor = WGPUBlendFactor_OneMinusSrcAlpha;
         blend.color.operation = WGPUBlendOperation_Add;
@@ -353,8 +352,8 @@ namespace ice::render::webgpu
         blend.alpha.operation = WGPUBlendOperation_Add;
 
         WGPUColorTargetState targets[4]{};
-        WGPUFragmentState fragment{};
-        fragment.entryPoint = "main";
+        WGPUFragmentState fragment = WGPU_FRAGMENT_STATE_INIT;
+        fragment.entryPoint = wgpu_string("main");
         fragment.targetCount = 0;
         fragment.targets = targets;
 
@@ -375,11 +374,11 @@ namespace ice::render::webgpu
             {
             case ShaderStageFlags::VertexStage:
                 vertex.module = WebGPUShader::native(program.shader)->_wgpu_shader;
-                vertex.entryPoint = ice::string::begin(program.entry_point);
+                vertex.entryPoint = wgpu_string(ice::string::begin(program.entry_point));
                 break;
             case ShaderStageFlags::FragmentStage:
                 fragment.module = WebGPUShader::native(program.shader)->_wgpu_shader;
-                fragment.entryPoint = ice::string::begin(program.entry_point);
+                fragment.entryPoint = wgpu_string(ice::string::begin(program.entry_point));
                 break;
             default:
                 ICE_ASSERT_CORE(false);
@@ -406,8 +405,8 @@ namespace ice::render::webgpu
         // depthstencil.back.writeMask = 0;
         // depthstencil.front = depthstencil.back;
 
-        WGPURenderPipelineDescriptor descriptor{};
-        descriptor.label = "Render Pipeline";
+        WGPURenderPipelineDescriptor descriptor = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
+        descriptor.label = wgpu_string("Render Pipeline");
         descriptor.layout = WebGPUPipeline::native(info.layout);
         descriptor.multisample.alphaToCoverageEnabled = false;
         descriptor.multisample.count = 1;
@@ -435,7 +434,7 @@ namespace ice::render::webgpu
         ice::u32 buffer_size
     ) noexcept -> ice::render::Buffer
     {
-        WGPUBufferUsageFlags flags = WGPUBufferUsage_CopyDst;
+        WGPUBufferUsage flags = WGPUBufferUsage_CopyDst;
         switch(buffer_type)
         {
         case BufferType::Index:
@@ -452,8 +451,8 @@ namespace ice::render::webgpu
             break;
         }
 
-        WGPUBufferDescriptor descriptor{};
-        descriptor.label = "Buffer";
+        WGPUBufferDescriptor descriptor = WGPU_BUFFER_DESCRIPTOR_INIT;
+        descriptor.label = wgpu_string("Buffer");
         descriptor.mappedAtCreation = false;
         descriptor.size = buffer_size;
         descriptor.usage = flags;
@@ -520,8 +519,8 @@ namespace ice::render::webgpu
     {
         ICE_ASSERT_CORE(image_info.type == ImageType::Image2D);
 
-        WGPUTextureDescriptor descriptor{};
-        descriptor.label = "Texture";
+        WGPUTextureDescriptor descriptor = WGPU_TEXTURE_DESCRIPTOR_INIT;
+        descriptor.label = wgpu_string("Texture");
         descriptor.dimension = WGPUTextureDimension_2D;
         descriptor.usage = native_usage(image_info.usage);
         descriptor.format = native_format(image_info.format);
@@ -535,13 +534,13 @@ namespace ice::render::webgpu
 
         if (data.location != nullptr && data.size > 0_B)
         {
-            WGPUImageCopyTexture copy_info{};
+            WGPUTexelCopyTextureInfo copy_info{};
             copy_info.mipLevel = 0;
             copy_info.texture = texture;
             copy_info.origin = { 0, 0, 0 };
             copy_info.aspect = WGPUTextureAspect_All;
 
-            WGPUTextureDataLayout layout{};
+            WGPUTexelCopyBufferLayout layout{};
             layout.offset = 0;
             layout.bytesPerRow = image_info.width * 4;
             layout.rowsPerImage = image_info.height;
@@ -549,8 +548,8 @@ namespace ice::render::webgpu
             wgpuQueueWriteTexture(_wgpu_queue, &copy_info, data.location, data.size.value, &layout, &descriptor.size);
         }
 
-        WGPUTextureViewDescriptor view_descriptor{};
-        view_descriptor.label = "";
+        WGPUTextureViewDescriptor view_descriptor = WGPU_TEXTURE_VIEW_DESCRIPTOR_INIT;
+        view_descriptor.label = wgpu_string("");
         view_descriptor.dimension = WGPUTextureViewDimension_2D;
         view_descriptor.format = descriptor.format;
         view_descriptor.mipLevelCount = descriptor.mipLevelCount;
@@ -578,11 +577,11 @@ namespace ice::render::webgpu
         ice::render::SamplerInfo const& sampler_info
     ) noexcept -> ice::render::Sampler
     {
-        WGPUSamplerDescriptor descriptor{};
+        WGPUSamplerDescriptor descriptor = WGPU_SAMPLER_DESCRIPTOR_INIT;
         descriptor.addressModeU = native_address_mode(sampler_info.address_mode.u);
         descriptor.addressModeV = native_address_mode(sampler_info.address_mode.v);
         descriptor.addressModeW = native_address_mode(sampler_info.address_mode.w);
-        descriptor.label = "Sampler";
+        descriptor.label = wgpu_string("Sampler");
         descriptor.magFilter = native_filter(sampler_info.mag_filter);
         descriptor.minFilter = native_filter(sampler_info.min_filter);
         descriptor.mipmapFilter = native_mipmap_mode(sampler_info.mip_map_mode);
@@ -610,7 +609,7 @@ namespace ice::render::webgpu
     ) const noexcept -> ice::render::RenderQueue*
     {
         WGPUQueue queue = wgpuDeviceGetQueue(_wgpu_device);
-        wgpuQueueReference(queue);
+        wgpuQueueAddRef(queue);
         return _allocator.create<WebGPUQueue>(_allocator, _wgpu_device, queue);
     }
 
