@@ -13,6 +13,11 @@ namespace ice::render::webgpu
 
     constexpr ice::LogTagDefinition LogTag_WebGPU = ice::create_log_tag(ice::LogTag::Module, "WebGPU");
 
+    constexpr auto wgpu_string(ice::String value) noexcept -> WGPUStringView
+    {
+        return WGPUStringView{ .data = value._data, .length = value._size };
+    }
+
 #define ICE_LOG_WGPU(severity, message, ...) \
     ICE_LOG(severity, ice::render::webgpu::LogTag_WebGPU, message, __VA_ARGS__)
 

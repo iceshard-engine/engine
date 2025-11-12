@@ -17,12 +17,5 @@
             'render_system'
         }
     ]
-
-    .Public =
-    [
-        .Libs = {
-            'webgpu'
-        }
-    ]
 ]
 .Projects + .Project

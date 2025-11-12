@@ -15,10 +15,12 @@ namespace ice::render::webgpu
         WebGPURenderSurface(
             WGPUSurface wgpu_surface,
             WGPUTextureFormat wgpu_surface_format,
+            WGPUPresentMode wgpu_present_mode,
             ice::render::SurfaceInfo surface_info
         ) noexcept
             : _wgpu_surface{ wgpu_surface }
             , _wgpu_surface_format{ wgpu_surface_format }
+            , _wgpu_present_mode{ wgpu_present_mode }
             , _surface_info{ surface_info }
         {
         }
@@ -30,6 +32,7 @@ namespace ice::render::webgpu
 
         WGPUSurface const _wgpu_surface;
         WGPUTextureFormat _wgpu_surface_format;
+        WGPUPresentMode _wgpu_present_mode;
         ice::render::SurfaceInfo const _surface_info;
     };
 

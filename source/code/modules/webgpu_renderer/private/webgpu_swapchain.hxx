@@ -13,7 +13,7 @@ namespace ice::render::webgpu
     {
     public:
         WebGPUSwapchain(
-            WGPUSwapChain wgpu_swapchain,
+            WGPUSurface wgpu_surface,
             WGPUTextureFormat wgpu_format,
             ice::vec2u extent
         ) noexcept;
@@ -31,10 +31,11 @@ namespace ice::render::webgpu
 
         auto current_image_index() const noexcept -> ice::u32 override;
 
-        WGPUSwapChain const _wgpu_swapchain;
+        WGPUSurface const _wgpu_surface;
     private:
         WGPUTextureFormat const _wgpu_format;
         ice::vec2u const _extent;
+        WGPUSurfaceTexture _texture;
         WebGPUImage _images[2];
         uint32_t _current_index;
     };

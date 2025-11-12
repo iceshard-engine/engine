@@ -48,7 +48,7 @@ namespace ice::render::webgpu
         case ShaderAttribType::Vec3f: return WGPUVertexFormat_Float32x3;
         case ShaderAttribType::Vec4f: return WGPUVertexFormat_Float32x4;
         case ShaderAttribType::Vec4f_Unorm8: return WGPUVertexFormat_Unorm8x4;
-        default: return WGPUVertexFormat_Undefined;
+        default: return WGPUVertexFormat_Force32;
         }
     }
 

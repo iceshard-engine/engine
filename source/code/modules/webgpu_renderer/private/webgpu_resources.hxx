@@ -36,19 +36,19 @@ namespace ice::render::webgpu
         }
     };
 
-    inline auto native_shader_stages(ice::render::ShaderStageFlags flags) noexcept -> WGPUShaderStageFlags
+    inline auto native_shader_stages(ice::render::ShaderStageFlags flags) noexcept -> WGPUShaderStage
     {
         bool const unsupported_flags = ice::has_any(flags, ~(ShaderStageFlags::FragmentStage | ShaderStageFlags::VertexStage));
         ICE_ASSERT(unsupported_flags == false, "WebGPU rendered only supports vertex, fragment and compute stages.");
 
-        WGPUShaderStageFlags result = WGPUShaderStage_None;
+        WGPUShaderStage result = WGPUShaderStage_None;
         if (ice::has_all(flags, ShaderStageFlags::VertexStage))
         {
-            result = WGPUShaderStageFlags(result | WGPUShaderStage_Vertex);
+            result = WGPUShaderStage(result | WGPUShaderStage_Vertex);
         }
         if (ice::has_all(flags, ShaderStageFlags::FragmentStage))
         {
-            result = WGPUShaderStageFlags(result | WGPUShaderStage_Fragment);
+            result = WGPUShaderStage(result | WGPUShaderStage_Fragment);
         }
         return result;
     }

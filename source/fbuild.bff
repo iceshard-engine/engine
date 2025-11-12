@@ -103,7 +103,7 @@ Settings
     Using( .Piepline_WebAsm )
 
     // Might need to be updated whenever latest EmScripten is downloaded
-    .EMSDKVersion = '4.0.9'
+    .EMSDKVersion = '4.0.18'
 
     .PipelineName = 'WebAsm'
     .PipelineAllowUnityBuilds = true
@@ -111,7 +111,7 @@ Settings
     .PipelineTags = { 'Monolythic' }
 
     .PipelineConanProfile = 'WebAsm'
-    .PipelineToolchain = 'em4-clang-21.0.0'
+    .PipelineToolchain = 'em4-clang-22.0.0'
 
     // Disable explicitly (we dont want VS configs for WebAssembly for now)
     .PipelineVSInfo =

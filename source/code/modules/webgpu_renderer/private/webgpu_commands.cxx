@@ -80,8 +80,8 @@ namespace ice::render::webgpu
         //     attachment_count += 1;
         // }
 
-        WGPURenderPassDescriptor descriptor{};
-        descriptor.label = "Default Renderpass";
+        WGPURenderPassDescriptor descriptor = WGPU_RENDER_PASS_DESCRIPTOR_INIT;
+        descriptor.label = wgpu_string("Default Renderpass");
         descriptor.colorAttachmentCount = attachment_count;
         descriptor.colorAttachments = attachments;
         descriptor.depthStencilAttachment = nullptr;
@@ -140,8 +140,8 @@ namespace ice::render::webgpu
 
         ICE_ASSERT_CORE(subpass.depth_stencil_attachment.layout != ImageLayout::DepthStencil);
 
-        WGPURenderPassDescriptor descriptor{};
-        descriptor.label = "Default Renderpass";
+        WGPURenderPassDescriptor descriptor = WGPU_RENDER_PASS_DESCRIPTOR_INIT;
+        descriptor.label = wgpu_string("Default Renderpass");
         descriptor.colorAttachmentCount = attachment_count;
         descriptor.colorAttachments = attachments;
         descriptor.depthStencilAttachment = nullptr;
@@ -296,8 +296,8 @@ namespace ice::render::webgpu
 
         //wgpuCommandEncoderInsertDebugMarker(webgpu_cmds->command_encoder, "End");
 
-        WGPUCommandBufferDescriptor descriptor{};
-        descriptor.label = "Command Buffer";
+        WGPUCommandBufferDescriptor descriptor = WGPU_COMMAND_BUFFER_DESCRIPTOR_INIT;
+        descriptor.label = wgpu_string("Command Buffer");
         webgpu_cmds->command_buffer = wgpuCommandEncoderFinish(webgpu_cmds->command_encoder, &descriptor);
     }
 
@@ -321,14 +321,13 @@ namespace ice::render::webgpu
             bytes_per_row
         );
 
-        WGPUImageCopyBuffer source{};
+        WGPUTexelCopyBufferInfo source = WGPU_TEXEL_COPY_BUFFER_INFO_INIT;
         source.buffer = WebGPUBuffer::native(image_contents)->wgpu_buffer;
-
         source.layout.offset = 0;
         source.layout.bytesPerRow = bytes_per_row;
         source.layout.rowsPerImage = extents.y;
 
-        WGPUImageCopyTexture destination{};
+        WGPUTexelCopyTextureInfo destination = WGPU_TEXEL_COPY_TEXTURE_INFO_INIT;
         destination.aspect = WGPUTextureAspect_Undefined;
         destination.mipLevel = 0;
         destination.origin = { 0, 0, 0 };
