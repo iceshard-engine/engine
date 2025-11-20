@@ -157,8 +157,7 @@ namespace ice
         ice::AssetState const state = calculate_state(min_state, meta);
 
         // Create new metadata entry and assign as next
-        ice::UniquePtr<ice::AssetData> entry_meta = ice::create_asset_data_entry(alloc, state, dataalloc, metadata);
-        entry_meta->_flags |= AssetDataFlags::Metadata;
+        ice::UniquePtr<ice::AssetData> entry_meta = ice::create_asset_data_entry(alloc, state, dataalloc, metadata, AssetDataFlags::Metadata);
         entry_meta->_next = ice::move(asset._data);
 
         // Set the asset data and point to the meta entry

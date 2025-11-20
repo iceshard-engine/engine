@@ -4,11 +4,13 @@
 #include "asset_shelve.hxx"
 #include "asset_entry.hxx"
 #include "asset_request_awaitable.hxx"
-#include <ice/task_utils.hxx>
-#include <ice/string/heap_string.hxx>
-#include <ice/container/hashmap.hxx>
-#include <ice/profiler.hxx>
+
 #include <ice/assert.hxx>
+#include <ice/container/hashmap.hxx>
+#include <ice/mem_allocator_utils.hxx>
+#include <ice/profiler.hxx>
+#include <ice/string/heap_string.hxx>
+#include <ice/task_utils.hxx>
 
 namespace ice
 {
@@ -65,6 +67,45 @@ namespace ice
     {
         ice::UniquePtr<ice::ResourceAssetData> resource_data = ice::create_asset_data_entry(
             _allocator, AssetState::Exists, resource
+        );
+
+        ice::u64 const name_hash = ice::hash(name);
+        if constexpr (ice::AssetEntry::HoldsDebugData)
+        {
+            ice::HeapString<> asset_name{ _allocator, ice::stringid_hint(name) };
+
+            ice::hashmap::set(
+                _asset_resources,
+                name_hash,
+                _allocator.create<ice::AssetEntry>(ice::move(asset_name), this, ice::move(resource_data))
+            );
+        }
+        else
+        {
+            ice::hashmap::set(
+                _asset_resources,
+                name_hash,
+                _allocator.create<ice::AssetEntry>(name, this, ice::move(resource_data))
+            );
+        }
+
+        ice::AssetEntry** entry = ice::hashmap::try_get(_asset_resources, name_hash);
+        ICE_ASSERT_CORE(entry != nullptr);
+        ICE_ASSERT_CORE(*entry != nullptr);
+        return *entry;
+    }
+
+    auto AssetShelve::store(
+        ice::StringID_Arg name,
+        ice::AssetDataBinding const& data_binding
+    ) noexcept -> ice::AssetEntry*
+    {
+        ice::UniquePtr<ice::AssetData> resource_data = ice::create_asset_data_entry(
+            _allocator,
+            data_binding.state,
+            _allocator,
+            data_binding.content,
+            data_binding.metadata
         );
 
         ice::u64 const name_hash = ice::hash(name);

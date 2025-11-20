@@ -33,7 +33,7 @@ namespace ice
         inline AssetHandle(
             ice::StringID_Hash id,
             ice::AssetShelve* shelve,
-            ice::UniquePtr<ice::ResourceAssetData> resource
+            ice::UniquePtr<ice::AssetData> resource
         ) noexcept;
         inline AssetHandle(ice::AssetHandle&& other) noexcept;
 
@@ -68,7 +68,7 @@ namespace ice
     inline AssetHandle::AssetHandle(
         ice::StringID_Hash id,
         ice::AssetShelve* shelve,
-        ice::UniquePtr<ice::ResourceAssetData> resource
+        ice::UniquePtr<ice::AssetData> resource
     ) noexcept
         : _identifier{ id }
         , _shelve{ shelve }
@@ -102,7 +102,7 @@ namespace ice
         inline AssetEntryFinal(
             ice::HeapString<> name,
             ice::AssetShelve* shelve,
-            ice::UniquePtr<ice::ResourceAssetData> resource
+            ice::UniquePtr<ice::AssetData> resource
         ) noexcept;
         inline AssetEntryFinal(AssetEntryFinal const& other) noexcept;
 
@@ -129,11 +129,12 @@ namespace ice
     inline AssetEntryFinal<IsDebug>::AssetEntryFinal(
         ice::HeapString<> name,
         ice::AssetShelve* shelve,
-        ice::UniquePtr<ice::ResourceAssetData> resource
+        ice::UniquePtr<ice::AssetData> resource
     ) noexcept
         : AssetHandle{ ice::stringid(name), shelve, ice::move(resource) }
         , debug_name{ ice::move(name) }
     {
+        _identifier = ice::stringid(debug_name);
     }
 
     template<bool IsDebug>

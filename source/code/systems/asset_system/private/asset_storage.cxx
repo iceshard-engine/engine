@@ -8,6 +8,7 @@
 #include "asset_request_awaitable.hxx"
 #include "asset_transaction.hxx"
 
+#include <ice/mem_allocator_utils.hxx>
 #include <ice/config.hxx>
 
 namespace ice
@@ -321,11 +322,7 @@ namespace ice
             if (resource_handle.valid())
             {
                 // Create a new asset entry if the handle exists
-                entry = shelve->store(
-                    ice::stringid(name),
-                    resource_handle
-                );
-
+                entry = shelve->store(ice::stringid(name), resource_handle);
                 ICE_ASSERT_CORE(entry != nullptr);
 
                 //ice::u32 const prev_count = entry->_refcount.fetch_add(1, std::memory_order_relaxed);
@@ -333,6 +330,62 @@ namespace ice
 
                 result = Asset{ entry };
             }
+        }
+        return result;
+    }
+
+    auto DefaultAssetStorage::bind_data(
+        ice::AssetCategory_Arg category,
+        ice::String name,
+        ice::AssetDataBinding const& data_binding
+    ) noexcept -> ice::Asset
+    {
+        Asset result{ };
+        // CHECK: Always called from the same thread.
+        // OR TODO: Think of how to make it MT + lock-free
+
+        // TODO: Can we have empty assets?
+        if (data_binding.content.location == nullptr)
+        {
+            return result;
+        }
+
+        ice::AssetShelve* shelve = nullptr;
+        ice::AssetEntry* entry = nullptr;
+        if (find_shelve_and_entry(category, name, shelve, entry))
+        {
+            result = Asset{ entry };
+
+            // We need to ensure the previous count was higher else the asset might be released already
+            ice::u32 const curr_count = entry->_refcount.load(std::memory_order_relaxed);
+            if (curr_count == 1)
+            {
+                // Only keep metadata data
+                while (entry->_data != nullptr)
+                {
+                    // TODO: Add an sleep statement?
+                    //IPT_MESSAGE_C("Asset waiting for 'Release' operation to finish.", 0xEE8866);
+                }
+
+                entry->_data = ice::create_asset_data_entry(
+                    _allocator,
+                    data_binding.state,
+                    _allocator,
+                    data_binding.content,
+                    data_binding.metadata
+                );
+            }
+        }
+        else if (shelve != nullptr)
+        {
+            // Create a new asset entry if the handle exists
+            entry = shelve->store(ice::stringid(name), data_binding);
+            ICE_ASSERT_CORE(entry != nullptr);
+
+            //ice::u32 const prev_count = entry->_refcount.fetch_add(1, std::memory_order_relaxed);
+            //ICE_ASSERT(prev_count == 0, "Unexpected value!");
+
+            result = Asset{ entry };
         }
         return result;
     }
@@ -402,7 +455,7 @@ namespace ice
             // We request a baked resource first
             co_await request_asset_loaded(transaction);
 
-            ice::Memory runtime_data = co_await AssetRequestAwaitable{ StringID_Invalid, transaction };
+            ice::Memory runtime_data = co_await AssetRequestAwaitable{ transaction };
 
             // ICE_ASSERT_CORE(runtime_data.location == transaction.result_data->readwrite);
 
