@@ -10,6 +10,8 @@
 #include <ice/font_utils.hxx>
 #include <ice/task_utils.hxx>
 
+#if ISP_WINDOWS
+
 ISC_WARNING_PUSH
 ISCW_DECLARATION_HIDES_CLASS_MEMBER(ISCW_OP_DISABLE)
 ISCW_UNREFERENCED_INTERNAL_FUNCTION_REMOVED(ISCW_OP_DISABLE)
@@ -246,3 +248,5 @@ namespace ice
     }
 
 } // namespace ice
+
+#endif

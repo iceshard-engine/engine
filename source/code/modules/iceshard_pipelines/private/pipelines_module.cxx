@@ -15,13 +15,20 @@ namespace ice
 
     struct IceShardPipelinesModule : ice::Module<IceShardPipelinesModule>
     {
+        static void v1_archive_api(ice::detail::asset_system::v1::AssetArchiveAPI& api) noexcept;
+
         static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator auto const& negotiator) noexcept
         {
             ice::LogModule::init(alloc, negotiator);
-            return true;
+            return negotiator.register_api(v1_archive_api);
         }
 
         IS_WORKAROUND_MODULE_INITIALIZATION(IceShardPipelinesModule);
     };
+
+    void IceShardPipelinesModule::v1_archive_api(ice::detail::asset_system::v1::AssetArchiveAPI& api) noexcept
+    {
+        api.fn_register_categories = ice::asset_category_image_definition;
+    }
 
 } // namespace ice

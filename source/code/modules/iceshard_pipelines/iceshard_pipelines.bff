@@ -9,18 +9,10 @@
 
     .BaseDir = '$WorkspaceCodeDir$/modules/iceshard_pipelines'
 
-    .Requires = {
-        'Windows'
-    }
-
     .Private =
     [
         .Modules = {
             'arctic'
-            'assimp'
-            'freetype'
-            'msdfgen'
-            'msdf_atlas_gen'
             'rapidxml_ns'
         }
         .Uses = {
@@ -32,5 +24,30 @@
             'engine'
         }
     ]
+
+    .Rule_Monolythic =
+    [
+        .Name = 'Monolythic'
+        .Requires = { 'Monolythic' }
+        .Kind = .Kind_ObjectList
+    ]
+    .Rule_Win32Plugins =
+    [
+        .Name = 'EditorPlugins'
+        .Requires = { 'Windows' }
+        .Private =
+        [
+            .Modules = {
+                'assimp'
+                'freetype'
+                'msdfgen'
+                'msdf_atlas_gen'
+            }
+        ]
+    ]
+    .Rules = {
+        .Rule_Monolythic
+        .Rule_Win32Plugins
+    }
 ]
 .Projects + .Project
