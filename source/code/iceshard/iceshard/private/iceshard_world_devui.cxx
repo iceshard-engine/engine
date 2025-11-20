@@ -81,7 +81,7 @@ namespace ice
         {
             IceshardWorldContext const& ctx = _context;
 
-            static auto make_handler_list = [this](ice::String handler_type, auto const& hashmap) noexcept
+            auto make_handler_list = [this](ice::String handler_type, auto const& hashmap) noexcept
                 {
                     ImGui::TextT("{} handlers (count: {})", handler_type, ice::hashmap::count(hashmap));
                     if (ice::hashmap::any(hashmap))

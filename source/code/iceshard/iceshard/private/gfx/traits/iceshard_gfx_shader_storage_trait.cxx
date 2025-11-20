@@ -65,7 +65,7 @@ namespace ice::gfx
         }
     }
 
-    auto Trait_GfxShaderStorage::on_asset_released(ice::Asset const &asset) noexcept -> ice::Task<>
+    auto Trait_GfxShaderStorage::on_asset_released(ice::Asset const& asset) noexcept -> ice::Task<>
     {
         GfxShaderEntry* entry = ice::hashmap::try_get(_loaded_shaders, ice::hash(asset.name()));
         ICE_ASSERT_CORE(entry != nullptr);

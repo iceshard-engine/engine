@@ -44,7 +44,10 @@ namespace ice::gfx
             ice::gfx::RenderFrameUpdate const& update,
             ice::AssetStorage& assets
         ) noexcept -> ice::Task<>;
-        auto gfx_shutdown(ice::render::RenderDevice& device) noexcept -> ice::Task<>;
+
+        auto gfx_shutdown(
+            ice::render::RenderDevice& device
+        ) noexcept -> ice::Task<>;
 
     private:
         ice::HashMap<GfxShaderEntry> _loaded_shaders;

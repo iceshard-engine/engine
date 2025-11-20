@@ -11,7 +11,9 @@
 #include <ice/gfx/gfx_context.hxx>
 #include <ice/render/render_buffer.hxx>
 #include <ice/render/render_command_buffer.hxx>
+#include <ice/render/render_pipeline.hxx>
 #include <ice/render/render_device.hxx>
+#include <ice/render/render_pass.hxx>
 #include <ice/resource_tracker.hxx>
 #include <ice/resource.hxx>
 #include <ice/shard_container.hxx>
@@ -36,10 +38,11 @@ namespace ice::gfx
         : ice::Trait{ ctx }
         , _loaded_images{ alloc }
     {
-        _context.bind<&Trait_GfxImageStorage::gfx_update>(ice::gfx::ShardID_RenderFrameUpdate);
+        _context.bind<&Trait_GfxImageStorage::gfx_update, Render>(ice::gfx::ShardID_RenderFrameUpdate);
+        _context.bind<&Trait_GfxImageStorage::gfx_shutdown, Render>(ice::gfx::ShardID_GfxShutdown);
     }
 
-    auto Trait_GfxImageStorage::on_asset_released(ice::Asset const &asset) noexcept -> ice::Task<>
+    auto Trait_GfxImageStorage::on_asset_released(ice::Asset const& asset) noexcept -> ice::Task<>
     {
         GfxImageEntry* entry = ice::hashmap::try_get(_loaded_images, ice::hash(asset.name()));
         ICE_ASSERT_CORE(entry != nullptr);
@@ -59,8 +62,8 @@ namespace ice::gfx
             ice::AssetState const state = request->state();
             ICE_ASSERT_CORE(state == AssetState::Loaded); // The image needs to be loaded.
 
-            ice::u64 const image_hash = ice::hash(request->asset_name());
-            GfxImageEntry* entry = ice::hashmap::try_get(_loaded_images, image_hash);
+            ice::StringID const image_hash = request->asset_name();
+            GfxImageEntry* entry = ice::hashmap::try_get(_loaded_images, ice::hash(image_hash));
             ICE_ASSERT_CORE(entry == nullptr || entry->released);
 
             using namespace ice::render;
@@ -76,6 +79,7 @@ namespace ice::gfx
             if (metadata_data.location == nullptr)
             {
                 request->resolve({ .result = ice::AssetRequestResult::Error });
+                request = assets.aquire_request(ice::render::AssetCategory_Texture2D, AssetState::Runtime);
                 continue;
             }
 
@@ -90,7 +94,7 @@ namespace ice::gfx
             valid_data &= ice::config::get(meta, "texture.size.y", size.y);
 
             [[maybe_unused]]
-            ice::Data const* d = reinterpret_cast<ice::Data const*>(request->data().location);
+            ice::Data const texture_data = request->data();
 
             // Creates the image object
             ImageInfo image_info{
@@ -100,54 +104,106 @@ namespace ice::gfx
                 .width = (ice::u32) size.x,
                 .height = (ice::u32) size.y,
             };
-            Image image = device.create_image(image_info, {});
+            Image image = device.create_image(image_info, texture_data);
             if (image == Image::Invalid)
             {
                 request->resolve({ .result = AssetRequestResult::Error });
                 co_return;
             }
 
-            ice::render::Buffer buffer = device.create_buffer(BufferType::Transfer, size.x * size.y);
+            ice::render::Buffer transfer_buffer = device.create_buffer(BufferType::Transfer, ice::u32(texture_data.size.value));
             BufferUpdateInfo const buffer_updates[]{
                 BufferUpdateInfo{
-                    .buffer = buffer,
-                    .data = *d,
+                    .buffer = transfer_buffer,
+                    .data = texture_data,
                     .offset = 0
                 }
             };
 
             device.update_buffers(buffer_updates);
 
-            // RenderCommands& api = device.get_commands();
-            // CommandBuffer const cmds = co_await params.frame_transfer;
+            RenderCommands& api = device.get_commands();
+            CommandBuffer const cmds = co_await params.stages.frame_transfer;
 
-            // api.update_texture_v2(
-            //     cmds,
-            //     image,
-            //     buffer,
-            //     ice::vec2u{ size }
-            // );
+            ImageBarrier barriers[4]{ };
 
-            // co_await params.frame_end;
+            for (ice::u32 idx = 0; idx < 1; ++idx)
+            {
+                barriers[idx].image = image;
+                barriers[idx].source_layout = ImageLayout::Undefined;
+                barriers[idx].destination_layout = ImageLayout::TransferDstOptimal;
+                barriers[idx].source_access = AccessFlags::None;
+                barriers[idx].destination_access = AccessFlags::TransferWrite;
+            }
 
-            // device.destroy_buffer(data_buffer);
+            api.pipeline_image_barrier(
+                cmds,
+                PipelineStage::TopOfPipe,
+                PipelineStage::Transfer,
+                { barriers, 1 }
+            );
 
-            // ICE_LOG(LogSeverity::Info, LogTag::Game, "ShaderStorage - Loaded image: {}", request->asset_name());
+            api.update_texture_v2(
+                cmds,
+                image,
+                transfer_buffer,
+                ice::vec2u{ size }
+            );
 
-            // // Allocates a handle for it... (TODO: Rework?)
-            // ice::Memory const result = request->allocate(ice::size_of<ice::render::Image>);
-            // *reinterpret_cast<Image*>(result.location) = image;
+            for (ice::u32 idx = 0; idx < 1; ++idx)
+            {
+                barriers[idx].image = image;
+                barriers[idx].source_layout = ImageLayout::TransferDstOptimal;
+                barriers[idx].destination_layout = ImageLayout::ShaderReadOnly;
+                barriers[idx].source_access = AccessFlags::TransferWrite;
+                barriers[idx].destination_access = AccessFlags::ShaderRead;
+            }
 
-            // // Save the image handle
-            // ice::hashmap::set(_loaded_images, image_hash, { .image = image });
+            api.pipeline_image_barrier(
+                cmds,
+                PipelineStage::Transfer,
+                PipelineStage::FramentShader,
+                { barriers, 1 }
+            );
+
+            co_await params.stages.frame_end;
+
+            device.destroy_buffer(transfer_buffer);
+
+            ICE_LOG(LogSeverity::Info, LogTag::Game, "ShaderStorage - Loaded image: {}", request->asset_name());
+
+            // Allocates a handle for it... (TODO: Rework?)
+            ice::Memory const result = request->allocate(ice::size_of<ice::render::Image>);
+            *reinterpret_cast<Image*>(result.location) = image;
+
+            // Reslove the request (will resume all awaiting tasks)
+            ice::Asset asset = request->resolve({ .resolver = this, .result = AssetRequestResult::Success, .memory = result });
+            // send("iceshard:images-internal:loaded"_shardid, asset);
+
+            // Save the image handle
+            ice::hashmap::set(_loaded_images, ice::hash(image_hash), { .asset = ice::move(asset), .image = image});
 
             // // Reslove the request (will resume all awaiting tasks)
             // request->resolve({ .resolver = this, .result = AssetRequestResult::Success, .memory = result });
 
-            // // Get the next queued request
-            // request = update.assets.aquire_request(ice::render::AssetCategory_Texture2D, AssetState::Runtime);
+            // Get the next queued request
+            request = assets.aquire_request(ice::render::AssetCategory_Texture2D, AssetState::Runtime);
         }
 
+        co_return;
+    }
+
+    auto Trait_GfxImageStorage::gfx_shutdown(
+        ice::render::RenderDevice& device
+    ) noexcept -> ice::Task<>
+    {
+        for (ice::gfx::GfxImageEntry& entry : ice::hashmap::values(_loaded_images))
+        {
+            device.destroy_image(entry.image);
+            entry.asset.release();
+        }
+
+        ice::hashmap::clear(_loaded_images);
         co_return;
     }
 
