@@ -170,7 +170,7 @@ namespace ice::gfx
 
             device.destroy_buffer(transfer_buffer);
 
-            ICE_LOG(LogSeverity::Info, LogTag::Game, "ShaderStorage - Loaded image: {}", request->asset_name());
+            ICE_LOG(LogSeverity::Info, LogTag::Game, "TextureStorage - Loaded image: {}", request->asset_name());
 
             // Allocates a handle for it... (TODO: Rework?)
             ice::Memory const result = request->allocate(ice::size_of<ice::render::Image>);

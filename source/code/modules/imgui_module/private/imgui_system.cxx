@@ -171,7 +171,7 @@ namespace ice::devui
                 ImGui::ShowDemoWindow(&show_demo);
             }
 
-            ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
+            ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 
             for (auto const& runtime : _widget_manager.widgets())
             {
