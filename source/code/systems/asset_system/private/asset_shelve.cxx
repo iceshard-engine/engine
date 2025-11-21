@@ -85,7 +85,7 @@ namespace ice
             ice::hashmap::set(
                 _asset_resources,
                 name_hash,
-                _allocator.create<ice::AssetEntry>(name, this, ice::move(resource_data))
+                _allocator.create<ice::AssetEntry>(ice::stringid(name), this, ice::move(resource_data))
             );
         }
 
@@ -124,7 +124,7 @@ namespace ice
             ice::hashmap::set(
                 _asset_resources,
                 name_hash,
-                _allocator.create<ice::AssetEntry>(name, this, ice::move(resource_data))
+                _allocator.create<ice::AssetEntry>(ice::stringid(name), this, ice::move(resource_data))
             );
         }
 
