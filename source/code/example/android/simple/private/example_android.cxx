@@ -166,8 +166,9 @@ void TestGame::on_resume(ice::Engine& engine) noexcept
         ice::StringID traits[]{
             "test"_sid,
             "test2"_sid,
+            ice::devui_trait_name(),
             ice::TraitID_GfxShaderStorage,
-            ice::devui_trait_name()
+            ice::TraitID_GfxImageStorage,
         };
 
         engine.worlds().create_world({ .name = "world"_sid, .traits = traits });
