@@ -322,7 +322,7 @@ namespace ice
             if (resource_handle.valid())
             {
                 // Create a new asset entry if the handle exists
-                entry = shelve->store(ice::stringid(name), resource_handle);
+                entry = shelve->store(name, resource_handle);
                 ICE_ASSERT_CORE(entry != nullptr);
 
                 //ice::u32 const prev_count = entry->_refcount.fetch_add(1, std::memory_order_relaxed);
@@ -379,7 +379,7 @@ namespace ice
         else if (shelve != nullptr)
         {
             // Create a new asset entry if the handle exists
-            entry = shelve->store(ice::stringid(name), data_binding);
+            entry = shelve->store(name, data_binding);
             ICE_ASSERT_CORE(entry != nullptr);
 
             //ice::u32 const prev_count = entry->_refcount.fetch_add(1, std::memory_order_relaxed);

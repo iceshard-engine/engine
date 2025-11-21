@@ -61,7 +61,7 @@ namespace ice
     }
 
     auto AssetShelve::store(
-        ice::StringID_Arg name,
+        ice::String name,
         ice::ResourceHandle const& resource
     ) noexcept -> ice::AssetEntry*
     {
@@ -72,7 +72,7 @@ namespace ice
         ice::u64 const name_hash = ice::hash(name);
         if constexpr (ice::AssetEntry::HoldsDebugData)
         {
-            ice::HeapString<> asset_name{ _allocator, ice::stringid_hint(name) };
+            ice::HeapString<> asset_name{ _allocator, name };
 
             ice::hashmap::set(
                 _asset_resources,
@@ -96,7 +96,7 @@ namespace ice
     }
 
     auto AssetShelve::store(
-        ice::StringID_Arg name,
+        ice::String name,
         ice::AssetDataBinding const& data_binding
     ) noexcept -> ice::AssetEntry*
     {
@@ -111,7 +111,7 @@ namespace ice
         ice::u64 const name_hash = ice::hash(name);
         if constexpr (ice::AssetEntry::HoldsDebugData)
         {
-            ice::HeapString<> asset_name{ _allocator, ice::stringid_hint(name) };
+            ice::HeapString<> asset_name{ _allocator, name };
 
             ice::hashmap::set(
                 _asset_resources,
