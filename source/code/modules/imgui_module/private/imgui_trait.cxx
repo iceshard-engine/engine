@@ -173,30 +173,41 @@ namespace ice::devui
                 : AssetDataBinding{ .state = AssetState::Loaded }
                 , _allocator{ alloc }
             {
+                using namespace ice::render;
+
                 ice::Data const texture_data{
                     texture.Pixels,
                     ice::usize(texture.GetSizeInBytes()),
-                    ice::ualign::b_default
+                    ice::ualign::b_1
                 };
 
-                ice::ConfigBuilder config{ _allocator };
-                ice::ConfigBuilderValue mtex = config["texture"];
-                mtex["format"] = ice::i32(ice::render::ImageFormat::UNORM_RGBA);
-                mtex["size"]["x"] = ice::i32(texture.Width);
-                mtex["size"]["y"] = ice::i32(texture.Height);
-                _metadata = config.finalize(_allocator);
+                _texdata = alloc.allocate(
+                    ice::AllocRequest{
+                        ice::size_of<ImageInfo> + texture_data.size,
+                        ice::align_of<ImageInfo>
+                    }
+                );
 
-                this->content = texture_data;
-                this->metadata = ice::data_view(_metadata);
+                ice::Memory texmem = ice::ptr_add(_texdata, ice::size_of<ImageInfo>);
+                ice::memcpy(texmem, { texture_data });
+
+                ImageInfo* const info = reinterpret_cast<ImageInfo*>(_texdata.location);
+                info->width = texture.Width;
+                info->height = texture.Height;
+                info->format = ImageFormat::UNORM_RGBA;
+                info->type = ImageType::Image2D;
+                info->usage = ImageUsageFlags::Sampled | ImageUsageFlags::TransferDst;
+                info->data = texmem.location;
+                this->content = ice::data_view(_texdata);
             }
 
             ~ImTextureAssetDataBinding()
             {
-                _allocator.deallocate(_metadata);
+                _allocator.deallocate(_texdata);
             }
 
             ice::Allocator& _allocator;
-            ice::Memory _metadata;
+            ice::Memory _texdata;
         };
 
         inline auto total_command_count(ImDrawData const& draw_data) noexcept -> ice::u32
