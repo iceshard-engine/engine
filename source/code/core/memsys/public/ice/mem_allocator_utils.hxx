@@ -9,6 +9,11 @@ namespace ice
 
     inline auto data_copy(ice::Allocator& alloc, ice::Data data) noexcept -> ice::Memory
     {
+        if (data.size == 0_B)
+        {
+            return {};
+        }
+
         ice::Memory const result = alloc.allocate({ data.size, data.alignment });
         if (result.location != nullptr)
         {
