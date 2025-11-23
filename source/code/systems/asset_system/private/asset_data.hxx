@@ -5,6 +5,7 @@
 #include <ice/asset.hxx>
 #include <ice/config.hxx>
 #include <ice/mem_unique_ptr.hxx>
+#include <ice/mem_allocator_utils.hxx>
 #include <ice/resource.hxx>
 #include <ice/resource_tracker.hxx>
 
@@ -103,6 +104,11 @@ namespace ice
                 ice::ResourceAssetData* resdata = static_cast<ice::ResourceAssetData*>(data.get());
                 co_return co_await ice::resource_meta(resdata->_resource_handle, out_data);
             }
+            else if (ice::has_any(data->_flags, AssetDataFlags::Allocated))
+            {
+                out_data = { data->_readwrite, data->_size, data->_alignment };
+                co_return S_Success;
+            }
             else // The data stored in this object is pure metadata
             {
                 out_data = { data->_readonly, data->_size, data->_alignment };
@@ -158,13 +164,14 @@ namespace ice
         ice::Allocator& alloc,
         ice::AssetState state,
         ice::Allocator& data_alloc,
-        ice::Memory asset_memory
+        ice::Memory asset_memory,
+        ice::AssetDataFlags additional_flags = AssetDataFlags::None
     ) noexcept -> ice::UniquePtr<ice::AllocatedAssetData>
     {
         ice::AllocatedAssetData* data = alloc.create<ice::AllocatedAssetData>();
         data->_next = nullptr;
         data->_alloc = ice::addressof(alloc);
-        data->_flags = AssetDataFlags::Allocated;
+        data->_flags = AssetDataFlags::Allocated | additional_flags;
         data->_state = state;
         data->_alignment = asset_memory.alignment;
         data->_size = asset_memory.size;
@@ -206,6 +213,23 @@ namespace ice
         data->_size = asset_data.size;
         data->_readonly = asset_data.location;
         return ice::make_unique(ice::destroy_asset_data_entry<ice::AssetData>, data);
+    }
+
+    inline auto create_asset_data_entry(
+        ice::Allocator& alloc,
+        ice::AssetState state,
+        ice::Allocator& data_alloc,
+        ice::Data asset_data,
+        ice::Data metadata_data
+    ) noexcept -> ice::UniquePtr<ice::AssetData>
+    {
+        ice::UniquePtr<ice::AssetData> result = ice::create_asset_data_entry(
+            alloc, state, data_alloc, ice::data_copy(data_alloc, asset_data)
+        );
+        result->_next = ice::create_asset_data_entry(
+            alloc, state, data_alloc, ice::data_copy(data_alloc, metadata_data), AssetDataFlags::Metadata
+        );
+        return result;
     }
 
 } // namespace ice

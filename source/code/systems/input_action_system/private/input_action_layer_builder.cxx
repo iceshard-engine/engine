@@ -1,3 +1,6 @@
+/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "input_action_internal_types.hxx"
 #include <ice/input_action_layer_builder.hxx>
 #include <ice/input_action_layer.hxx>

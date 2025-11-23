@@ -42,6 +42,7 @@
             'imgui_module'
             'shader_tools'
             'webgpu_renderer'
+            'iceshard_pipelines'
         }
     ]
 ]

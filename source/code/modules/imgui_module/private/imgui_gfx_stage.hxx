@@ -62,7 +62,6 @@ namespace ice::devui
         ice::render::Pipeline _pipeline;
 
         ice::render::Sampler _sampler;
-        ice::render::Image _font_texture;
 
         ice::u16* _index_buffer_host;
         ice::Array<ice::render::Buffer> _index_buffers;

@@ -53,11 +53,24 @@ namespace ice::devui
             ice::AssetStorage& assets
         ) noexcept -> ice::Task<>;
 
-        auto gfx_shutdown(ice::gfx::GfxStateChange const& params) noexcept -> ice::Task<>;
-        auto gfx_update(ice::gfx::RenderFrameUpdate const& update) noexcept -> ice::Task<>;
+        auto gfx_shutdown(
+            ice::gfx::GfxStateChange const& params,
+            ice::gfx::GfxContext& ctx
+        ) noexcept -> ice::Task<>;
+
+        auto gfx_update(
+            ice::gfx::RenderFrameUpdate const& update,
+            ice::AssetStorage& assets
+        ) noexcept -> ice::Task<>;
 
     private:
-        void build_internal_command_list(ice::Span<ImGuiGfxStage::DrawCommand> draw_cmds) noexcept;
+        void build_internal_command_list(ice::Array<ImGuiGfxStage::DrawCommand>& out_draw_cmds) noexcept;
+        auto load_texture(
+            ice::gfx::GfxContext& gfx,
+            ice::AssetStorage& assets,
+            ice::TaskScheduler scheduler,
+            ImTextureData* texture
+        ) noexcept -> ice::Task<>;
 
     private:
         ice::ProxyAllocator _allocator;

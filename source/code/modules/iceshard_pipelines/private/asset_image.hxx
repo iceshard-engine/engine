@@ -7,6 +7,9 @@
 namespace ice
 {
 
-    void asset_category_image_definition(ice::AssetCategoryArchive& asset_category_archive) noexcept;
+    void asset_category_image_definition(
+        ice::AssetCategoryArchive& asset_category_archive,
+        ice::ModuleQuery const& module_query
+    ) noexcept;
 
 } // namespace iceshard

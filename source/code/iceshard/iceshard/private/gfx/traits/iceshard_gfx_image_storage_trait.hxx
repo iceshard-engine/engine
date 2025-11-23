@@ -14,6 +14,7 @@ namespace ice::gfx
 
     struct GfxImageEntry
     {
+        ice::Asset asset;
         ice::render::Image image;
         bool released = false;
     };
@@ -33,6 +34,10 @@ namespace ice::gfx
         auto gfx_update(
             ice::gfx::RenderFrameUpdate const& update,
             ice::AssetStorage& assets
+        ) noexcept -> ice::Task<>;
+
+        auto gfx_shutdown(
+            ice::render::RenderDevice& device
         ) noexcept -> ice::Task<>;
 
     private:

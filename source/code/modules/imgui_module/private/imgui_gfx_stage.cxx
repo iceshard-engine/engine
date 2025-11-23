@@ -38,28 +38,9 @@ namespace ice::devui
         using namespace ice::gfx;
         using namespace ice::render;
 
-        auto scheduler = stages.scheduler;
-        auto stage_transfer = stages.frame_transfer;
-        auto stage_end = stages.frame_end;
+        ice::TaskScheduler scheduler = stages.scheduler;
 
         RenderDevice& device = gfx.device();
-
-        ImGuiIO& io = ImGui::GetIO();
-
-        ice::u8* pixels;
-        ice::i32 font_texture_width, font_texture_height;
-        io.Fonts->GetTexDataAsRGBA32(&pixels, &font_texture_width, &font_texture_height);
-
-        // ice::u32 upload_size = font_texture_width * font_texture_height * 4 * sizeof(char);
-        ice::render::ImageInfo font_info;
-        font_info.type = ImageType::Image2D;
-        font_info.usage = ImageUsageFlags::Sampled | ImageUsageFlags::TransferDst;
-        font_info.format = ImageFormat::UNORM_RGBA;
-        font_info.width = font_texture_width;
-        font_info.height = font_texture_height;
-        font_info.data = pixels;
-
-        _font_texture = device.create_image(font_info, { });
 
         ice::Expected r_vert = co_await ice::gfx::load_shader_program("shaders/debug/imgui-vert", _assets);
         ice::Expected r_frag = co_await ice::gfx::load_shader_program("shaders/debug/imgui-frag", _assets);
@@ -134,14 +115,6 @@ namespace ice::devui
         {
             ResourceUpdateInfo
             {
-                .sampler = _sampler
-            },
-            ResourceUpdateInfo
-            {
-                .image = _font_texture,
-            },
-            ResourceUpdateInfo
-            {
                 .uniform_buffer = {.buffer = _uniform_buffer, .offset = 0, .size = 64},
             },
         };
@@ -150,27 +123,11 @@ namespace ice::devui
         {
             ResourceSetUpdateInfo
             {
-                .resource_set = _resources[1],
-                .resource_type = ResourceType::Sampler,
-                .binding_index = 1,
-                .array_element = 0,
-                .resources = { resource_update + 0, 1 }
-            },
-            ResourceSetUpdateInfo
-            {
-                .resource_set = _resources[1],
-                .resource_type = ResourceType::SampledImage,
-                .binding_index = 2,
-                .array_element = 0,
-                .resources = { resource_update + 1, 1 }
-            },
-            ResourceSetUpdateInfo
-            {
                 .resource_set = _resources[0],
                 .resource_type = ResourceType::UniformBuffer,
                 .binding_index = 3,
                 .array_element = 0,
-                .resources = { resource_update + 2, 1 }
+                .resources = { resource_update, 1 }
             },
         };
 
@@ -240,50 +197,6 @@ namespace ice::devui
             device.create_buffer(BufferType::Vertex, 1024 * 1024 * 64)
         );
 
-#if 1
-        //auto update_texture_task = [](GfxContext& gfx_ctx, GfxFrame& gfx_frame, Image image, ImageInfo image_info) noexcept -> ice::Task<>
-        {
-            ice::u32 const image_data_size = font_info.width * font_info.height * 4;
-
-            // Currently we start the task on the graphics thread, so we can dont race for access to the render device.
-            //  It is planned to create an awaiter for graphics thread access so we can schedule this at any point from any thread.
-            ice::render::Buffer const data_buffer = device.create_buffer(
-                ice::render::BufferType::Transfer,
-                image_data_size
-            );
-
-            ice::render::BufferUpdateInfo updates[]
-            {
-                ice::render::BufferUpdateInfo
-                {
-                    .buffer = data_buffer,
-                    .data =
-                    {
-                        .location = font_info.data,
-                        .size = { image_data_size },
-                        .alignment = ice::ualign::b_4
-                    }
-                }
-            };
-
-            device.update_buffers(updates);
-
-            ice::render::RenderCommands& api = device.get_commands();
-            ice::render::CommandBuffer const cmds = co_await stage_transfer;
-
-            api.update_texture(
-                cmds,
-                _font_texture,
-                data_buffer,
-                { font_info.width, font_info.height }
-            );
-
-            co_await stage_end;
-
-            device.destroy_buffer(data_buffer);
-        }
-#endif
-
         co_return;
     }
 
@@ -306,7 +219,6 @@ namespace ice::devui
         ice::array::clear(_vertex_buffers);
 
         device.destroy_buffer(_uniform_buffer);
-        device.destroy_image(_font_texture);
         device.destroy_pipeline(_pipeline);
         device.destroy_pipeline_layout(_pipeline_layout);
         device.destroy_sampler(_sampler);
@@ -324,7 +236,7 @@ namespace ice::devui
         using namespace ice::render;
 
         ImDrawData* draw_data = ImGui::GetDrawData();
-        if (draw_data == nullptr)
+        if (draw_data == nullptr || ice::array::empty(draw_commands))
         {
             return;
         }
@@ -360,7 +272,7 @@ namespace ice::devui
         ImVec2 clip_off = draw_data->DisplayPos;         // (0,0) unless using multi-viewports
         ImVec2 clip_scale = draw_data->FramebufferScale; // (1,1) unless using retina display which are often (2,2)
 
-        ImTextureID last_texid = nullptr; // ImGui::GetIO().tex
+        ImTextureID last_texid = ImTextureID_Invalid; // ImGui::GetIO().tex
         ice::u32 next_resource_idx = 2;
         ResourceUpdateInfo resource_update[]
         {
@@ -403,11 +315,10 @@ namespace ice::devui
             for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
             {
                 ImDrawCmd const* pcmd = &cmd_list->CmdBuffer[cmd_i];
-
-                if (pcmd->TextureId != nullptr && pcmd->TextureId != last_texid)
+                if (pcmd->GetTexID() != ImTextureID_Invalid && pcmd->GetTexID() != last_texid)
                 {
-                    last_texid = pcmd->TextureId;
-                    resource_update[1].image = static_cast<Image>(reinterpret_cast<ice::uptr>(last_texid));
+                    last_texid = pcmd->GetTexID();
+                    resource_update[1].image = static_cast<Image>(last_texid);
                     resource_set_update[0].resource_set = _resources[next_resource_idx];
                     resource_set_update[1].resource_set = _resources[next_resource_idx];
 

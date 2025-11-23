@@ -16,24 +16,227 @@
 #include <ice/gfx/gfx_shards.hxx>
 #include <ice/gfx/gfx_stage_registry.hxx>
 #include <ice/render/render_swapchain.hxx>
+#include <ice/render/render_image.hxx>
+#include <ice/render/render_device.hxx>
 
 #include <ice/input/input_event.hxx>
 #include <ice/input/input_keyboard.hxx>
 #include <ice/input/input_mouse.hxx>
 
 #include <ice/asset.hxx>
+#include <ice/config/config_builder.hxx>
 #include <ice/profiler.hxx>
 #include <ice/task_utils.hxx>
+#include <ice/string_utils.hxx>
 #include <ice/task.hxx>
 
 namespace ice::devui
 {
+    namespace detail
+    {
+
+        constexpr auto ice_to_imgui_key(ice::input::KeyboardKey key) noexcept -> ImGuiKey
+        {
+            switch (key)
+            {
+                using enum ice::input::KeyboardKey;
+            case Tab: return ImGuiKey_Tab;
+            case Left: return ImGuiKey_LeftArrow;
+            case Right: return ImGuiKey_RightArrow;
+            case Up: return ImGuiKey_UpArrow;
+            case Down: return ImGuiKey_DownArrow;
+            case PageUp: return ImGuiKey_PageUp;
+            case PageDown: return ImGuiKey_PageDown;
+            case Home: return ImGuiKey_Home;
+            case End: return ImGuiKey_End;
+            case Insert: return ImGuiKey_Insert;
+            case Delete: return ImGuiKey_Delete;
+            case Backspace: return ImGuiKey_Backspace;
+            case Space: return ImGuiKey_Space;
+            case Return: return ImGuiKey_Enter;
+            case Escape: return ImGuiKey_Escape;
+            case Quote: return ImGuiKey_Apostrophe;
+            case Comma: return ImGuiKey_Comma;
+            case Minus: return ImGuiKey_Minus;
+            case Period: return ImGuiKey_Period;
+            case Slash: return ImGuiKey_Slash;
+            case SemiColon: return ImGuiKey_Semicolon;
+            case Equals: return ImGuiKey_Equal;
+            case LeftBracket: return ImGuiKey_LeftBracket;
+            case BackSlash: return ImGuiKey_Backslash;
+            case RightBracket: return ImGuiKey_RightBracket;
+            case BackQuote: return ImGuiKey_GraveAccent;
+            case KeyCapsLock: return ImGuiKey_CapsLock;
+            case ScrollLock: return ImGuiKey_ScrollLock;
+            case NumPadNumlockClear: return ImGuiKey_NumLock;
+            case PrintScreen: return ImGuiKey_PrintScreen;
+            case Pause: return ImGuiKey_Pause;
+            case NumPad0: return ImGuiKey_Keypad0;
+            case NumPad1: return ImGuiKey_Keypad1;
+            case NumPad2: return ImGuiKey_Keypad2;
+            case NumPad3: return ImGuiKey_Keypad3;
+            case NumPad4: return ImGuiKey_Keypad4;
+            case NumPad5: return ImGuiKey_Keypad5;
+            case NumPad6: return ImGuiKey_Keypad6;
+            case NumPad7: return ImGuiKey_Keypad7;
+            case NumPad8: return ImGuiKey_Keypad8;
+            case NumPad9: return ImGuiKey_Keypad9;
+            //case DLK_KP_PERIOD: return ImGuiKey_KeypadDecimal; // todo?
+            case NumPadDivide: return ImGuiKey_KeypadDivide;
+            case NumPadMultiply: return ImGuiKey_KeypadMultiply;
+            case NumPadMinus: return ImGuiKey_KeypadSubtract;
+            case NumPadPlus: return ImGuiKey_KeypadAdd;
+            case NumPadEnter: return ImGuiKey_KeypadEnter;
+            //case SDLK_KP_EQUALS: return ImGuiKey_KeypadEqual; // todo?
+            case KeyLeftCtrl: return ImGuiKey_LeftCtrl;
+            case KeyLeftShift: return ImGuiKey_LeftShift;
+            case KeyLeftAlt: return ImGuiKey_LeftAlt;
+            case KeyLeftGui: return ImGuiKey_LeftSuper;
+            case KeyRightCtrl: return ImGuiKey_RightCtrl;
+            case KeyRightShift: return ImGuiKey_RightShift;
+            case KeyRightAlt: return ImGuiKey_RightAlt;
+            case KeyRightGui: return ImGuiKey_RightSuper;
+            //case SDLK_APPLICATION: return ImGuiKey_Menu; // todo?
+            case Key0: return ImGuiKey_0;
+            case Key1: return ImGuiKey_1;
+            case Key2: return ImGuiKey_2;
+            case Key3: return ImGuiKey_3;
+            case Key4: return ImGuiKey_4;
+            case Key5: return ImGuiKey_5;
+            case Key6: return ImGuiKey_6;
+            case Key7: return ImGuiKey_7;
+            case Key8: return ImGuiKey_8;
+            case Key9: return ImGuiKey_9;
+            case KeyA: return ImGuiKey_A;
+            case KeyB: return ImGuiKey_B;
+            case KeyC: return ImGuiKey_C;
+            case KeyD: return ImGuiKey_D;
+            case KeyE: return ImGuiKey_E;
+            case KeyF: return ImGuiKey_F;
+            case KeyG: return ImGuiKey_G;
+            case KeyH: return ImGuiKey_H;
+            case KeyI: return ImGuiKey_I;
+            case KeyJ: return ImGuiKey_J;
+            case KeyK: return ImGuiKey_K;
+            case KeyL: return ImGuiKey_L;
+            case KeyM: return ImGuiKey_M;
+            case KeyN: return ImGuiKey_N;
+            case KeyO: return ImGuiKey_O;
+            case KeyP: return ImGuiKey_P;
+            case KeyQ: return ImGuiKey_Q;
+            case KeyR: return ImGuiKey_R;
+            case KeyS: return ImGuiKey_S;
+            case KeyT: return ImGuiKey_T;
+            case KeyU: return ImGuiKey_U;
+            case KeyV: return ImGuiKey_V;
+            case KeyW: return ImGuiKey_W;
+            case KeyX: return ImGuiKey_X;
+            case KeyY: return ImGuiKey_Y;
+            case KeyZ: return ImGuiKey_Z;
+            case KeyF1: return ImGuiKey_F1;
+            case KeyF2: return ImGuiKey_F2;
+            case KeyF3: return ImGuiKey_F3;
+            case KeyF4: return ImGuiKey_F4;
+            case KeyF5: return ImGuiKey_F5;
+            case KeyF6: return ImGuiKey_F6;
+            case KeyF7: return ImGuiKey_F7;
+            case KeyF8: return ImGuiKey_F8;
+            case KeyF9: return ImGuiKey_F9;
+            case KeyF10: return ImGuiKey_F10;
+            case KeyF11: return ImGuiKey_F11;
+            case KeyF12: return ImGuiKey_F12;
+            //case SDLK_F13: return ImGuiKey_F13; // todo?
+            //case SDLK_F14: return ImGuiKey_F14;
+            //case SDLK_F15: return ImGuiKey_F15;
+            //case SDLK_F16: return ImGuiKey_F16;
+            //case SDLK_F17: return ImGuiKey_F17;
+            //case SDLK_F18: return ImGuiKey_F18;
+            //case SDLK_F19: return ImGuiKey_F19;
+            //case SDLK_F20: return ImGuiKey_F20;
+            //case SDLK_F21: return ImGuiKey_F21;
+            //case SDLK_F22: return ImGuiKey_F22;
+            //case SDLK_F23: return ImGuiKey_F23;
+            //case SDLK_F24: return ImGuiKey_F24;
+            //case SDLK_AC_BACK: return ImGuiKey_AppBack; // todo?
+            //case SDLK_AC_FORWARD: return ImGuiKey_AppForward; // todo?
+            default: break;
+            }
+            return ImGuiKey_None;
+        }
+
+        struct ImTextureAssetDataBinding : ice::AssetDataBinding
+        {
+            ImTextureAssetDataBinding(
+                ice::Allocator& alloc,
+                ImTextureData const& texture
+            ) noexcept
+                : AssetDataBinding{ .state = AssetState::Loaded }
+                , _allocator{ alloc }
+            {
+                ice::Data const texture_data{
+                    texture.Pixels,
+                    ice::usize(texture.GetSizeInBytes()),
+                    ice::ualign::b_default
+                };
+
+                ice::ConfigBuilder config{ _allocator };
+                ice::ConfigBuilderValue mtex = config["texture"];
+                mtex["format"] = ice::i32(ice::render::ImageFormat::UNORM_RGBA);
+                mtex["size"]["x"] = ice::i32(texture.Width);
+                mtex["size"]["y"] = ice::i32(texture.Height);
+                _metadata = config.finalize(_allocator);
+
+                this->content = texture_data;
+                this->metadata = ice::data_view(_metadata);
+            }
+
+            ~ImTextureAssetDataBinding()
+            {
+                _allocator.deallocate(_metadata);
+            }
+
+            ice::Allocator& _allocator;
+            ice::Memory _metadata;
+        };
+
+        inline auto total_command_count(ImDrawData const& draw_data) noexcept -> ice::u32
+        {
+            ice::u32 cmd_count = 0;
+            for (ice::i32 i = 0; i < draw_data.CmdListsCount; i++)
+            {
+                ImDrawList const* cmd_list = draw_data.CmdLists[i];
+                cmd_count += cmd_list->CmdBuffer.Size;
+            }
+            return cmd_count;
+        }
+
+        inline bool is_invalid_texture(ImTextureRef const& ref) noexcept
+        {
+            return ref.GetTexID() == ImTextureID_Invalid;
+        }
+
+        inline bool is_invalid_texture(ImDrawCmd const& cmd) noexcept
+        {
+            return is_invalid_texture(cmd.TexRef);
+        }
+
+        inline bool is_different_texture(ImDrawCmd const& cmd, ImTextureID last_id) noexcept
+        {
+            ImTextureID const texid = cmd.TexRef.GetTexID();
+            return texid != ImTextureID_Invalid && texid != last_id;
+        }
+
+        static constexpr fmt::string_view TextureNameFormat = "imgui-backend-texture-{}";
+
+    } // namespace detail
+
 
     ImGuiTrait::ImGuiTrait(ice::TraitContext& ctx, ice::Allocator& alloc, ImGuiSystem& system) noexcept
         : ice::Trait{ ctx }
         , ice::TraitDevUI{ {.category="Traits/Debug",.name="ImGUI-DevUI"} }
         , _allocator{ alloc, "trait:devui-imgui" }
         , _system{ system }
+        , _stats{ }
         , _imgui_gfx_stage{ }
         , _resized{ false }
     {
@@ -54,29 +257,6 @@ namespace ice::devui
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-
-        io.KeyMap[ImGuiKey_Tab] = (uint32_t)ice::input::KeyboardKey::Tab;
-        io.KeyMap[ImGuiKey_LeftArrow] = (uint32_t)ice::input::KeyboardKey::Left;
-        io.KeyMap[ImGuiKey_RightArrow] = (uint32_t)ice::input::KeyboardKey::Right;
-        io.KeyMap[ImGuiKey_UpArrow] = (uint32_t)ice::input::KeyboardKey::Up;
-        io.KeyMap[ImGuiKey_DownArrow] = (uint32_t)ice::input::KeyboardKey::Down;
-        io.KeyMap[ImGuiKey_PageUp] = (uint32_t)ice::input::KeyboardKey::PageUp;
-        io.KeyMap[ImGuiKey_PageDown] = (uint32_t)ice::input::KeyboardKey::PageDown;
-        io.KeyMap[ImGuiKey_Home] = (uint32_t)ice::input::KeyboardKey::Home;
-        io.KeyMap[ImGuiKey_End] = (uint32_t)ice::input::KeyboardKey::End;
-        io.KeyMap[ImGuiKey_Insert] = (uint32_t)ice::input::KeyboardKey::Insert;
-        io.KeyMap[ImGuiKey_Delete] = (uint32_t)ice::input::KeyboardKey::Delete;
-        io.KeyMap[ImGuiKey_Backspace] = (uint32_t)ice::input::KeyboardKey::Backspace;
-        io.KeyMap[ImGuiKey_Space] = (uint32_t)ice::input::KeyboardKey::Space;
-        io.KeyMap[ImGuiKey_Enter] = (uint32_t)ice::input::KeyboardKey::Return;
-        io.KeyMap[ImGuiKey_Escape] = (uint32_t)ice::input::KeyboardKey::Escape;
-        io.KeyMap[ImGuiKey_KeypadEnter] = 0;
-        io.KeyMap[ImGuiKey_A] = (uint32_t)ice::input::KeyboardKey::KeyA;
-        io.KeyMap[ImGuiKey_C] = (uint32_t)ice::input::KeyboardKey::KeyC;
-        io.KeyMap[ImGuiKey_V] = (uint32_t)ice::input::KeyboardKey::KeyV;
-        io.KeyMap[ImGuiKey_X] = (uint32_t)ice::input::KeyboardKey::KeyX;
-        io.KeyMap[ImGuiKey_Y] = (uint32_t)ice::input::KeyboardKey::KeyY;
-        io.KeyMap[ImGuiKey_Z] = (uint32_t)ice::input::KeyboardKey::KeyZ;
 
         ice::u8* pixels;
         ice::i32 font_texture_width, font_texture_height;
@@ -104,6 +284,9 @@ namespace ice::devui
             io.AddInputCharactersUTF8(input_text);
         }
 
+        ice::vec2f temp_pos{};
+        io.AddMouseSourceEvent(ImGuiMouseSource_Mouse);
+
         ice::shards::inspect_each<ice::input::InputEvent>(
             update.frame.shards(),
             ice::ShardID_InputEvent,
@@ -116,22 +299,23 @@ namespace ice::devui
                     switch (input_source)
                     {
                     case MouseInput::ButtonLeft:
-                        io.MouseDown[0] = input.value.button.state.pressed;
+                        io.AddMouseButtonEvent(ImGuiMouseButton_Left, input.value.button.state.pressed);
                         break;
                     case MouseInput::ButtonRight:
-                        io.MouseDown[1] = input.value.button.state.pressed;
+                        io.AddMouseButtonEvent(ImGuiMouseButton_Right, input.value.button.state.pressed);
                         break;
                     case MouseInput::ButtonMiddle:
-                        io.MouseDown[2] = input.value.button.state.pressed;
+                        io.AddMouseButtonEvent(ImGuiMouseButton_Middle, input.value.button.state.pressed);
                         break;
                     case MouseInput::PositionX:
-                        io.MousePos.x = (ice::f32)input.value.axis.value_i32;
+                        temp_pos.x = (ice::f32)input.value.axis.value_i32;
                         break;
                     case MouseInput::PositionY:
-                        io.MousePos.y = (ice::f32)input.value.axis.value_i32;
+                        temp_pos.y = (ice::f32)input.value.axis.value_i32;
+                        io.AddMousePosEvent(temp_pos.x, temp_pos.y);
                         break;
                     case MouseInput::Wheel:
-                        io.MouseWheel = (ice::f32)input.value.axis.value_i32;
+                        io.AddMouseWheelEvent(0.0f, (ice::f32)input.value.axis.value_i32);
                         break;
                     }
                 }
@@ -140,7 +324,10 @@ namespace ice::devui
                     using namespace ice::input;
                     ice::u32 const input_source = ice::input::input_identifier_value(input.identifier);
 
-                    io.KeysDown[input_source] = input.value.button.state.pressed;
+                    io.AddKeyEvent(
+                        detail::ice_to_imgui_key(KeyboardKey(input_source)),
+                        input.value.button.state.pressed
+                    );
 
                     InputID constexpr left_ctrl_key_mod = ice::input::input_identifier(DeviceType::Keyboard, KeyboardMod::CtrlLeft, mod_identifier_base_value);
                     InputID constexpr right_ctrl_key_mod = ice::input::input_identifier(DeviceType::Keyboard, KeyboardMod::CtrlRight, mod_identifier_base_value);
@@ -148,18 +335,24 @@ namespace ice::devui
                     InputID constexpr right_shift_key_mod = ice::input::input_identifier(DeviceType::Keyboard, KeyboardMod::ShiftRight, mod_identifier_base_value);
                     InputID constexpr left_alt_key_mod = ice::input::input_identifier(DeviceType::Keyboard, KeyboardMod::AltLeft, mod_identifier_base_value);
                     InputID constexpr right_alt_key_mod = ice::input::input_identifier(DeviceType::Keyboard, KeyboardMod::AltRight, mod_identifier_base_value);
+                    InputID constexpr left_gui_key_mod = ice::input::input_identifier(DeviceType::Keyboard, KeyboardMod::GuiLeft, mod_identifier_base_value);
+                    InputID constexpr right_gui_key_mod = ice::input::input_identifier(DeviceType::Keyboard, KeyboardMod::GuiRight, mod_identifier_base_value);
 
                     if (input.identifier == left_ctrl_key_mod || input.identifier == right_ctrl_key_mod)
                     {
-                        io.KeyCtrl = input.value.button.state.pressed;
+                        io.AddKeyEvent(ImGuiMod_Ctrl, input.value.button.state.pressed);
                     }
                     if (input.identifier == left_shift_key_mod || input.identifier == right_shift_key_mod)
                     {
-                        io.KeyShift = input.value.button.state.pressed;
+                        io.AddKeyEvent(ImGuiMod_Shift, input.value.button.state.pressed);
                     }
                     if (input.identifier == left_alt_key_mod || input.identifier == right_alt_key_mod)
                     {
-                        io.KeyAlt = input.value.button.state.pressed;
+                        io.AddKeyEvent(ImGuiMod_Alt, input.value.button.state.pressed);
+                    }
+                    if (input.identifier == left_gui_key_mod || input.identifier == right_gui_key_mod)
+                    {
+                        io.AddKeyEvent(ImGuiMod_Super, input.value.button.state.pressed);
                     }
                 }
 
@@ -187,13 +380,52 @@ namespace ice::devui
         co_return;
     }
 
-    auto ImGuiTrait::gfx_shutdown(ice::gfx::GfxStateChange const& params) noexcept -> ice::Task<>
+    auto ImGuiTrait::gfx_shutdown(
+        ice::gfx::GfxStateChange const& params,
+        ice::gfx::GfxContext& ctx
+    ) noexcept -> ice::Task<>
     {
         params.registry.remove_stage("iceshard.devui"_sid);
         co_return;
     }
 
-    auto ImGuiTrait::gfx_update(ice::gfx::RenderFrameUpdate const& update) noexcept -> ice::Task<>
+    auto ImGuiTrait::load_texture(
+        ice::gfx::GfxContext& gfx,
+        ice::AssetStorage& assets,
+        ice::TaskScheduler scheduler,
+        ImTextureData* texture
+    ) noexcept -> ice::Task<>
+    {
+        IPT_ZONE_SCOPED_NAMED("ImGui - Load texture");
+
+        ice::HeapString<> texture_name{ _allocator };
+        ice::string::push_format(texture_name, detail::TextureNameFormat, texture->UniqueID);
+        IPT_ZONE_TEXT_STR(texture_name);
+
+        detail::ImTextureAssetDataBinding texture_binding{ _allocator, *texture };
+        ice::Asset tex_asset = assets.bind_data(
+            ice::render::AssetCategory_Texture2D,
+            texture_name,
+            texture_binding
+        );
+
+        // Store the asset handle in the backend user-data pointer.
+        texture->BackendUserData = tex_asset._handle;
+
+        ice::Data tex_handle = co_await ice::await_on(tex_asset[AssetState::Runtime], scheduler);
+
+        // Get the image handle
+        ice::render::Image const* const tex = reinterpret_cast<ice::render::Image const*>(tex_handle.location);
+
+        // Update the texture object
+        texture->SetTexID(static_cast<ImTextureID>(*tex));
+        texture->SetStatus(ImTextureStatus_OK);
+    }
+
+    auto ImGuiTrait::gfx_update(
+        ice::gfx::RenderFrameUpdate const& update,
+        ice::AssetStorage& assets
+    ) noexcept -> ice::Task<>
     {
         IPT_ZONE_SCOPED;
         ImGuiIO const& io = ImGui::GetIO();
@@ -208,14 +440,19 @@ namespace ice::devui
         ImDrawData* draw_data = ImGui::GetDrawData();
         if (draw_data != nullptr)
         {
-            ice::u32 cmd_count = 0;
-            for (ice::i32 i = 0; i < draw_data->CmdListsCount; i++)
+            if (draw_data->Textures != nullptr)
             {
-                ImDrawList const* cmd_list = draw_data->CmdLists[i];
-                cmd_count += cmd_list->CmdBuffer.Size;
+                for (ImTextureData* texture : *draw_data->Textures)
+                {
+                    if (texture->Status == ImTextureStatus_WantCreate
+                        && texture->BackendUserData == nullptr)
+                    {
+                        ice::execute_task(
+                            load_texture(update.context, assets, update.stages.scheduler, texture)
+                        );
+                    }
+                }
             }
-
-            ice::array::resize(_imgui_gfx_stage->draw_commands, cmd_count);
 
             build_internal_command_list(_imgui_gfx_stage->draw_commands);
         }
@@ -230,16 +467,24 @@ namespace ice::devui
         co_return;
     }
 
-    void ImGuiTrait::build_internal_command_list(ice::Span<ImGuiGfxStage::DrawCommand> draw_cmds) noexcept
+    void ImGuiTrait::build_internal_command_list(ice::Array<ImGuiGfxStage::DrawCommand>& out_draw_cmds) noexcept
     {
         IPT_ZONE_SCOPED;
         _stats = {}; // reset stats
+
+        ice::array::clear(_imgui_gfx_stage->draw_commands);
 
         ImDrawData* draw_data = ImGui::GetDrawData();
         if (draw_data == nullptr)
         {
             return;
         }
+
+        // Reserve enough space for all possible commands
+        ice::array::reserve(
+            _imgui_gfx_stage->draw_commands,
+            detail::total_command_count(*draw_data)
+        );
 
         using ice::render::Image;
         using ice::render::ResourceSet;
@@ -249,28 +494,32 @@ namespace ice::devui
         ImVec2 clip_off = draw_data->DisplayPos;         // (0,0) unless using multi-viewports
         ImVec2 clip_scale = draw_data->FramebufferScale; // (1,1) unless using retina display which are often (2,2)
 
-        ImTextureID last_texid = nullptr;
+        ImTextureID last_texid = ImTextureID_Invalid;
         ice::u32 curr_resource_idx = 1;
 
         // Upload vertex/index data into a single contiguous GPU buffer
         ice::u32 vtx_buffer_offset = 0;
         ice::u32 idx_buffer_offset = 0;
 
-        ice::u32 command_idx = 0;
         for (int n = 0; n < draw_data->CmdListsCount; n++)
         {
             ImDrawList const* cmd_list = draw_data->CmdLists[n];
             for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
             {
                 ImDrawCmd const* pcmd = &cmd_list->CmdBuffer[cmd_i];
-                ImGuiGfxStage::DrawCommand& cmd = draw_cmds[command_idx];
-
-                if (pcmd->TextureId != nullptr && pcmd->TextureId != last_texid)
+                if (detail::is_invalid_texture(*pcmd))
                 {
-                    last_texid = pcmd->TextureId;
+                    continue;
+                }
+
+                if (detail::is_different_texture(*pcmd, last_texid))
+                {
+                    last_texid = pcmd->GetTexID();
                     curr_resource_idx += 1;
                 }
 
+                ice::array::push_back(out_draw_cmds, ImGuiGfxStage::DrawCommand{});
+                ImGuiGfxStage::DrawCommand& cmd = ice::array::back(out_draw_cmds);
                 cmd.resource_set_idx = curr_resource_idx;
 
                 ImVec4 clip_rect;
@@ -283,8 +532,6 @@ namespace ice::devui
                 cmd.index_offset = pcmd->IdxOffset + idx_buffer_offset;
                 cmd.vertex_offset = pcmd->VtxOffset + vtx_buffer_offset;
                 cmd.clip_rect = clip_rect;
-
-                command_idx += 1;
             }
 
             vtx_buffer_offset += cmd_list->VtxBuffer.Size;

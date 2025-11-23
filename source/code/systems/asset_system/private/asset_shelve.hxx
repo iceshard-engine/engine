@@ -4,6 +4,7 @@
 #pragma once
 #include <ice/mem_allocator.hxx>
 #include <ice/asset_category_archive.hxx>
+#include <ice/asset_storage.hxx>
 #include <ice/devui_widget.hxx>
 #include <atomic>
 
@@ -35,8 +36,13 @@ namespace ice
         ) const noexcept -> ice::AssetEntry const*;
 
         auto store(
-            ice::StringID_Arg name,
+            ice::String name,
             ice::ResourceHandle const& resource_handle
+        ) noexcept -> ice::AssetEntry*;
+
+        auto store(
+            ice::String name,
+            ice::AssetDataBinding const& data_binding
         ) noexcept -> ice::AssetEntry*;
 
         void append_request(

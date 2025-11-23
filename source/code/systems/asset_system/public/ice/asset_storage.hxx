@@ -9,6 +9,13 @@
 namespace ice
 {
 
+    struct AssetDataBinding
+    {
+        ice::Data content;
+        ice::Data metadata;
+        ice::AssetState state;
+    };
+
     struct AssetStorageCreateInfo
     {
         //! \brief Resource tracker associated with this asset storage.
@@ -33,6 +40,12 @@ namespace ice
         virtual auto bind(
             ice::AssetCategory_Arg category,
             ice::String name
+        ) noexcept -> ice::Asset = 0;
+
+        virtual auto bind_data(
+            ice::AssetCategory_Arg category,
+            ice::String name,
+            ice::AssetDataBinding const& data_binding
         ) noexcept -> ice::Asset = 0;
 
         virtual auto preload(

@@ -122,25 +122,25 @@ namespace ice
         return _handle->data_for_state(state).location != nullptr;
     }
 
-    auto Asset::preload(ice::AssetState state) noexcept -> ice::Task<>
-    {
-        co_await data(state);
-    }
-
-    auto Asset::data(ice::AssetState state) noexcept -> ice::Task<ice::Data>
-    {
-        co_return co_await _handle->_shelve->storage.request(*this, state);
-    }
-
     auto Asset::resource() const noexcept -> ice::Resource const*
     {
         return ice::asset_data_resource(_handle->_data);
     }
 
-    auto Asset::operator[](ice::AssetState state) noexcept -> ice::Task<ice::Data>
+    auto Asset::preload(this ice::Asset self, ice::AssetState state) noexcept -> ice::Task<>
     {
-        ICE_ASSERT(_handle != nullptr, "Invalid Asset object!");
-        co_return co_await data(state);
+        co_await self.data(state);
+    }
+
+    auto Asset::data(this ice::Asset self, ice::AssetState state) noexcept -> ice::Task<ice::Data>
+    {
+        co_return co_await self._handle->_shelve->storage.request(self, state);
+    }
+
+    auto Asset::operator[](this ice::Asset self, ice::AssetState state) noexcept -> ice::Task<ice::Data>
+    {
+        ICE_ASSERT(self._handle != nullptr, "Invalid Asset object!");
+        co_return co_await self.data(state);
     }
 
     auto Asset::start_transaction(

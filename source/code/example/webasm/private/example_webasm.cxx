@@ -301,8 +301,9 @@ void TestGame::on_resume(ice::Engine& engine) noexcept
         ice::StringID traits[]{
             "act"_sid,
             "test2"_sid,
-            ice::TraitID_GfxShaderStorage,
             ice::devui_trait_name(),
+            ice::TraitID_GfxShaderStorage,
+            ice::TraitID_GfxImageStorage,
         };
         ice::StringID traits2[]{
             "test"_sid,

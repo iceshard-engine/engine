@@ -163,6 +163,7 @@ namespace ice
         // Try to access the source
         ice::ResourceHandle resource;
         arctic::String source = _resolver.load_source(import_path, resource);
+        ICE_ASSERT(source.empty() == false, "Failed to load source for import path: {}", import_path);
         if (source.empty())
         {
             return;
@@ -174,6 +175,7 @@ namespace ice
             .file = parse_import_file(_allocator, *this, _script_visitors, source, import_alias),
             .resource = resource
         };
+        ICE_ASSERT(import_entry.file != nullptr, "Failed to parse source of import path: {}", import_path);
         if (import_entry.file == nullptr)
         {
             return;

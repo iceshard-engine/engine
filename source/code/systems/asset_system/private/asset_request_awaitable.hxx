@@ -16,7 +16,6 @@ namespace ice
     {
     public:
         AssetRequestAwaitable(
-            ice::StringID_Arg asset_name,
             ice::AssetStateTransaction& transation
         ) noexcept;
 
@@ -46,7 +45,6 @@ namespace ice
         AssetRequestAwaitable* _chained;
 
     private:
-        ice::StringID const _asset_name;
         ice::AssetShelve& _asset_shelve;
         ice::AssetStateTransaction& _transaction;
         ice::Memory _result_data;

@@ -12,13 +12,11 @@ namespace ice
 {
 
     AssetRequestAwaitable::AssetRequestAwaitable(
-        ice::StringID_Arg asset_name,
         ice::AssetStateTransaction& transaction
     ) noexcept
         : _next{ nullptr }
         , _prev{ nullptr }
         , _chained{ nullptr }
-        , _asset_name{ asset_name }
         , _asset_shelve{ transaction.shelve }
         , _transaction{ transaction }
         , _result_data{ }

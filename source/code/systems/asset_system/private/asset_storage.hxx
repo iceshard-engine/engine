@@ -46,6 +46,12 @@ namespace ice
             ice::String name
         ) noexcept -> ice::Asset override;
 
+        auto bind_data(
+            ice::AssetCategory_Arg category,
+            ice::String name,
+            ice::AssetDataBinding const& data_binding
+        ) noexcept -> ice::Asset override;
+
         auto preload(
             ice::AssetCategory_Arg category,
             ice::String name,

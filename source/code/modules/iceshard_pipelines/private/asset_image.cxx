@@ -2,6 +2,9 @@
 /// SPDX-License-Identifier: MIT
 
 #include "asset_image.hxx"
+#include <ice/config.hxx>
+#include <ice/asset_storage.hxx>
+#include <ice/resource_compiler_api.hxx>
 #include <ice/render/render_image.hxx>
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -25,16 +28,36 @@
 namespace ice
 {
 
-    auto asset_image_oven(
+
+    auto asset_image_state(
         void*,
-        ice::Allocator& alloc,
-        ice::ResourceTracker const&,
-        ice::LooseResource const& resource,
-        ice::Data data,
-        ice::Memory& memory
-    ) noexcept -> ice::Task<bool>
+        ice::AssetCategoryDefinition const&,
+        ice::Config const& metadata,
+        ice::URI const& uri
+    ) noexcept -> ice::AssetState
+    {
+        bool baked = false;
+        if (ice::config::get(metadata, "ice.shader.baked", baked) && baked)
+        {
+            return AssetState::Baked;
+        }
+        return AssetState::Raw;
+    }
+
+    auto asset_image_oven(
+        ice::ResourceCompilerCtx& ctx,
+        ice::ResourceHandle const& resource_handle,
+        ice::ResourceTracker& resource_tracker,
+        ice::Span<ice::ResourceHandle const> sources,
+        ice::Span<ice::URI const> dependencies,
+        ice::Allocator& result_alloc
+    ) noexcept -> ice::Task<ice::ResourceCompilerResult>
     {
         using ice::render::ImageInfo;
+
+        ice::ResourceResult const res = co_await resource_tracker.load_resource(resource_handle);
+        ice::Data const data = res.data;
+        ICE_ASSERT_CORE(res.resource_status == ResourceStatus::Loaded);
 
         stbi_uc const* image_buffer_raw = reinterpret_cast<stbi_uc const*>(data.location);
 
@@ -49,11 +72,12 @@ namespace ice
             STBI_rgb_alpha
         );
 
+        ice::Memory image_mem{};
         if (image_buffer != nullptr)
         {
             ice::meminfo image_meminfo = ice::meminfo_of<ImageInfo>;
             ice::usize const offset_data = image_meminfo += ice::meminfo_of<stbi_uc> * width * height * 4;
-            ice::Memory image_mem = alloc.allocate(image_meminfo);
+            image_mem = result_alloc.allocate(image_meminfo);
 
             ice::render::ImageInfo* texture = reinterpret_cast<ImageInfo*>(image_mem.location);
             texture->type = ice::render::ImageType::Image2D;
@@ -74,10 +98,9 @@ namespace ice
             );
 
             stbi_image_free(image_buffer);
-            memory = image_mem;
         }
 
-        co_return width != 0 && height != 0;
+        co_return ResourceCompilerResult{ image_mem };
     }
 
     auto asset_image_loader(
@@ -107,17 +130,23 @@ namespace ice
         co_return true;
     }
 
-    void asset_category_image_definition(ice::AssetCategoryArchive& asset_category_archive) noexcept
+    void asset_category_image_definition(
+        ice::AssetCategoryArchive& asset_category_archive,
+        ice::ModuleQuery const& module_query
+    ) noexcept
     {
         static ice::String extensions[]{ ".jpg", ".png", ".jpeg", ".bmp" };
 
-        static ice::AssetCategoryDefinition definition{
-            .resource_extensions = extensions,
-            // .fn_asset_oven = asset_image_oven,
-            .fn_asset_loader = asset_image_loader
+        static ice::ResourceCompiler const compiler{
+            .fn_compile_source = asset_image_oven,
         };
 
-        asset_category_archive.register_category(ice::render::AssetCategory_Texture2D, definition);
+        static ice::AssetCategoryDefinition const definition{
+            .resource_extensions = extensions,
+            .fn_asset_loader = asset_image_loader,
+        };
+
+        asset_category_archive.register_category(ice::render::AssetCategory_Texture2D, definition, &compiler);
     }
 
 } // namespace ice
