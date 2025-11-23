@@ -20,6 +20,7 @@ namespace ice::render
 
     enum class PipelineStage : ice::u32
     {
+        BottomOfPipe,
         TopOfPipe,
         Transfer,
         ColorAttachmentOutput,
