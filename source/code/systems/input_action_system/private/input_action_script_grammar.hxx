@@ -1,3 +1,6 @@
+/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include "input_action_script_syntax_data.hxx"
 #include "input_action_script_tokens.hxx"
