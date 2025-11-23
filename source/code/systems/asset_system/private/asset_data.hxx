@@ -226,9 +226,12 @@ namespace ice
         ice::UniquePtr<ice::AssetData> result = ice::create_asset_data_entry(
             alloc, state, data_alloc, ice::data_copy(data_alloc, asset_data)
         );
-        result->_next = ice::create_asset_data_entry(
-            alloc, state, data_alloc, ice::data_copy(data_alloc, metadata_data), AssetDataFlags::Metadata
-        );
+        if (metadata_data.size > 0_B)
+        {
+            result->_next = ice::create_asset_data_entry(
+                alloc, state, data_alloc, ice::data_copy(data_alloc, metadata_data), AssetDataFlags::Metadata
+            );
+        }
         return result;
     }
 

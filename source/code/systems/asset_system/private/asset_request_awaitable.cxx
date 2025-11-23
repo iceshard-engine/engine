@@ -95,7 +95,6 @@ namespace ice
             _transaction.set_result_data(_asset_shelve.asset_allocator(), _transaction.target_state, resolve_data);
             _result_data = resolve_data.memory;
 
-            _transaction.asset._refcount.fetch_add(1, std::memory_order_release);
             asset_handle = Asset{ ice::addressof(_transaction.asset) };
         }
 
