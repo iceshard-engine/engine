@@ -36,7 +36,8 @@ namespace ice::gfx
 
     Trait_GfxImageStorage::Trait_GfxImageStorage(ice::TraitContext& ctx, ice::Allocator& alloc) noexcept
         : ice::Trait{ ctx }
-        , _loaded_images{ alloc }
+        , _allocator{ alloc, "gfx-image-storage" }
+        , _loaded_images{ _allocator }
     {
         _context.bind<&Trait_GfxImageStorage::gfx_update, Render>(ice::gfx::ShardID_RenderFrameUpdate);
         _context.bind<&Trait_GfxImageStorage::gfx_shutdown, Render>(ice::gfx::ShardID_GfxShutdown);
@@ -55,81 +56,98 @@ namespace ice::gfx
         ice::AssetStorage& assets
     ) noexcept -> ice::Task<>
     {
-        // Handle up to 4 requests at the same time each frame.
+        using namespace ice::render;
+
         ice::AssetRequest* request = assets.aquire_request(ice::render::AssetCategory_Texture2D, AssetState::Runtime);
-        while(request != nullptr)
+        ice::AssetResolveData resolve_success{ .resolver = this, .result = AssetRequestResult::Success };
+
+        ice::u32 upload_count = 0;
+        ice::AssetRequest* uploading_requests[4];
+        ice::render::Buffer transfer_buffers[4];
+        ice::render::BufferUpdateInfo update_infos[4];
+        ice::render::Image created_images[4];
+        ice::vec2u created_extents[4];
+
+        while(request != nullptr && upload_count < 4)
         {
             ice::AssetState const state = request->state();
             ICE_ASSERT_CORE(state == AssetState::Loaded); // The image needs to be loaded.
 
-            ice::StringID const image_hash = request->asset_name();
-            GfxImageEntry* entry = ice::hashmap::try_get(_loaded_images, ice::hash(image_hash));
-            ICE_ASSERT_CORE(entry == nullptr || entry->released);
-
-            using namespace ice::render;
-            RenderDevice& device = params.context.device();
-
+            ice::StringID const nameid = request->asset_name();
+            GfxImageEntry* entry = ice::hashmap::try_get(_loaded_images, ice::hash(nameid));
             if (entry && entry->image != Image::Invalid)
             {
-                // Destroy the previous image object, as it might be outdated.
-                device.destroy_image(entry->image);
-            }
+                // Allocates a handle for it... (TODO: Rework?)
+                resolve_success.memory = request->allocate(ice::size_of<ice::render::Image>);
+                *reinterpret_cast<Image*>(resolve_success.memory.location) = entry->image;
 
-            ice::Data const metadata_data = request->metadata();
-            if (metadata_data.location == nullptr)
-            {
-                request->resolve({ .result = ice::AssetRequestResult::Error });
+                // Return the existing image object
+                // TODO: Handle updates in later version.
+                ice::Asset asset_result = request->resolve(resolve_success);
+
+                // Get the next queued request
                 request = assets.aquire_request(ice::render::AssetCategory_Texture2D, AssetState::Runtime);
                 continue;
             }
 
-            ice::Config const meta = ice::config::from_data(metadata_data);
+            ICE_ASSERT_CORE(entry == nullptr || entry->released);
 
-            ice::i32 image_format;
-            ice::vec2i size;
+            // The render device
+            RenderDevice& device = params.context.device();
 
-            [[maybe_unused]]
-            bool valid_data = ice::config::get(meta, "texture.format", image_format);
-            valid_data &= ice::config::get(meta, "texture.size.x", size.x);
-            valid_data &= ice::config::get(meta, "texture.size.y", size.y);
-
-            [[maybe_unused]]
-            ice::Data const texture_data = request->data();
-
-            // Creates the image object
-            ImageInfo image_info{
-                .type = ImageType::Image2D,
-                .format = (ImageFormat) image_format,
-                .usage = ImageUsageFlags::Sampled | ImageUsageFlags::TransferDst,
-                .width = (ice::u32) size.x,
-                .height = (ice::u32) size.y,
+            // Get the image data
+            Data const request_data = request->data();
+            ImageInfo const* image_info = reinterpret_cast<ImageInfo const*>(request_data.location);
+            Data const image_data{
+                .location = image_info->data,
+                .size = ice::usize::subtract(request_data.size, ice::size_of<ImageInfo>),
+                .alignment = ice::ualign::b_4,
             };
-            Image image = device.create_image(image_info, texture_data);
-            if (image == Image::Invalid)
+
+            // Create image and transfer buffer
+            created_images[upload_count] = device.create_image(*image_info, image_data);
+            if (created_images[upload_count] == Image::Invalid)
             {
                 request->resolve({ .result = AssetRequestResult::Error });
-                co_return;
+                continue;
             }
 
-            ice::render::Buffer transfer_buffer = device.create_buffer(BufferType::Transfer, ice::u32(texture_data.size.value));
-            BufferUpdateInfo const buffer_updates[]{
-                BufferUpdateInfo{
-                    .buffer = transfer_buffer,
-                    .data = texture_data,
-                    .offset = 0
-                }
+            // Store upload data
+            uploading_requests[upload_count] = request;
+
+            created_extents[upload_count].x = image_info->width;
+            created_extents[upload_count].y = image_info->height;
+
+            transfer_buffers[upload_count] = device.create_buffer(BufferType::Transfer, ice::u32(image_data.size.value));
+            update_infos[upload_count] = BufferUpdateInfo{
+                .buffer = transfer_buffers[upload_count],
+                .data = image_data,
+                .offset = 0
             };
 
-            device.update_buffers(buffer_updates);
+            // Increase the upload count
+            upload_count += 1;
+
+            // Get the next queued request
+            request = assets.aquire_request(ice::render::AssetCategory_Texture2D, AssetState::Runtime);
+        }
+
+        if (upload_count > 0)
+        {
+            // The render device
+            RenderDevice& device = params.context.device();
+            device.update_buffers({ update_infos, upload_count });
+
+            TaskStage const stage_transfer = params.stages.frame_transfer;
+            TaskStage const stage_end = params.stages.frame_end;
 
             RenderCommands& api = device.get_commands();
-            CommandBuffer const cmds = co_await params.stages.frame_transfer;
+            CommandBuffer const cmds = co_await stage_transfer;
 
             ImageBarrier barriers[4]{ };
-
-            for (ice::u32 idx = 0; idx < 1; ++idx)
+            for (ice::u32 idx = 0; idx < upload_count; ++idx)
             {
-                barriers[idx].image = image;
+                barriers[idx].image = created_images[idx];
                 barriers[idx].source_layout = ImageLayout::Undefined;
                 barriers[idx].destination_layout = ImageLayout::TransferDstOptimal;
                 barriers[idx].source_access = AccessFlags::None;
@@ -138,21 +156,24 @@ namespace ice::gfx
 
             api.pipeline_image_barrier(
                 cmds,
-                PipelineStage::TopOfPipe,
+                PipelineStage::BottomOfPipe,
                 PipelineStage::Transfer,
-                { barriers, 1 }
+                { barriers, upload_count }
             );
 
-            api.update_texture_v2(
-                cmds,
-                image,
-                transfer_buffer,
-                ice::vec2u{ size }
-            );
-
-            for (ice::u32 idx = 0; idx < 1; ++idx)
+            for (ice::u32 idx = 0; idx < upload_count; ++idx)
             {
-                barriers[idx].image = image;
+                api.update_texture_v2(
+                    cmds,
+                    created_images[idx],
+                    transfer_buffers[idx],
+                    created_extents[idx]
+                );
+            }
+
+            for (ice::u32 idx = 0; idx < upload_count; ++idx)
+            {
+                barriers[idx].image = created_images[idx];
                 barriers[idx].source_layout = ImageLayout::TransferDstOptimal;
                 barriers[idx].destination_layout = ImageLayout::ShaderReadOnly;
                 barriers[idx].source_access = AccessFlags::TransferWrite;
@@ -163,33 +184,38 @@ namespace ice::gfx
                 cmds,
                 PipelineStage::Transfer,
                 PipelineStage::FramentShader,
-                { barriers, 1 }
+                { barriers, upload_count }
             );
 
-            co_await params.stages.frame_end;
+            co_await stage_end;
 
-            device.destroy_buffer(transfer_buffer);
+            for (ice::u32 idx = 0; idx < upload_count; ++idx)
+            {
+                device.destroy_buffer(transfer_buffers[idx]);
+            }
 
-            ICE_LOG(LogSeverity::Info, LogTag::Game, "TextureStorage - Loaded image: {}", request->asset_name());
+            for (ice::u32 idx = 0; idx < upload_count; ++idx)
+            {
+                ice::AssetRequest* const uploaded_request = uploading_requests[idx];
+                ICE_LOG(
+                    LogSeverity::Info, LogTag::Game,
+                    "TextureStorage - Loaded image: {}",
+                    uploaded_request->asset_name()
+                );
 
-            // Allocates a handle for it... (TODO: Rework?)
-            ice::Memory const result = request->allocate(ice::size_of<ice::render::Image>);
-            *reinterpret_cast<Image*>(result.location) = image;
+                // Allocates a handle for it... (TODO: Rework?)
+                resolve_success.memory = uploaded_request->allocate(ice::size_of<Image>);
+                *reinterpret_cast<Image*>(resolve_success.memory.location) = created_images[idx];
+                ice::Asset asset = uploaded_request->resolve(resolve_success);
 
-            // Reslove the request (will resume all awaiting tasks)
-            ice::Asset asset = request->resolve({ .resolver = this, .result = AssetRequestResult::Success, .memory = result });
-            // send("iceshard:images-internal:loaded"_shardid, asset);
-
-            // Save the image handle
-            ice::hashmap::set(_loaded_images, ice::hash(image_hash), { .asset = ice::move(asset), .image = image});
-
-            // // Reslove the request (will resume all awaiting tasks)
-            // request->resolve({ .resolver = this, .result = AssetRequestResult::Success, .memory = result });
-
-            // Get the next queued request
-            request = assets.aquire_request(ice::render::AssetCategory_Texture2D, AssetState::Runtime);
+                // Save the image handle
+                ice::hashmap::set(
+                    _loaded_images,
+                    ice::hash(uploaded_request->asset_name()),
+                    { .asset = ice::move(asset), .image = created_images[idx] }
+                );
+            }
         }
-
         co_return;
     }
 

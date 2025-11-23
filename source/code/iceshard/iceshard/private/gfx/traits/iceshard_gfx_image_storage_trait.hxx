@@ -8,6 +8,7 @@
 #include <ice/gfx/gfx_shards.hxx>
 #include <ice/task_scheduler.hxx>
 #include <ice/asset_request.hxx>
+#include <ice/mem_allocator_proxy.hxx>
 
 namespace ice::gfx
 {
@@ -41,6 +42,7 @@ namespace ice::gfx
         ) noexcept -> ice::Task<>;
 
     private:
+        ice::ProxyAllocator _allocator;
         ice::HashMap<GfxImageEntry> _loaded_images;
     };
 
