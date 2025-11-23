@@ -45,7 +45,7 @@ Custom package format for storing resources used by 'iceshard' game engine frame
 ## imgui
 Dear ImGui: Bloat-free Immediate Mode Graphical User interface for C++ with minimal dependencies
 - **upstream:** https://github.com/ocornut/imgui
-- **version:** 1.90.docking
+- **version:** 1.92.4.docking
 - **license:** MIT
 
 ## imguizmo
