@@ -105,6 +105,11 @@ namespace ice
 
     ////////////////////////////////////////////////////////////////
 
+    template<typename T>
+    inline auto wait_for_expected(ice::TaskExpected<T> task) noexcept -> ice::Expected<T>;
+
+    ////////////////////////////////////////////////////////////////
+
 
     [[deprecated("To be replaced at a later time")]]
     auto await_filtered_queue_on(ice::TaskQueue& queue, ice::TaskScheduler& resumer, FnTaskQueueFilter filter, void* userdata = nullptr) noexcept -> ice::Task<bool>;

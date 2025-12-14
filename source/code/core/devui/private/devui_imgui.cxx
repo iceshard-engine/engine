@@ -2,6 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #include <ice/devui_imgui.hxx>
+#include <ice/string/heap_string.hxx>
 #include <imgui/imgui_internal.h>
 
 namespace ice::detail
@@ -18,6 +19,25 @@ namespace ice::detail
         return { val.x + right.x, val.y + right.y, val.z + right.z, val.w };
     }
 #endif
+
+    auto textinput_heapstring_callback(ImGuiInputTextCallbackData* data) noexcept -> ice::i32
+    {
+        ice::HeapString<>* const str = reinterpret_cast<ice::HeapString<>*>(data->UserData);
+        ICE_ASSERT_CORE(str != nullptr);
+
+        if ((data->EventFlag & ImGuiInputTextFlags_CallbackResize) == ImGuiInputTextFlags_CallbackResize)
+        {
+            ICE_ASSERT_CORE(ice::string::begin(*str) == data->Buf);
+            if (ice::string::capacity(*str) <= ice::ucount(data->BufTextLen))
+            {
+                ice::string::grow(*str, data->BufSize);
+            }
+
+            ice::string::resize(*str, data->BufTextLen);
+            data->Buf = ice::string::begin(*str);
+        }
+        return 0;
+    }
 
 } // namespace ice
 
@@ -37,6 +57,20 @@ namespace ImGui
     void Detail::TextEx(char const* begin, char const* end) noexcept
     {
         ImGui::TextEx(begin, end, ImGuiTextFlags_NoWidthForLargeClippedText);
+    }
+
+    bool InputText(ice::String label, ice::HeapString<>& out_string, ImGuiInputTextFlags flags) noexcept
+    {
+        ice::string::reserve(out_string, 1);
+
+        return ImGui::InputText(
+            ice::string::begin(label),
+            ice::string::begin(out_string),
+            ice::string::capacity(out_string),
+            flags | ImGuiInputTextFlags_CallbackResize,
+            ice::detail::textinput_heapstring_callback,
+            ice::addressof(out_string)
+        );
     }
 
     bool BeginLargeButton(std::string_view label, int& inout_status, ImVec2 const& size_arg, ImGuiButtonFlags flags) noexcept

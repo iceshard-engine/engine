@@ -73,7 +73,7 @@ namespace ice
         inline void return_value(TypeExpected&& expected) noexcept(std::is_nothrow_move_constructible_v<Result>)
         {
             ICE_ASSERT_CORE(expected.valid());
-            if (expected)
+            if (expected.succeeded())
             {
                 new (&_value) Result{ ice::forward<TypeExpected>(expected).value() };
             }

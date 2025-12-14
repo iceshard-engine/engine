@@ -34,6 +34,18 @@
 #   define IPT_DEALLOC_POOL( ptr, name ) TracyFreeN( ptr, ice::string::begin(name) )
 
 #   define IPT_MESSAGE( txt ) TracyMessage( txt, ice::count(txt) )
+#   define IPT_MESSAGE_STR( txt ) TracyMessage( ice::string::begin(txt), ice::string::size(txt) )
+
+
+#   if defined(TRACY_FIBERS)
+#       define IPT_FIBERS 1
+#       define IPT_FIBER_START( name ) TracyFiberEnter( name )
+#       define IPT_FIBER_END TracyFiberLeave
+#   else
+#       define IPT_FIBERS 0
+#       define IPT_FIBER_START( name )
+#       define IPT_FIBER_END
+#   endif
 
 #else // #if ICE_PROFILE
 
@@ -55,5 +67,18 @@
 #   define IPT_DEALLOC_POOL( ptr, name )
 
 #   define IPT_MESSAGE( txt )
+#   define IPT_MESSAGE_STR( txt )
+
+#   define IPT_FIBERS 0
+#   define IPT_FIBER_START( name )
+#   define IPT_FIBER_END
 
 #endif // #if ICE_PROFILE
+
+namespace ice::profiling
+{
+
+    static constexpr bool is_enabled = IPT_ENABLED;
+    static constexpr bool has_fiber_support = IPT_FIBERS;
+
+} // namespace ice::profiling
