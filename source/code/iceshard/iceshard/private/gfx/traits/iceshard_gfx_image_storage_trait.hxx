@@ -22,11 +22,17 @@ namespace ice::gfx
 
     class Trait_GfxImageStorage final
         : public ice::Trait
+        , public ice::TraitDevUI
         , public ice::AssetRequestResolver
+        , public ice::InterfaceSelectorOf<Trait_GfxImageStorage, ice::TraitDevUI>
     {
     public: // Implementation of: ice::Trait
         Trait_GfxImageStorage(ice::TraitContext& ctx, ice::Allocator& alloc) noexcept;
         ~Trait_GfxImageStorage() noexcept override = default;
+
+    public: // Implementation of: ice::TraitDevUI
+        auto trait_name() const noexcept -> ice::String override { return "Gfx.ImageStorage"; }
+        void build_content() noexcept override;
 
     public: // Implementation of: ice::AssetRequestResolver
         auto on_asset_released(ice::Asset const& asset) noexcept -> ice::Task<> override;

@@ -36,11 +36,49 @@ namespace ice::gfx
 
     Trait_GfxImageStorage::Trait_GfxImageStorage(ice::TraitContext& ctx, ice::Allocator& alloc) noexcept
         : ice::Trait{ ctx }
+        , ice::TraitDevUI{ {.category = "Engine/Gfx", .name = "Images"} }
         , _allocator{ alloc, "gfx-image-storage" }
         , _loaded_images{ _allocator }
     {
         _context.bind<&Trait_GfxImageStorage::gfx_update, Render>(ice::gfx::ShardID_RenderFrameUpdate);
         _context.bind<&Trait_GfxImageStorage::gfx_shutdown, Render>(ice::gfx::ShardID_GfxShutdown);
+    }
+
+    void Trait_GfxImageStorage::build_content() noexcept
+    {
+        static ice::i32 selected = -1;
+        ice::Span<GfxImageEntry const> images = ice::hashmap::values(_loaded_images);
+
+        ice::String const preview = selected < 0 ? "<asset-uri>" : ice::stringid_hint(images[selected].asset.name());
+
+        if (ImGui::BeginCombo("Loaded Image", ice::string::begin(preview)))
+        {
+            if (ImGui::Selectable("##empty"))
+            {
+                selected = -1;
+            }
+
+            ice::i32 idx = 0;
+            for (GfxImageEntry const& entry : images)
+            {
+                if (ImGui::Selectable(ice::stringid_hint(entry.asset.name()), selected == idx))
+                {
+                    selected = idx;
+                }
+                idx += 1;
+            }
+            ImGui::EndCombo();
+        }
+
+        if (selected >= 0)
+        {
+            GfxImageEntry const& selected_entry = images[selected];
+            ImTextureRef const ref{ ImTextureID(selected_entry.image) };
+            float const avail_width = ImGui::GetContentRegionAvail().x;
+            ImVec2 const size{ avail_width, avail_width };
+
+            ImGui::Image(ref, size);
+        }
     }
 
     auto Trait_GfxImageStorage::on_asset_released(ice::Asset const& asset) noexcept -> ice::Task<>
@@ -206,12 +244,14 @@ namespace ice::gfx
                 // Allocates a handle for it... (TODO: Rework?)
                 resolve_success.memory = uploaded_request->allocate(ice::size_of<Image>);
                 *reinterpret_cast<Image*>(resolve_success.memory.location) = created_images[idx];
+
+                ice::u64 const asset_hash = ice::hash(uploaded_request->asset_name());
                 ice::Asset asset = uploaded_request->resolve(resolve_success);
 
                 // Save the image handle
                 ice::hashmap::set(
                     _loaded_images,
-                    ice::hash(uploaded_request->asset_name()),
+                    asset_hash,
                     { .asset = ice::move(asset), .image = created_images[idx] }
                 );
             }
