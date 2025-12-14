@@ -17,6 +17,7 @@
 
 # Temporary files to ignore
 compile_commands.json
+settings.VisualStudio.json
 *.patch
 *.cso
 *.sln

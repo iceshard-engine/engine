@@ -69,7 +69,7 @@ namespace ice
             _allocator, AssetState::Exists, resource
         );
 
-        ice::u64 const name_hash = ice::hash(name);
+        ice::u64 const name_hash = ice::hash(ice::stringid(name));
         if constexpr (ice::AssetEntry::HoldsDebugData)
         {
             ice::HeapString<> asset_name{ _allocator, name };
@@ -108,7 +108,7 @@ namespace ice
             data_binding.metadata
         );
 
-        ice::u64 const name_hash = ice::hash(name);
+        ice::u64 const name_hash = ice::hash(ice::stringid(name));
         if constexpr (ice::AssetEntry::HoldsDebugData)
         {
             ice::HeapString<> asset_name{ _allocator, name };

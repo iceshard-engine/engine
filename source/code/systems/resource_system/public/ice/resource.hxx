@@ -11,8 +11,6 @@
 namespace ice
 {
 
-    struct Metadata;
-
     class Resource
     {
     public:

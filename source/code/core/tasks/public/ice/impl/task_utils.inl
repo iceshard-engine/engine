@@ -14,6 +14,12 @@ namespace ice
             out_result = co_await ice::move(task);
         }
 
+        template<typename T>
+        auto output_result_task(ice::TaskExpected<T> task, ice::Expected<T>& out_result) noexcept -> ice::Task<>
+        {
+            out_result = co_await ice::move(task);
+        }
+
     } // namespace detail
 
     inline auto resume_on(ice::TaskScheduler& scheduler) noexcept
@@ -118,4 +124,13 @@ namespace ice
         barrier.wait();
     }
 
+    template<typename T>
+    inline auto wait_for_expected(ice::TaskExpected<T> task) noexcept -> ice::Expected<T>
+    {
+        ice::Expected<T> result;
+        ice::wait_for(ice::detail::output_result_task(ice::move(task), result));
+        return result;
+    }
+
 } // namespace ice
+

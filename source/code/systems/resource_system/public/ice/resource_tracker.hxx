@@ -10,6 +10,7 @@
 #include <ice/resource_flags.hxx>
 #include <ice/resource_handle.hxx>
 #include <ice/resource_status.hxx>
+#include <ice/uri.hxx>
 
 #include <ice/task.hxx>
 #include <ice/task_flags.hxx>
@@ -80,6 +81,11 @@ namespace ice
             ice::URI const& uri,
             ice::ResourceHandle const& resource_handle
         ) const noexcept -> ice::ResourceHandle = 0;
+
+        virtual auto filter_resource_uris(
+            ice::ResourceFilter const& filter,
+            ice::Array<ice::URI>& out_uris
+        ) const noexcept -> ice::TaskExpected<ice::ucount> = 0;
 
 
         virtual auto set_resource(

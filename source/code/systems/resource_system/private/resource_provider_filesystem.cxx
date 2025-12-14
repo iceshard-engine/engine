@@ -4,6 +4,8 @@
 #include "resource_provider_filesystem.hxx"
 #include "resource_provider_hailstorm.hxx"
 #include "resource_filesystem_baked.hxx"
+#include <ice/resource_filter.hxx>
+#include <ice/config.hxx>
 
 namespace ice
 {
@@ -50,6 +52,58 @@ namespace ice
     auto FileSystemResourceProvider::schemeid() const noexcept -> ice::StringID
     {
         return ice::Scheme_File;
+    }
+
+    auto FileSystemResourceProvider::filter_resource_uris(
+        ice::ResourceFilter const& filter,
+        ice::Array<ice::URI>& out_uris
+    ) noexcept -> ice::TaskExpected<ice::ucount>
+    {
+        ice::ucount collected = 0;
+        for (ice::FileSystemResource const* resource : _resources)
+        {
+            if (filter.allows_resource(resource))
+            {
+                ice::Data metadata_data{};
+                if (filter.requires_metadata())
+                {
+                    metadata_data = co_await load_resource(resource, "meta");
+
+                    if (filter.filter_thread() != nullptr)
+                    {
+                        co_await *filter.filter_thread();
+                    }
+
+                    if (metadata_data.location == nullptr || metadata_data.size == 0_B)
+                    {
+                        continue;
+                    }
+
+                    ice::Config metadata{};
+                    ice::Memory metadata_mem{};
+                    if (reinterpret_cast<char const*>(metadata_data.location)[0] == '{')
+                    {
+                        metadata = ice::config::from_json(_named_allocator, ice::string::from_data(metadata_data), metadata_mem);
+                    }
+                    else
+                    {
+                        metadata = ice::config::from_data(metadata_data);
+                    }
+
+                    if (filter.allows_metadata(metadata) == false)
+                    {
+                        _named_allocator.deallocate(metadata_mem);
+                        continue;
+                    }
+
+                    _named_allocator.deallocate(metadata_mem);
+                }
+
+                ice::array::push_back(out_uris, resource->uri());
+                collected += 1;
+            }
+        }
+        co_return collected;
     }
 
     auto FileSystemResourceProvider::collect(

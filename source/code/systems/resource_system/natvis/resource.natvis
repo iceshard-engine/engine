@@ -3,16 +3,19 @@
 
   <!-- URI Type -->
   <Type Name="ice::URI">
-    <DisplayString Condition="_forced_scheme == 0">URI {{ path={_uri,sb} }}</DisplayString>
-    <DisplayString Condition="_forced_scheme == 1">URI {{ urn, path={_uri,s8b} }}</DisplayString>
-    <DisplayString Condition="_forced_scheme == 2">URI {{ file, path={_uri,s8b} }}</DisplayString>
+    <DisplayString Condition="_forced_scheme == 0">URI {{ urn, path={_uri,s8b} }}</DisplayString>
+    <DisplayString Condition="_forced_scheme == 1">URI {{ file, path={_uri,s8b} }}</DisplayString>
+    <DisplayString Condition="_forced_scheme == 2">URI {{ hailstorm, path={_uri,s8b} }}</DisplayString>
     <DisplayString Condition="_forced_scheme == 3">URI {{ dynlib, path={_uri,s8b} }}</DisplayString>
+    <DisplayString Condition="_forced_scheme == 4">URI {{ path={_uri,sb} }}</DisplayString>
 
     <Expand>
       <Synthetic Name="[scheme]" Condition="_forced_scheme != 0">
-        <DisplayString Condition="_forced_scheme == 1">urn</DisplayString>
-        <DisplayString Condition="_forced_scheme == 2">file</DisplayString>
+        <DisplayString Condition="_forced_scheme == 0">urn</DisplayString>
+        <DisplayString Condition="_forced_scheme == 1">file</DisplayString>
+        <DisplayString Condition="_forced_scheme == 2">hailstorm</DisplayString>
         <DisplayString Condition="_forced_scheme == 3">dynlib</DisplayString>
+        <DisplayString Condition="_forced_scheme == 4">invalid</DisplayString>
       </Synthetic>
       <Item Name="[path]">_uri,sb</Item>
     </Expand>

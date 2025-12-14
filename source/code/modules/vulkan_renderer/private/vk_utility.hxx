@@ -220,6 +220,8 @@ namespace ice::render::vk
     {
         switch (stage)
         {
+        case PipelineStage::BottomOfPipe:
+            return VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
         case PipelineStage::TopOfPipe:
             return VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
         case PipelineStage::Transfer:

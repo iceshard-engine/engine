@@ -40,7 +40,7 @@ namespace ice
         {
             if (_state == 1u) // Already checking our state
             {
-                new (ice::addressof(_value)) Value { ice::forward(other)._value };
+                new (ice::addressof(_value)) Value { ice::forward<Value>(other) };
             }
             else
             {

@@ -149,6 +149,17 @@ namespace ice
             ice::ResourceHandle const& resource_handle
         ) const noexcept -> ice::ResourceHandle override;
 
+        auto filter_resource_provider_uris(
+            ice::ResourceProvider& provider,
+            ice::ResourceFilter const& filter,
+            ice::Array<ice::URI>& out_uris
+        ) const noexcept -> ice::TaskExpected<ice::ucount>;
+
+        auto filter_resource_uris(
+            ice::ResourceFilter const& filter,
+            ice::Array<ice::URI>& out_uris
+        ) const noexcept -> ice::TaskExpected<ice::ucount>  override;
+
 
         auto set_resource(
             ice::URI const& uri,
@@ -217,7 +228,7 @@ namespace ice
 
         ice::HashMap<ice::Resource*> _resources;
         ice::HashMap<ice::UniquePtr<ice::ResourceProvider>, ContainerLogic::Complex> _resource_providers;
-        ice::HashMap<ice::UniquePtr<ice::ResourceWriter>, ContainerLogic::Complex> _resource_writers;
+        ice::HashMap<ice::ResourceWriter*> _resource_writers;
 
         ice::UniquePtr<ice::DevUIWidget> _devui_widget;
     };

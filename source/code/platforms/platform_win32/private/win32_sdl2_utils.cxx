@@ -65,6 +65,8 @@ namespace ice::platform::win32::sdl2
         case SDL_SCANCODE_MINUS: return KeyboardKey::Minus;
         case SDL_SCANCODE_PERIOD: return KeyboardKey::Period;
         case SDL_SCANCODE_SLASH: return KeyboardKey::Slash;
+        case SDL_SCANCODE_HOME: return KeyboardKey::Home;
+        case SDL_SCANCODE_END: return KeyboardKey::End;
 
         case SDL_SCANCODE_SEMICOLON: return KeyboardKey::SemiColon;
         case SDL_SCANCODE_EQUALS: return KeyboardKey::Equals;

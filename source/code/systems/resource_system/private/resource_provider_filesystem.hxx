@@ -44,6 +44,11 @@ namespace ice
 
         auto schemeid() const noexcept -> ice::StringID override;
 
+        auto filter_resource_uris(
+            ice::ResourceFilter const& filter,
+            ice::Array<ice::URI>& out_uris
+        ) noexcept -> ice::TaskExpected<ice::ucount> override;
+
         auto collect(
             ice::Array<ice::Resource*>& out_changes
         ) noexcept -> ice::ucount override;
