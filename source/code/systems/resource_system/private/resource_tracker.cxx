@@ -3,6 +3,7 @@
 
 #include "resource_tracker.hxx"
 #include "resource_internal.hxx"
+#include <ice/resource_filter.hxx>
 
 #include <ice/sync_manual_events.hxx>
 
@@ -80,14 +81,17 @@ namespace ice
     }
 
     auto ResourceTrackerImplementation::attach_writer(
-        ice::UniquePtr<ice::ResourceWriter> provider
+        ice::UniquePtr<ice::ResourceWriter> writer
     ) noexcept -> ice::ResourceWriter*
     {
-        ice::ResourceWriter* const result = provider.get();
+        ice::ResourceWriter* const result = writer.get();
+        ice::ResourceProvider* const provider = attach_provider(ice::move(writer));
+        ICE_ASSERT_CORE(provider != nullptr);
+
         ice::multi_hashmap::insert(
             _resource_writers,
-            ice::hash(provider->schemeid()),
-            ice::move(provider)
+            ice::hash(result->schemeid()),
+            result
         );
         return result;
     }
@@ -104,12 +108,14 @@ namespace ice
 
             this->sync_provider(temp_resources, *provider);
         }
+#if 0
         for (auto const& writer : _resource_writers)
         {
             ice::array::clear(temp_resources);
 
             this->sync_provider(temp_resources, *writer);
         }
+#endif
     }
 
     auto ResourceTrackerImplementation::find_resource(
@@ -141,6 +147,41 @@ namespace ice
             result = this->find_resource(resource->uri(), resource->flags());
         }
         return result;
+    }
+
+    auto ResourceTrackerImplementation::filter_resource_provider_uris(
+        ice::ResourceProvider& provider,
+        ice::ResourceFilter const& filter,
+        ice::Array<ice::URI>& out_uris
+    ) const noexcept -> ice::TaskExpected<ice::ucount>
+    {
+        co_return co_await provider.filter_resource_uris(filter, out_uris);
+    }
+
+    auto ResourceTrackerImplementation::filter_resource_uris(
+        ice::ResourceFilter const& filter,
+        ice::Array<ice::URI>& out_uris
+    ) const noexcept -> ice::TaskExpected<ice::ucount>
+    {
+        ice::ucount collected = 0;
+        for (ice::UniquePtr<ice::ResourceProvider> const& provider : _resource_providers)
+        {
+            static constexpr ice::String const keywords[]{ "blocked", "allowed" };
+            bool const scheme_allowed = filter.allows_scheme(provider->schemeid());
+            bool const hostname_allowed = filter.allows_hostname(provider->hostname());
+            ICE_LOG_IF(
+                !scheme_allowed || !hostname_allowed,
+                LogSeverity::Debug, LogTag::Engine,
+                "Provider was filtered out. [scheme: {} ({}), hostname: {} ({})]",
+                provider->schemeid(), keywords[i32(scheme_allowed)],
+                provider->hostname(), keywords[i32(hostname_allowed)]
+            );
+            if (scheme_allowed && hostname_allowed)
+            {
+                collected += co_await filter_resource_provider_uris(*provider, filter, out_uris);
+            }
+        }
+        co_return collected;
     }
 
     auto ResourceTrackerImplementation::set_resource(
@@ -239,7 +280,7 @@ namespace ice
         while (it != nullptr)
         {
             [[maybe_unused]]
-            ice::ResourceWriter* candidate_writer = it.value().get();
+            ice::ResourceWriter* candidate_writer = it.value();
 
             // We only allow to create resources for specific writers.
             if (candidate_writer->hostname() == resource_uri.host())

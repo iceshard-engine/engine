@@ -11,6 +11,7 @@
 #include <ice/native_aio.hxx>
 #include <ice/task_types.hxx>
 #include <ice/task_expected.hxx>
+#include <ice/uri.hxx>
 
 namespace ice
 {
@@ -30,6 +31,14 @@ namespace ice
         virtual auto schemeid() const noexcept -> ice::StringID = 0;
 
         virtual auto hostname() const noexcept -> ice::String { return {}; }
+
+        virtual auto filter_resource_uris(
+            ice::ResourceFilter const& filter,
+            ice::Array<ice::URI>& out_uris
+        ) noexcept -> ice::TaskExpected<ice::ucount>
+        {
+            co_return 0;
+        }
 
         virtual auto collect(
             ice::Array<ice::Resource*>& out_changes

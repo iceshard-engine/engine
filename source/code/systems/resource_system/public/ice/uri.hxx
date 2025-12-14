@@ -17,6 +17,7 @@ namespace ice
 
     struct URI
     {
+        constexpr URI() noexcept;
         constexpr explicit URI(char const* uri_raw) noexcept;
         constexpr explicit URI(ice::String uri) noexcept;
         constexpr URI(ice::StringID_Arg scheme, ice::String uri) noexcept;
@@ -61,6 +62,20 @@ namespace ice
         };
 
         static_assert(ice::count(Constant_KnownSchemes) <= 15);
+
+        constexpr bool get_known_scheme_index(ice::StringID_Arg known_scheme) noexcept
+        {
+            ice::u8 scheme_idx = 0;
+            for (ice::StringID_Arg scheme : detail::Constant_KnownSchemes)
+            {
+                if (scheme == known_scheme)
+                {
+                    break;
+                }
+                scheme_idx += 1;
+            }
+            return scheme_idx;
+        }
 
         constexpr bool get_scheme_size(ice::String raw_uri, ice::u8& out_size) noexcept
         {
@@ -159,6 +174,20 @@ namespace ice
         }
 
     } // namespace detail
+
+    constexpr URI::URI() noexcept
+        : _uri{ nullptr }
+        , _forced_scheme{ detail::get_known_scheme_index(Scheme_Invalid) }
+        , _scheme{ }
+        , _authority{ }
+        , _userinfo{ }
+        , _host{ }
+        , _port{ }
+        , _path{ }
+        , _query{ }
+        , _fragment{ }
+    {
+    }
 
     constexpr URI::URI(char const* uri_raw) noexcept
         : URI{ ice::String{ uri_raw } }

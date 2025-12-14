@@ -8,11 +8,11 @@ namespace ice
 {
 
     struct URI;
-    struct Metadata;
     struct ResourceHandle;
     struct ResourceTrackerCreateInfo;
 
     class Resource;
+    class ResourceFilter;
     class ResourceProvider;
     class ResourceTracker;
     class ResourceWriter;

@@ -56,6 +56,7 @@ namespace ice
                 ice::string::push_back(native_filepath, ISP_PATH_LITERAL(".isrm"));
             }
 
+            IPT_MESSAGE_STR(filepath);
             ice::Expected<ice::native_file::File> handle = ice::native_file::open_file(aioport, native_filepath);
             if (handle)
             {

@@ -12,6 +12,9 @@ namespace ice
 
     struct AssetCategoryDefinition
     {
+        constexpr auto valid() const noexcept { return ice::span::any(resource_extensions); }
+
+        ice::String name;
         ice::Span<ice::Shard const> asset_params;
         ice::Span<ice::String const> resource_extensions;
 
