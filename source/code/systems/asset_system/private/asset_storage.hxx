@@ -8,7 +8,6 @@
 #include <ice/resource_tracker.hxx>
 #include <ice/resource.hxx>
 #include <ice/container/hashmap.hxx>
-#include <ice/string/static_string.hxx>
 #include <ice/devui_widget.hxx>
 #include <ice/task_expected.hxx>
 #include <ice/task_utils.hxx>

@@ -126,7 +126,7 @@ namespace ice::render::vk
         // TODO: Can we do this differently?
         if (result != VK_SUCCESS)
         {
-            return ice::ucount_max;
+            return ice::u32_max;
         }
 
         //ICE_ASSERT(

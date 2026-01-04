@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -10,17 +10,17 @@ namespace ice::queue
 
     // TODO: Move to details (we don't need this, also makes no sense for this queue)
     template<typename Type, ice::ContainerLogic Logic>
-    inline void set_capacity(ice::Queue<Type, Logic>& queue, ice::ucount new_capacity) noexcept;
+    inline void set_capacity(ice::Queue<Type, Logic>& queue, ice::u32 new_capacity) noexcept;
 
     template<typename Type, ice::ContainerLogic Logic>
-    inline void reserve(ice::Queue<Type, Logic>& queue, ice::ucount min_capacity) noexcept;
+    inline void reserve(ice::Queue<Type, Logic>& queue, ice::u32 min_capacity) noexcept;
 
     template<typename Type, ice::ContainerLogic Logic>
-    inline void grow(ice::Queue<Type, Logic>& queue, ice::ucount min_capacity = 0) noexcept;
+    inline void grow(ice::Queue<Type, Logic>& queue, ice::u32 min_capacity = 0) noexcept;
 
     // TODO: Move to details (we don't need this, also makes no sense for this queue)
     template<typename Type, ice::ContainerLogic Logic>
-    inline void resize(ice::Queue<Type, Logic>& queue, ice::ucount new_count) noexcept;
+    inline void resize(ice::Queue<Type, Logic>& queue, ice::u32 new_count) noexcept;
 
     template<typename Type, ice::ContainerLogic Logic>
     inline void shrink(ice::Queue<Type, Logic>& queue) noexcept;
@@ -45,7 +45,7 @@ namespace ice::queue
     inline void push_back(ice::Queue<Type, Logic>& queue, ice::Span<Type const> items) noexcept;
 
     template<typename Type, ice::ContainerLogic Logic>
-    inline void pop_back(ice::Queue<Type, Logic>& queue, ice::ucount count = 1) noexcept;
+    inline void pop_back(ice::Queue<Type, Logic>& queue, ice::u32 count = 1) noexcept;
 
     template<typename Type, ice::ContainerLogic Logic>
         requires std::move_constructible<Type>
@@ -64,7 +64,7 @@ namespace ice::queue
     inline void push_front(ice::Queue<Type, Logic>& queue, ice::Span<Type const> items) noexcept;
 
     template<typename Type, ice::ContainerLogic Logic>
-    inline void pop_front(ice::Queue<Type, Logic>& queue, ice::ucount count = 1) noexcept;
+    inline void pop_front(ice::Queue<Type, Logic>& queue, ice::u32 count = 1) noexcept;
 
     template<typename Type, ice::ContainerLogic Logic>
     inline auto front(ice::Queue<Type, Logic>& queue) noexcept -> Type&;
@@ -74,10 +74,10 @@ namespace ice::queue
 
 
     template<typename Type, ice::ContainerLogic Logic>
-    inline auto count(ice::Queue<Type, Logic> const& queue) noexcept -> ice::ucount;
+    inline auto count(ice::Queue<Type, Logic> const& queue) noexcept -> ice::u32;
 
     template<typename Type, ice::ContainerLogic Logic>
-    inline auto capacity(ice::Queue<Type, Logic> const& queue) noexcept -> ice::ucount;
+    inline auto capacity(ice::Queue<Type, Logic> const& queue) noexcept -> ice::u32;
 
     template<typename Type, ice::ContainerLogic Logic>
     inline auto size_bytes(ice::Queue<Type, Logic> const& queue) noexcept -> ice::usize;

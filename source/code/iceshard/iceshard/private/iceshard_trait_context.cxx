@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_world.hxx"
@@ -46,7 +46,7 @@ namespace ice
 
     void IceshardTraitContext::send(ice::detail::TraitEvent event) noexcept
     {
-        ice::ucount idx = 0;
+        ice::u32 idx = 0;
         if (event.mode == TraitSendMode::Replace && ice::search(ice::Span{ _events }, event, detail::is_same_event, idx))
         {
             _events[idx] = event;

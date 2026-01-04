@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -21,9 +21,9 @@ namespace ice
         ) noexcept;
         ~TaskThreadPoolImplementation() noexcept override;
 
-        auto thread_count() const noexcept -> ice::ucount override;
-        auto managed_thread_count() const noexcept -> ice::ucount override;
-        auto estimated_task_count() const noexcept -> ice::ucount override;
+        auto thread_count() const noexcept -> ice::u32 override;
+        auto managed_thread_count() const noexcept -> ice::u32 override;
+        auto estimated_task_count() const noexcept -> ice::u32 override;
 
         auto create_thread(ice::StringID name) noexcept -> ice::TaskThread& override;
         auto find_thread(ice::StringID name) noexcept -> ice::TaskThread* override;

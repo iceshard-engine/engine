@@ -93,7 +93,7 @@ namespace ice
             return source;
         }
 
-        template<typename T, ice::ucount Size>
+        template<typename T, ice::u64 Size>
             requires (std::is_trivially_copyable_v<T> && !std::is_pointer_v<T>)
         inline auto read_raw_array(ice::Data source, T(&out_array)[Size]) noexcept -> ice::Data
         {

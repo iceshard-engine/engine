@@ -3,7 +3,6 @@
 
 #pragma once
 #include <ice/string/string.hxx>
-#include <ice/string/static_string.hxx>
 #include <ice/string/heap_string.hxx>
 #include <ice/log_formatters.hxx>
 #include <ice/expected.hxx>
@@ -19,7 +18,7 @@ namespace ice
 
         template<typename... Args>
         constexpr void push_format(
-            ice::HeapString<char>& str,
+            ice::string::ResizableStringType auto& str,
             fmt::format_string<Args...> format,
             Args&&... args
         ) noexcept;
@@ -74,8 +73,8 @@ namespace ice
         if constexpr (std::is_integral_v<T>)
         {
             fc_res = std::from_chars(
-                ice::string::begin(str),
-                ice::string::end(str),
+                str.begin(),
+                str.end(),
                 out_value
             );
         }
@@ -86,8 +85,8 @@ namespace ice
             // We don't try to handle errors in this version.
             fc_res.ec = std::errc{};
             char* ptr_end = nullptr; // Why the hell is this a char ptr?
-            out_value = strtof(ice::string::begin(str), &ptr_end);
-            ICE_ASSERT_CORE(ice::ptr_distance(ice::string::begin(str), ptr_end).value <= ice::size(str));
+            out_value = strtof(str.begin(), &ptr_end);
+            ICE_ASSERT_CORE(ice::ptr_distance(str.begin(), ptr_end).value <= str.size());
             fc_res.ptr = ptr_end;
 #else
             fc_res = std::from_chars(
@@ -110,7 +109,7 @@ namespace ice
 
         return {
             .ec = res,
-            .remaining = ice::String{ fc_res.ptr, ice::string::end(str) }
+            .remaining = ice::String{ fc_res.ptr, str.end() }
         };
     }
 
@@ -186,20 +185,19 @@ namespace ice
 
         template<typename... Args>
         constexpr void push_format(
-            ice::HeapString<char>& str,
+            ice::string::ResizableStringType auto& str,
             fmt::format_string<Args...> format,
             Args&&... args
         ) noexcept
         {
-            ice::u32 const size = ice::u32(fmt::formatted_size(format, ice::forward<Args>(args)...));
-            ice::u32 const new_size = ice::string::size(str) + size;
-            if (new_size + 1 >= str._capacity)
+            ice::ncount const pushed_size = fmt::formatted_size(format, ice::forward<Args>(args)...);
+            ice::ncount const final_size = str.size() + pushed_size;
+            if (final_size + 1 >= str.capacity())
             {
-                ice::string::grow(str, new_size + 1);
+                str.grow(final_size + 1);
             }
-            fmt::format_to_n(ice::string::end(str), size, format, ice::forward<Args>(args)...);
-            str._size += size;
-            str._data[str._size] = '\0';
+            fmt::format_to_n(str.end(), pushed_size, format, ice::forward<Args>(args)...);
+            str.resize(final_size);
         }
 
         template<ice::u32 Capacity, typename... Args>
@@ -209,31 +207,30 @@ namespace ice
             Args&&... args
         ) noexcept
         {
-            ice::u32 const size = ice::u32(fmt::formatted_size(format, ice::forward<Args>(args)...));
-            ice::u32 new_size = ice::string::size(str) + size;
-            if (new_size + 1 >= Capacity)
+            ice::ncount const pushed_size = fmt::formatted_size(format, ice::forward<Args>(args)...);
+            ice::ncount const final_size = str.size() + pushed_size;
+            if (final_size + 1 >= Capacity)
             {
-                new_size = Capacity - 1;
+                final_size = Capacity - 1;
             }
-            fmt::format_to_n(ice::string::end(str), new_size, format, ice::forward<Args>(args)...);
-            str._size += new_size;
-            str._data[str._size] = '\0';
+            fmt::format_to_n(str.end(), final_size, format, ice::forward<Args>(args)...);
+            str.resize(final_size);
         }
 
         template<typename Fn>
         constexpr auto for_each_split(ice::String contents, ice::String separator, Fn&& fn) noexcept -> ice::u32
         {
             ice::u32 count = 0;
-            while(ice::string::any(contents))
+            while(contents.not_empty())
             {
                 count += 1;
-                ice::ucount const separator_pos = ice::string::find_first_of(contents, separator);
-                ice::String const line = ice::string::substr(contents, 0, separator_pos);
+                ice::nindex const separator_pos = contents.find_first_of(separator);
+                ice::String const line = contents.substr(0, separator_pos);
                 if (ice::forward<Fn>(fn)(line) == false)
                 {
                     break;
                 }
-                contents = ice::string::substr(contents, separator_pos + 1);
+                contents = contents.substr(separator_pos + 1);
             }
             return count;
         }

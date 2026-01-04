@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "imgui_devui_manager.hxx"
@@ -11,7 +11,7 @@ namespace ImGui
 {
     void StringUnformatted(ice::String str) noexcept
     {
-        TextUnformatted(ice::string::begin(str), ice::string::end(str));
+        TextUnformatted(str.begin(), str.end());
     }
 } // namespace ImGui
 
@@ -42,7 +42,7 @@ namespace ice::devui
             };
 
         ice::DevUIWidgetState const* owner_state = nullptr;
-        ice::ucount owner_idx = 0;
+        ice::u32 owner_idx = 0;
         if (ice::search(ice::Span{ _widgets }, owning_widget, fn_compare, owner_idx))
         {
             owner_state = ice::addressof(_widgets[owner_idx]->state);

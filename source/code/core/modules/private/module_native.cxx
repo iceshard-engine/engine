@@ -12,22 +12,22 @@ namespace ice::native_module
 
     bool utf8_to_wide_append_module(ice::String path, ice::HeapString<ice::wchar>& out_str) noexcept
     {
-        ice::i32 const required_size = MultiByteToWideChar(CP_UTF8, 0, ice::string::begin(path), ice::string::size(path), NULL,  0);
+        ice::i32 const required_size = MultiByteToWideChar(CP_UTF8, 0, path.begin(), path.size().u32(), NULL, 0);
 
         if (required_size != 0)
         {
-            ice::u32 const current_size = ice::string::size(out_str);
-            ice::u32 const total_size = static_cast<ice::u32>(required_size) + ice::string::size(out_str);
-            ice::string::resize(out_str, total_size);
+            ice::ncount const current_size = out_str.size();
+            ice::ncount const total_size = current_size + required_size;
+            out_str.resize(total_size);
 
             [[maybe_unused]]
             ice::i32 const chars_written = MultiByteToWideChar(
                 CP_UTF8,
                 0,
-                ice::string::begin(path),
-                ice::string::size(path),
-                ice::string::begin(out_str) + current_size,
-                ice::string::size(out_str) - current_size
+                path.begin(),
+                path.size().u32(),
+                out_str.begin() + current_size,
+                (out_str.size() - current_size).u32()
             );
         }
 
@@ -40,7 +40,7 @@ namespace ice::native_module
         ice::HeapString<ice::wchar> wide_path{ temp_alloc };
         if (utf8_to_wide_append_module(path, wide_path))
         {
-            return ice::native_module::ModuleHandle{ LoadLibraryExW(ice::string::begin(wide_path), NULL, NULL) };
+            return ice::native_module::ModuleHandle{ LoadLibraryExW(wide_path.begin(), NULL, NULL) };
         }
         return {};
     }
@@ -52,7 +52,7 @@ namespace ice::native_module
 
     auto module_find_address(ice::native_module::ModuleHandle const& module, ice::String symbol_name) noexcept -> void*
     {
-        return ::GetProcAddress(module.native(), ice::string::begin(symbol_name));
+        return ::GetProcAddress(module.native(), symbol_name.begin());
     }
 
 #elif ISP_UNIX

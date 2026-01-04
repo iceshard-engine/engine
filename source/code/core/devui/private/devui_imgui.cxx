@@ -27,14 +27,14 @@ namespace ice::detail
 
         if ((data->EventFlag & ImGuiInputTextFlags_CallbackResize) == ImGuiInputTextFlags_CallbackResize)
         {
-            ICE_ASSERT_CORE(ice::string::begin(*str) == data->Buf);
-            if (ice::string::capacity(*str) <= ice::ucount(data->BufTextLen))
+            ICE_ASSERT_CORE(str->begin() == data->Buf);
+            if (str->capacity() <= data->BufTextLen)
             {
-                ice::string::grow(*str, data->BufSize);
+                str->grow(data->BufSize);
             }
 
-            ice::string::resize(*str, data->BufTextLen);
-            data->Buf = ice::string::begin(*str);
+            str->resize(data->BufTextLen);
+            data->Buf = str->begin();
         }
         return 0;
     }
@@ -61,12 +61,12 @@ namespace ImGui
 
     bool InputText(ice::String label, ice::HeapString<>& out_string, ImGuiInputTextFlags flags) noexcept
     {
-        ice::string::reserve(out_string, 1);
+        out_string.reserve(1);
 
         return ImGui::InputText(
-            ice::string::begin(label),
-            ice::string::begin(out_string),
-            ice::string::capacity(out_string),
+            label.begin(),
+            out_string.begin(),
+            out_string.capacity(),
             flags | ImGuiInputTextFlags_CallbackResize,
             ice::detail::textinput_heapstring_callback,
             ice::addressof(out_string)

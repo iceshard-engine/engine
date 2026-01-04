@@ -74,8 +74,8 @@ namespace ice
         ice::u32& out_glyph_count
     ) noexcept -> ice::vec2f
     {
-        char const* text_it = ice::string::begin(text);
-        char const* const text_end = ice::string::end(text);
+        char const* text_it = text.begin();
+        char const* const text_end = text.end();
 
         ice::f32 last_advance_offset = 0.f;
 

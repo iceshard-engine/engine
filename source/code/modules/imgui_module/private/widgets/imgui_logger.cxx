@@ -10,7 +10,6 @@
 #include <ice/mem_allocator_host.hxx>
 #include <ice/sort.hxx>
 #include <ice/string/heap_string.hxx>
-#include <ice/string/static_string.hxx>
 #include <ice/string_utils.hxx>
 
 #include <rapidfuzz/distance.hpp>

@@ -85,11 +85,11 @@ namespace ice::config::detail
         else
         {
             idx = ice::count(container._entries);
-            ice::u32 const offset = ice::string::size(container._keystrings);
-            ice::string::push_back(container._keystrings, key);
+            ice::ncount const offset = container._keystrings.size();
+            container._keystrings.push_back(key);
 
             // Add the new entry
-            ice::array::push_back(container._entries, ConfigKey{ 0, CONFIG_KEYTYPE_STRING, CONFIG_VALTYPE_NONE, offset, ice::size(key) });
+            ice::array::push_back(container._entries, ConfigKey{ 0, CONFIG_KEYTYPE_STRING, CONFIG_VALTYPE_NONE, offset.u32(), key.size().u32()});
 
             // Return the entry
             result = ice::array::begin(container._entries) + idx;

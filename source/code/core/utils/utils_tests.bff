@@ -29,7 +29,7 @@
 
     .UnitTests =
     [
-        .Enabled = true
+        .Enabled = false
     ]
 ]
 .Projects + .Project

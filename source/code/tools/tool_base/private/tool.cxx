@@ -27,7 +27,7 @@ auto ice::tool::path_make_absolute(ice::native_file::FilePath path) noexcept -> 
     ice::native_file::HeapFilePath searched_utf8_path{ global_allocator(), path };
     if (ice::path::is_absolute(path) == false)
     {
-        ice::string::clear(searched_utf8_path);
+        searched_utf8_path.clear();
         ice::path::join(searched_utf8_path, ice::tool::path_current_directory());
         ice::path::join(searched_utf8_path, path);
     }

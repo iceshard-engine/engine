@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -30,11 +30,11 @@ namespace ice
     }
 
     template<typename T>
-    auto mem_construct_n_at(ice::Memory memory, ice::ucount count) noexcept -> T*
+    auto mem_construct_n_at(ice::Memory memory, ice::u32 count) noexcept -> T*
     {
         // TODO: Assert (align + size)
         T* target_mem = reinterpret_cast<T*>(memory.location);
-        for (ice::ucount idx = 0; idx < count; ++idx)
+        for (ice::u32 idx = 0; idx < count; ++idx)
         {
             new (target_mem + idx) T{ };
         }
@@ -42,11 +42,11 @@ namespace ice
     }
 
     template<typename T>
-    auto mem_move_construct_n_at(ice::Memory memory, T* objects, ice::ucount count) noexcept -> T*
+    auto mem_move_construct_n_at(ice::Memory memory, T* objects, ice::u32 count) noexcept -> T*
     {
         // TODO: Assert (align + size)
         T* target_mem = reinterpret_cast<T*>(memory.location);
-        for (ice::ucount idx = 0; idx < count; ++idx)
+        for (ice::u32 idx = 0; idx < count; ++idx)
         {
             new (target_mem + idx) T{ ice::move(objects[idx]) };
         }
@@ -54,9 +54,9 @@ namespace ice
     }
 
     template<typename T>
-    auto mem_move_n_to(T* target_objects, T* objects, ice::ucount count) noexcept -> T*
+    auto mem_move_n_to(T* target_objects, T* objects, ice::u32 count) noexcept -> T*
     {
-        for (ice::ucount idx = 0; idx < count; ++idx)
+        for (ice::u32 idx = 0; idx < count; ++idx)
         {
             target_objects[idx] = ice::move(objects[idx]);
         }
@@ -64,11 +64,11 @@ namespace ice
     }
 
     template<typename T>
-    auto mem_copy_construct_n_at(ice::Memory memory, T const* objects, ice::ucount count) noexcept -> T*
+    auto mem_copy_construct_n_at(ice::Memory memory, T const* objects, ice::u32 count) noexcept -> T*
     {
         // TODO: Assert (align + size)
         T* target_mem = reinterpret_cast<T*>(memory.location);
-        for (ice::ucount idx = 0; idx < count; ++idx)
+        for (ice::u32 idx = 0; idx < count; ++idx)
         {
             new (target_mem + idx) T{ objects[idx] };
         }
@@ -84,9 +84,9 @@ namespace ice
     }
 
     template<typename T>
-    void mem_destruct_n_at(T* location, ice::ucount count) noexcept
+    void mem_destruct_n_at(T* location, ice::u32 count) noexcept
     {
-        for (ice::ucount idx = 0; idx < count; ++idx)
+        for (ice::u32 idx = 0; idx < count; ++idx)
         {
             ice::mem_destruct_at(location + idx);
         }

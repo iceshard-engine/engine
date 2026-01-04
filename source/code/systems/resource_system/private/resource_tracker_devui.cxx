@@ -6,10 +6,7 @@
 
 #include <ice/devui_context.hxx>
 #include <ice/devui_frame.hxx>
-#include <ice/string/static_string.hxx>
-
-#include <imgui/imgui.h>
-#undef assert
+#include <ice/devui_imgui.hxx>
 
 namespace ice
 {
@@ -79,12 +76,12 @@ namespace ice
             {
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn();
-                ImGui::TextUnformatted(ice::string::begin(handle->name()), ice::string::end(handle->name()));
+                ImGui::TextUnformatted(handle->name());
 
                 if (ImGui::TableNextColumn())
                 {
                     detail::status_flags_string(ice::internal_status(handle), temp_str);
-                    ImGui::Text(ice::string::begin(temp_str), ice::string::end(temp_str));
+                    ImGui::TextUnformatted(temp_str);
                 }
             }
 
@@ -96,28 +93,28 @@ namespace ice
     {
         using enum ice::ResourceStatus;
 
-        ice::string::clear(out_str);
+        out_str.clear();
         if (ice::has_all(flags, Available))
         {
-            ice::string::push_back(out_str, "Available | ");
+            out_str.push_back("Available | ");
         }
         if (ice::has_all(flags, Loading))
         {
-            ice::string::push_back(out_str, "Loading | ");
+            out_str.push_back("Loading | ");
         }
         if (ice::has_all(flags, Loaded))
         {
-            ice::string::push_back(out_str, "Loaded | ");
+            out_str.push_back("Loaded | ");
         }
         if (ice::has_all(flags, Unloading))
         {
-            ice::string::push_back(out_str, "Unloading | ");
+            out_str.push_back("Unloading | ");
         }
         if (flags == Invalid)
         {
             out_str = ice::String{ "Invalid | " };
         }
-        ice::string::pop_back(out_str, 3);
+        out_str.pop_back(3);
     }
 
 } // namespace ice

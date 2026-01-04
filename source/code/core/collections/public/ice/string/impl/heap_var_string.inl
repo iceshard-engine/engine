@@ -1,13 +1,14 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 namespace ice
 {
 
-    namespace string::detail
+#if 0
+    namespace varstring
     {
 
-        inline auto allocate_varstring_exact(ice::Allocator& alloc, ice::ucount size, ice::ucount& out_size_bytes) noexcept -> char*
+        inline auto allocate_exact(ice::Allocator& alloc, ice::ncount size, ice::ucount& out_size_bytes) noexcept -> char*
         {
             if (size == 0)
             {
@@ -15,21 +16,21 @@ namespace ice
             }
 
             // Allocate enough for: bytes + size + '\0'
-            ice::ucount const final_size = ice::string::detail::calc_varstring_required_size(size) + 1;
+            ice::usize const final_size = calc_required_size(size) + 1_B;
             ice::Memory const result = alloc.allocate(ice::usize{ final_size });
-            out_size_bytes = write_varstring_size(result.location, size);
+            out_size_bytes = write_size(result.location, size);
             return reinterpret_cast<char*>(result.location);
         }
 
-        inline auto create_varstring(ice::Allocator& alloc, ice::String str) noexcept -> char*
+        inline auto create(ice::Allocator& alloc, ice::String str) noexcept -> char*
         {
-            ice::ucount const str_size = ice::string::size(str);
+            ice::ncount const str_size = str.size();
 
-            ice::ucount bytes = 0;
-            char* data = ice::string::detail::allocate_varstring_exact(alloc, str_size, bytes);
+            ice::u32 bytes = 0;
+            char* const data = allocate_exact(alloc, str_size.u32(), bytes);
             if (data != nullptr)
             {
-                ice::memcpy(data + bytes, ice::string::begin(str), str_size);
+                ice::memcpy(data + bytes, str.begin(), str_size.bytes());
                 data[bytes + str_size] = '\0';
             }
             return data;
@@ -186,5 +187,6 @@ namespace ice
         }
 
     } // namespace string
+#endif
 
 } // namespace ice

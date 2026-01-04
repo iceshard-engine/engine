@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "asset_compiler_resource_provider.hxx"
@@ -18,7 +18,7 @@ AssetCompilerResource::AssetCompilerResource(
 {
     ice::native_file::HeapFilePath metapath{ _allocator };
     ice::native_file::path_from_string(metapath, _path);
-    ice::string::push_back(metapath, ISP_PATH_LITERAL(".isrm"));
+    metapath.push_back(ISP_PATH_LITERAL(".isrm"));
 
     if (auto metafile = ice::native_file::open_file(metapath, ice::native_file::FileOpenFlags::Read); file)
     {
@@ -98,7 +98,7 @@ AssetCompilerResourceProvider::~AssetCompilerResourceProvider() noexcept
 
 auto AssetCompilerResourceProvider::collect(
     ice::Array<ice::Resource*>& out_changes
-) noexcept -> ice::ucount
+) noexcept -> ice::u32
 {
     return 0;
 }

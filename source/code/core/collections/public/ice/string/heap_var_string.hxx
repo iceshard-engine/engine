@@ -1,7 +1,8 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#if 0
 #include <ice/string_types.hxx>
 #include <ice/string/var_string.hxx>
 
@@ -44,3 +45,4 @@ namespace ice
 } // namespace ice
 
 #include "impl/heap_var_string.inl"
+#endif

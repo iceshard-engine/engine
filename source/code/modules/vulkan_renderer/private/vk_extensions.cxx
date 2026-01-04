@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "vk_extensions.hxx"
@@ -31,7 +31,7 @@ namespace ice::render::vk
         { ExtensionTarget::VmaExtension, Extension::Vma_MemoryBudget, VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT, "" },
     };
 
-    auto gather_instance_layers(ice::Array<ExtensionName>& out_names, ice::ucount& out_count) noexcept -> Extension
+    auto gather_instance_layers(ice::Array<ExtensionName>& out_names, ice::u32& out_count) noexcept -> Extension
     {
         Extension result = Extension::None;
 
@@ -67,7 +67,7 @@ namespace ice::render::vk
         return result;
     }
 
-    auto gather_instance_extensions(ice::Array<ExtensionName>& out_names, ice::ucount& out_count) noexcept -> Extension
+    auto gather_instance_extensions(ice::Array<ExtensionName>& out_names, ice::u32& out_count) noexcept -> Extension
     {
         Extension result = Extension::None;
 
@@ -103,7 +103,7 @@ namespace ice::render::vk
         return result;
     }
 
-    auto gather_device_extensions(ice::Array<ExtensionName>& out_names, ice::ucount& out_count, VkPhysicalDevice physical_device) noexcept -> Extension
+    auto gather_device_extensions(ice::Array<ExtensionName>& out_names, ice::u32& out_count, VkPhysicalDevice physical_device) noexcept -> Extension
     {
         Extension result = Extension::None;
 
@@ -139,7 +139,7 @@ namespace ice::render::vk
         return result;
     }
 
-    auto extensions_gather_names(ice::Array<ExtensionName>& out_names, ice::ucount& out_count, ExtensionTarget target) noexcept -> Extension
+    auto extensions_gather_names(ice::Array<ExtensionName>& out_names, ice::u32& out_count, ExtensionTarget target) noexcept -> Extension
     {
         switch(target)
         {
@@ -152,7 +152,7 @@ namespace ice::render::vk
         }
     }
 
-    auto extensions_gather_names(ice::Array<ExtensionName>& out_names, ice::ucount &out_count, VkPhysicalDevice physical_device) noexcept -> Extension
+    auto extensions_gather_names(ice::Array<ExtensionName>& out_names, ice::u32 &out_count, VkPhysicalDevice physical_device) noexcept -> Extension
     {
         return gather_device_extensions(out_names, out_count, physical_device);
     }

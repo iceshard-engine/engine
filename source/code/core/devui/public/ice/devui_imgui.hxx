@@ -22,17 +22,17 @@ namespace ImGui
 
     inline bool Begin(ice::String name, bool* inout_open = nullptr, ImGuiWindowFlags flags = 0) noexcept
     {
-        return ImGui::Begin(ice::string::begin(name), inout_open, flags);
+        return ImGui::Begin(name.begin(), inout_open, flags);
     }
 
     inline bool BeginListBox(ice::String label, ice::vec2f size = {}) noexcept
     {
-        return ImGui::BeginListBox(ice::string::begin(label), ImVec2{ size.x, size.y });
+        return ImGui::BeginListBox(label.begin(), ImVec2{ size.x, size.y });
     }
 
     inline void TextUnformatted(ice::String text) noexcept
     {
-        ImGui::TextUnformatted(ice::string::begin(text), ice::string::end(text));
+        ImGui::TextUnformatted(text.begin(), text.end());
     }
 
     inline bool Selectable(
@@ -42,7 +42,7 @@ namespace ImGui
         ice::vec2f size = {}
     ) noexcept
     {
-        return ImGui::Selectable(ice::begin(label), selected, flags, ImVec2{ size.x, size.y });
+        return ImGui::Selectable(label.begin(), selected, flags, ImVec2{ size.x, size.y });
     }
 
     // Extensions

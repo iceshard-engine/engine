@@ -60,7 +60,7 @@ namespace ice
         ice::Data const data = co_await script[AssetState::Raw];
         if (data.location != nullptr)
         {
-            _layers = ice::parse_input_action_layer(_allocator, ice::string::from_data(data));
+            _layers = ice::parse_input_action_layer(_allocator, ice::string_from_data<char>(data));
         }
 
 

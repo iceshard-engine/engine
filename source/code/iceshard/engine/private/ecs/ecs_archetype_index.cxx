@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/ecs/ecs_archetype_index.hxx>
@@ -121,12 +121,12 @@ namespace ice::ecs
             ice::usize& offset_values_out
         ) noexcept -> ice::meminfo
         {
-            ice::ucount const component_count = ice::span::count(info.component_identifiers);
+            ice::u32 const component_count = ice::span::count(info.component_identifiers);
 
             ice::meminfo result = ice::meminfo_of<ArchetypeDataHeader>;
-            offset_name_out = result += ice::meminfo_of<ice::utf8> * (ice::string::size(name) + 1);
+            offset_name_out = result += ice::meminfo_of<ice::utf8> * (name.size() + 1);
             offset_ids_out = result += ice::meminfo_of<ice::StringID> * component_count;
-            offset_values_out = result += ice::meminfo_of<ice::ucount> * component_count * 3; // 3 = size, alignment, offset
+            offset_values_out = result += ice::meminfo_of<ice::u32> * component_count * 3; // 3 = size, alignment, offset
             return result;
         }
 
@@ -227,7 +227,7 @@ namespace ice::ecs
         {
             // Copy archetype name
             ice::memset(mem_archetype_name, 0);
-            ice::memcpy(mem_archetype_name, ice::string::data_view(archetype_info.name));
+            ice::memcpy(mem_archetype_name, archetype_info.name.data_view());
 
             // Copy the component idnetifiers
             ice::memcpy(mem_component_data, ice::span::data_view(archetype_info.component_identifiers));
@@ -255,7 +255,7 @@ namespace ice::ecs
             );
         }
 
-        data_header->archetype_name = ice::String{ (char const*) mem_archetype_name.location, ice::size(archetype_info.name) };
+        data_header->archetype_name = ice::String{ (char const*) mem_archetype_name.location, archetype_info.name.size() };
         data_header->archetype_identifier = archetype_info.identifier;
         data_header->archetype_info.data_block_filter = data_block_filter;
         data_header->archetype_info.component_identifiers = ice::Span<ice::StringID const>{ component_identifiers, component_count };
@@ -267,7 +267,7 @@ namespace ice::ecs
         // We need now to calculate the number of entities that we can store in the remaining memory.
         //  Additionally calculate the offets each component array will be located at.
         {
-            ice::ucount const component_entity_count_max = ice::ecs::detail::calculate_entity_count_for_space(
+            ice::u32 const component_entity_count_max = ice::ecs::detail::calculate_entity_count_for_space(
                 data_header->archetype_info,
                 data_block_pool->provided_block_size()
             );
@@ -303,7 +303,7 @@ namespace ice::ecs
         ice::hashmap::set(_archetype_index, ice::hash(archetype_info.identifier), archetype_index);
 
         // Save the 'index' for the given name
-        if (ice::string::any(data_header->archetype_name))
+        if (data_header->archetype_name.not_empty())
         {
             ice::hashmap::set(_archetype_names_index, ice::hash(data_header->archetype_name), archetype_index);
         }

@@ -7,7 +7,6 @@
 #include <ice/task_utils.hxx>
 #include <ice/mem_allocator_stack.hxx>
 #include <ice/string/heap_string.hxx>
-#include <ice/string/static_string.hxx>
 #include <ice/string_utils.hxx>
 #include <ice/path_utils.hxx>
 
@@ -51,9 +50,9 @@ namespace ice
             ice::native_file::FilePath const uribase = ice::path::directory(base_path);
             ice::native_file::FilePath const datafile = file_path;
             ice::native_file::HeapFilePath metafile{ temp_alloc };
-            ice::string::reserve(metafile, 512);
-            ice::string::push_back(metafile, file_path);
-            ice::string::push_back(metafile, ISP_PATH_LITERAL(".isrm"));
+            metafile.reserve(512);
+            metafile.push_back(file_path);
+            metafile.push_back(ISP_PATH_LITERAL(".isrm"));
 
             resource = _callbacks.create_loose_resource(
                 base_path,
@@ -104,9 +103,9 @@ namespace ice
             ice::native_file::FilePath const uribase = ice::path::directory(base_path);
             ice::native_file::FilePath const datafile = file_path;
             ice::native_file::HeapFilePath metafile{ temp_alloc };
-            ice::string::reserve(metafile, 512);
-            ice::string::push_back(metafile, file_path);
-            ice::string::push_back(metafile, ISP_PATH_LITERAL(".isrm"));
+            metafile.reserve(512);
+            metafile.push_back(file_path);
+            metafile.push_back(ISP_PATH_LITERAL(".isrm"));
 
             resource = _callbacks.create_loose_resource(
                 base_path,

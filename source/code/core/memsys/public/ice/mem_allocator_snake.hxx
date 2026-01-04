@@ -13,7 +13,7 @@ namespace ice
         static constexpr ice::usize Constant_DefaultBlockSizes[]{ 32_KiB };
         static constexpr ice::usize Constant_DefaultBucketSizes[]{ 256_KiB };
 
-        ice::ucount chain_capacity = 4;
+        ice::u32 chain_capacity = 4;
 
         std::span<ice::usize const> block_sizes = Constant_DefaultBlockSizes;
 

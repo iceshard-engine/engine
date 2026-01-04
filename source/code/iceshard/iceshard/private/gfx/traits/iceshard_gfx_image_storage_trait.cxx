@@ -51,7 +51,7 @@ namespace ice::gfx
 
         ice::String const preview = selected < 0 ? "<asset-uri>" : ice::stringid_hint(images[selected].asset.name());
 
-        if (ImGui::BeginCombo("Loaded Image", ice::string::begin(preview)))
+        if (ImGui::BeginCombo("Loaded Image", preview.begin()))
         {
             if (ImGui::Selectable("##empty"))
             {

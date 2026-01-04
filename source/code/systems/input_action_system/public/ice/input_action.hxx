@@ -9,6 +9,8 @@
 namespace ice
 {
 
+    static constexpr auto ab = ice::String{ "asd" };
+
     static constexpr ice::AssetCategory AssetCategory_InputActionsScript = ice::make_asset_category("ice/input_actions/script");
 
 } // namespace ice

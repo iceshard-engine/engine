@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "ip_ui_oven_page.hxx"
@@ -47,7 +47,7 @@ namespace ice
         using ice::ui::ElementState;
 
         ElementState result = ElementState::None;
-        if (ice::string::empty(element_state))
+        if (element_state.is_empty())
         {
             result |= ElementState::Any;
         }
@@ -187,13 +187,13 @@ namespace ice
             {
                 res.type = ResourceType::String;
             }
-            else if (ice::string::starts_with(type_str, Constant_UIResourceType_String))
+            else if (type_str.starts_with(Constant_UIResourceType_String))
             {
-                ice::ucount const arrval_beg = ice::string::find_first_of(type_str, '[');
-                ice::ucount const arrval_end = ice::string::find_last_of(type_str, ']');
+                ice::nindex const arrval_beg = type_str.find_first_of('[');
+                ice::nindex const arrval_end = type_str.find_last_of(']');
                 if (arrval_beg < arrval_end)
                 {
-                    ice::String arrval_str = ice::string::substr(type_str, arrval_beg + 1, (arrval_end - arrval_beg) - 1);
+                    ice::String arrval_str = type_str.substr(arrval_beg + 1, (arrval_end - arrval_beg) - 1);
                     if (ice::from_chars(arrval_str, res.type_data))
                     {
                         res.type = ResourceType::String;
@@ -257,7 +257,7 @@ namespace ice
                     ice::RawShard
                     {
                         .ui_name = ice::xml_value(uiref),
-                        .shard_name = ice::shardid(ice::String{ attr_name->value(), ice::ucount(attr_name->value_size()) })
+                        .shard_name = ice::shardid(ice::String{ attr_name->value(), attr_name->value_size() })
                     }
                 );
             }

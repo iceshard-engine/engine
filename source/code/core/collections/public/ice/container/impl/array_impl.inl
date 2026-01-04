@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 namespace ice
@@ -145,14 +145,14 @@ namespace ice
     }
 
     template<typename Type, ice::ContainerLogic Logic>
-    inline auto Array<Type, Logic>::operator[](ice::ucount idx) noexcept -> Type&
+    inline auto Array<Type, Logic>::operator[](ice::u32 idx) noexcept -> Type&
     {
         // TODO: Assert
         return _data[idx];
     }
 
     template<typename Type, ice::ContainerLogic Logic>
-    inline auto Array<Type, Logic>::operator[](ice::ucount idx) const noexcept -> Type const&
+    inline auto Array<Type, Logic>::operator[](ice::u32 idx) const noexcept -> Type const&
     {
         // TODO: Assert
         return _data[idx];
@@ -174,7 +174,7 @@ namespace ice
     {
 
         template<typename Type, ice::ContainerLogic Logic>
-        inline void set_capacity(ice::Array<Type, Logic>& arr, ice::ucount new_capacity) noexcept
+        inline void set_capacity(ice::Array<Type, Logic>& arr, ice::u32 new_capacity) noexcept
         {
             if (new_capacity == arr._capacity)
             {
@@ -217,7 +217,7 @@ namespace ice
         }
 
         template<typename Type, ice::ContainerLogic Logic>
-        inline void reserve(ice::Array<Type, Logic>& arr, ice::ucount min_capacity) noexcept
+        inline void reserve(ice::Array<Type, Logic>& arr, ice::u32 min_capacity) noexcept
         {
             if (arr._capacity < min_capacity)
             {
@@ -226,9 +226,9 @@ namespace ice
         }
 
         template<typename Type, ice::ContainerLogic Logic>
-        inline void grow(ice::Array<Type, Logic>& arr, ice::ucount min_capacity) noexcept
+        inline void grow(ice::Array<Type, Logic>& arr, ice::u32 min_capacity) noexcept
         {
-            ice::ucount new_capacity = arr._capacity * 2 + 4;
+            ice::u32 new_capacity = arr._capacity * 2 + 4;
             if (new_capacity < min_capacity)
             {
                 new_capacity = min_capacity;
@@ -237,7 +237,7 @@ namespace ice
         }
 
         template<typename Type, ice::ContainerLogic Logic>
-        inline void resize(ice::Array<Type, Logic>& arr, ice::ucount new_count) noexcept
+        inline void resize(ice::Array<Type, Logic>& arr, ice::u32 new_count) noexcept
         {
             if (arr._capacity < new_count)
             {
@@ -246,7 +246,7 @@ namespace ice
 
             if (new_count > arr._count)
             {
-                ice::ucount const missing_items = new_count - arr._count;
+                ice::u32 const missing_items = new_count - arr._count;
 
                 // Even for trivial logic we construct items so at least the default ctor is called.
                 ice::mem_construct_n_at<Type>(
@@ -257,7 +257,7 @@ namespace ice
             else if constexpr (Logic == ContainerLogic::Complex)
             {
                 static_assert(Logic != ContainerLogic::Trivial);
-                ice::ucount const destroyed_items = arr._count - new_count;
+                ice::u32 const destroyed_items = arr._count - new_count;
 
                 ice::mem_destruct_n_at(
                     arr._data + new_count,
@@ -350,13 +350,13 @@ namespace ice
             requires std::copy_constructible<Type>
         inline void push_back(ice::Array<Type, Logic>& arr, ice::Span<Type const> items) noexcept
         {
-            ice::ucount const required_capacity = arr._count + ice::span::count(items);
+            ice::u32 const required_capacity = arr._count + ice::span::count(items);
             if (required_capacity > arr._capacity)
             {
                 ice::array::grow(arr, required_capacity);
             }
 
-            ice::ucount const missing_items = required_capacity - arr._count;
+            ice::u32 const missing_items = required_capacity - arr._count;
             if constexpr (Logic == ContainerLogic::Complex)
             {
                 ice::mem_copy_construct_n_at<Type>(
@@ -380,13 +380,13 @@ namespace ice
             requires std::copy_constructible<Type> && (std::is_same_v<Type, Source> == false)
         inline void push_back(ice::Array<Type, Logic>& arr, ice::Span<Source const> items, Type(*fn)(Source const&) noexcept) noexcept
         {
-            ice::ucount const required_capacity = arr._count + ice::span::count(items);
+            ice::u32 const required_capacity = arr._count + ice::span::count(items);
             if (required_capacity > arr._capacity)
             {
                 ice::array::grow(arr, required_capacity);
             }
 
-            ice::ucount const missing_items = required_capacity - arr._count;
+            ice::u32 const missing_items = required_capacity - arr._count;
             for (ice::u32 src_idx = 0; src_idx < missing_items; ++src_idx)
             {
                 ice::array::push_back(arr, fn(items[src_idx]));
@@ -394,7 +394,7 @@ namespace ice
         }
 
         template<typename Type, ice::ContainerLogic Logic>
-        inline void pop_back(ice::Array<Type, Logic>& arr, ice::ucount count /*= 1*/) noexcept
+        inline void pop_back(ice::Array<Type, Logic>& arr, ice::u32 count /*= 1*/) noexcept
         {
             count = ice::min(count, arr._count);
             if constexpr (Logic == ContainerLogic::Complex)
@@ -453,13 +453,13 @@ namespace ice
 
 
         template<typename Type, ice::ContainerLogic Logic>
-        inline auto count(ice::Array<Type, Logic> const& arr) noexcept -> ice::ucount
+        inline auto count(ice::Array<Type, Logic> const& arr) noexcept -> ice::u32
         {
             return arr._count;
         }
 
         template<typename Type, ice::ContainerLogic Logic>
-        inline auto capacity(ice::Array<Type, Logic> const& arr) noexcept -> ice::ucount
+        inline auto capacity(ice::Array<Type, Logic> const& arr) noexcept -> ice::u32
         {
             return arr._capacity;
         }
@@ -483,7 +483,7 @@ namespace ice
         }
 
         template<typename Type, ice::ContainerLogic Logic>
-        inline auto slice(ice::Array<Type, Logic> const& arr, ice::ucount from_idx, ice::ucount count) noexcept -> ice::Span<Type const>
+        inline auto slice(ice::Array<Type, Logic> const& arr, ice::u32 from_idx, ice::u32 count) noexcept -> ice::Span<Type const>
         {
             return ice::span::subspan<Type const>(arr, from_idx, count);
         }

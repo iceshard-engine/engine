@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 namespace ice
@@ -8,10 +8,10 @@ namespace ice
     {
 
         template<typename Type>
-        inline void destroy_head_items(ice::Queue<Type, ContainerLogic::Complex>& queue, ice::ucount destroy_count) noexcept;
+        inline void destroy_head_items(ice::Queue<Type, ContainerLogic::Complex>& queue, ice::u32 destroy_count) noexcept;
 
         template<typename Type>
-        inline void destroy_tail_items(ice::Queue<Type, ContainerLogic::Complex>& queue, ice::ucount destroy_count) noexcept;
+        inline void destroy_tail_items(ice::Queue<Type, ContainerLogic::Complex>& queue, ice::u32 destroy_count) noexcept;
 
         template<typename Type>
         inline void copy_items_to_new_location(ice::Memory dest, ice::Queue<Type, ContainerLogic::Complex> const& queue) noexcept;
@@ -76,10 +76,10 @@ namespace ice
     {
         if constexpr (Logic == ContainerLogic::Complex)
         {
-            ice::ucount const last_raw_idx = _offset + _count;
+            ice::u32 const last_raw_idx = _offset + _count;
             if (last_raw_idx > _capacity)
             {
-                ice::ucount const wrapped_count = last_raw_idx - _capacity;
+                ice::u32 const wrapped_count = last_raw_idx - _capacity;
                 ice::mem_destruct_n_at(_data + _offset, _count - wrapped_count); // Destroyes elements at the end of the ring buffer [_offset, count_until_capacity)
                 ice::mem_destruct_n_at(_data, wrapped_count); // Destroys wrapped tail elements [0, tail_size)
             }
@@ -134,13 +134,13 @@ namespace ice
     }
 
     template<typename Type, ice::ContainerLogic Logic>
-    inline auto Queue<Type, Logic>::operator[](ice::ucount idx) noexcept -> Type&
+    inline auto Queue<Type, Logic>::operator[](ice::u32 idx) noexcept -> Type&
     {
         return _data[(idx + _offset) % _capacity];
     }
 
     template<typename Type, ice::ContainerLogic Logic>
-    inline auto Queue<Type, Logic>::operator[](ice::ucount idx) const noexcept -> Type const&
+    inline auto Queue<Type, Logic>::operator[](ice::u32 idx) const noexcept -> Type const&
     {
         return _data[(idx + _offset) % _capacity];
     }
@@ -149,11 +149,11 @@ namespace ice
     {
 
         template<typename Type>
-        void destroy_head_items(ice::Queue<Type, ContainerLogic::Complex>& queue, ice::ucount destroy_count) noexcept
+        void destroy_head_items(ice::Queue<Type, ContainerLogic::Complex>& queue, ice::u32 destroy_count) noexcept
         {
-            ice::ucount const raw_end_idx = queue._offset + destroy_count;
-            ice::ucount const start_idx = queue._offset;
-            ice::ucount const end_idx = raw_end_idx % queue._capacity;
+            ice::u32 const raw_end_idx = queue._offset + destroy_count;
+            ice::u32 const start_idx = queue._offset;
+            ice::u32 const end_idx = raw_end_idx % queue._capacity;
 
             // We got a wrapped case
             if (start_idx > end_idx)
@@ -168,11 +168,11 @@ namespace ice
         }
 
         template<typename Type>
-        void destroy_tail_items(ice::Queue<Type, ContainerLogic::Complex>& queue, ice::ucount destroy_count) noexcept
+        void destroy_tail_items(ice::Queue<Type, ContainerLogic::Complex>& queue, ice::u32 destroy_count) noexcept
         {
-            ice::ucount const raw_end_idx = queue._offset + queue._count;
-            ice::ucount const start_idx = (raw_end_idx - destroy_count) % queue._capacity;
-            ice::ucount const end_idx = raw_end_idx % queue._capacity;
+            ice::u32 const raw_end_idx = queue._offset + queue._count;
+            ice::u32 const start_idx = (raw_end_idx - destroy_count) % queue._capacity;
+            ice::u32 const end_idx = raw_end_idx % queue._capacity;
 
             // We got a wrapped case
             if (start_idx > end_idx)
@@ -189,8 +189,8 @@ namespace ice
         template<typename Type>
         inline void copy_items_to_new_location(ice::Memory dest, ice::Queue<Type, ContainerLogic::Complex> const& queue) noexcept
         {
-            ice::ucount const start_idx = queue._offset;
-            ice::ucount const head_count = queue._capacity - start_idx;
+            ice::u32 const start_idx = queue._offset;
+            ice::u32 const head_count = queue._capacity - start_idx;
             ice::usize const head_size = ice::size_of<Type> * head_count;
 
             ice::mem_copy_construct_n_at(dest, queue._data + start_idx, head_count);
@@ -203,8 +203,8 @@ namespace ice
         template<typename Type>
         inline void move_items_to_new_location(ice::Memory dest, ice::Queue<Type, ContainerLogic::Complex>& queue) noexcept
         {
-            ice::ucount const start_idx = queue._offset;
-            ice::ucount const head_count = queue._capacity - start_idx;
+            ice::u32 const start_idx = queue._offset;
+            ice::u32 const head_count = queue._capacity - start_idx;
             ice::usize const head_size = ice::size_of<Type> * head_count;
 
             ice::mem_move_construct_n_at(dest, queue._data + start_idx, head_count);
@@ -223,8 +223,8 @@ namespace ice
         {
             ice::usize const total_size = ice::size_of<Type> * queue._count;
 
-            ice::ucount const head_count = std::min(queue._offset + queue._count, queue._capacity) - queue._offset;
-            ice::ucount const tail_count = queue._count - head_count;
+            ice::u32 const head_count = std::min(queue._offset + queue._count, queue._capacity) - queue._offset;
+            ice::u32 const tail_count = queue._count - head_count;
 
             ice::usize const head_size = ice::size_of<Type> * head_count;
             ice::usize const head_end_offset = ice::size_of<Type> * head_count;
@@ -257,7 +257,7 @@ namespace ice
     {
 
         template<typename Type, ice::ContainerLogic Logic>
-        inline void set_capacity(ice::Queue<Type, Logic>& queue, ice::ucount new_capacity) noexcept
+        inline void set_capacity(ice::Queue<Type, Logic>& queue, ice::u32 new_capacity) noexcept
         {
             if (new_capacity == queue._capacity)
             {
@@ -299,7 +299,7 @@ namespace ice
         }
 
         template<typename Type, ice::ContainerLogic Logic>
-        inline void reserve(ice::Queue<Type, Logic>& queue, ice::ucount min_capacity) noexcept
+        inline void reserve(ice::Queue<Type, Logic>& queue, ice::u32 min_capacity) noexcept
         {
             if (queue._capacity < min_capacity)
             {
@@ -308,9 +308,9 @@ namespace ice
         }
 
         template<typename Type, ice::ContainerLogic Logic>
-        inline void grow(ice::Queue<Type, Logic>& queue, ice::ucount min_capacity /*= 0*/) noexcept
+        inline void grow(ice::Queue<Type, Logic>& queue, ice::u32 min_capacity /*= 0*/) noexcept
         {
-            ice::ucount new_capacity = queue._count * 2 + 4;
+            ice::u32 new_capacity = queue._count * 2 + 4;
             if (new_capacity < min_capacity)
             {
                 new_capacity = min_capacity;
@@ -319,7 +319,7 @@ namespace ice
         }
 
         template<typename Type, ice::ContainerLogic Logic>
-        inline void resize(ice::Queue<Type, Logic>& queue, ice::ucount new_count) noexcept
+        inline void resize(ice::Queue<Type, Logic>& queue, ice::u32 new_count) noexcept
         {
             if (queue._capacity < new_count)
             {
@@ -329,11 +329,11 @@ namespace ice
             // Even for trivial logic we construct items so at least the default ctor is called.
             if (new_count > queue._count)
             {
-                ice::ucount const missing_items = new_count - queue._count;
-                ice::ucount const start_idx = (queue._offset + queue._count) % queue._capacity;
+                ice::u32 const missing_items = new_count - queue._count;
+                ice::u32 const start_idx = (queue._offset + queue._count) % queue._capacity;
 
-                ice::ucount const end_idx = ice::min(start_idx + missing_items, queue._capacity);
-                ice::ucount const wrapped_end_idx = missing_items - (end_idx - start_idx);
+                ice::u32 const end_idx = ice::min(start_idx + missing_items, queue._capacity);
+                ice::u32 const wrapped_end_idx = missing_items - (end_idx - start_idx);
 
                 // Construct until we hit end of the queue buffer
                 ice::mem_construct_n_at<Type>(
@@ -389,7 +389,7 @@ namespace ice
                 ice::queue::grow(queue);
             }
 
-            ice::ucount const item_idx = (queue._offset + queue._count) % queue._capacity;
+            ice::u32 const item_idx = (queue._offset + queue._count) % queue._capacity;
             if constexpr (Logic == ContainerLogic::Complex)
             {
                 ice::mem_move_construct_at<Type>(
@@ -414,7 +414,7 @@ namespace ice
                 ice::queue::grow(queue);
             }
 
-            ice::ucount const item_idx = (queue._offset + queue._count) % queue._capacity;
+            ice::u32 const item_idx = (queue._offset + queue._count) % queue._capacity;
             if constexpr (Logic == ContainerLogic::Complex)
             {
                 ice::mem_copy_construct_at<Type>(
@@ -438,20 +438,20 @@ namespace ice
             requires std::copy_constructible<Type>
         inline void push_back(ice::Queue<Type, Logic>& queue, ice::Span<Type const> items) noexcept
         {
-            ice::ucount const required_capacity = queue._count + ice::span::count(items);
+            ice::u32 const required_capacity = queue._count + ice::span::count(items);
             if (required_capacity > queue._capacity)
             {
                 ice::queue::grow(queue, required_capacity);
             }
 
-            ice::ucount const span_count = ice::span::count(items);
-            ice::ucount const start_idx = (queue._offset + queue._count) % queue._capacity;
-            ice::ucount const end_idx = ice::min(queue._capacity, start_idx + span_count);
+            ice::u32 const span_count = ice::span::count(items);
+            ice::u32 const start_idx = (queue._offset + queue._count) % queue._capacity;
+            ice::u32 const end_idx = ice::min(queue._capacity, start_idx + span_count);
 
             // The space can we use before wrapping around the buffer.
-            ice::ucount const head_space = end_idx - start_idx;
+            ice::u32 const head_space = end_idx - start_idx;
             // The space after the wrapped buffer we still need to allocate. Can be 0.
-            ice::ucount const tail_space = span_count - head_space;
+            ice::u32 const tail_space = span_count - head_space;
 
             if constexpr (Logic == ContainerLogic::Complex)
             {
@@ -569,7 +569,7 @@ namespace ice
                 queue._offset = queue._capacity;
             }
 
-            ice::ucount const item_idx = queue._offset - 1;
+            ice::u32 const item_idx = queue._offset - 1;
             if constexpr (Logic == ContainerLogic::Complex)
             {
                 ice::mem_copy_construct_at<Type>(
@@ -594,14 +594,14 @@ namespace ice
         inline void push_front(ice::Queue<Type, Logic>& queue, ice::Span<Type const> items) noexcept;
 
         template<typename Type, ice::ContainerLogic Logic>
-        inline auto take_front(ice::Queue<Type, Logic>& queue, ice::Span<Type> out_values) noexcept -> ice::ucount
+        inline auto take_front(ice::Queue<Type, Logic>& queue, ice::Span<Type> out_values) noexcept -> ice::u32
         {
-            ice::ucount const taken_items = ice::min(ice::count(out_values), ice::count(queue));
+            ice::u32 const taken_items = ice::min(ice::count(out_values), ice::count(queue));
 
             // (offset, end][0, remaining)
-            ice::ucount const first_part = ice::min(queue._offset + taken_items, queue._capacity);
-            ice::ucount const second_part = (queue._offset + taken_items) - first_part;
-            ice::ucount const first_part_count = first_part - queue._offset;
+            ice::u32 const first_part = ice::min(queue._offset + taken_items, queue._capacity);
+            ice::u32 const second_part = (queue._offset + taken_items) - first_part;
+            ice::u32 const first_part_count = first_part - queue._offset;
 
             if constexpr (Logic == ContainerLogic::Complex)
             {
@@ -619,7 +619,7 @@ namespace ice
         }
 
         template<typename Type, ice::ContainerLogic Logic>
-        inline void pop_front(ice::Queue<Type, Logic>& queue, ice::ucount count /*= 1*/) noexcept
+        inline void pop_front(ice::Queue<Type, Logic>& queue, ice::u32 count /*= 1*/) noexcept
         {
             if constexpr (Logic == ContainerLogic::Complex)
             {
@@ -652,13 +652,13 @@ namespace ice
 
 
         template<typename Type, ice::ContainerLogic Logic>
-        inline auto count(ice::Queue<Type, Logic> const& queue) noexcept -> ice::ucount
+        inline auto count(ice::Queue<Type, Logic> const& queue) noexcept -> ice::u32
         {
             return queue._count;
         }
 
         template<typename Type, ice::ContainerLogic Logic>
-        inline auto capacity(ice::Queue<Type, Logic> const& queue) noexcept -> ice::ucount
+        inline auto capacity(ice::Queue<Type, Logic> const& queue) noexcept -> ice::u32
         {
             return queue._capacity;
         }
@@ -701,8 +701,8 @@ namespace ice
                 return;
             }
 
-            ice::ucount const first_part = ice::min(queue._offset + queue._count, queue._capacity);
-            ice::ucount const second_part = (queue._offset + queue._count) - first_part;
+            ice::u32 const first_part = ice::min(queue._offset + queue._count, queue._capacity);
+            ice::u32 const second_part = (queue._offset + queue._count) - first_part;
 
             for (ice::u32 idx = queue._offset; idx < first_part; ++idx)
             {
@@ -723,8 +723,8 @@ namespace ice
                 return;
             }
 
-            ice::ucount const first_part = ice::min(queue._offset + queue._count, queue._capacity);
-            ice::ucount const second_part = (queue._offset + queue._count) - first_part;
+            ice::u32 const first_part = ice::min(queue._offset + queue._count, queue._capacity);
+            ice::u32 const second_part = (queue._offset + queue._count) - first_part;
 
             if (second_part > 0)
             {

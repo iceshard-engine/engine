@@ -14,7 +14,7 @@ namespace Catch
     {
         static std::string convert(ice::String const& value)
         {
-            return StringMaker<std::string_view>::convert({ value._data, value._size });
+            return StringMaker<std::string_view>::convert(value);
         }
     };
 }
@@ -59,6 +59,8 @@ SCENARIO("resource_system 'ice/resource_meta.hxx'", "[resource][metadata]")
             REQUIRE(meta._data != nullptr);
 
             ice::String meta_name;
+            meta_name == "asd";
+
             CHECK(ice::config::get(meta, "name", meta_name));
             CHECK(meta_name == "foo");
 

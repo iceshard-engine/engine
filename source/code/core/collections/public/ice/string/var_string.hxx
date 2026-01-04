@@ -1,10 +1,11 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/string_types.hxx>
 #include <ice/string/string.hxx>
 
+#if 0
 namespace ice::string
 {
 
@@ -124,3 +125,5 @@ namespace ice
 } // namespace ice
 
 #include "impl/var_string.inl"
+
+#endif

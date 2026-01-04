@@ -1,11 +1,10 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/input_action_stack.hxx>
 #include <ice/input_action_layer.hxx>
 #include <ice/input_action_info.hxx>
 #include <ice/input_action_executor.hxx>
-#include <ice/string/static_string.hxx>
 #include <ice/string/heap_string.hxx>
 #include <ice/container/hashmap.hxx>
 #include <ice/container/array.hxx>
@@ -38,7 +37,7 @@ namespace ice
 
         auto registered_layers(
             ice::Array<ice::InputActionLayer const*>& out_layers
-        ) const noexcept -> ice::ucount override;
+        ) const noexcept -> ice::u32 override;
 
         auto register_layer(
             ice::InputActionLayer const* layer
@@ -47,7 +46,7 @@ namespace ice
 
         auto active_layers(
             ice::Array<ice::InputActionLayer const*>& out_layers
-        ) const noexcept -> ice::ucount override;
+        ) const noexcept -> ice::u32 override;
 
         void push_layer(
             ice::InputActionLayer const* layer
@@ -135,7 +134,7 @@ namespace ice
 
     auto SimpleInputActionStack::registered_layers(
         ice::Array<ice::InputActionLayer const*>& out_layers
-    ) const noexcept -> ice::ucount
+    ) const noexcept -> ice::u32
     {
         for (StackLayer const& layer : _layers)
         {
@@ -154,7 +153,7 @@ namespace ice
             return E_NullPointer;
         }
 
-        ice::ucount layer_idx;
+        ice::u32 layer_idx;
         if (ice::search(ice::Span{ _layers }, layer, compare_layers, layer_idx))
         {
             return S_LayerAlreadyRegistered;
@@ -170,7 +169,7 @@ namespace ice
         // Go through each resource and set the indices
         ice::u64 prev_name_hash = 0;
         ice::Span<ice::InputActionSourceInputInfo const> sources = layer->sources();
-        ice::ucount const count_sources = ice::count(sources);
+        ice::u32 const count_sources = ice::count(sources);
         for (ice::u32 idx = 0; idx < count_sources; ++idx)
         {
             ice::InputActionSourceInputInfo const& source = sources[idx];
@@ -234,7 +233,7 @@ namespace ice
                 // Create the final name with the prefix and store it so the pointer reimains valid.
                 // #TODO: Consider using refs instead?
                 ice::HeapString<> final_name = _idprefix;
-                ice::string::push_back(final_name, action_name);
+                final_name.push_back(action_name);
                 ice::hashmap::set(_action_names, action_name_hash, ice::move(final_name));
 
                 ice::HeapString<> const* final_name_ptr = ice::hashmap::try_get(_action_names, action_name_hash);
@@ -255,7 +254,7 @@ namespace ice
 
     auto SimpleInputActionStack::active_layers(
         ice::Array<ice::InputActionLayer const*>& out_layers
-    ) const noexcept -> ice::ucount
+    ) const noexcept -> ice::u32
     {
         auto it = ice::array::rbegin(_layers_active);
         auto const end = ice::array::rend(_layers_active);
@@ -272,7 +271,7 @@ namespace ice
         ice::InputActionLayer const* layer
     ) noexcept
     {
-        ice::ucount idx;
+        ice::u32 idx;
         if (ice::search(ice::Span{ _layers }, layer, compare_layers, idx) == false)
         {
             // #TODO: Create a proper error return value.
@@ -293,7 +292,7 @@ namespace ice
         ice::InputActionLayer const* layer
     ) noexcept
     {
-        ice::ucount idx;
+        ice::u32 idx;
         if (ice::search(ice::Span{ _layers }, layer, compare_layers, idx))
         {
             // We just cut anything below this index, because we want to pop everything up to this layer
@@ -305,13 +304,13 @@ namespace ice
     auto SimpleInputActionStack::action(ice::String action_name) const noexcept -> ice::Expected<ice::InputAction const*>
     {
         ice::InputActionRuntime const* action = ice::hashmap::try_get(_actions, ice::hash(action_name));
-        if (action == nullptr && ice::string::starts_with(action_name, _idprefix))
+        if (action == nullptr && action_name.starts_with(_idprefix))
         {
             // Try again after removing the prefix
             action = ice::hashmap::try_get(
                 _actions,
                 ice::hash(
-                    ice::string::substr(action_name, ice::size(_idprefix))
+                    action_name.substr(_idprefix.size())
                 )
             );
         }
@@ -404,7 +403,7 @@ namespace ice
         IPT_ZONE_SCOPED;
         using Iterator = ice::Array<ActiveStackLayer>::ConstReverseIterator;
 
-        ice::ucount remaining_events = ice::count(events);
+        ice::u32 remaining_events = ice::count(events);
         ice::Array<ice::input::InputEvent> events_copy{ _allocator, events };
         ice::Array<ice::InputActionSource*> source_values{ _allocator };
 
@@ -420,7 +419,7 @@ namespace ice
                 ice::array::push_back(source_values, ice::addressof(_sources_runtime_values[offset]));
             }
 
-            ice::ucount const processed_events = layer.layer->process_inputs(
+            ice::u32 const processed_events = layer.layer->process_inputs(
                 ice::array::slice(events_copy, 0, remaining_events),
                 source_values
             );

@@ -4,7 +4,6 @@
 #include <ice/assert.hxx>
 #include <ice/app_info.hxx>
 #include <ice/mem_allocator_stack.hxx>
-#include <ice/string/static_string.hxx>
 #include <ice/string_utils.hxx>
 
 namespace ice::app
@@ -26,8 +25,8 @@ namespace ice::app
         static ice::StaticString<256> app_location = []() noexcept
         {
             ice::StaticString<256, ice::wchar> location_wide{ L"" };
-            DWORD const path_size = GetModuleFileNameW(NULL, ice::string::begin(location_wide), ice::string::capacity(location_wide));
-            ice::string::resize(location_wide, path_size);
+            DWORD const path_size = GetModuleFileNameW(NULL, location_wide.begin(), location_wide.capacity().u32());
+            location_wide.resize(path_size);
 
             ice::StackAllocator_1024 stack_alloc;
             ice::HeapString<> location_utf8{ stack_alloc };
@@ -50,8 +49,8 @@ namespace ice::app
         static ice::StaticString<256> working_dir = []() noexcept
         {
             ice::StaticString<256, ice::wchar> location_wide{ L"" };
-            DWORD const path_size = GetCurrentDirectoryW(ice::string::capacity(location_wide), ice::string::begin(location_wide));
-            ice::string::resize(location_wide, path_size);
+            DWORD const path_size = GetCurrentDirectoryW(location_wide.capacity().u32(), location_wide.begin());
+            location_wide.resize(path_size);
 
             ice::StackAllocator_1024 stack_alloc;
             ice::HeapString<> location_utf8{ stack_alloc };

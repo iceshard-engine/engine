@@ -1,8 +1,7 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "task_thread_pool_impl.hxx"
-#include <ice/string/static_string.hxx>
 #include <ice/string/string.hxx>
 #include <ice/assert.hxx>
 
@@ -19,11 +18,11 @@ namespace ice
             auto const result = fmt::vformat_to_n(
                 raw_buffer,
                 ice::count(raw_buffer),
-                fmt::string_view{format._data, format._size},
+                fmt::string_view{ format.data(), format.size() },
                 fmt::make_format_args(std::forward<Args>(args)...)
             );
 
-            out_string = ice::String{ raw_buffer, (ice::ucount) result.size };
+            out_string = ice::String{ raw_buffer, (ice::u32) result.size };
         }
 
         auto aio_thread_routine(void* userdata, ice::TaskQueue&) noexcept -> ice::u32
@@ -106,17 +105,17 @@ namespace ice
         ice::array::clear(_thread_pool);
     }
 
-    auto TaskThreadPoolImplementation::thread_count() const noexcept -> ice::ucount
+    auto TaskThreadPoolImplementation::thread_count() const noexcept -> ice::u32
     {
         return ice::array::count(_thread_pool);
     }
 
-    auto TaskThreadPoolImplementation::managed_thread_count() const noexcept -> ice::ucount
+    auto TaskThreadPoolImplementation::managed_thread_count() const noexcept -> ice::u32
     {
         return ice::array::count(_managed_threads) + ice::hashmap::count(_created_threads);
     }
 
-    auto TaskThreadPoolImplementation::estimated_task_count() const noexcept -> ice::ucount
+    auto TaskThreadPoolImplementation::estimated_task_count() const noexcept -> ice::u32
     {
         return 0; // TODO:
     }
@@ -134,7 +133,7 @@ namespace ice
             .exclusive_queue = false,
             .sort_by_priority = false,
             .stack_size = 0_B, // default
-            .debug_name = ice::String{ name_hint.data(), static_cast<ice::ucount>(name_hint.size()) }
+            .debug_name = ice::String{ name_hint.data(), static_cast<ice::u32>(name_hint.size()) }
         };
 
         ice::hashmap::set(

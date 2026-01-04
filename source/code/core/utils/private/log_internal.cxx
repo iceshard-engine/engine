@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "log_internal.hxx"
@@ -32,7 +32,7 @@ namespace ice::detail
 
     auto LogState::register_sink(ice::LogSinkFn fn_sink, void* userdata) noexcept -> ice::LogSinkID
     {
-        ice::ucount const sinkidx = ice::count(_sinks);
+        ice::u32 const sinkidx = ice::count(_sinks);
         // Pottentially an error when sinks are added and remove all the time!
         // NOTE: Once added sinks should only be reset when a module was reloaded!
         ICE_ASSERT_CORE(sinkidx < 50);
@@ -42,7 +42,7 @@ namespace ice::detail
 
     void LogState::unregister_sink(ice::LogSinkID sinkid) noexcept
     {
-        ice::ucount const sinkidx = static_cast<ice::ucount>(sinkid);
+        ice::u32 const sinkidx = static_cast<ice::u32>(sinkid);
         if (ice::count(_sinks) > sinkidx)
         {
             // Just clear the values

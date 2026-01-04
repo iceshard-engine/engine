@@ -44,7 +44,7 @@ namespace ice
 
     void Trait::send(ice::ShardID shardid, ice::String value, SendMode mode) noexcept
     {
-        this->send(shardid | ice::string::begin(value), mode);
+        this->send(shardid | value.begin(), mode);
     }
 
     void Trait::send(ice::ShardID shardid, ice::Asset asset, SendMode mode) noexcept

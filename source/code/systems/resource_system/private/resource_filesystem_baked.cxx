@@ -114,7 +114,7 @@ namespace ice
 
     auto BakedFileResource::name() const noexcept -> ice::String
     {
-        return ice::string::substr(_uri.path(), 1);
+        return _uri.path().substr(1);
     }
 
     auto BakedFileResource::origin() const noexcept -> ice::String
@@ -202,7 +202,7 @@ namespace ice
         IPT_ZONE_TEXT_STR(utf8_file_path);
 
         ice::HeapString<> utf8_uri{ alloc };
-        ice::string::push_back(utf8_uri, uri_base);
+        utf8_uri.push_back(uri_base);
 
         char temp[128];
         read = ice::native_file::read_file(
@@ -210,7 +210,7 @@ namespace ice
         );
 
         ICE_ASSERT_CORE(read >= 0_B);
-        ice::string::push_back(utf8_uri, { temp, header.name_size });
+        utf8_uri.push_back(ice::String{ temp, header.name_size });
 
         return ice::create_resource_object<BakedFileResource>(
             alloc,

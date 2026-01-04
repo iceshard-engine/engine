@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "ip_ui_oven_elements.hxx"
@@ -15,27 +15,27 @@ namespace ice
 
     bool trim(ice::String& inout_str, char character) noexcept
     {
-        ice::ucount const left_bracket = ice::string::find_first_not_of(inout_str, character);
-        ice::ucount const right_bracket = ice::string::find_last_not_of(inout_str, character);
-        if (left_bracket == ice::String_NPos && right_bracket == ice::String_NPos)
+        ice::nindex const left_bracket = inout_str.find_first_not_of(character);
+        ice::nindex const right_bracket = inout_str.find_last_not_of(character);
+        if (left_bracket == ice::none_index && right_bracket == ice::none_index)
         {
             return false;
         }
 
-        inout_str = ice::string::substr(inout_str, left_bracket, (right_bracket - left_bracket) + 1);
+        inout_str = inout_str.substr(left_bracket, (right_bracket - left_bracket) + 1);
         return true;
     }
 
     bool remove_brackets(ice::String& inout_str) noexcept
     {
-        ice::ucount const left_bracket = ice::string::find_first_of(inout_str, '{');
-        ice::ucount const right_bracket = ice::string::find_last_of(inout_str, '}');
-        if (left_bracket == ice::String_NPos || right_bracket == ice::String_NPos)
+        ice::nindex const left_bracket = inout_str.find_first_of('{');
+        ice::nindex const right_bracket = inout_str.find_last_of('}');
+        if (left_bracket == ice::none_index || right_bracket == ice::none_index)
         {
             return false;
         }
 
-        inout_str = ice::string::substr(inout_str, left_bracket + 1, (right_bracket - left_bracket) - 1);
+        inout_str = inout_str.substr(left_bracket + 1, (right_bracket - left_bracket) - 1);
         return true;
     }
 
@@ -44,12 +44,12 @@ namespace ice
         ice::RawAction& out_action
     ) noexcept
     {
-        ice::ucount const type_end = ice::string::find_first_of(inout_str, ' ');
+        ice::nindex const type_end = inout_str.find_first_of(' ');
 
         bool result = false;
-        if (type_end != ice::String_NPos)
+        if (type_end != ice::none_index)
         {
-            ice::String const action_type = ice::string::substr(inout_str, 0, type_end);
+            ice::String const action_type = inout_str.substr(0, type_end);
             if (action_type == RawAction::Constant_ActionType_Shard)
             {
                 out_action.action_type = ice::ui::ActionType::Shard;
@@ -67,14 +67,14 @@ namespace ice
             result = out_action.action_type != ice::ui::ActionType::None;
             if (result)
             {
-                inout_str = ice::string::substr(inout_str, type_end + 1);
+                inout_str = inout_str.substr(type_end + 1);
 
-                ice::ucount const action_value_end = ice::string::find_first_of(inout_str, ",} "_str);
-                out_action.action_value = ice::string::substr(inout_str, 0, action_value_end);
-                result = ice::string::empty(out_action.action_value) == false;
+                ice::nindex const action_value_end = inout_str.find_first_of(",} "_str);
+                out_action.action_value = inout_str.substr(0, action_value_end);
+                result = out_action.action_value.not_empty();
 
                 // Move to the next expected token.
-                inout_str = ice::string::substr(inout_str, action_value_end + 1);
+                inout_str = inout_str.substr(action_value_end + 1);
             }
         }
         return result;
@@ -87,18 +87,18 @@ namespace ice
 
         if (remove_brackets(str))
         {
-            ice::ucount const type_end = ice::string::find_first_of(str, ' ');
-            ice::String const data_type = ice::string::substr(str, 0, type_end);
+            ice::nindex const type_end = str.find_first_of(' ');
+            ice::String const data_type = str.substr(0, type_end);
 
             if (data_type == RawAction::Constant_ActionDataType_Resource)
             {
                 out_action.data_type = ice::ui::DataSource::ValueResource;
-                out_action.data_source = ice::string::substr(str, type_end + 1);
+                out_action.data_source = str.substr(type_end + 1);
             }
             else if (data_type == RawAction::Constant_ActionDataType_Property)
             {
                 out_action.data_type = ice::ui::DataSource::ValueProperty;
-                out_action.data_source = ice::string::substr(str, type_end + 1);
+                out_action.data_source = str.substr(type_end + 1);
             }
             ice::trim(out_action.data_source, ' ');
         }
@@ -110,15 +110,15 @@ namespace ice
         out_action.data.data_source = {};
 
         bool result = true;
-        ice::ucount const data_start = ice::string::find_first_of(inout_str, '=');
-        if (data_start != ice::String_NPos)
+        ice::nindex const data_start = inout_str.find_first_of('=');
+        if (data_start != ice::none_index)
         {
-            ice::ucount const data_arg_start = ice::string::find_last_of(inout_str, " ,"_str, data_start);
+            ice::nindex const data_arg_start = inout_str.find_last_of(" ,"_str, data_start);
 
             [[maybe_unused]]
-            ice::String const data_arg = ice::string::substr(inout_str, data_arg_start + 1, (data_start - data_arg_start) - 1);
+            ice::String const data_arg = inout_str.substr(data_arg_start + 1, (data_start - data_arg_start) - 1);
 
-            inout_str = ice::string::substr(inout_str, data_start + 1);
+            inout_str = inout_str.substr(data_start + 1);
             if (remove_brackets(inout_str))
             {
                 ICE_ASSERT(false, "TODO!"); // Was here before memsys refactor. Needs a ticket!
@@ -249,7 +249,7 @@ namespace ice
                 ICE_ASSERT(
                     action_parse_result != false,
                     "Failed to parse action value '{}'",
-                    ice::String{ attribute->value(), ice::ucount(attribute->value_size()) }
+                    ice::String{ attribute->value(), attribute->value_size() }
                 );
             }
 

@@ -338,8 +338,8 @@ auto ice_setup(
         ice::path::join(config.dev_dirs.assets, "../source/data");
         ice::path::normalize(config.dev_dirs.shaders);
         ice::path::normalize(config.dev_dirs.assets);
-        ice::string::push_back(config.dev_dirs.shaders, '/');
-        ice::string::push_back(config.dev_dirs.assets, '/');
+        config.dev_dirs.shaders.push_back('/');
+        config.dev_dirs.assets.push_back('/');
         ice::array::push_back(resource_paths, config.dev_dirs.assets);
         ice::array::push_back(resource_paths, config.dev_dirs.shaders);
     }

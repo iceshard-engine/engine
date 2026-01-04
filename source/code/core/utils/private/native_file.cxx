@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "native_aio.hxx"
@@ -83,7 +83,7 @@ namespace ice::native_file
     bool exists_file(ice::native_file::FilePath path) noexcept
     {
         IPT_ZONE_SCOPED;
-        DWORD const result = GetFileAttributesW(ice::string::begin(path));
+        DWORD const result = GetFileAttributesW(path.begin());
         return result != INVALID_FILE_ATTRIBUTES
             && (result == FILE_ATTRIBUTE_NORMAL
                 || (result & (FILE_ATTRIBUTE_ARCHIVE | FILE_ATTRIBUTE_READONLY)) != 0);
@@ -97,7 +97,7 @@ namespace ice::native_file
         IPT_ZONE_SCOPED;
         ice::win32::FileHandle handle{
             CreateFileW(
-                ice::string::begin(path),
+                path.begin(),
                 translate_access(flags),
                 translate_mode(flags), // FILE_SHARE_*
                 NULL, // SECURITY ATTRIBS
@@ -126,7 +126,7 @@ namespace ice::native_file
         ice::native_aio::aio_file_flags(port, flags);
         ice::win32::FileHandle result = ice::win32::FileHandle{
             CreateFileW(
-                ice::string::begin(path),
+                path.begin(),
                 translate_access(flags),
                 translate_mode(flags), // FILE_SHARE_*
                 NULL, // SECURITY ATTRIBS
@@ -357,20 +357,20 @@ namespace ice::native_file
     ) noexcept
     {
         // Store for later information about the current state of dirpath
-        if (ice::string::back(dirpath) != L'/')
+        if (dirpath.back() != L'/')
         {
-            ice::string::push_back(dirpath, L'/');
+            dirpath.push_back(L'/');
         }
 
-        ice::u32 const size_dirpath = ice::string::size(dirpath);
-        ice::string::push_back(dirpath, L'*');
+        ice::ncount const size_dirpath = dirpath.size();
+        dirpath.push_back(L'*');
 
         WIN32_FIND_DATA direntry;
         HANDLE const handle = FindFirstFileW(
-            ice::string::begin(dirpath),
+            dirpath.begin(),
             &direntry
         );
-        ice::string::pop_back(dirpath);
+        dirpath.pop_back();
 
         bool traverse_success = false;
         if (handle != INVALID_HANDLE_VALUE)
@@ -391,7 +391,7 @@ namespace ice::native_file
 
                 // Append the entry name to the path
                 ice::native_file::FilePath const entry_name = (ice::wchar const*)direntry.cFileName;
-                ice::string::push_back(dirpath, entry_name);
+                dirpath.push_back(entry_name);
 
                 // Call the callback for the next entry encountered...
                 ice::native_file::TraverseAction const action = callback(basepath, dirpath, type, userdata);
@@ -411,7 +411,7 @@ namespace ice::native_file
                 }
 
                 // Rollback the directory string to the base value
-                ice::string::resize(dirpath, size_dirpath);
+                dirpath.resize(size_dirpath);
 
             } while (FindNextFileW(handle, &direntry) != FALSE);
             FindClose(handle);
@@ -427,8 +427,8 @@ namespace ice::native_file
     {
         ice::StackAllocator_1024 temp_alloc;
         ice::native_file::HeapFilePath dirpath{ temp_alloc };
-        ice::string::reserve(dirpath, 256 * 2); // 512 bytes for paths
-        ice::string::push_back(dirpath, starting_dir);
+        dirpath.reserve(256 * 2); // 512 bytes for paths
+        dirpath.push_back(starting_dir);
         return traverse_directories_internal(dirpath, dirpath, callback, userdata);
     }
 
@@ -437,14 +437,14 @@ namespace ice::native_file
     ) noexcept
     {
         // If zero, we failed, check why.
-        if (CreateDirectory(ice::string::begin(dirpath), NULL) == 0)
+        if (CreateDirectory(dirpath.begin(), NULL) == 0)
         {
             // Try the next path before retrying this path.
             if (GetLastError() == ERROR_PATH_NOT_FOUND)
             {
                 // Remove the top-most the directory explicitly.
-                ice::ucount const dirslash = ice::string::find_last_of(ice::WString{ dirpath }, ice::WString{ L"\\/" });
-                if (dirslash == ice::String_NPos)
+                ice::nindex const dirslash = dirpath.find_last_of(L"\\/");
+                if (dirslash == ice::none_index)
                 {
                     return false;
                 }
@@ -460,7 +460,7 @@ namespace ice::native_file
                 dirpath[dirslash] = '/';
 
                 // Try again to create the directory
-                return CreateDirectory(ice::string::begin(dirpath), NULL) != 0;
+                return CreateDirectory(dirpath.begin(), NULL) != 0;
             }
             // else it's either 'ERROR_ALREADY_EXISTS' so we continue.
         }
@@ -488,7 +488,7 @@ namespace ice::native_file
         ice::String path_string
     ) noexcept
     {
-        ice::string::clear(out_filepath);
+        out_filepath.clear();
         ice::utf8_to_wide_append(path_string, out_filepath);
     }
 
@@ -497,7 +497,7 @@ namespace ice::native_file
         ice::HeapString<>& out_string
     ) noexcept
     {
-        ice::string::clear(out_string);
+        out_string.clear();
         ice::wide_to_utf8_append(path, out_string);
     }
 
@@ -507,11 +507,11 @@ namespace ice::native_file
     ) noexcept
     {
         // TODO: Think if maybe moving this to a different function is possible?
-        if (ice::string::any(path) && ice::string::back(path) != L'/' && ice::string::back(path) != L'\\')
+        if (path.not_empty() && path.back() != L'/' && path.back() != L'\\')
         {
-            if (ice::string::front(string) != '/' && ice::string::front(string) != '\\')
+            if (string.front() != '/' && string.front() != '\\')
             {
-                ice::string::push_back(path, L'/');
+                path.push_back(L'/');
             }
         }
         ice::utf8_to_wide_append(string, path);
@@ -793,8 +793,8 @@ namespace ice::native_file
             else if (errno == ENOENT)
             {
                 // Remove the top-most the directory explicitly.
-                ice::ucount const dirslash = ice::string::find_last_of(dirpath, ice::String{ "/" });
-                if (dirslash == ice::String_NPos)
+                ice::nindex const dirslash = ice::string::find_last_of(dirpath, ice::String{ "/" });
+                if (dirslash == ice::none_index)
                 {
                     return false;
                 }

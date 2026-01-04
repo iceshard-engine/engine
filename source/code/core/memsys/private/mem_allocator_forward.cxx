@@ -13,7 +13,7 @@ namespace ice
         void* _end;
 
         // Only used for tracking of deallocations, do not use to calculate pointers!
-        ice::ucount _alloc_count;
+        ice::u32 _alloc_count;
 
         MemoryBucket* _next;
 
@@ -28,7 +28,7 @@ namespace ice
         static auto alloc_buckets(
             ice::Allocator& alloc,
             ice::ForwardAllocatorParams const& params,
-            ice::ucount count
+            ice::u32 count
         ) noexcept -> MemoryBucket*;
     };
 
@@ -79,7 +79,7 @@ namespace ice
 
     void ForwardAllocator::reset() noexcept
     {
-        ice::ucount skipped_bucket_count = 0;
+        ice::u32 skipped_bucket_count = 0;
 
         MemoryBucket* new_list = nullptr;
         while (_buckets != nullptr)
@@ -208,7 +208,7 @@ namespace ice
     auto ForwardAllocator::MemoryBucket::alloc_buckets(
         ice::Allocator& alloc,
         ice::ForwardAllocatorParams const& params,
-        ice::ucount count
+        ice::u32 count
     ) noexcept -> MemoryBucket*
     {
         MemoryBucket* result = nullptr;

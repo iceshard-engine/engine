@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "ip_ui_oven_utils.hxx"
@@ -16,31 +16,20 @@ namespace ice
         ice::String name
     ) noexcept -> rapidxml_ns::xml_node<char> const*
     {
-        if (ice::string::any(ns))
+        if (ns.not_empty())
         {
-            if (ice::string::any(name))
+            if (name.not_empty())
             {
-                return parent->first_node_ns(
-                    ice::string::begin(ns),
-                    ice::string::size(ns),
-                    ice::string::begin(name),
-                    ice::string::size(name)
-                );
+                return parent->first_node_ns(ns.begin(), ns.size(), name.begin(), name.size());
             }
             else
             {
-                return parent->first_node_ns(
-                    ice::string::begin(ns),
-                    ice::string::size(ns)
-                );
+                return parent->first_node_ns(ns.begin(), ns.size());
             }
         }
         else
         {
-            return parent->first_node(
-                ice::string::begin(name),
-                ice::string::size(name)
-            );
+            return parent->first_node(name.begin(), name.size());
         }
     }
 
@@ -50,30 +39,30 @@ namespace ice
         ice::String name
     ) noexcept -> rapidxml_ns::xml_node<char> const*
     {
-        if (ice::string::any(ns))
+        if (ns.not_empty())
         {
-            if (ice::string::any(name))
+            if (name.not_empty())
             {
                 return parent->next_sibling_ns(
-                    ice::string::begin(ns),
-                    ice::string::size(ns),
-                    ice::string::begin(name),
-                    ice::string::size(name)
+                    ns.begin(),
+                    ns.size(),
+                    name.begin(),
+                    name.size()
                 );
             }
             else
             {
                 return parent->next_sibling_ns(
-                    ice::string::begin(ns),
-                    ice::string::size(ns)
+                    ns.begin(),
+                    ns.size()
                 );
             }
         }
         else
         {
             return parent->next_sibling(
-                ice::string::begin(name),
-                ice::string::size(name)
+                name.begin(),
+                name.size()
             );
         }
     }
@@ -84,8 +73,8 @@ namespace ice
     ) noexcept -> rapidxml_ns::xml_attribute<char> const*
     {
         return node->first_attribute(
-            ice::string::begin(name),
-            ice::string::size(name)
+            name.begin(),
+            name.size()
         );
     }
 
@@ -95,8 +84,8 @@ namespace ice
     ) noexcept -> rapidxml_ns::xml_attribute<char> const*
     {
         return attrib->next_attribute(
-            ice::string::begin(name),
-            ice::string::size(name)
+            name.begin(),
+            name.size()
         );
     }
 
@@ -104,35 +93,35 @@ namespace ice
         rapidxml_ns::xml_node<char> const* node
     ) noexcept -> ice::String
     {
-        return { node->local_name(), ice::ucount(node->local_name_size()) };
+        return { node->local_name(), node->local_name_size() };
     }
 
     auto xml_name(
         rapidxml_ns::xml_attribute<char> const* attrib
     ) noexcept -> ice::String
     {
-        return { attrib->name(), ice::ucount(attrib->name_size()) };
+        return { attrib->name(), attrib->name_size() };
     }
 
     auto xml_value(
         rapidxml_ns::xml_node<char> const* node
     ) noexcept -> ice::String
     {
-        return { node->value(), ice::ucount(node->value_size()) };
+        return { node->value(), node->value_size() };
     }
 
     auto xml_value(
         rapidxml_ns::xml_attribute<char> const* attrib
     ) noexcept -> ice::String
     {
-        return attrib == nullptr ? "" : ice::String{ attrib->value(), ice::ucount(attrib->value_size()) };
+        return attrib == nullptr ? "" : ice::String{ attrib->value(), attrib->value_size() };
     }
 
     auto xml_value_noutf8(
         rapidxml_ns::xml_attribute<char> const* attrib
     ) noexcept -> ice::String
     {
-        return attrib == nullptr ? "" : ice::String{ attrib->value(), ice::ucount(attrib->value_size()) };
+        return attrib == nullptr ? "" : ice::String{ attrib->value(), attrib->value_size() };
     }
 
     void parse_element_size(
@@ -143,13 +132,13 @@ namespace ice
     {
         using ice::ui::ElementFlags;
 
-        ice::ucount const separator = ice::string::find_first_of(value, ',');
+        ice::nindex const separator = value.find_first_of(',');
 
         bool valid_values = true;
-        if (separator != ice::String_NPos)
+        if (separator != ice::none_index)
         {
-            ice::String left = ice::string::substr(value, 0, separator);
-            ice::String right = ice::string::substr(value, separator + 1);
+            ice::String left = value.substr(0, separator);
+            ice::String right = value.substr(separator + 1);
 
             if (ice::from_chars(left, left, out_size.width) == false)
             {
@@ -200,7 +189,7 @@ namespace ice
         }
 
         ICE_ASSERT(
-            valid_values || ice::string::empty(value),
+            valid_values || value.is_empty(),
             "Invalid value in 'size' attribute! Valid values are: {}, {}, <float>.",
             ice::Constant_UIAttributeKeyword_Auto,
             ice::Constant_UIAttributeKeyword_Stretch
@@ -215,13 +204,13 @@ namespace ice
     {
         using ice::ui::ElementFlags;
 
-        ice::ucount const separator = ice::string::find_first_of(value, ',');
+        ice::nindex const separator = value.find_first_of(',');
 
         bool valid_values = true;
-        if (separator != ice::String_NPos)
+        if (separator != ice::none_index)
         {
-            ice::String left = ice::string::substr(value, 0, separator);
-            ice::String right = ice::string::substr(value, separator + 1);
+            ice::String left = value.substr(0, separator);
+            ice::String right = value.substr(separator + 1);
 
             if (ice::from_chars(left, left, out_pos.x) == false)
             {
@@ -268,7 +257,7 @@ namespace ice
         }
 
         ICE_ASSERT(
-            valid_values || ice::string::empty(value),
+            valid_values || value.is_empty(),
             "Invalid value in 'position' attribute! Valid values are: {}, <float>.",
             ice::Constant_UIAttributeKeyword_Auto
         );
@@ -282,17 +271,17 @@ namespace ice
     {
         using ice::ui::ElementFlags;
 
-        ice::ucount const sep1 = ice::string::find_first_of(value, ',', 0);
-        ice::ucount const sep2 = ice::string::find_first_of(value, ',', sep1 + 1);
-        ice::ucount const sep3 = ice::string::find_first_of(value, ',', sep2 + 1);
+        ice::nindex const sep1 = value.find_first_of(',', 0);
+        ice::nindex const sep2 = value.find_first_of(',', sep1 + 1);
+        ice::nindex const sep3 = value.find_first_of(',', sep2 + 1);
 
         bool valid_values = true;
-        if (sep3 != ice::String_NPos && sep2 != ice::String_NPos && sep1 != ice::String_NPos)
+        if (sep3 != ice::none_index && sep2 != ice::none_index && sep1 != ice::none_index)
         {
-            ice::String first = ice::string::substr(value, 0, sep1);
-            ice::String second = ice::string::substr(value, sep1 + 1, (sep2 - sep1) - 1);
-            ice::String third = ice::string::substr(value, sep2 + 1, (sep3 - sep2) - 1);
-            ice::String fourth = ice::string::substr(value, sep3 + 1);
+            ice::String first = value.substr(0, sep1);
+            ice::String second = value.substr(sep1 + 1, (sep2 - sep1) - 1);
+            ice::String third = value.substr(sep2 + 1, (sep3 - sep2) - 1);
+            ice::String fourth = value.substr(sep3 + 1);
 
             if (ice::from_chars(first, first, out_offset.left) == false)
             {
@@ -339,10 +328,10 @@ namespace ice
                 }
             }
         }
-        else if (sep1 != ice::String_NPos)
+        else if (sep1 != ice::none_index)
         {
-            ice::String first = ice::string::substr(value, 0, sep1);
-            ice::String second = ice::string::substr(value, sep1 + 1);
+            ice::String first = value.substr(0, sep1);
+            ice::String second = value.substr(sep1 + 1);
 
             if (ice::from_chars(first, first, out_offset.left) == false)
             {
@@ -396,7 +385,7 @@ namespace ice
         }
 
         ICE_ASSERT(
-            valid_values || ice::string::empty(value),
+            valid_values || value.is_empty(),
             "Invalid value in 'padding' / 'margin' attribute! Valid values are: {}, <float>.",
             ice::Constant_UIAttributeKeyword_Auto
         );
@@ -409,22 +398,22 @@ namespace ice
     {
         using ice::ui::ElementFlags;
 
-        ice::ucount const sep1 = ice::string::find_first_of(value, ',', 0);
-        ice::ucount const sep2 = ice::string::find_first_of(value, ',', sep1 + 1);
+        ice::nindex const sep1 = value.find_first_of(',', 0);
+        ice::nindex const sep2 = value.find_first_of(',', sep1 + 1);
 
         bool valid_values = false;
-        if (sep1 != ice::String_NPos && sep2 != ice::String_NPos)
+        if (sep1 != ice::none_index && sep2 != ice::none_index)
         {
-            ice::String first = ice::string::substr(value, 0, sep1);
-            ice::String second = ice::string::substr(value, sep1 + 1, (sep2 - sep1) - 1);
-            ice::String third = ice::string::substr(value, sep2 + 1);
+            ice::String first = value.substr(0, sep1);
+            ice::String second = value.substr(sep1 + 1, (sep2 - sep1) - 1);
+            ice::String third = value.substr(sep2 + 1);
 
             ice::from_chars(first, out_color.red);
             ice::from_chars(second, out_color.green);
             ice::from_chars(third, out_color.blue);
             valid_values = true;
         }
-        else if (sep1 == ice::String_NPos && sep2 == ice::String_NPos)
+        else if (sep1 == ice::none_index && sep2 == ice::none_index)
         {
             ice::from_chars(value, out_color.red);
             out_color.green = out_color.red;

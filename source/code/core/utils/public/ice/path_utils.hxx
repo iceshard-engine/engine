@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -16,7 +16,7 @@ namespace ice::path
     bool is_absolute_root(ice::String path) noexcept;
 
     //! \return The lenght of the path.
-    auto length(ice::String path) noexcept -> ice::ucount;
+    auto length(ice::String path) noexcept -> ice::u32;
 
     //! \return The last extension part (with the dot character) or empty string if no extension was found.
     auto extension(ice::String path) noexcept -> ice::String;
@@ -59,7 +59,7 @@ namespace ice::path
 
     bool is_absolute(ice::WString path) noexcept;
     bool is_absolute_root(ice::WString path) noexcept;
-    auto length(ice::WString path) noexcept -> ice::ucount;
+    auto length(ice::WString path) noexcept -> ice::u32;
     auto extension(ice::WString path) noexcept -> ice::WString;
     auto filename(ice::WString path) noexcept -> ice::WString;
     auto basename(ice::WString path) noexcept -> ice::WString;

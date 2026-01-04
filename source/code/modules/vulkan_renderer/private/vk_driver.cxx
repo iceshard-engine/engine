@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "vk_driver.hxx"
@@ -371,7 +371,7 @@ namespace ice::render::vk
             ice::array::push_back(queue_create_infos, queue_create_info);
         }
 
-        ice::ucount count_extensions = 0;
+        ice::u32 count_extensions = 0;
         ice::Array<ExtensionName> extension_names{ _allocator };
         Extension const device_extensions = extensions_gather_names(extension_names, count_extensions, _vk_physical_device);
         ICE_ASSERT_CORE(ice::has_all(device_extensions, Extension::VkD_Swapchain));

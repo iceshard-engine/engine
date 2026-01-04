@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/ecs/ecs_entity_operations.hxx>
@@ -323,8 +323,8 @@ namespace ice::ecs
             return Result{ *this };
         }
 
-        ice::ucount const entity_count = mode == 2 ? index_create_count : ice::count(entities);
-        ice::ucount const component_count = ice::count(component_info.names);
+        ice::u32 const entity_count = mode == 2 ? index_create_count : ice::count(entities);
+        ice::u32 const component_count = ice::count(component_info.names);
 
         ice::meminfo additional_data_size = ice::meminfo{ filter_data_size, ice::ualign::b_8 };
         additional_data_size += ice::meminfo_of<ice::ecs::Entity> * entity_count;
@@ -398,7 +398,7 @@ namespace ice::ecs
             ice::memcpy(operation_data, data.location, data.size);
 
             // Save the offset
-            offsets_ptr[component_idx] = ice::ucount(ice::ptr_distance(data_beg, operation_data).value);
+            offsets_ptr[component_idx] = ice::u32(ice::ptr_distance(data_beg, operation_data).value);
 
             operation_data = ice::ptr_add(operation_data, data.size);
             component_idx += 1;
@@ -408,7 +408,7 @@ namespace ice::ecs
         operation->entities = entities_ptr;
         operation->entity_count = entity_count;
         operation->component_data = component_info_ptr;
-        operation->component_data_size = ice::ucount(ice::ptr_distance(component_info_ptr, operation_data).value);
+        operation->component_data_size = ice::u32(ice::ptr_distance(component_info_ptr, operation_data).value);
         operation->filter_data = filter_ptr;
 
         if (mode == 2)
@@ -424,7 +424,7 @@ namespace ice::ecs
     {
         if (mode != 0)
         {
-            ice::ucount const entity_count = mode == 2 ? index_create_count : ice::count(entities);
+            ice::u32 const entity_count = mode == 2 ? index_create_count : ice::count(entities);
 
             ice::meminfo required_memory = ice::meminfo{ filter_data_size, ice::ualign::b_8 };
             required_memory += ice::meminfo_of<ice::ecs::Entity> * entity_count;

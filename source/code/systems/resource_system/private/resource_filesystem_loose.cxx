@@ -53,7 +53,7 @@ namespace ice
             ice::native_file::path_from_string(native_filepath, filepath);
             if (readmeta)
             {
-                ice::string::push_back(native_filepath, ISP_PATH_LITERAL(".isrm"));
+                native_filepath.push_back(ISP_PATH_LITERAL(".isrm"));
             }
 
             IPT_MESSAGE_STR(filepath);
@@ -82,7 +82,7 @@ namespace ice
             ice::native_file::path_from_string(native_filepath, filepath);
             if (readmeta)
             {
-                ice::string::push_back(native_filepath, ISP_PATH_LITERAL(".isrm"));
+                native_filepath.push_back(ISP_PATH_LITERAL(".isrm"));
             }
 
             ice::native_file::File handle = ice::native_file::open_file(native_filepath);
@@ -117,7 +117,7 @@ namespace ice
             ice::Memory metafile_data = alloc.allocate(meta_size);
             if (ice::native_file::read_file(meta_handle, meta_size, metafile_data) > 0_B)
             {
-                if (ice::config::from_json(out_metadata, ice::string::from_data(metafile_data)))
+                if (ice::config::from_json(out_metadata, ice::string_from_data<char>(metafile_data)))
                 {
                     // return the memory, we won't release it
                     out_memory = metafile_data;
@@ -323,8 +323,8 @@ namespace ice
 
             // TODO: Decide how to handle the basepath naming.
             bool const remove_slash = utf8_file_path[ice::path::length(base_path)] == '/';
-            ice::String utf8_origin_name = ice::string::substr(utf8_file_path, ice::path::length(base_path) + remove_slash);
-            ice::String utf8_uri_path = ice::string::substr(utf8_file_path, ice::path::length(uri_base_path));
+            ice::String const utf8_origin_name = utf8_file_path.substr(ice::path::length(base_path) + remove_slash);
+            ice::String const utf8_uri_path = utf8_file_path.substr(ice::path::length(uri_base_path));
 
             IPT_ZONE_SCOPED_NAMED("stage: create_resource");
             main_resource = ice::create_resource_object<ice::LooseFilesResource>(

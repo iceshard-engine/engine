@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/module_register.hxx>
@@ -33,7 +33,7 @@ namespace ice
 
         static bool from_app(ModuleNegotiatorAPIContext*) noexcept;
         static bool get_module_api(ModuleNegotiatorAPIContext*, ice::StringID_Hash, ice::u32, ice::ModuleAPI*) noexcept;
-        static bool get_module_apis(ModuleNegotiatorAPIContext*, ice::StringID_Hash, ice::u32, ice::ModuleAPI*, ice::ucount*) noexcept;
+        static bool get_module_apis(ModuleNegotiatorAPIContext*, ice::StringID_Hash, ice::u32, ice::ModuleAPI*, ice::u32*) noexcept;
         static bool register_module(ModuleNegotiatorAPIContext*, ice::StringID_Hash, FnModuleSelectAPI*) noexcept;
     };
 
@@ -58,13 +58,13 @@ namespace ice
         auto api_count(
             ice::StringID_Arg name,
             ice::u32 version
-        ) const noexcept -> ice::ucount;
+        ) const noexcept -> ice::u32;
 
         bool query_apis(
             ice::StringID_Arg api_name,
             ice::u32 version,
             ice::ModuleAPI* out_array,
-            ice::ucount* inout_array_size
+            ice::u32* inout_array_size
         ) const noexcept override;
 
         bool register_module(
@@ -167,9 +167,9 @@ namespace ice
     auto DefaultModuleRegister::api_count(
         ice::StringID_Arg api_name,
         ice::u32 version
-    ) const noexcept -> ice::ucount
+    ) const noexcept -> ice::u32
     {
-        ice::ucount result = 0;
+        ice::u32 result = 0;
         auto it = ice::multi_hashmap::find_first(_modules, ice::hash(api_name));
         while (it != nullptr)
         {
@@ -187,7 +187,7 @@ namespace ice
         ice::StringID_Arg api_name,
         ice::u32 version,
         ice::ModuleAPI* out_array,
-        ice::ucount* inout_array_size
+        ice::u32* inout_array_size
     ) const noexcept
     {
         if (out_array == nullptr)
@@ -204,7 +204,7 @@ namespace ice
         ice::u32 idx = 0;
         auto it = ice::multi_hashmap::find_first(_modules, ice::hash(api_name));
 
-        ice::ucount const array_size = *inout_array_size;
+        ice::u32 const array_size = *inout_array_size;
         while (it != nullptr && idx < array_size)
         {
             ice::ModuleAPI api_ptr;
@@ -237,7 +237,7 @@ namespace ice
         ice::StringID_Hash api_name,
         ice::u32 version,
         ice::ModuleAPI* out_api,
-        ice::ucount* inout_array_size
+        ice::u32* inout_array_size
     ) noexcept
     {
         return ctx->module_register->query_apis(ice::StringID{ api_name }, version, out_api, inout_array_size);

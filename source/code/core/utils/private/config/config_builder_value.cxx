@@ -86,7 +86,7 @@ namespace ice
 
     auto ice::ConfigBuilderValue::operator[](ice::String key) noexcept -> ConfigBuilderValue
     {
-        ICE_ASSERT_CORE(ice::string::find_first_of(key, '.') == ice::String_NPos);
+        ICE_ASSERT_CORE(key.find_first_of('.') == ice::none_index);
 
         ConfigBuilderEntry* const entry = _idx == ice::u32_max
             ? _internal : (static_cast<ConfigBuilderContainer*>(_internal)->_entries._data + _idx);

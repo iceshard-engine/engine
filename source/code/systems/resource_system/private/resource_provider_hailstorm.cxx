@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "resource_aio_request.hxx"
@@ -268,10 +268,10 @@ namespace ice
             }
 
             ice::HeapString<> prefix{ _allocator, _packname };
-            ice::string::push_back(prefix, "/");
+            prefix.push_back("/");
 
             ice::usize::base_type const size_extended_paths = hailstorm::v1::prefixed_resource_paths_size(
-                _pack.paths, (ice::ucount)_pack.resources.size(), ice::String{ prefix }
+                _pack.paths, (ice::u32)_pack.resources.size(), ice::String{ prefix }
             );
 
             // We allocate enough memory to keep all original paths prefixed with the resource file name and a slash.
@@ -293,7 +293,7 @@ namespace ice
 
             bool const prefixing_success = v1::prefix_resource_paths(
                 _pack.paths,
-                { resptr, (ice::ucount)_pack.resources.size() },
+                { resptr, (ice::u32)_pack.resources.size() },
                 { _paths_memory.location, _paths_memory.size.value, (size_t)_paths_memory.alignment },
                 ice::String{ prefix }
             );
@@ -415,7 +415,7 @@ namespace ice
     ) noexcept -> ice::TaskExpected<ice::Data>
     {
         hailstorm::HailstormResource const& hsres = static_cast<ice::HailstormResource const*>(resource)->_handle;
-        if (ice::string::size(fragment) && fragment == "meta")
+        if (fragment.not_empty() && fragment == "meta")
         {
             co_return co_await _loaders[hsres.meta_chunk]->request_slice(hsres.meta_offset, hsres.meta_size, _aioport);
         }

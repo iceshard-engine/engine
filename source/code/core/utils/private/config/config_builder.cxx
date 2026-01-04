@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/config/config_builder.hxx>
@@ -119,9 +119,9 @@ namespace ice
             }
             else if (entry->vtype == CONFIG_VALTYPE_STRING)
             {
-                ice::ucount bytes = 0;
-                ice::ucount const size = ice::string::detail::read_varstring_size(entry->data.val_varstr->_data, bytes);
-                out_data_size += { bytes + size + 1 }; // +1 for '\0'
+                ice::usize bytes = 0_B;
+                ice::ncount const size = ice::varstring::read_size(entry->data.val_varstr->_data, bytes);
+                out_data_size += bytes + size.bytes() + 1_B; // +1 for '\0'
             }
             else if (entry->vtype >= CONFIG_VALTYPE_LARGE)
             {
@@ -228,7 +228,7 @@ namespace ice
             else if (it_entry->vtype == CONFIG_VALTYPE_STRING)
             {
                 ice::HeapVarString<> const& varstr = *config._entries[out_keyidx].data.val_varstr;
-                ice::Data const in_data = ice::string::data_view(varstr);
+                ice::Data const in_data = varstr.data_view();
 
                 // Set the '\0' character
                 *(reinterpret_cast<char*>(out_data.memory.location) + (out_data.offset_strings - 1)) = '\0';
@@ -399,16 +399,16 @@ namespace ice
         // Reserve space to hold all keystring entries and build the string buffer.
         ice::array::resize(keyoffsets, ice::hashmap::count(keystrings));
 
-        ice::u32 keystr_offset = 0;
+        ice::ncount keystr_offset = 0;
         for (CBKeyString const& keystr : ice::hashmap::values(keystrings))
         {
             // Copy and advance the pointer
-            ice::memcpy(final_keystrings_mem, ice::string::data_view(keystr.value));
-            final_keystrings_mem = ice::ptr_add(final_keystrings_mem, ice::string::data_view(keystr.value).size);
+            ice::memcpy(final_keystrings_mem, keystr.value.data_view());
+            final_keystrings_mem = ice::ptr_add(final_keystrings_mem, keystr.value.size());
 
             // Store the offset
-            keyoffsets[keystr.index] = keystr_offset;
-            keystr_offset += ice::string::size(keystr.value);
+            keyoffsets[keystr.index] = keystr_offset.u32();
+            keystr_offset += keystr.value.size();
         }
 
         // Build the new key and value arrays + copy large data.

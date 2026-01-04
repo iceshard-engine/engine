@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -85,7 +85,7 @@ namespace ice
         virtual auto filter_resource_uris(
             ice::ResourceFilter const& filter,
             ice::Array<ice::URI>& out_uris
-        ) const noexcept -> ice::TaskExpected<ice::ucount> = 0;
+        ) const noexcept -> ice::TaskExpected<ice::u32> = 0;
 
 
         virtual auto set_resource(

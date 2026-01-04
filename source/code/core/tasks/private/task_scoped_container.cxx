@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/task_scoped_container.hxx>
@@ -22,11 +22,11 @@ namespace ice
     }
 
     auto ScopedTaskContainer::create_tasks(
-        ice::ucount count,
+        ice::u32 count,
         ice::ShardID shardid
     ) noexcept -> ice::Span<ice::Task<>>
     {
-        ice::ucount const new_count = ice::array::count(_tasks) + count;
+        ice::u32 const new_count = ice::array::count(_tasks) + count;
 
         if (new_count > ice::array::capacity(_tasks))
         {
@@ -44,9 +44,9 @@ namespace ice
         co_await ice::await_scheduled_on(_tasks, scheduler, resumer);
     }
 
-    auto ScopedTaskContainer::execute_tasks() noexcept -> ice::ucount
+    auto ScopedTaskContainer::execute_tasks() noexcept -> ice::u32
     {
-        ice::ucount const result = ice::array::count(_tasks);
+        ice::u32 const result = ice::array::count(_tasks);
         if (result > 0)
         {
             _barrier.reset(static_cast<ice::u8>(result));
@@ -56,7 +56,7 @@ namespace ice
         return result;
     }
 
-    auto ScopedTaskContainer::running_tasks() const noexcept -> ice::ucount
+    auto ScopedTaskContainer::running_tasks() const noexcept -> ice::u32
     {
         return _barrier.value();
     }

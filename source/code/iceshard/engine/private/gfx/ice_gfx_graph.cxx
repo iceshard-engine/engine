@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "ice_gfx_graph.hxx"
@@ -90,7 +90,7 @@ namespace ice::gfx
     {
         if (ice::hashmap::has(_objects, ice::hash(pass.name)) == false)
         {
-            ice::ucount res_count = 0;
+            ice::u32 res_count = 0;
             for (ice::gfx::GfxGraphStage const& stage : pass.stages)
             {
                 res_count += ice::count(stage.depth_stencil) + ice::count(stage.inputs) + ice::count(stage.outputs);
@@ -130,7 +130,7 @@ namespace ice::gfx
 
         ice::vec2u extent = swapchain.extent();
 
-        ice::ucount const count_images = ice::count(resources);
+        ice::u32 const count_images = ice::count(resources);
 
         ice::array::clear(out_images);
         ice::array::reserve(out_images, count_images);
@@ -373,10 +373,10 @@ namespace ice::gfx
             return false;
         }
 
-        ice::ucount const fb_idx = _context.next_frame();
+        ice::u32 const fb_idx = _context.next_frame();
 
         // TODO: Can we do this differently?
-        if (fb_idx == ice::ucount_max)
+        if (fb_idx == ice::u32_max)
         {
             return false;
         }

@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "win32_storage.hxx"
@@ -17,7 +17,7 @@
 namespace ice::platform::win32
 {
 
-    static constexpr ice::ucount Constant_AppNameReservedLength = 24;
+    static constexpr ice::u32 Constant_AppNameReservedLength = 24;
 
     namespace detail
     {
@@ -27,15 +27,15 @@ namespace ice::platform::win32
             PWSTR path;
             if (SHGetKnownFolderPath(known_path_guid, KF_FLAG_CREATE, NULL, &path) == S_OK)
             {
-                ice::ucount const path_len = ice::ucount(lstrlenW(path));
+                ice::u32 const path_len = ice::u32(lstrlenW(path));
                 // Reserve additional space for the app name, so we don't need to resize buffers if that happens.
-                ice::string::reserve(out_path, path_len + Constant_AppNameReservedLength);
-                ice::wide_to_utf8_append({ path, ice::ucount(lstrlenW(path)) }, out_path);
-                ice::string::push_back(out_path, '\\');
-                if (ice::string::any(appname))
+                out_path.reserve(path_len + Constant_AppNameReservedLength);
+                ice::wide_to_utf8_append({ path, ice::u32(lstrlenW(path)) }, out_path);
+                out_path.push_back('\\');
+                if (appname.not_empty())
                 {
-                    ice::string::push_back(out_path, appname);
-                    ice::string::push_back(out_path, '\\');
+                    out_path.push_back(appname);
+                    out_path.push_back('\\');
                 }
                 ice::path::normalize(out_path);
                 CoTaskMemFree(path);
@@ -46,9 +46,9 @@ namespace ice::platform::win32
         {
             ice::StackAllocator<512_B> temp_alloc;
             ice::HeapString<ice::wchar> temp_paths{ temp_alloc };
-            ice::string::reserve(temp_paths, 256);
+            temp_paths.reserve(256);
             ice::utf8_to_wide_append(path, temp_paths);
-            return CreateDirectoryW(ice::string::begin(temp_paths), NULL);
+            return CreateDirectoryW(temp_paths.begin(), NULL);
         }
 
     } // namespace detail
@@ -104,11 +104,11 @@ namespace ice::platform::win32
 
     void win32::Win32Storage::reload_paths(ice::String appname) noexcept
     {
-        ice::string::clear(_save_location);
-        ice::string::clear(_cache_location);
-        ice::string::clear(_temp_location);
-        ice::string::clear(_pictures_location);
-        ice::string::clear(_other_location);
+        _save_location.clear();
+        _cache_location.clear();
+        _temp_location.clear();
+        _pictures_location.clear();
+        _other_location.clear();
 
         detail::get_known_path(_save_location, FOLDERID_SavedGames, appname);
         detail::get_known_path(_cache_location, FOLDERID_LocalAppData, appname);
@@ -123,7 +123,7 @@ namespace ice::platform::win32
         WCHAR tempbuff[256];
         // GetTempPathW already returns a path ending with a slash character.
         DWORD const len = GetTempPathW(256, tempbuff);
-        ice::wide_to_utf8_append({ tempbuff, ice::ucount(len) }, _temp_location);
+        ice::wide_to_utf8_append({ tempbuff, ice::u32(len) }, _temp_location);
         ice::path::normalize(_temp_location);
     }
 

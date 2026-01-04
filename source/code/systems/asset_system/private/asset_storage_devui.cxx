@@ -5,9 +5,7 @@
 #include "asset_storage_devui.hxx"
 #include <ice/devui_context.hxx>
 #include <ice/devui_frame.hxx>
-
-#include <imgui/imgui.h>
-#undef assert
+#include <ice/devui_imgui.hxx>
 
 namespace ice
 {
@@ -73,14 +71,14 @@ namespace ice
                 {
                     ImGui::TableNextRow();
                     ImGui::TableNextColumn();
-                    ImGui::TextUnformatted(ice::string::begin(category.name), ice::string::end(category.name));
+                    ImGui::TextUnformatted(category.name);
 
                     ice::AssetCategoryDefinition const& def = _storage._asset_archive->find_definition(category);
                     if (ImGui::TableNextColumn())
                     {
                         for (ice::String ext : def.resource_extensions)
                         {
-                            ImGui::TextUnformatted(ice::string::begin(ext), ice::string::end(ext)); ImGui::SameLine();
+                            ImGui::TextUnformatted(ext); ImGui::SameLine();
                         }
                     }
 

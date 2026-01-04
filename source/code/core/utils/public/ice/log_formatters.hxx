@@ -15,7 +15,7 @@ struct fmt::formatter<ice::BasicString<CharType>> : public fmt::formatter<std::b
     template<typename FormatContext>
     constexpr auto format(ice::BasicString<CharType> value, FormatContext& ctx) const noexcept
     {
-        return fmt::formatter<std::basic_string_view<CharType>>::format({ value._data, value._size }, ctx);
+        return fmt::formatter<std::basic_string_view<CharType>>::format(value, ctx);
     }
 };
 
@@ -79,6 +79,22 @@ struct fmt::formatter<ice::BaseStringID<DebugImpl>>
                 return fmt::format_to(ctx.out(), "[sid:{:16x}]'{}'", ice::stringid_hash(value).value, ice::stringid_hint(value));
             }
         }
+    }
+};
+
+template<>
+struct fmt::formatter<ice::ncount>
+{
+    template<typename ParseContext>
+    constexpr auto parse(ParseContext& ctx)
+    {
+        return ctx.begin();
+    }
+
+    template<typename FormatContext>
+    constexpr auto format(ice::ncount value, FormatContext& ctx) const noexcept
+    {
+        return fmt::format_to(ctx.out(), "{}", value.native());
     }
 };
 

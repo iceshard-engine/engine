@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -153,12 +153,12 @@ namespace ice
             ice::ResourceProvider& provider,
             ice::ResourceFilter const& filter,
             ice::Array<ice::URI>& out_uris
-        ) const noexcept -> ice::TaskExpected<ice::ucount>;
+        ) const noexcept -> ice::TaskExpected<ice::u32>;
 
         auto filter_resource_uris(
             ice::ResourceFilter const& filter,
             ice::Array<ice::URI>& out_uris
-        ) const noexcept -> ice::TaskExpected<ice::ucount>  override;
+        ) const noexcept -> ice::TaskExpected<ice::u32>  override;
 
 
         auto set_resource(

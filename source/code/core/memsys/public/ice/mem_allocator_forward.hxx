@@ -13,7 +13,7 @@ namespace ice
         ice::usize bucket_size = 1_KiB;
 
         //! \brief The number of empty buckets allocated.
-        ice::ucount min_bucket_count = 1;
+        ice::u32 min_bucket_count = 1;
     };
 
     struct ForwardAllocator : public ice::Allocator

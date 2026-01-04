@@ -20,7 +20,7 @@ bool ParamRange::param_parse_results(ParamRange& range, ice::Span<ice::String co
         value = results[1];
     }
 
-    if (ice::string::any(value))
+    if (value.not_empty())
     {
         ice::from_chars(value, value, range.count);
     }

@@ -6,6 +6,7 @@
 #include <ice/mem_data.hxx>
 #include <ice/mem_memory.hxx>
 #include <ice/container_logic.hxx>
+#include <ice/types/ncount.hxx>
 #include <array> // TODO: Introduce our own static array object.
 
 namespace ice
@@ -20,28 +21,29 @@ namespace ice
         using ReverseIterator = std::reverse_iterator<Type*>;
         using ConstIterator = Type const*;
         using ConstReverseIterator = std::reverse_iterator<Type const*>;
+        using SizeType = ice::ncount;
 
-        ice::ucount _count;
+        u64 _count;
         Type* _data;
 
         constexpr Span() noexcept;
         constexpr Span(ice::Span<Type>&& other) noexcept = default;
         constexpr Span(ice::Span<Type> const& other) noexcept = default;
-        constexpr Span(Type* location, ice::ucount count) noexcept;
+        constexpr Span(Type* location, u64 count) noexcept;
         constexpr Span(Type* from, Type* to) noexcept;
 
-        template<ice::ucount Size>
+        template<ice::u64 Size>
         constexpr Span(Type(&location)[Size]) noexcept;
 
         constexpr auto operator=(ice::Span<Type>&& other) noexcept -> ice::Span<Type>& = default;
         constexpr auto operator=(ice::Span<Type> const& other) noexcept -> ice::Span<Type>& = default;
 
-        constexpr auto operator[](ice::ucount idx) const noexcept -> Type&;
+        constexpr auto operator[](ice::u64 idx) const noexcept -> Type&;
         constexpr operator ice::Span<Type const>() noexcept { return { _data, _count }; }
         constexpr operator ice::Span<Type const>() const noexcept { return { _data, _count }; }
     };
 
-    template<typename T, ice::ucount Size> Span(T(&)[Size]) noexcept -> Span<T>;
+    template<typename T, ice::u64 Size> Span(T(&)[Size]) noexcept -> Span<T>;
     template<typename T> Span(ice::Span<T>&&) noexcept -> Span<T>;
     template<typename T> Span(ice::Span<T> const&) noexcept -> Span<T>;
     template<typename T, ContainerLogic Logic, template<typename, ContainerLogic> typename Container> Span(Container<T, Logic> const&) noexcept -> Span<T>;
@@ -62,7 +64,7 @@ namespace ice
         constexpr auto data_view(ice::Span<Type> span) noexcept -> ice::Data;
 
         template<typename Type>
-        constexpr auto count(ice::Span<Type> span) noexcept -> ice::ucount;
+        constexpr auto count(ice::Span<Type> span) noexcept -> ice::u32;
 
         template<typename Type>
         constexpr auto size_bytes(ice::Span<Type> span) noexcept -> ice::usize;
@@ -77,13 +79,13 @@ namespace ice
         constexpr auto back(ice::Span<Type> span) noexcept -> Type&;
 
         template<typename Type>
-        constexpr auto head(ice::Span<Type> span, ice::ucount count) noexcept -> ice::Span<Type>;
+        constexpr auto head(ice::Span<Type> span, ice::u64 count) noexcept -> ice::Span<Type>;
 
         template<typename Type>
-        constexpr auto tail(ice::Span<Type> span, ice::ucount from_idx) noexcept -> ice::Span<Type>;
+        constexpr auto tail(ice::Span<Type> span, ice::u64 from_idx) noexcept -> ice::Span<Type>;
 
         template<typename Type>
-        constexpr auto subspan(ice::Span<Type> span, ice::ucount from_idx, ice::ucount count = ice::ucount_max) noexcept -> ice::Span<Type>;
+        constexpr auto subspan(ice::Span<Type> span, ice::u64 from_idx, ice::u64 count = ice::u32_max) noexcept -> ice::Span<Type>;
 
         template<typename Type>
         constexpr auto subspan(ice::Span<Type> span, ice::ref32 ref) noexcept -> ice::Span<Type>;
@@ -126,7 +128,7 @@ namespace ice
 
         template<typename T>
             requires (std::is_trivially_copyable_v<T> && !std::is_pointer_v<T>)
-        inline auto read_span(ice::Data source, ice::ucount count, ice::Span<T const>& out_value) noexcept -> ice::Data
+        inline auto read_span(ice::Data source, ice::u64 count, ice::Span<T const>& out_value) noexcept -> ice::Data
         {
             ICE_ASSERT_CORE(source.alignment >= ice::align_of<T>);
             out_value._count = count;
@@ -149,7 +151,7 @@ namespace ice
     }
 
     template<typename Type>
-    constexpr Span<Type>::Span(Type* location, ice::ucount count) noexcept
+    constexpr Span<Type>::Span(Type* location, ice::u64 count) noexcept
         : _count{ count }
         , _data{ location }
     {
@@ -157,13 +159,13 @@ namespace ice
 
     template<typename Type>
     constexpr Span<Type>::Span(Type* from, Type* to) noexcept
-        : _count{ static_cast<ice::ucount>(to - from) }
+        : _count{ static_cast<ice::u64>(to - from) }
         , _data{ from }
     {
     }
 
     template<typename Type>
-    template<ice::ucount Size>
+    template<ice::u64 Size>
     constexpr Span<Type>::Span(Type(&location)[Size]) noexcept
         : _count{ Size }
         , _data{ location }
@@ -171,7 +173,7 @@ namespace ice
     }
 
     template<typename Type>
-    constexpr auto Span<Type>::operator[](ice::ucount idx) const noexcept -> Type&
+    constexpr auto Span<Type>::operator[](ice::u64 idx) const noexcept -> Type&
     {
         // TODO: ASSERT
         return _data[idx];
@@ -209,9 +211,9 @@ namespace ice
         }
 
         template<typename Type>
-        constexpr auto count(ice::Span<Type> span) noexcept -> ice::ucount
+        constexpr auto count(ice::Span<Type> span) noexcept -> ice::u32
         {
-            return span._count;
+            return u32(span._count);
         }
 
         template<typename Type>
@@ -239,24 +241,24 @@ namespace ice
         }
 
         template<typename Type>
-        constexpr auto head(ice::Span<Type> span, ice::ucount count) noexcept -> ice::Span<Type>
+        constexpr auto head(ice::Span<Type> span, ice::u64 count) noexcept -> ice::Span<Type>
         {
-            ice::ucount const new_count = ice::min(count, span._count);
+            ice::u64 const new_count = ice::min(count, span._count);
             return { span._data, new_count };
         }
 
         template<typename Type>
-        constexpr auto tail(ice::Span<Type> span, ice::ucount from_idx) noexcept -> ice::Span<Type>
+        constexpr auto tail(ice::Span<Type> span, ice::u64 from_idx) noexcept -> ice::Span<Type>
         {
-            ice::ucount const from_start = ice::min(from_idx, span._count);
+            ice::u64 const from_start = ice::min(from_idx, span._count);
             return { span._data + from_start, span._count - from_start };
         }
 
         template<typename Type>
-        constexpr auto subspan(ice::Span<Type> span, ice::ucount from_idx, ice::ucount count) noexcept -> ice::Span<Type>
+        constexpr auto subspan(ice::Span<Type> span, ice::u64 from_idx, ice::u64 count) noexcept -> ice::Span<Type>
         {
-            ice::ucount const from_start = ice::min(from_idx, span._count);
-            ice::ucount const new_count = ice::min(span._count - from_start, count);
+            ice::u64 const from_start = ice::min(from_idx, span._count);
+            ice::u64 const new_count = ice::min(span._count - from_start, count);
             return { span._data + from_start, new_count };
         }
 
@@ -318,13 +320,13 @@ namespace ice
         template<typename Type, size_t Size>
         constexpr auto from_std(std::array<Type, Size>& std_array) noexcept -> ice::Span<Type>
         {
-            return ice::Span<Type>{ std_array.data(), ice::ucount(std_array.size()) };
+            return ice::Span<Type>{ std_array.data(), std_array.size() };
         }
 
         template<typename Type, size_t Size>
         constexpr auto from_std_const(std::array<Type, Size> const& std_array) noexcept -> ice::Span<Type const>
         {
-            return ice::Span<Type const>{ std_array.data(), ice::ucount(std_array.size()) };
+            return ice::Span<Type const>{ std_array.data(), std_array.size() };
         }
 
         // TODO: Move to another location or rename? Not sure this is properly named
@@ -339,7 +341,7 @@ namespace ice
         }
 
         template<typename Type>
-        constexpr auto from_memory(ice::Memory const& mem, ice::ucount count, ice::usize offset) noexcept -> ice::Span<Type>
+        constexpr auto from_memory(ice::Memory const& mem, ice::u64 count, ice::usize offset) noexcept -> ice::Span<Type>
         {
             static ice::meminfo minfo = ice::meminfo_of<Type>;
 
@@ -351,7 +353,7 @@ namespace ice
 
         // TODO: Move to another location or rename? Not sure this is properly named
         template<typename Type>
-        constexpr auto from_data(ice::Data const& mem, ice::ucount count, ice::usize offset) noexcept -> ice::Span<Type const>
+        constexpr auto from_data(ice::Data const& mem, ice::u64 count, ice::usize offset) noexcept -> ice::Span<Type const>
         {
             static ice::meminfo constexpr minfo = ice::meminfo_of<Type>;
 

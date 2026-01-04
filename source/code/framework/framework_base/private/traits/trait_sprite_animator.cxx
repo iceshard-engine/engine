@@ -14,7 +14,6 @@
 #include <ice/game_anim.hxx>
 #include <ice/game_entity.hxx>
 #include <ice/render/render_image.hxx>
-#include <ice/string/static_string.hxx>
 #include <ice/task_utils.hxx>
 
 namespace ice

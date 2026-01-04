@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -17,17 +17,17 @@ namespace ice
 
         //! \brief Create a new set of tasks and return the slice containing them.
         auto create_tasks(
-            ice::ucount count,
+            ice::u32 count,
             ice::ShardID shardid
         ) noexcept -> ice::Span<ice::Task<>> override;
 
         auto await_tasks_scheduled_on(ice::TaskScheduler& scheduler, ice::TaskScheduler& resumer) noexcept -> ice::Task<> override;
 
         //! \brief Execute all tasks that have been created.
-        auto execute_tasks() noexcept -> ice::ucount override;
+        auto execute_tasks() noexcept -> ice::u32 override;
 
         //! \brief Returns the number of tasks that are currently running.
-        auto running_tasks() const noexcept -> ice::ucount override;
+        auto running_tasks() const noexcept -> ice::u32 override;
 
         //! \brief Wait for all tasks to complete.
         void wait_tasks() noexcept override;

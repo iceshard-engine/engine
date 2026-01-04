@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/params.hxx>
@@ -20,14 +20,14 @@ namespace ice
 
     auto to_std(ice::String str) noexcept
     {
-        return std::string{ ice::string::begin(str), ice::string::end(str) };
+        return std::string{ str.begin(), str.end() };
     }
 
     auto to_std_or(ice::String str, std::string_view fallback) noexcept
     {
-        if (ice::string::any(str))
+        if (str.not_empty())
         {
-            return std::string{ ice::string::begin(str), ice::string::end(str) };
+            return std::string{ str.begin(), str.end() };
         }
         else
         {
@@ -179,15 +179,15 @@ namespace ice
         opt->required(ice::has_any(definition.flags, PF::IsRequired));
         opt->allow_extra_args(ice::has_all(definition.flags, PF::AllowExtraArgs)); // Arrays have one additional check
 
-        if (ice::string::any(definition.description))
+        if (definition.description.not_empty())
         {
             opt->description(to_std(definition.description));
         }
-        if (ice::string::any(definition.group))
+        if (definition.group.not_empty())
         {
             opt->group(to_std(definition.group));
         }
-        if (ice::string::any(definition.type_name))
+        if (definition.type_name.not_empty())
         {
             opt->type_name(to_std(definition.type_name));
         }
@@ -221,7 +221,7 @@ namespace ice
                 opt->expected(definition.min, definition.max);
             }
 
-            if (ice::string::empty(definition.type_name))
+            if (definition.type_name.is_empty())
             {
                 opt->type_name("VALUE");
             }
@@ -299,9 +299,7 @@ namespace ice
     {
         auto fn_callback = [&out_value](CLI::results_t const& results) noexcept
         {
-            std::string const& arg = results.front();
-            out_value._data = arg.data();
-            out_value._size = static_cast<ice::ucount>(arg.size());
+            out_value = ice::String{ results.front() };
             return true;
         };
         params_setup(app.add_option(to_std(definition.name), ice::move(fn_callback)), definition);
@@ -319,7 +317,7 @@ namespace ice
         auto fn_callback = [&out_value](CLI::results_t const& results) noexcept
         {
             std::string const& arg = results.front();
-            ice::string::push_back(out_value, ice::String{ std::string_view{ arg } });
+            out_value.push_back(ice::String{ std::string_view{ arg } });
             return true;
         };
         params_setup(app.add_option(to_std(definition.name), ice::move(fn_callback)), definition);
@@ -338,7 +336,7 @@ namespace ice
         {
             for (std::string const& result : results)
             {
-                ice::array::push_back(out_values, { result.data(), static_cast<ice::ucount>(result.size()) });
+                ice::array::push_back(out_values, { result.data(), static_cast<ice::u32>(result.size()) });
             }
             return true;
         };
@@ -380,7 +378,7 @@ namespace ice
             &alloc = params->_allocator
         ](CLI::results_t const& results) noexcept
         {
-            ice::ucount const result_count = (ice::ucount) std::min<ice::usize::base_type>(
+            ice::u32 const result_count = (ice::u32) std::min<ice::usize::base_type>(
                     results.size(), std::max(typesize.y, 0)
             );
             ice::StackAllocator<ice::size_of<ice::String> * 8> stack_alloc;

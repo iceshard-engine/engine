@@ -25,7 +25,7 @@ namespace ice
     {
         if (ImGui::BeginMenu("Resource Providers", true))
         {
-            ImGui::MenuItem(ice::string::begin(widget_info.name), nullptr, &state.active);
+            ImGui::MenuItem(widget_info.name.begin(), nullptr, &state.active);
             ImGui::EndMenu();
         }
         return false;
@@ -84,7 +84,7 @@ namespace ice
         ice::u32 idx = 1; // We start with '1' since the first entry are the headers.
         for (ice::FileSystemResource* const res : ice::hashmap::values(_resources))
         {
-            if (strstr(ice::string::begin(res->name()), _filter) == nullptr)
+            if (strstr(res->name().begin(), _filter) == nullptr)
             {
                 continue;
             }
@@ -100,11 +100,11 @@ namespace ice
                 continue;
             }
 
-            ImGui::TextUnformatted(ice::string::begin(res->name()), ice::string::end(res->name()));
+            ImGui::TextUnformatted(res->name());
 
             if (ImGui::TableNextColumn())
             {
-                ImGui::TextUnformatted(ice::string::begin(res->origin()), ice::string::end(res->origin()));
+                ImGui::TextUnformatted(res->origin());
             }
 
             if (ImGui::TableNextColumn())

@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "input_action_internal_types.hxx"
@@ -17,7 +17,7 @@ namespace ice
         auto parse_source(ice::String source) noexcept -> std::tuple<ice::String, ice::u8>
         {
             ice::u8 read_from = 0;
-            ice::ucount source_size = ice::size(source);
+            ice::ncount source_size = source.size();
             // We want to parse the following cases: <source>(.[xyz])
             if (source_size > 1 && source[source_size - 2] == '.')
             {
@@ -25,7 +25,7 @@ namespace ice
                 read_from = source[source_size + 1] - 'x';
                 ICE_ASSERT_CORE(read_from >= 0 && read_from < 3);
             }
-            return { ice::string::substr(source, 0, source_size), read_from };
+            return { source.substr(0, source_size), read_from };
         }
 
     } // namespace detail
@@ -266,8 +266,8 @@ namespace ice
             ice::Array<ice::InputActionInfo> final_actions{ _allocator };
 
             // Insert layer name as the first string
-            ice::string::push_back(strings, _name);
-            ice::string::push_back(strings, '\0');
+            strings.push_back(_name);
+            strings.push_back('\0');
 
             // Prepare data of all sources
             for (Internal<InputActionBuilder::Source> const& source : _sources)
@@ -276,7 +276,7 @@ namespace ice
                 {
                     ice::array::push_back(final_sources,
                         InputActionSourceInputInfo{
-                            .name = { ice::u16(ice::size(strings)), ice::u16(ice::size(source.name)) },
+                            .name = { strings.size().u16(), source.name.size().u16() },
                             .input = ice::input::InputID::Invalid,
                             .type = source.type,
                             .storage_offset = count_storage_values,
@@ -289,7 +289,7 @@ namespace ice
                 {
                     ice::array::push_back(final_sources,
                         InputActionSourceInputInfo{
-                            .name = { ice::u16(ice::size(strings)), ice::u16(ice::size(source.name)) },
+                            .name = { strings.size().u16(), source.name.size().u16() },
                             .input = input_event,
                             .type = source.type,
                             .storage_offset = count_storage_values,
@@ -297,7 +297,7 @@ namespace ice
                         }
                     );
                 }
-                ice::string::push_back(strings, source.name);
+                strings.push_back(source.name);
                 // ice::string::push_back(strings, '\0');
 
                 switch(source.type)
@@ -314,14 +314,14 @@ namespace ice
 
             auto find_source_storage_index = [&strings, &final_sources](ice::String source_name) noexcept -> ice::u16
             {
-                ice::ucount idx_found = ice::ucount_max;
+                ice::u32 idx_found = ice::u32_max;
                 bool const found = ice::search(
                     ice::array::slice(final_sources),
                     source_name,
                     [&strings](ice::InputActionSourceInputInfo const& source, ice::String expected) noexcept
                     {
-                        ice::String const source_name = ice::string::substr(
-                            strings, source.name.offset, source.name.size
+                        ice::String const source_name = strings.substr(
+                            source.name.offset, source.name.size
                         );
                         return expected == source_name;
                     },
@@ -335,14 +335,14 @@ namespace ice
 
             auto find_action_storage_index = [&strings, &final_actions](ice::String source_name) noexcept -> ice::u16
             {
-                ice::ucount idx_found = ice::ucount_max;
+                ice::u32 idx_found = ice::u32_max;
                 bool const found = ice::search(
                     ice::array::slice(final_actions),
                     source_name,
                     [&strings](ice::InputActionInfo const& action, ice::String expected) noexcept
                     {
-                        ice::String const source_name = ice::string::substr(
-                            strings, action.name.offset, action.name.size
+                        ice::String const source_name = strings.substr(
+                            action.name.offset, action.name.size
                         );
                         return expected == source_name;
                     },
@@ -404,7 +404,7 @@ namespace ice
                         if (condition.from_action)
                         {
                             // If we are empty, it's a "self reference"
-                            if (ice::string::any(condition.source))
+                            if (condition.source.not_empty())
                             {
                                 source_index.source_index = find_action_storage_index(condition.source);
                                 source_index.source_axis = condition.axis;
@@ -442,7 +442,7 @@ namespace ice
 
                 ice::array::push_back(final_actions,
                     InputActionInfo{
-                        .name = { ice::u16(ice::size(strings)), ice::u16(ice::size(action.name)) },
+                        .name = { strings.size().u16(), action.name.size().u16() },
                         .type = action.type,
                         .behavior = action.behavior,
                         .conditions = { condition_offset, condition_count },
@@ -450,7 +450,7 @@ namespace ice
                     }
                 );
 
-                ice::string::push_back(strings, action.name);
+                strings.push_back(action.name);
 
                 modifier_offset += modifier_count;
                 condition_offset += ice::exchange(condition_count, ice::u16_0);
@@ -466,7 +466,7 @@ namespace ice
             }
 
             ice::InputActionLayerInfoHeader final_info{
-                .size_name = ice::u8(ice::size(_name)),
+                .size_name = _name.size().u8(),
                 .count_constants = ice::u8(ice::count(final_constants)),
                 .count_sources = ice::u16(ice::count(final_sources)),
                 .count_actions = ice::u16(ice::count(final_actions)),
@@ -485,7 +485,7 @@ namespace ice
             ice::usize const offset_modifiers = minfo_layer += ice::array::meminfo(final_modifiers);
             ice::usize const offset_constant_values = minfo_layer += ice::meminfo_of<ice::f32> * ice::count(final_constant_values);
             ice::usize const offset_constants = minfo_layer += ice::array::meminfo(final_constants);
-            ice::usize const offset_strings = minfo_layer += ice::string::meminfo(ice::String{strings});
+            ice::usize const offset_strings = minfo_layer += strings.meminfo();
             final_info.offset_strings = ice::u32(offset_strings.value);
 
             ice::Memory const final_memory = alloc.allocate(minfo_layer);
@@ -497,7 +497,7 @@ namespace ice
             ice::memcpy(ice::ptr_add(final_memory, offset_modifiers), ice::array::data_view(final_modifiers));
             ice::memcpy(ice::ptr_add(final_memory, offset_constant_values), ice::array::data_view(final_constant_values));
             ice::memcpy(ice::ptr_add(final_memory, offset_constants), ice::array::data_view(final_constants));
-            ice::memcpy(ice::ptr_add(final_memory, offset_strings), ice::string::data_view(strings));
+            ice::memcpy(ice::ptr_add(final_memory, offset_strings), strings.data_view());
             return ice::create_input_action_layer(alloc, final_memory);
         }
 
@@ -673,13 +673,13 @@ namespace ice
         ice::String target_axis /*= ".x"*/
     ) noexcept -> Action&
     {
-        ICE_ASSERT_CORE(ice::size(target_axis) >= 2 && target_axis[0] == '.');
-        if (ice::size(target_axis) < 2 || target_axis[0] != '.')
+        ICE_ASSERT_CORE(target_axis.size() >= 2 && target_axis[0] == '.');
+        if (target_axis.size() < 2 || target_axis[0] != '.')
         {
             return *this;
         }
 
-        for (char axis_component : ice::string::substr(target_axis, 1, 3))
+        for (char axis_component : target_axis.substr(1, 3))
         {
             ICE_ASSERT_CORE(axis_component >= 'x' && axis_component <= 'z'); // .xyz
 

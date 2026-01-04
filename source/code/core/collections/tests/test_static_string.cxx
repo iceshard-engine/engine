@@ -2,11 +2,11 @@
 /// SPDX-License-Identifier: MIT
 
 #include <catch2/catch_test_macros.hpp>
-#include <ice/string/static_string.hxx>
+#include <ice/static_string.hxx>
 
 SCENARIO("ice :: StackString")
 {
-    static constexpr ice::ucount test_stack_string_capacity = 64u;
+    static constexpr ice::ncount test_stack_string_capacity = 64u;
     static constexpr ice::String test_string_value{ "test_string" };
 
     GIVEN("A an empty String value")
@@ -17,105 +17,103 @@ SCENARIO("ice :: StackString")
         // Reserve some capacity for tests
         //ice::string::reserve(test_string, 10); = deleted
 
-        CHECK(ice::string::size(test_string) == 0);
-        CHECK(ice::string::capacity(test_string) == test_stack_string_capacity);
-        CHECK(ice::string::empty(test_string) == true);
+        CHECK(test_string.size() == 0);
+        CHECK(test_string.capacity() == test_stack_string_capacity);
+        CHECK(test_string.is_empty());
 
         THEN("Assigning a value")
         {
             test_string = test_string_value;
 
-            uint32_t const saved_size = ice::string::size(test_string);
-            uint32_t const saved_capacity = ice::string::capacity(test_string);
+            ice::ncount const saved_size = test_string.size();
+            ice::ncount const saved_capacity = test_string.capacity();
 
-            CHECK(ice::string::size(test_string) == ice::string::size(test_string_value));
-            CHECK(ice::string::empty(test_string) == false);
+            CHECK(test_string.size() == test_string_value.size());
+            CHECK(test_string.not_empty());
 
             WHEN("Clearing the string")
             {
+                test_string.clear();
 
-                ice::string::clear(test_string);
-
-                CHECK(ice::string::size(test_string) == 0);
-                CHECK(ice::string::capacity(test_string) == saved_capacity);
-                CHECK(ice::string::empty(test_string) == true);
+                CHECK(test_string.size() == 0);
+                CHECK(test_string.capacity() == saved_capacity);
+                CHECK(test_string.is_empty());
 
                 REQUIRE(test_string == "");
             }
 
             WHEN("Resizing the string")
             {
-                auto saved_capacity_2 = ice::string::capacity(test_string);
+                ice::ncount const saved_capacity_2 = test_string.capacity();
 
                 GIVEN("The value is zero")
                 {
-                    ice::string::resize(test_string, 0);
+                    test_string.resize(0);
 
-                    CHECK(ice::string::size(test_string) == 0);
-                    CHECK(ice::string::capacity(test_string) == saved_capacity_2);
-                    CHECK(ice::string::empty(test_string) == true);
+                    CHECK(test_string.size() == 0);
+                    CHECK(test_string.capacity() == saved_capacity_2);
+                    CHECK(test_string.is_empty());
 
                     REQUIRE(test_string == "");
                 }
 
                 GIVEN("A smaller value")
                 {
-                    ice::string::resize(test_string, 4);
+                    test_string.resize(4);
 
-                    CHECK(ice::string::size(test_string) == 4);
-                    CHECK(ice::string::capacity(test_string) == saved_capacity_2);
-                    CHECK(ice::string::empty(test_string) == false);
+                    CHECK(test_string.size() == 4);
+                    CHECK(test_string.capacity() == saved_capacity_2);
+                    CHECK(test_string.not_empty());
 
                     REQUIRE(test_string == "test");
                 }
 
                 GIVEN("A larger value")
                 {
-                    ice::string::resize(test_string, 20);
+                    test_string.resize(20);
 
-                    CHECK(ice::string::size(test_string) == 20);
-                    CHECK(ice::string::capacity(test_string) == saved_capacity_2);
-                    CHECK(ice::string::empty(test_string) == false);
+                    CHECK(test_string.size() == 20);
+                    CHECK(test_string.capacity() == saved_capacity_2);
+                    CHECK(test_string.not_empty());
 
-                    REQUIRE(ice::string::substr(test_string, 0, saved_size) == test_string_value);
+                    REQUIRE(test_string.substr(0, saved_size) == test_string_value);
                 }
             }
         }
 
         THEN("Modyfing the string")
         {
-            uint32_t const saved_capacity = ice::string::capacity(test_string);
-
-            ice::string::push_back(test_string, 'a');
+            ice::ncount const saved_capacity = test_string.capacity();
+            test_string.push_back('a');
 
             WHEN("Appending a character")
             {
-                CHECK(ice::string::size(test_string) == 1);
-                CHECK(ice::string::capacity(test_string) == saved_capacity);
-                CHECK(ice::string::empty(test_string) == false);
+                CHECK(test_string.size() == 1);
+                CHECK(test_string.capacity() == saved_capacity);
+                CHECK(test_string.not_empty());
             }
 
-            ice::string::push_back(test_string, "string");
+            test_string.push_back("string");
 
             THEN("Appending a string")
             {
-                CHECK(ice::string::size(test_string) == 7);
-                CHECK(ice::string::capacity(test_string) == saved_capacity);
-                CHECK(ice::string::empty(test_string) == false);
+                CHECK(test_string.size() == 7);
+                CHECK(test_string.capacity() == saved_capacity);
+                CHECK(test_string.not_empty());
             }
 
-            ice::string::resize(test_string, 20);
+            test_string.resize(20);
 
             // Fill the new string with space characters.
-            memset(ice::string::begin(test_string), ' ', ice::string::size(test_string));
+            memset(test_string.begin(), ' ', test_string.size());
 
-            ice::string::push_back(test_string, test_string);
+            test_string.push_back(test_string);
 
             THEN("Resizing the string and appending itself")
             {
-                CHECK(ice::string::size(test_string) == 40);
-                CHECK(ice::string::capacity(test_string) == test_stack_string_capacity);
-                CHECK(ice::string::empty(test_string) == false);
+                CHECK(test_string.size() == 40);
+                CHECK(test_string.capacity() == test_stack_string_capacity);
+                CHECK(test_string.not_empty());
             }
 
             //ice::string::pop_back(test_string);
