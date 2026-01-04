@@ -1,9 +1,9 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/profiler.hxx>
-#include <ice/string/string.hxx>
+#include <ice/string.hxx>
 #include <ice/log_severity.hxx>
 #include <ice/log_tag.hxx>
 #include <ice/log_formatters.hxx>

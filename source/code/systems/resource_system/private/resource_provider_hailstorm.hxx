@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -6,7 +6,7 @@
 #include <ice/container/linked_queue.hxx>
 #include <ice/container/hashmap.hxx>
 #include <ice/container/array.hxx>
-#include <ice/string/heap_string.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/resource_provider.hxx>
 #include <ice/task_awaitable.hxx>
 #include <ice/task_queue.hxx>

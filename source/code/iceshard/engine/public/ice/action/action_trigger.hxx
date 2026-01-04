@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -10,7 +10,7 @@
 namespace ice::action
 {
 
-    using ActionTriggerHandler = bool (
+    using ActionTriggerHandler = bool(
         ice::Shard const& user_shard,
         ice::Shard const& event_shard,
         ice::Tns stage_time_elapsed

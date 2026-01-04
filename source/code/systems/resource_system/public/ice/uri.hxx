@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/string/string.hxx>
+#include <ice/string.hxx>
 #include <ice/stringid.hxx>
 
 namespace ice

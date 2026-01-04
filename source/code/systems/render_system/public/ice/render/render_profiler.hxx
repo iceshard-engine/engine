@@ -1,9 +1,9 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/profiler.hxx>
-#include <ice/string/string.hxx>
+#include <ice/string.hxx>
 #include <ice/render/render_declarations.hxx>
 
 namespace ice::render::detail

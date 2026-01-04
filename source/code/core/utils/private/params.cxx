@@ -3,8 +3,8 @@
 
 #include <ice/params.hxx>
 #include <ice/container/array.hxx>
-#include <ice/string/string.hxx>
-#include <ice/string/heap_string.hxx>
+#include <ice/string.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/string_utils.hxx>
 #include <ice/mem_allocator_stack.hxx>
 #include <ice/native_file.hxx>

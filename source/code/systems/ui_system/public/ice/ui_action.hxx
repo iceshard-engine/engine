@@ -1,10 +1,10 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/ui_types.hxx>
 #include <ice/ui_data_ref.hxx>
-#include <ice/string/string.hxx>
+#include <ice/string.hxx>
 #include <ice/span.hxx>
 
 namespace ice::ui

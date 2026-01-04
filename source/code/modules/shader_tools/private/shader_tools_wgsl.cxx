@@ -6,7 +6,7 @@
 #if ISP_WINDOWS || ISP_LINUX || ISP_WEBAPP
 #include <ice/task_expected.hxx>
 #include <ice/render/render_shader.hxx>
-#include <ice/string/string.hxx>
+#include <ice/string.hxx>
 #include <ice/string_utils.hxx>
 #include <ice/path_utils.hxx>
 #include <ice/log.hxx>

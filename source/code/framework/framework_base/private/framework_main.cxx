@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/framework_app.hxx>
@@ -58,7 +58,7 @@
 #include <ice/task_scoped_container.hxx>
 #include <ice/sync_manual_events.hxx>
 #include <ice/path_utils.hxx>
-#include <ice/string/heap_string.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/profiler.hxx>
 #include <ice/uri.hxx>
 

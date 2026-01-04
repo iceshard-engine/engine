@@ -3,7 +3,7 @@
 
 #pragma once
 #include <ice/string_types.hxx>
-#include <ice/string/string.hxx>
+#include <ice/string.hxx>
 
 namespace ice::path
 {

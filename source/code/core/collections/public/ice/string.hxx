@@ -2,6 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#include <ice/stringid.hxx>
 #include <ice/string/string_concepts.hxx>
 #include <ice/string/readonly_operations.hxx>
 
@@ -73,6 +74,16 @@ namespace ice
         return ice::BasicString<char>{ buffer, size };
     }
 
+    template<typename CharT> requires ice::concepts::SupportedCharType<CharT>
+    constexpr auto BasicString<CharT>::data_view() const noexcept -> ice::Data
+    {
+        return Data{
+            .location = _data,
+            .size = size().bytes(),
+            .alignment = ice::align_of<CharType>
+        };
+    }
+
     using String = ice::BasicString<char>;
     using WString = ice::BasicString<wchar_t>;
 
@@ -85,20 +96,25 @@ namespace ice
         };
     }
 
-    template<typename CharT> requires ice::concepts::SupportedCharType<CharT>
-    constexpr auto BasicString<CharT>::data_view() const noexcept -> ice::Data
-    {
-        return Data{
-            .location = _data,
-            .size = size().bytes(),
-            .alignment = ice::align_of<CharType>
-        };
-    }
-
     template<typename CharType, typename T> requires ice::concepts::RODataObject<T>
     constexpr auto string_from_data(T ro_data) noexcept -> ice::BasicString<CharType>
     {
         return ice::string_from_data<CharType>(ro_data, 0, ro_data.size.value);
+    }
+
+    constexpr auto hash(ice::String value) noexcept -> ice::u64
+    {
+        return ice::hash(std::string_view{ value });
+    }
+
+    constexpr auto hash32(ice::String value) noexcept -> ice::u32
+    {
+        return ice::hash32(std::string_view{ value });
+    }
+
+    constexpr auto stringid(ice::String value) noexcept -> ice::StringID
+    {
+        return ice::stringid(value.data(), value.size().u64());
     }
 
 } // namespace ice

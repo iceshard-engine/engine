@@ -5,7 +5,7 @@
 #include <ice/input_action_layer_builder.hxx>
 #include <ice/input_action_layer.hxx>
 #include <ice/container/hashmap.hxx>
-#include <ice/string/heap_string.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/sort.hxx>
 
 namespace ice

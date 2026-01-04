@@ -4,7 +4,7 @@
 #include <ice/module_register.hxx>
 #include <ice/container/array.hxx>
 #include <ice/container/hashmap.hxx>
-#include <ice/string/heap_string.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/os/windows.hxx>
 #include <ice/os/unix.hxx>
 #include <ice/profiler.hxx>

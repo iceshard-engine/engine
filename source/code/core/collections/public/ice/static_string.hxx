@@ -178,4 +178,10 @@ namespace ice
         };
     }
 
+    template<ice::u32 Capacity = 12>
+    constexpr auto stringid(ice::StaticString<Capacity, char> value) noexcept -> ice::StringID
+    {
+        return ice::stringid(value._data, value._size);
+    }
+
 } // namespace ice

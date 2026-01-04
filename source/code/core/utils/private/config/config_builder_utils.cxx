@@ -1,8 +1,8 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "config_builder_utils.hxx"
-#include <ice/string/heap_string.hxx>
+#include <ice/heap_string.hxx>
 
 namespace ice::config::detail
 {

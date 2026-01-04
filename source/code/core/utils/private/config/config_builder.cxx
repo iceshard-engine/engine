@@ -3,8 +3,8 @@
 
 #include <ice/config/config_builder.hxx>
 #include <ice/container/hashmap.hxx>
-#include <ice/string/heap_string.hxx>
-#include <ice/string/heap_var_string.hxx>
+#include <ice/heap_string.hxx>
+#include <ice/heap_varstring.hxx>
 
 #include "config_builder.hxx"
 

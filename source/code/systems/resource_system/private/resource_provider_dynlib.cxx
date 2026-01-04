@@ -1,10 +1,10 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/resource_provider.hxx>
 #include <ice/mem_allocator_stack.hxx>
 #include <ice/container/hashmap.hxx>
-#include <ice/string/heap_string.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/native_file.hxx>
 #include <ice/uri.hxx>
 

@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "resource_filesystem_traverser.hxx"
@@ -6,7 +6,7 @@
 #include <ice/task_scheduler.hxx>
 #include <ice/task_utils.hxx>
 #include <ice/mem_allocator_stack.hxx>
-#include <ice/string/heap_string.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/string_utils.hxx>
 #include <ice/path_utils.hxx>
 

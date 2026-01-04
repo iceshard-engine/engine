@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #include "asset_compiler_resource_provider.hxx"
-#include <ice/string/heap_string.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/resource_flags.hxx>
 
 AssetCompilerResource::AssetCompilerResource(

@@ -6,7 +6,7 @@
 #include <ice/mem_data.hxx>
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/container_types.hxx>
-#include <ice/string/heap_string.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/resource_flags.hxx>
 #include <ice/resource_handle.hxx>
 #include <ice/resource_status.hxx>

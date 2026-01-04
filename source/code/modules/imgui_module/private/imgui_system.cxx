@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "imgui_system.hxx"
@@ -7,7 +7,7 @@
 
 #include <ice/assert.hxx>
 #include <ice/devui_imgui.hxx>
-#include <ice/string/heap_string.hxx>
+#include <ice/heap_string.hxx>
 
 #if ISP_WINDOWS
 #include <imguizmo/ImGuizmo.h>

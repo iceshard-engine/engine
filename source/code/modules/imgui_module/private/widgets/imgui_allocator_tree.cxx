@@ -3,7 +3,7 @@
 
 #include "imgui_allocator_tree.hxx"
 #include <ice/log_formatters.hxx>
-#include <ice/string/string.hxx>
+#include <ice/string.hxx>
 #include <ice/devui_imgui.hxx>
 
 #include <imgui/imgui.h>

@@ -1,8 +1,8 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "resource_provider_hailstorm_devui.hxx"
-#include <ice/string/heap_string.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/devui_context.hxx>
 #include <ice/devui_frame.hxx>
 #include <ice/devui_imgui.hxx>

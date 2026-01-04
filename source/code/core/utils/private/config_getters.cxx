@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #include "config/config_detail.hxx"
-#include <ice/string/var_string.hxx>
+#include <ice/varstring.hxx>
 
 namespace ice::config::detail
 {

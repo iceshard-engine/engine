@@ -9,7 +9,7 @@
 #include <ice/uri.hxx>
 #include <ice/profiler.hxx>
 
-#include <ice/string/string.hxx>
+#include <ice/string.hxx>
 #include <ice/container/hashmap.hxx>
 #include <ice/log_tag.hxx>
 #include <ice/log_formatters.hxx>

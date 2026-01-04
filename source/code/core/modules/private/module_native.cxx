@@ -1,8 +1,8 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "module_native.hxx"
-#include <ice/string/heap_string.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/mem_allocator_stack.hxx>
 
 namespace ice::native_module

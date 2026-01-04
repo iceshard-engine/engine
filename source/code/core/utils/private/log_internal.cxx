@@ -3,7 +3,7 @@
 
 #include "log_internal.hxx"
 #include <ice/container/hashmap.hxx>
-#include <ice/string/heap_string.hxx>
+#include <ice/heap_string.hxx>
 
 namespace ice::detail
 {
