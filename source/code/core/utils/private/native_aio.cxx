@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "native_aio.hxx"
@@ -543,11 +543,11 @@ namespace ice::native_aio
     auto aio_process_events(
         ice::native_aio::AIOPort port,
         ice::native_aio::AIOProcessLimits limits
-    ) noexcept -> ice::ucount
+    ) noexcept -> ice::u32
     {
         ice::usize bytes;
 
-        ice::ucount num_completed = 0;
+        ice::u32 num_completed = 0;
         while(limits.events_max > num_completed)
         {
             ice::native_aio::AIORequest const* request = nullptr;

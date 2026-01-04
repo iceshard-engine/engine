@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -6,6 +6,24 @@
 
 namespace ice
 {
+
+    // Const utlities (deducing-this helpers)
+    template<typename OwnerT, typename ValueT>
+    struct const_correct
+    {
+        using type = ValueT;
+    };
+
+    template<typename OwnerT, typename ValueT>
+    struct const_correct<OwnerT const, ValueT>
+    {
+        using type = std::add_const_t<ValueT>;
+    };
+
+    template<typename OwnerT, typename ValueT>
+    using const_correct_t = typename ice::const_correct<OwnerT, ValueT>::type;
+
+    // Tuple utilities
 
     using std::tuple;
 

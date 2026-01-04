@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -25,7 +25,7 @@ namespace ice
     struct FileListEntry
     {
         ice::native_file::HeapFilePath path;
-        ice::ucount basepath_size;
+        ice::u32 basepath_size;
     };
 
     class FileListResourceProvider;
@@ -58,7 +58,7 @@ namespace ice
 
         auto collect(
             ice::Array<ice::Resource*>& out_changes
-        ) noexcept -> ice::ucount override;
+        ) noexcept -> ice::u32 override;
 
         auto refresh(
             ice::Array<ice::Resource*>& out_changes

@@ -1,8 +1,8 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "resource_provider_hailstorm_devui.hxx"
-#include <ice/string/heap_string.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/devui_context.hxx>
 #include <ice/devui_frame.hxx>
 #include <ice/devui_imgui.hxx>
@@ -96,7 +96,7 @@ namespace ice
     {
         if (ImGui::BeginMenu("Resource Providers", true))
         {
-            ImGui::MenuItem(ice::string::begin(widget_info.name), nullptr, &state.active);
+            ImGui::MenuItem(widget_info.name.begin(), nullptr, &state.active);
             ImGui::EndMenu();
         }
         return false;
@@ -223,7 +223,7 @@ namespace ice
 
     void HailStormResourceProvider::DevUI::build_resources_table() noexcept
     {
-        ice::u32 const pack_name_size = ice::string::size(_name) + 1;
+        ice::u32 const pack_name_size = _name.size().u32() + 1;
 
         ice::u32 const entry_count = 20;
         ice::u32 const entry_size = static_cast<ice::u32>(ImGui::GetTextLineHeightWithSpacing());

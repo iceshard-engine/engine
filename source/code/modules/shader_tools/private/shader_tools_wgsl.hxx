@@ -1,9 +1,9 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/resource_compiler.hxx>
-#include <ice/string/heap_string.hxx>
+#include <ice/heap_string.hxx>
 
 #if ISP_WINDOWS || ISP_LINUX || ISP_WEBAPP
 #include <arctic/arctic_syntax_node.hxx>

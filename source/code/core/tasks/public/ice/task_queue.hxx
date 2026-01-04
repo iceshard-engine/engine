@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -28,14 +28,14 @@ namespace ice
         auto consume() noexcept -> ice::LinkedQueueRange<ice::TaskAwaitableBase>;
 
         bool process_one(void* result_value = nullptr) noexcept;
-        auto process_all(void* result_value = nullptr) noexcept -> ice::ucount;
+        auto process_all(void* result_value = nullptr) noexcept -> ice::u32;
 
         void wait_any() noexcept;
 
         template<typename Value>
         inline bool process_one(Value& result_value) noexcept;
         template<typename Value>
-        inline auto process_all(Value& result_value) noexcept -> ice::ucount;
+        inline auto process_all(Value& result_value) noexcept -> ice::u32;
 
         //! \brief Flags of task allowed to be pushed onto this queue.
         ice::TaskFlags const flags;
@@ -51,7 +51,7 @@ namespace ice
     }
 
     template<typename Value>
-    inline auto TaskQueue::process_all(Value& result_value) noexcept -> ice::ucount
+    inline auto TaskQueue::process_all(Value& result_value) noexcept -> ice::u32
     {
         return this->process_all(reinterpret_cast<void*>(&result_value));
     }

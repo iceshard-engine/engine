@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <catch2/catch_test_macros.hpp>
@@ -33,7 +33,7 @@ SCENARIO("collections 'ice/container/hashmap.hxx'", "[collection][hash][complex]
 
         AND_THEN("replacing the object will call destructor")
         {
-            ice::ucount dtor_count = 0;
+            ice::u32 dtor_count = 0;
             obj->data.test_dtor = &dtor_count;
 
             ice::hashmap::set(test_hash, 0, Test_TrackingObject{ 69 });
@@ -75,7 +75,7 @@ SCENARIO("collections 'ice/container/hashmap.hxx'", "[collection][hash][complex]
 
         AND_THEN("replacing the objects will call destructors")
         {
-            ice::ucount dtor_count = 0;
+            ice::u32 dtor_count = 0;
             for (Test_TrackingObject& obj : ice::hashmap::values(test_hash))
             {
                 obj.data.test_dtor = &dtor_count;

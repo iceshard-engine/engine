@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "log_buffer.hxx"
@@ -11,7 +11,7 @@ namespace ice::detail
         static_cast<LogMessageBuffer&>(buf).grow(capacity);
     }
 
-    LogMessageBuffer::LogMessageBuffer(ice::Allocator& alloc, ice::ucount initial_allocation) noexcept
+    LogMessageBuffer::LogMessageBuffer(ice::Allocator& alloc, ice::u32 initial_allocation) noexcept
         : fmt::detail::buffer<char>{ internal_grow_fmt_buffer }
         , _allocator{ alloc }
     {

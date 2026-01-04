@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -111,7 +111,7 @@ namespace ice
 
         void execute_all() noexcept
         {
-            ice::ucount const num_tasks = ice::array::count(_pending_tasks);
+            ice::u32 const num_tasks = ice::array::count(_pending_tasks);
             _running_tasks.fetch_add(num_tasks, std::memory_order_relaxed);
 
             for (ice::Task<>& pending_task : _pending_tasks)

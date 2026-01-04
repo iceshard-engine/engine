@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_world_manager.hxx"
@@ -81,10 +81,10 @@ namespace ice
 
     IceshardWorldManager::~IceshardWorldManager() noexcept
     {
-        ice::ucount active_worlds = 0;
+        ice::u32 active_worlds = 0;
         for (Entry const& entry : _worlds)
         {
-            active_worlds += ice::ucount(entry.is_active);
+            active_worlds += ice::u32(entry.is_active);
         }
 
         ICE_ASSERT(

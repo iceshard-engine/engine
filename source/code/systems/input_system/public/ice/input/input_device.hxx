@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -21,10 +21,10 @@ namespace ice::input
         //! \note In some cases, like a touch screen, a single touch pointer is seen as a single device.
         //!     Multi touch is implemented using this value.
         //! \note A total of 15 different devices of the same type can be handled based on engine limits.
-        virtual auto max_count() const noexcept -> ice::ucount { return 1u; }
+        virtual auto max_count() const noexcept -> ice::u32 { return 1u; }
 
         //! \return Number of currently connected devices.
-        virtual auto count() const noexcept -> ice::ucount { return 1u; }
+        virtual auto count() const noexcept -> ice::u32 { return 1u; }
 
         //! \return Handle to a connected device.
         //! \note After accessing a handle, the user is still required to check if the handle valid.

@@ -1,9 +1,9 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/log.hxx>
 #include <ice/os/windows.hxx>
-#include <ice/string/string.hxx>
+#include <ice/string.hxx>
 #include <ice/profiler.hxx>
 
 #include "log_internal.hxx"
@@ -95,7 +95,7 @@ namespace ice::detail
             ice::detail::local_time(),
             fmt_string(detail::severity_value[static_cast<ice::u32>(severity)]),
             fmt_string(base_tag_name),
-            fmt_string(ice::string::empty(tag_name) || ice::string::empty(base_tag_name) ? "" : " | "),
+            fmt_string(tag_name.is_empty() || base_tag_name.is_empty() ? "" : " | "),
             fmt_string(tag_name)
         );
 

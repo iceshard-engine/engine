@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -37,7 +37,7 @@ namespace ice::ecs
         virtual auto query_data_slots(
             ice::Span<ice::ecs::Entity const> requested,
             ice::Span<ice::ecs::EntityDataSlot> out_data_slots
-        ) const noexcept -> ice::ucount = 0;
+        ) const noexcept -> ice::u32 = 0;
 
         virtual bool query_archetype_block(
             ice::ecs::Archetype archetype,

@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "vk_device.hxx"
@@ -656,9 +656,9 @@ namespace ice::render::vk
             shader_stage.flags = 0;
             shader_stage.stage = native_enum_value(info.shaders[stage_idx].stage);
             shader_stage.module = native_handle(info.shaders[stage_idx].shader);
-            if (ice::string::any(info.shaders[stage_idx].entry_point))
+            if (info.shaders[stage_idx].entry_point.not_empty())
             {
-                shader_stage.pName = ice::string::begin(info.shaders[stage_idx].entry_point);
+                shader_stage.pName = info.shaders[stage_idx].entry_point.begin();
             }
             else
             {
@@ -910,12 +910,12 @@ namespace ice::render::vk
         ice::Span<ice::render::BufferUpdateInfo const> update_infos
     ) noexcept
     {
-        ice::ucount const update_count = ice::count(update_infos);
+        ice::u32 const update_count = ice::count(update_infos);
 
-        ice::ucount update_offset = 0;
+        ice::u32 update_offset = 0;
         while(update_offset < update_count)
         {
-            ice::ucount const current_update_count = ice::min(update_count - update_offset, 16u);
+            ice::u32 const current_update_count = ice::min(update_count - update_offset, 16u);
 
             // We map up to 16 pointers at one time so VMA does not continously call vkMap and vkUnmap for each object entry.
             void* data_pointers[16];

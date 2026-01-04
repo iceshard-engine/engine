@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -62,7 +62,7 @@ namespace ice
     auto load_global_modules(
         ice::Allocator& alloc,
         ice::ModuleRegister& modules_register
-    ) noexcept -> ice::ucount;
+    ) noexcept -> ice::u32;
 
     //! \brief Creates a default module register.
     //! \param[in] alloc The allocator to use for the module register.

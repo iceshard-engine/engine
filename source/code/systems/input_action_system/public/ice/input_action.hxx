@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -8,6 +8,8 @@
 
 namespace ice
 {
+
+    static constexpr auto ab = ice::String{ "asd" };
 
     static constexpr ice::AssetCategory AssetCategory_InputActionsScript = ice::make_asset_category("ice/input_actions/script");
 

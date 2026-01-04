@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/render/render_module.hxx>
@@ -23,11 +23,11 @@ namespace ice::render::vk
         app_info.engineVersion = 1;
         app_info.apiVersion = VK_API_VERSION_1_3;
 
-        ice::ucount layer_count = 0;
+        ice::u32 layer_count = 0;
         ice::Array<ExtensionName> names{ alloc };
         Extension extensions = extensions_gather_names(names, layer_count, ExtensionTarget::InstanceLayer);
 
-        ice::ucount extension_count = 0;
+        ice::u32 extension_count = 0;
         extensions |= extensions_gather_names(names, extension_count, ExtensionTarget::InstanceExtension);
         ICE_ASSERT_CORE(ice::has_all(extensions, Extension::VkI_Surface));
         ICE_ASSERT_CORE(ice::has_any(extensions, Extension::VkI_AndroidSurface | Extension::VkI_Win32Surface));

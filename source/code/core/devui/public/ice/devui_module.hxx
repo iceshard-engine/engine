@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -6,7 +6,7 @@
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/module_types.hxx>
 #include <ice/devui_types.hxx>
-#include <ice/string/string.hxx>
+#include <ice/string.hxx>
 #include <ice/span.hxx>
 
 namespace ice::api

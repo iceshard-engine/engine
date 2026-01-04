@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "input_devices.hxx"
@@ -122,7 +122,7 @@ namespace ice::input
             break;
         }
 
-        ice::ucount const control_index = detail::input_control_index(input);
+        ice::u32 const control_index = detail::input_control_index(input);
         ICE_ASSERT_CORE(control_index < ice::array::count(_controls));
 
         detail::ControlState control = _controls[control_index];

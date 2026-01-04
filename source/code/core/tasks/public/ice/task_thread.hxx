@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -53,7 +53,7 @@ namespace ice
         virtual bool is_busy() const noexcept = 0;
         virtual bool is_running() const noexcept = 0;
 
-        virtual auto estimated_task_count() const noexcept -> ice::ucount = 0;
+        virtual auto estimated_task_count() const noexcept -> ice::u32 = 0;
 
         virtual auto queue() noexcept -> ice::TaskQueue& = 0;
     };

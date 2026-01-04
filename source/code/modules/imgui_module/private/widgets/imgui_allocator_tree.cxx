@@ -1,9 +1,9 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "imgui_allocator_tree.hxx"
 #include <ice/log_formatters.hxx>
-#include <ice/string/string.hxx>
+#include <ice/string.hxx>
 #include <ice/devui_imgui.hxx>
 
 #include <imgui/imgui.h>
@@ -56,13 +56,13 @@ namespace ice::devui
             {
                 if (ImGui::TableNextColumn())
                 {
-                    ice::ucount const current_count = allocator.allocation_count();
+                    ice::u32 const current_count = allocator.allocation_count();
                     ImGui::Text(current_count == Allocator::CountNotTracked ? "- not tracked -" : "%d", current_count);
                 }
 
                 if (ImGui::TableNextColumn())
                 {
-                    ice::ucount const total_count = allocator.allocation_total_count();
+                    ice::u32 const total_count = allocator.allocation_total_count();
                     ImGui::Text(total_count == Allocator::CountNotTracked ? "- not tracked -" : "%d", total_count);
                 }
 

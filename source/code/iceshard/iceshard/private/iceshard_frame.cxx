@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_frame.hxx"
@@ -82,12 +82,12 @@ namespace ice
         }
     }
 
-    auto IceshardEngineFrame::execute_tasks() noexcept -> ice::ucount
+    auto IceshardEngineFrame::execute_tasks() noexcept -> ice::u32
     {
-        ice::ucount total_count = 0;
+        ice::u32 total_count = 0;
         for (TaskGroup& group : _task_groups)
         {
-            ice::ucount const current_count = ice::count(group.tasks);
+            ice::u32 const current_count = ice::count(group.tasks);
 
             // Only reset the barrier if we actual have tasks to execute.
             if (current_count > 0)
@@ -104,12 +104,12 @@ namespace ice
         return total_count;
     }
 
-    auto IceshardEngineFrame::running_tasks() const noexcept -> ice::ucount
+    auto IceshardEngineFrame::running_tasks() const noexcept -> ice::u32
     {
-        ice::ucount result = 0;
+        ice::u32 result = 0;
         for (TaskGroup const& group : _task_groups)
         {
-            result += ice::ucount(group.barrier->is_set() == false);
+            result += ice::u32(group.barrier->is_set() == false);
         }
         return result;
     }

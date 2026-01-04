@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "linux_storage.hxx"
@@ -45,7 +45,7 @@ namespace ice::platform::linux
                     }
 
                     ice::ucount const idassignment = ice::string::find_first_of(line, '=');
-                    if (idassignment == ice::String_NPos)
+                    if (idassignment == ice::none_index)
                     {
                         ICE_LOG(LogSeverity::Warning, LogTag::Core, "Improperly formatted line: {}", line);
                         return true;

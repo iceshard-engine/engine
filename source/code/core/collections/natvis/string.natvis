@@ -1,6 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
 
+  <Type Name="ice::ncount">
+    <DisplayString Condition="width == 0">0 &lt;invalid&gt;</DisplayString>
+    <DisplayString>{value}</DisplayString>
+    <Expand>
+      <Item Name="[value]">value</Item>
+      <Item Name="[width]">width</Item>
+      <Item Name="[bytes]">value * width</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="ice::nindex">
+    <DisplayString Condition="width == 0">0 &lt;invalid&gt;</DisplayString>
+    <DisplayString>{value} </DisplayString>
+    <Expand>
+      <Item Name="[value]">value</Item>
+      <Item Name="[width]">width</Item>
+      <Item Name="[bytes]">value * width</Item>
+    </Expand>
+  </Type>
+
   <!-- Native Visualization for the core::String<> type -->
   <Type Name="ice::HeapString&lt;*&gt;">
     <DisplayString>HeapString {{ { _data,s8 } }}</DisplayString>

@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/mem_allocator_host.hxx>
@@ -152,7 +152,7 @@ public:
                 ice::Memory configmem;
                 ice::Config const config = ice::config::from_json(
                     _allocator,
-                    ice::String{ (char const*)filemem.location, (ice::ucount)filemem.size.value },
+                    ice::String{ (char const*)filemem.location, (ice::u32)filemem.size.value },
                     configmem
                 );
 

@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "ice_gfx_graph_runtime.hxx"
@@ -381,9 +381,9 @@ namespace ice::gfx
         ice::Array<GraphBarrier> barriers{ alloc };
         postprocess_snapshots(snapshots, barriers);
 
-        ice::ucount max_images = 0;
-        ice::ucount current_images = 0;
-        ice::ucount removed_images = 0;
+        ice::u32 max_images = 0;
+        ice::u32 current_images = 0;
+        ice::u32 removed_images = 0;
         for (GfxGraphSnapshot const snapshot : snapshots)
         {
             if (snapshot.event & GfxSnapshotEvent::MaskPass)

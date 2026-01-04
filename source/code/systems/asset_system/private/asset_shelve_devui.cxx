@@ -1,12 +1,11 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "asset_shelve_devui.hxx"
 
 #include <ice/resource.hxx>
 #include <ice/container/hashmap.hxx>
-#include <imgui/imgui.h>
-#undef assert
+#include <ice/devui_imgui.hxx>
 
 namespace ice
 {
@@ -46,7 +45,7 @@ namespace ice
             {
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn();
-                ImGui::TextUnformatted(ice::string::begin(entry->debug_name), ice::string::end(entry->debug_name));
+                ImGui::TextUnformatted(entry->debug_name.cbegin(), entry->debug_name.cend());
 
                 if (ImGui::TableNextColumn()) // Status
                 {
@@ -54,16 +53,13 @@ namespace ice
                         "Invalid", "Unknown", "Exists", "Raw", "Baked", "Loaded", "Runtime"
                     };
 
-                    ImGui::TextUnformatted(
-                        ice::string::begin(Constant_StateNames[static_cast<ice::u32>(entry->state())]),
-                        ice::string::end(Constant_StateNames[static_cast<ice::u32>(entry->state())])
-                    );
+                    ImGui::TextUnformatted(Constant_StateNames[static_cast<ice::u32>(entry->state())]);
                 }
                 if (ImGui::TableNextColumn()) // Resource
                 {
                     ice::ResourceHandle const handle = ice::asset_data_resource(entry->_data);
                     ice::String const origin = handle != nullptr ? handle->origin() : "???";
-                    ImGui::TextUnformatted(ice::string::begin(origin), ice::string::end(origin));
+                    ImGui::TextUnformatted(origin);
                 }
             }
 

@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -15,7 +15,7 @@ namespace ice::ecs
     template<ice::ecs::QueryArg... QueryComponents>
     struct QueryDefinition
     {
-        static constexpr ice::ucount Constant_ComponentCount = sizeof...(QueryComponents);
+        static constexpr ice::u32 Constant_ComponentCount = sizeof...(QueryComponents);
         static constexpr ice::StaticArray<ice::ecs::detail::QueryTypeInfo, Constant_ComponentCount> Constant_Requirements =
             ice::ecs::detail::QueryRequirements<QueryComponents...>::Constant_Requirements;
 
@@ -51,7 +51,7 @@ namespace ice::ecs
     template<ice::ecs::QueryTagType... Tags>
     struct QueryTagsDefinition
     {
-        static constexpr ice::ucount Constant_TagCount = sizeof...(Tags);
+        static constexpr ice::u32 Constant_TagCount = sizeof...(Tags);
         static constexpr ice::StaticArray<ice::StringID, Constant_TagCount> Constant_Tags =
             ice::ecs::detail::QueryTags<Tags...>::Constant_Tags;
     };

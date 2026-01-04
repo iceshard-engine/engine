@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "resource_provider_filelist.hxx"
@@ -43,14 +43,15 @@ namespace ice
                     _named_allocator, entry.path
                 );
 
-                ICE_ASSERT_CORE(ice::string::starts_with((ice::native_file::FilePath)file_path, (ice::native_file::FilePath)base_path));
+                ice::native_file::FilePath const file_path_str = file_path;
+                ICE_ASSERT_CORE(file_path_str.starts_with((ice::native_file::FilePath)base_path));
             }
 
-            ice::ucount const basepath_size = ice::string::empty(entry.basepath)
-                ? ice::string::size(entry.path) - ice::string::size(ice::path::filename(entry.path))
-                : ice::string::size(entry.basepath);
+            ice::ncount const basepath_size = entry.basepath.is_empty()
+                ? entry.path.size() - ice::path::filename(entry.path).size()
+                : entry.basepath.size();
 
-            ice::array::push_back(_file_paths, { .path = file_path, .basepath_size = basepath_size, });
+            ice::array::push_back(_file_paths, { .path = file_path, .basepath_size = basepath_size.u32() });
         }
     }
 
@@ -94,9 +95,9 @@ namespace ice
             ice::native_file::FilePath const uribase = ice::path::directory(base_path);
             ice::native_file::FilePath const datafile = file_path;
             ice::native_file::HeapFilePath metafile{ temp_alloc };
-            ice::string::reserve(metafile, 512);
-            ice::string::push_back(metafile, file_path);
-            ice::string::push_back(metafile, ISP_PATH_LITERAL(".isrm"));
+            metafile.reserve(512);
+            metafile.push_back(file_path);
+            metafile.push_back(ISP_PATH_LITERAL(".isrm"));
 
             resource = create_resources_from_loose_files(
                 _named_allocator,
@@ -134,7 +135,7 @@ namespace ice
         for (ice::FileListEntry const& entry : _file_paths)
         {
             create_resource_from_file(
-                ice::string::substr(entry.path, 0, entry.basepath_size),
+                entry.path.substr(0, entry.basepath_size),
                 entry.path
             );
         }
@@ -142,7 +143,7 @@ namespace ice
 
     auto FileListResourceProvider::collect(
         ice::Array<ice::Resource*>& out_changes
-    ) noexcept -> ice::ucount
+    ) noexcept -> ice::u32
     {
         IPT_ZONE_SCOPED;
 
@@ -225,17 +226,13 @@ namespace ice
         ice::Resource const* root_resource
     ) const noexcept -> ice::Resource const*
     {
-        ice::u32 const origin_size = ice::string::size(root_resource->origin());
+        ice::ncount const origin_size = root_resource->origin().size();
 
         ice::HeapString<> predicted_path{ (ice::Allocator&) _data_allocator };
-        ice::string::reserve(predicted_path, origin_size + ice::string::size(relative_uri.path()));
+        predicted_path.reserve(origin_size + relative_uri.path().size());
 
-        predicted_path = ice::string::substr(
-            root_resource->origin(),
-            0,
-            origin_size - ice::string::size(
-                ice::path::filename(root_resource->name())
-            )
+        predicted_path = root_resource->origin().substr(
+            0, origin_size - ice::path::filename(root_resource->name()).size()
         );
 
         ice::path::join(predicted_path, relative_uri.path());

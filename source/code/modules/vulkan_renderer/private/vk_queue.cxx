@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "vk_queue.hxx"
@@ -139,7 +139,7 @@ namespace ice::render::vk
         VkCommandBuffer vk_temp_buffers[16];
         ICE_ASSERT_CORE(ice::count(buffers) < 16);
 
-        ice::ucount count = 0;
+        ice::u32 count = 0;
         for (ice::render::CommandBuffer handle : buffers)
         {
             vk_temp_buffers[count] = VulkanCommandBuffer::native(handle)->buffer;

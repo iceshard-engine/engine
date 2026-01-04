@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "input_devices.hxx"
@@ -12,7 +12,7 @@ namespace ice::input
 {
 
     //! \brief Maximum number of pointers supported on a touchscreen device.
-    static constexpr ice::ucount Constant_MaxPointerCount = 6;
+    static constexpr ice::u32 Constant_MaxPointerCount = 6;
 
     static constexpr ice::input::detail::ControlConfig Constant_TouchControlConfig {
         .button_click_threshold = Constant_TouchScreenClickThreshold,
@@ -27,12 +27,12 @@ namespace ice::input
             ice::input::DeviceHandle device
         ) noexcept;
 
-        auto max_count() const noexcept -> ice::ucount override
+        auto max_count() const noexcept -> ice::u32 override
         {
             return Constant_MaxPointerCount;
         }
 
-        auto count() const noexcept -> ice::ucount override
+        auto count() const noexcept -> ice::u32 override
         {
             return _pointer_count;
         }
@@ -48,7 +48,7 @@ namespace ice::input
         void on_publish(ice::Array<ice::input::InputEvent>& events_out) noexcept override;
 
     private:
-        ice::ucount _pointer_count;
+        ice::u32 _pointer_count;
         ice::input::DeviceHandle _pointers[Constant_MaxPointerCount];
         ice::vec2f _positions[Constant_MaxPointerCount];
 
@@ -169,7 +169,7 @@ namespace ice::input
 
         event.value_type = InputValueType::AxisFloat;
 
-        ice::ucount remaining = _pointer_count;
+        ice::u32 remaining = _pointer_count;
         for (ice::u32 idx = 0; idx < max_count() && remaining > 0; ++idx)
         {
             if (_pointers[idx] == DeviceHandle::Invalid) continue;

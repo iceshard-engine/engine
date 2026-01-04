@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -28,29 +28,10 @@ namespace ice
 
     using uptr = std::uintptr_t;
 
-    // Declaration of ref types
-
-    //! \brief Holds 'offset' and 'size' fields (u32) to access data stored in a buffer-like object.
-    using ref32 = struct { ice::u32 offset; ice::u32 size; };
-
-    //! \brief Holds 'offset' and 'size' fields (u16) to access data stored in a buffer-like object.
-    struct ref16
-    {
-        ice::u16 offset;
-        ice::u16 size;
-
-        constexpr operator ice::ref32() const noexcept { return ref32{ offset, size }; }
-    };
-
-    //! \brief Holds 'offset' and 'size' fields (u8) to access data stored in a buffer-like object.
-    struct ref8
-    {
-        ice::u8 offset;
-        ice::u8 size;
-
-        constexpr operator ice::ref16() const noexcept { return ref16{ offset, size }; }
-        constexpr operator ice::ref32() const noexcept { return ref32{ offset, size }; }
-    };
+    // Forward declaration of ref types
+    struct ref8;
+    struct ref16;
+    struct ref32;
 
     // Forward declaration of time-types
     struct Ts;

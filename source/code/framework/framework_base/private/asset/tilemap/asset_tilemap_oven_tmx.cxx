@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "asset_tilemap.hxx"
@@ -9,7 +9,6 @@
 #include <ice/resource_tracker.hxx>
 #include <ice/resource.hxx>
 #include <ice/string_utils.hxx>
-#include <ice/string/static_string.hxx>
 #include <ice/task_utils.hxx>
 #include <ice/uri.hxx>
 
@@ -141,14 +140,14 @@ namespace ice
         Fn&& tileid_callback
     ) noexcept
     {
-        ice::String csv_data{ node_data->value(), ice::ucount(node_data->value_size()) };
+        ice::String csv_data{ node_data->value(), ice::u32(node_data->value_size()) };
 
-        ice::u32 beg = 0;
-        ice::u32 end = ice::string::find_first_of(csv_data, ',');
-        while (end != ice::String_NPos)
+        ice::nindex beg = 0;
+        ice::nindex end = csv_data.find_first_of(',');
+        while (end != ice::none_index)
         {
-            char const* val_beg = ice::string::begin(csv_data) + beg;
-            char const* val_end = ice::string::begin(csv_data) + end;
+            char const* val_beg = csv_data.begin() + beg;
+            char const* val_end = csv_data.begin() + end;
 
             while (std::isdigit(*val_beg) == false && val_beg != val_end)
             {
@@ -162,12 +161,12 @@ namespace ice
             }
 
             beg = end + 1;
-            end = ice::string::find_first_of(csv_data, ',', beg);
+            end = csv_data.find_first_of(',', beg);
         }
 
         {
-            char const* val_beg = ice::string::begin(csv_data) + beg;
-            char const* val_end = ice::string::begin(csv_data) + node_data->value_size();
+            char const* val_beg = csv_data.begin() + beg;
+            char const* val_end = csv_data.begin() + node_data->value_size();
 
             while (std::isdigit(*val_beg) == false && val_beg != val_end)
             {
@@ -188,14 +187,14 @@ namespace ice
         Fn&& point_callback
     ) noexcept
     {
-        char const* const data = ice::string::begin(points);
+        char const* const data = points.begin();
 
-        ice::u32 beg = 0;
-        ice::u32 end = ice::string::find_first_of(points, ' ');
-        while (end != ice::String_NPos)
+        ice::nindex beg = 0;
+        ice::nindex end = points.find_first_of(' ');
+        while (end != ice::none_index)
         {
             char const* val_beg = data + beg;
-            char const* val_delim = data + ice::string::find_first_of(points, ',', beg);
+            char const* val_delim = data + points.find_first_of(',', beg);
             char const* val_end = data + end;
 
             while (std::isdigit(*val_beg) == false && val_beg != val_end)
@@ -213,13 +212,13 @@ namespace ice
             }
 
             beg = end + 1;
-            end = ice::string::find_first_of(points, ' ', beg);
+            end = points.find_first_of(' ', beg);
         }
 
         {
             char const* val_beg = data + beg;
-            char const* val_delim = data + ice::string::find_first_of(points, ',', beg);
-            char const* val_end = data + ice::string::size(points);
+            char const* val_delim = data + points.find_first_of(',', beg);
+            char const* val_end = data + points.size();
 
             while (std::isdigit(*val_beg) == false && val_beg != val_end)
             {
@@ -875,8 +874,8 @@ namespace ice
                     }
 
                     ice::String origin = ice::resource_path(image_res);
-                    ice::String name = ice::string::substr(origin, 0, ice::string::find_last_of(origin, '.'));
-                    total_tileset_assets_size += ice::string::size(name) + 1;
+                    ice::String name = origin.substr(0, origin.find_last_of('.').u32());
+                    total_tileset_assets_size += name.size().u32() + 1;
                 }
 
                 total_tilemap_bytes += total_tileset_assets_size;
@@ -929,24 +928,24 @@ namespace ice
                     image_res = resource_tracker.find_resource({ ice::Scheme_URN, ice::resource_path(image_res) });
 
                     ice::String origin = ice::resource_path(image_res);
-                    ice::String name = ice::string::substr(origin, 0, ice::string::find_last_of(origin, '.'));
-                    char const* tileset_asset_str = ice::string::begin(name);
-                    ice::u32 const tileset_asset_len = ice::string::size(name);
+                    ice::String name = origin,substr(0, origin.find_last_of('.'));
+                    char const* tileset_asset_str = name.begin();
+                    ice::ncount const tileset_asset_len = name.size();
 
                     ice::memcpy(
                         tileset_assets,
                         tileset_asset_str,
-                        tileset_asset_len
+                        tileset_asset_len.bytes()
                     );
 
                     tilesets[idx].element_size = tilemap_info.tileset_info[idx].element_size;
 
                     ice::u32* asset_loc = reinterpret_cast<ice::u32*>(&tilesets[idx].asset);// = ice::String{ tileset_assets, tileset_asset_len };
                     asset_loc[0] = asset_str_offset;
-                    asset_loc[1] = tileset_asset_len;
+                    asset_loc[1] = tileset_asset_len.u32();
 
                     tileset_assets += tileset_asset_len;
-                    asset_str_offset += tileset_asset_len;
+                    asset_str_offset += tileset_asset_len.u32();
                 }
 
                 if (result == true)
@@ -1058,7 +1057,7 @@ namespace ice
     {
         if (node != nullptr)
         {
-            return ice::String{ node->name(), ice::ucount(node->name_size()) };
+            return ice::String{ node->name(), ice::u32(node->name_size()) };
         }
         return { };
     }
@@ -1068,7 +1067,7 @@ namespace ice
     {
         if (attrib != nullptr)
         {
-            out_value = ice::String{ attrib->value(), ice::ucount(attrib->value_size()) };
+            out_value = ice::String{ attrib->value(), ice::u32(attrib->value_size()) };
             return true;
         }
         return false;

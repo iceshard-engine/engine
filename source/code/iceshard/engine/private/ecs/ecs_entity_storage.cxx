@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/assert.hxx>
@@ -331,7 +331,7 @@ namespace ice::ecs
             ice::ecs::detail::DataBlock* archetype_block = nullptr;
             ice::u32 archetype_block_index = ice::u32_max;
 
-            ice::ucount dtor_count = 0;
+            ice::u32 dtor_count = 0;
             ice::ecs::detail::EntityDestructor const* dtors[5];
             ice::u32 dtor_components_sizes[10];
             ice::u32 dtor_components_offsets[10];
@@ -546,7 +546,7 @@ namespace ice::ecs
 
     } // namespace detail
 
-    static constexpr ice::ucount Constant_InitialEntityCount = 1024 * 32;
+    static constexpr ice::u32 Constant_InitialEntityCount = 1024 * 32;
 
     EntityStorage::EntityStorage(
         ice::Allocator& alloc,
@@ -1112,10 +1112,10 @@ namespace ice::ecs
     auto EntityStorage::query_data_slots(
         ice::Span<ice::ecs::Entity const> requested,
         ice::Span<ice::ecs::EntityDataSlot> out_data_slots
-    ) const noexcept -> ice::ucount
+    ) const noexcept -> ice::u32
     {
         ice::u32 idx = 0;
-        ice::ucount valid = 0;
+        ice::u32 valid = 0;
         for (ice::ecs::Entity entity : requested)
         {
             ice::ecs::EntityInfo const entity_info = ice::ecs::entity_info(entity);
@@ -1153,7 +1153,7 @@ namespace ice::ecs
         IPT_ZONE_SCOPED;
         ice::StackAllocator<512_B> archetypes_alloc{};
         ice::Array<ice::ecs::Archetype> archetypes{ archetypes_alloc };
-        ice::array::reserve(archetypes, ice::mem_max_capacity<ice::ecs::Archetype>(archetypes_alloc.Constant_InternalCapacity));
+        ice::array::reserve(archetypes, (u32) ice::mem_max_capacity<ice::ecs::Archetype>(archetypes_alloc.Constant_InternalCapacity));
         _archetype_index.find_archetypes(archetypes, query_info, query_tags);
 
         ice::u32 const prev_archetype_count = ice::count(out_instance_infos);

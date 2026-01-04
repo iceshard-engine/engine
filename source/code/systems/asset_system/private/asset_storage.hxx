@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -8,7 +8,6 @@
 #include <ice/resource_tracker.hxx>
 #include <ice/resource.hxx>
 #include <ice/container/hashmap.hxx>
-#include <ice/string/static_string.hxx>
 #include <ice/devui_widget.hxx>
 #include <ice/task_expected.hxx>
 #include <ice/task_utils.hxx>

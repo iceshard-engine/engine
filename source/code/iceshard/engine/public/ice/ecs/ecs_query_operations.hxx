@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -16,7 +16,7 @@ namespace ice::ecs
     {
     public:
         template<typename Self>
-        inline auto entity_count(this Self&& self) noexcept -> ice::ucount;
+        inline auto entity_count(this Self&& self) noexcept -> ice::u32;
 
         template<typename Self>
         inline auto for_entity(this Self&& self, ice::ecs::Entity entity) noexcept -> typename ice::clear_type_t<Self>::ResultType;
@@ -32,7 +32,7 @@ namespace ice::ecs
 
     public:
         template<typename Self>
-        inline auto block_count(this Self&& self) noexcept -> ice::ucount;
+        inline auto block_count(this Self&& self) noexcept -> ice::u32;
 
         template<typename Self>
         inline auto for_each_block(this Self&& self) noexcept -> ice::Generator<typename ice::clear_type_t<Self>::BlockResultType>;
@@ -85,7 +85,7 @@ namespace ice::ecs
             RefType const& ref = std::get<RefIdx>(in_tuple);
 
 
-            static constexpr ice::ucount component_count = sizeof...(SubQueryTypes);
+            static constexpr ice::u32 component_count = sizeof...(SubQueryTypes);
             ice::ecs::EntityDataSlot const slotinfo = provider.query_data_slot(ref->entity);
 
             ice::u32 arch_idx = 0;
@@ -172,7 +172,7 @@ namespace ice::ecs
             using QueryTypeTuple = std::tuple<QueryTypes...>;
             using SubQueryTypeTuple = std::tuple<SubQueryTypes...>;
 
-            static constexpr ice::ucount component_count = sizeof...(SubQueryTypes);
+            static constexpr ice::u32 component_count = sizeof...(SubQueryTypes);
             void* helper_pointer_array[component_count]{ nullptr };
 
             auto const invoke_for_entity = [&](
@@ -271,12 +271,12 @@ namespace ice::ecs
         inline auto entity_count(
             ice::ecs::QueryObject<MainPart, RefParts...> const& query,
             ice::ecs::detail::DataBlockFilter::QueryFilter filter
-        ) noexcept -> ice::ucount
+        ) noexcept -> ice::u32
         {
             // On a query with multiple parts we only want to check the blocks of the main part.
             ice::Span const blocks_to_check = ice::array::slice(query.archetype_data_blocks, 0, query.archetype_count_for_part[0]);
 
-            ice::ucount result = 0;
+            ice::u32 result = 0;
             for (ice::ecs::detail::DataBlock const* const head_block : blocks_to_check)
             {
                 // We don't want to count the head-block since it never contains actual entity data.
@@ -296,12 +296,12 @@ namespace ice::ecs
         template<typename MainPart, typename... RefParts>
         inline auto block_count(
             ice::ecs::QueryObject<MainPart, RefParts...> const& query
-        ) noexcept -> ice::ucount
+        ) noexcept -> ice::u32
         {
             // On a query with multiple parts we only want to check the blocks of the main part.
             ice::Span const blocks_to_check = ice::array::slice(query.archetype_data_blocks, 0, query.archetype_count_for_part[0]);
 
-            ice::ucount result = 0;
+            ice::u32 result = 0;
             for (ice::ecs::detail::DataBlock const* const head_block : blocks_to_check)
             {
                 // We don't want to count the head-block since it never contains actual entity data.
@@ -322,7 +322,7 @@ namespace ice::ecs
             bool allow_failure
         ) noexcept -> typename ice::ecs::QueryObject<MainPart, RefParts...>::ResultType
         {
-            static constexpr ice::ucount component_count = MainPart::ComponentCount;
+            static constexpr ice::u32 component_count = MainPart::ComponentCount;
             ice::ecs::EntityDataSlot const slotinfo = query.provider->query_data_slot(entity);
 
             ice::u32 arch_idx = 0;
@@ -402,7 +402,7 @@ namespace ice::ecs
             QueryObjectOwner
         ) noexcept -> ice::Generator<typename ice::ecs::QueryObject<MainPart, RefParts...>::ResultType>
         {
-            static constexpr ice::ucount component_count = MainPart::ComponentCount;
+            static constexpr ice::u32 component_count = MainPart::ComponentCount;
 
             void* helper_pointer_array[component_count]{ nullptr };
 
@@ -437,7 +437,7 @@ namespace ice::ecs
                         }
                     }
 
-                    ice::ucount entity_idx = 0;
+                    ice::u32 entity_idx = 0;
                     while (entity_idx < block->block_entity_count)
                     {
                         if constexpr (sizeof...(RefParts) == 0)
@@ -472,7 +472,7 @@ namespace ice::ecs
         ) noexcept
         {
             using Definition = typename ice::ecs::QueryObject<MainPart, RefParts...>::Definition;
-            static constexpr ice::ucount component_count = MainPart::ComponentCount;
+            static constexpr ice::u32 component_count = MainPart::ComponentCount;
 
             void* helper_pointer_array[component_count]{ nullptr };
 
@@ -546,7 +546,7 @@ namespace ice::ecs
         {
             static_assert(sizeof...(RefParts) == 0, "'for_each_block' only supports basic queries with no entity references!");
 
-            static constexpr ice::ucount component_count = MainPart::ComponentCount;
+            static constexpr ice::u32 component_count = MainPart::ComponentCount;
 
             void* helper_pointer_array[component_count]{ nullptr };
 
@@ -595,7 +595,7 @@ namespace ice::ecs
         ) noexcept
         {
             static_assert(sizeof...(RefParts) == 0, "'for_each_block' only supports basic queries with no entity references!");
-            static constexpr ice::ucount component_count = MainPart::ComponentCount;
+            static constexpr ice::u32 component_count = MainPart::ComponentCount;
 
             void* helper_pointer_array[component_count]{ nullptr };
 
@@ -643,13 +643,13 @@ namespace ice::ecs
     } // namespace query
 
     template<typename Self>
-    inline auto TraitQueryOperations::entity_count(this Self&& self) noexcept -> ice::ucount
+    inline auto TraitQueryOperations::entity_count(this Self&& self) noexcept -> ice::u32
     {
         return ice::ecs::query::entity_count(self.query_object(), self.filter_object());
     }
 
     template<typename Self>
-    inline auto TraitQueryOperations::block_count(this Self&& self) noexcept -> ice::ucount
+    inline auto TraitQueryOperations::block_count(this Self&& self) noexcept -> ice::u32
     {
         return ice::ecs::query::block_count(self.query_object());
     }

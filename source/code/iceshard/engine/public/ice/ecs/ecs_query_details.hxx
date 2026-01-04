@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -121,7 +121,7 @@ namespace ice::ecs::detail
     using QueryEntityIteratorSignature = void (typename QueryIteratorArgument<Args>::EntityIteratorArg...);
 
     template<QueryArg... Args>
-    using QueryBlockTupleResult = std::tuple<ice::ucount, typename QueryIteratorArgument<Args>::BlockIteratorArg...>;
+    using QueryBlockTupleResult = std::tuple<ice::u32, typename QueryIteratorArgument<Args>::BlockIteratorArg...>;
 
     template<QueryArg... Args>
     using QueryEntityTupleResult = std::tuple<typename QueryIteratorArgument<Args>::BlockIteratorArg...>;

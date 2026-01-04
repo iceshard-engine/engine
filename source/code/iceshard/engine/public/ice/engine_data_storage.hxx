@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -25,13 +25,13 @@ namespace ice
         inline auto store(ice::StringID_Arg name) noexcept -> T&;
 
         template<typename T> requires (std::is_trivially_destructible_v<ice::Span<T>>)
-        inline auto store(ice::StringID_Arg name, ice::ucount size) noexcept -> ice::Span<T>;
+        inline auto store(ice::StringID_Arg name, ice::u32 size) noexcept -> ice::Span<T>;
 
         template<typename T> requires (std::is_trivially_destructible_v<T>)
         inline auto read_or_store(ice::StringID_Arg name) noexcept -> T&;
 
         template<typename T> requires (std::is_trivially_destructible_v<ice::Span<T>>)
-        inline auto read_or_store(ice::StringID_Arg name, ice::ucount size) noexcept -> ice::Span<T>;
+        inline auto read_or_store(ice::StringID_Arg name, ice::u32 size) noexcept -> ice::Span<T>;
 
         template<typename T>
         inline auto read(ice::StringID_Arg name) noexcept -> T&;
@@ -49,7 +49,7 @@ namespace ice
     }
 
     template<typename T> requires (std::is_trivially_destructible_v<ice::Span<T>>)
-    inline auto DataStorage::store(ice::StringID_Arg name, ice::ucount size) noexcept -> ice::Span<T>
+    inline auto DataStorage::store(ice::StringID_Arg name, ice::u32 size) noexcept -> ice::Span<T>
     {
         ice::meminfo minfo = ice::meminfo_of<ice::Span<T>>;
         ice::usize const offset = minfo += ice::meminfo_of<T> * size;
@@ -70,7 +70,7 @@ namespace ice
     }
 
     template<typename T> requires (std::is_trivially_destructible_v<ice::Span<T>>)
-    inline auto DataStorage::read_or_store(ice::StringID_Arg name, ice::ucount size) noexcept -> ice::Span<T>
+    inline auto DataStorage::read_or_store(ice::StringID_Arg name, ice::u32 size) noexcept -> ice::Span<T>
     {
         if (this->has(name))
         {

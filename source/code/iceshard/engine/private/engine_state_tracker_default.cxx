@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "engine_state_tracker_default.hxx"
@@ -163,13 +163,13 @@ namespace ice
     auto EngineStateTracker_Default::update_states(
         ice::ShardContainer const& shards,
         ice::ShardContainer& out_shards
-    ) noexcept -> ice::ucount
+    ) noexcept -> ice::u32
     {
         ice::StackAllocator<512_B> temp_alloc;
         ice::ShardContainer temp_shards{ temp_alloc };
         ice::array::reserve(
             temp_shards._data,
-            ice::mem_max_capacity(
+            (u32)ice::mem_max_capacity(
                 ice::size_of<ice::Shard>,
                 decltype(temp_alloc)::Constant_InternalCapacity
             )

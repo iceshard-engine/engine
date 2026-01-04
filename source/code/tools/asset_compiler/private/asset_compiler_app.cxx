@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/app_info.hxx>
@@ -46,7 +46,7 @@ public:
         {
             ice::array::push_back(
                 self._params,
-                ice::shard(results[0], ice::string::begin(results[1]))
+                ice::shard(results[0], results[1].begin())
             );
         }
         if (ice::count(results) == 1)
@@ -149,7 +149,7 @@ public:
         }
 
         ICE_LOG_IF(
-            Param_Verbose && (_output_std == false && ice::string::empty(_output)),
+            Param_Verbose && (_output_std == false && _output.is_empty()),
             ice::LogSeverity::Retail, ice::LogTag::Tool,
             "No output was selected, please use '-o,--output' or '--stdout'!"
         );
@@ -160,7 +160,7 @@ public:
             { .predicted_resource_count = 10'000, .io_dedicated_threads = 0 }
         );
 
-        if (ice::string::empty(_asset_basepath))
+        if (_asset_basepath.is_empty())
         {
             _asset_basepath = ice::app::workingdir();
         }
@@ -194,7 +194,7 @@ public:
         );
 
         ice::HeapString<> uristr{ _allocator, "file://<inputs>" };
-        ice::string::push_back(uristr, input_resource->uri().path());
+        uristr.push_back(input_resource->uri().path());
 
         ice::ResourceHandle res = resource_tracker->find_resource(ice::URI{ uristr });
         if (res == nullptr)
@@ -221,7 +221,7 @@ public:
                     continue;
                 }
 
-                ice::ucount out_idx = 0;
+                ice::u32 out_idx = 0;
                 if (ice::search(compiler.fn_supported_resources(_params), res_ext, out_idx))
                 {
                     resource_compiler = &compiler;
@@ -264,7 +264,7 @@ public:
                 return 1;
             }
 
-            ice::ucount out_idx = 0;
+            ice::u32 out_idx = 0;
             if (ice::search(resource_compiler->fn_supported_resources(_params), res_ext, out_idx) == false)
             {
                 ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Resource compiler for resource '{}' is not available.", res->name());
@@ -281,25 +281,25 @@ public:
             }
 
             // If no name was provided use the input name and replace the extension is needed
-            if (ice::string::empty(final_asset_name))
+            if (final_asset_name.is_empty())
             {
                 final_asset_name = input_resource->name();
 
                 // Replace the extension if a result extension is provided.
-                if (ice::string::any(result_extension))
+                if (result_extension.not_empty())
                 {
                     ice::path::replace_extension(final_asset_name, result_extension);
                 }
             }
             // If asset name has no extension, attach the result extension
-            else if (ice::string::empty(ice::path::extension(final_asset_name)))
+            else if (ice::path::extension(final_asset_name).is_empty())
             {
                 ice::path::replace_extension(final_asset_name, result_extension);
             }
 
             // Warn if the final extension is different than what the resource compiler expects.
             ICE_LOG_IF(
-                ice::string::any(result_extension) && ice::path::extension(final_asset_name) != result_extension,
+                result_extension.not_empty() && ice::path::extension(final_asset_name) != result_extension,
                 ice::LogSeverity::Warning, ice::LogTag::Tool,
                 "Asset compiler result extension '{}' differs from provided asset name extension {}!",
                 result_extension, ice::path::extension(final_asset_name)
@@ -381,13 +381,13 @@ public:
                 return 1;
             }
 
-            if (ice::string::any(_output))
+            if (_output.not_empty())
             {
                 ice::Memory const final_meta_data = meta.finalize(_allocator);
 
                 // Calc meta offset
                 ice::AlignResult const meta_offset = ice::align_to(
-                    (ice::u32)sizeof(ice::ResourceFormatHeader) + ice::string::size(final_asset_name) + 1,
+                    (ice::u32)sizeof(ice::ResourceFormatHeader) + final_asset_name.size().u32() + 1,
                     ice::ualign::b_8
                 );
 
@@ -395,7 +395,7 @@ public:
                 ice::ResourceFormatHeader const rfh{
                     .magic = ice::Constant_ResourceFormatMagic,
                     .version = ice::Constant_ResourceFormatVersion,
-                    .name_size = ice::string::size(final_asset_name),
+                    .name_size = final_asset_name.size().u32(),
                     .meta_offset = meta_offset.value,
                     .meta_size = static_cast<ice::u32>(final_meta_data.size.value),
                     .offset = (ice::u32)(meta_offset.value + final_meta_data.size.value),
@@ -409,7 +409,7 @@ public:
                 char const filler[8]{ 0 };
                 ice::Data const file_parts[]{
                     ice::data_view(rfh), // Header
-                    ice::string::data_view(final_asset_name), // Name
+                    final_asset_name.data_view(), // Name
                     ice::Data{ &filler, 1, ice::ualign::b_1 },
                     ice::Data{ &filler, meta_offset.padding, ice::ualign::b_1 },
                     ice::data_view(final_meta_data), // Metadata
@@ -430,7 +430,7 @@ public:
 
             if (_output_std)
             {
-                fmt::println("{}", ice::String{ (char const*)final_asset_data.location, (ice::ucount)final_asset_data.size.value });
+                fmt::println("{}", ice::String{ (char const*)final_asset_data.location, (ice::u32)final_asset_data.size.value });
             }
 
             _allocator.deallocate(final_asset_data);

@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -82,7 +82,7 @@ namespace ice::ecs
             ice::ecs::EntityOperations& operations,
             ice::ecs::Archetype archetype,
             ice::ecs::EntityIndex& index,
-            ice::ucount entity_count
+            ice::u32 entity_count
         ) noexcept;
 
         ~OperationBuilder() noexcept;
@@ -241,7 +241,7 @@ namespace ice::ecs
         ice::ecs::EntityOperations& operations,
         ice::ecs::Archetype archetype,
         ice::ecs::EntityIndex& index,
-        ice::ucount entity_count
+        ice::u32 entity_count
     ) noexcept
         : operations{ operations }
         , archetype{ archetype }
@@ -270,7 +270,7 @@ namespace ice::ecs
 
     inline auto EntityOperations::create(
         ice::ecs::concepts::ArchetypeRef auto ref,
-        ice::ucount count
+        ice::u32 count
     ) noexcept -> ice::ecs::OperationBuilder
     {
         return OperationBuilder{ *this, this->get_archetype(ref), _entities, count };
@@ -335,8 +335,8 @@ namespace ice::ecs
             .offsets = ice::span::subspan(ice::span::from_std_const(HelperArchetype.component_alignments), 1)
         };
 
-        ice::ucount const entity_count = mode == 2 ? index_create_count : ice::count(entities);
-        ice::ucount constexpr component_count = sizeof...(Components);
+        ice::u32 const entity_count = mode == 2 ? index_create_count : ice::count(entities);
+        ice::u32 constexpr component_count = sizeof...(Components);
         ice::meminfo additional_data_size = ice::meminfo{ filter_data_size, ice::ualign::b_8 };
         additional_data_size += ice::meminfo_of<ice::ecs::Entity> * entity_count;
 
@@ -444,7 +444,7 @@ namespace ice::ecs
         operation->entities = entities_ptr;
         operation->entity_count = entity_count;
         operation->component_data = component_info_ptr;
-        operation->component_data_size = ice::ucount(ice::ptr_distance(component_info_ptr, component_info_ptr).value);
+        operation->component_data_size = ice::u32(ice::ptr_distance(component_info_ptr, component_info_ptr).value);
         operation->filter_data = filter_ptr;
 
         if (mode == 2)
@@ -477,8 +477,8 @@ namespace ice::ecs
             .offsets = ice::span::subspan(ice::span::from_std_const(HelperArchetype.component_alignments), 1)
         };
 
-        ice::ucount const entity_count = mode == 2 ? index_create_count : ice::count(entities);
-        ice::ucount constexpr component_count = sizeof...(Components);
+        ice::u32 const entity_count = mode == 2 ? index_create_count : ice::count(entities);
+        ice::u32 constexpr component_count = sizeof...(Components);
         ice::meminfo additional_data_size = ice::meminfo{ filter_data_size, ice::ualign::b_8 };
         additional_data_size += ice::meminfo_of<ice::ecs::Entity> * entity_count;
 
@@ -585,7 +585,7 @@ namespace ice::ecs
         operation->entities = entities_ptr;
         operation->entity_count = entity_count;
         operation->component_data = component_info_ptr;
-        operation->component_data_size = ice::ucount(ice::ptr_distance(component_info_ptr, component_info_ptr).value);
+        operation->component_data_size = ice::u32(ice::ptr_distance(component_info_ptr, component_info_ptr).value);
         operation->filter_data = filter_ptr;
 
         if (mode == 2)

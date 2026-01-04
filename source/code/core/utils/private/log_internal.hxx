@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -121,7 +121,7 @@ namespace ice::detail
 
     constexpr auto fmt_string(ice::String str) noexcept -> fmt::string_view
     {
-        return fmt_string(str._data, str._data + str._size);
+        return fmt_string(str.begin(), str.end());
     }
 
     static constexpr ice::String severity_value[]{

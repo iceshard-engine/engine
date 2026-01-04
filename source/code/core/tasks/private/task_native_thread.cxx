@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "task_native_thread.hxx"
@@ -81,7 +81,7 @@ namespace ice
         return _runtime._state == ThreadState::Active;
     }
 
-    auto NativeTaskThread::estimated_task_count() const noexcept -> ice::ucount
+    auto NativeTaskThread::estimated_task_count() const noexcept -> ice::u32
     {
         return 0;
     }
@@ -275,10 +275,10 @@ namespace ice
 
             if constexpr (ice::build::is_release == false)
             {
-                if (ice::string::any(info.debug_name))
+                if (info.debug_name.not_empty())
                 {
                     ice::StackAllocator<256_B> stack_alloc;
-                    ice::ucount const wide_count = ice::utf8_to_wide_size(info.debug_name);
+                    ice::u32 const wide_count = ice::utf8_to_wide_size(info.debug_name);
                     ICE_ASSERT(
                         ice::size_of<ice::wchar> *(wide_count + 1) < stack_alloc.Constant_InternalCapacity,
                         "Thread debug name too long!"

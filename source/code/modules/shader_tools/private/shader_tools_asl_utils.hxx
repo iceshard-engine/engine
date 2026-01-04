@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -48,7 +48,7 @@ namespace ice
 
         constexpr auto arc_str(arctic::String str) noexcept -> ice::String
         {
-            return ice::String{ str.data(), static_cast<ice::ucount>(str.size()) };
+            return ice::String{ str.data(), static_cast<ice::u32>(str.size()) };
         }
 
         constexpr auto arc_hash(arctic::String str) noexcept -> ice::u64

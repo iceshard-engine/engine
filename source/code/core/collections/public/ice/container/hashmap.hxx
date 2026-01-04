@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -13,7 +13,7 @@ namespace ice
     {
 
         template<typename Type, ice::ContainerLogic Logic>
-        inline void reserve(ice::HashMap<Type, Logic>& map, ice::ucount new_capacity) noexcept;
+        inline void reserve(ice::HashMap<Type, Logic>& map, ice::u32 new_capacity) noexcept;
 
         template<typename Type, ice::ContainerLogic Logic>
         inline void clear(ice::HashMap<Type, Logic>& map) noexcept;
@@ -48,7 +48,7 @@ namespace ice
 
 
         template<typename HashMapType> requires HashMapReadAccess<HashMapType>
-        inline auto count(HashMapType const& map) noexcept -> ice::ucount;
+        inline auto count(HashMapType const& map) noexcept -> ice::u32;
 
         template<typename HashMapType> requires HashMapReadAccess<HashMapType>
         inline bool full(HashMapType const& map) noexcept;
@@ -115,7 +115,7 @@ namespace ice
 
 
         template<typename Type, ice::ContainerLogic Logic>
-        inline auto count(ice::HashMap<Type, Logic> const& map, ice::u64 key) noexcept -> ice::ucount;
+        inline auto count(ice::HashMap<Type, Logic> const& map, ice::u64 key) noexcept -> ice::u32;
 
         template<typename Type, ice::ContainerLogic Logic>
         inline void get(ice::HashMap<Type, Logic> const& map, ice::u64 key, ice::Array<Type, Logic>& items) noexcept;

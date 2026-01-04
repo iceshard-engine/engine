@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 namespace ice
@@ -11,31 +11,31 @@ namespace ice
 
         struct FindResult;
 
-        constexpr auto calc_storage_capacity(ice::ucount max_count) noexcept -> ice::ucount;
+        constexpr auto calc_storage_capacity(ice::u32 max_count) noexcept -> ice::u32;
 
         template<typename Type, ice::ContainerLogic Logic>
-        inline bool can_store_count(ice::HashMap<Type, Logic> const& map, ice::ucount expected_count) noexcept;
+        inline bool can_store_count(ice::HashMap<Type, Logic> const& map, ice::u32 expected_count) noexcept;
 
         template<typename HashMapType> requires HashMapReadAccess<HashMapType>
         inline auto find(HashMapType const& map, ice::u64 key) noexcept -> FindResult;
 
         template<typename Type, ice::ContainerLogic Logic>
-        inline auto make(ice::HashMap<Type, Logic>& map, ice::u64 key) noexcept -> ice::ucount;
+        inline auto make(ice::HashMap<Type, Logic>& map, ice::u64 key) noexcept -> ice::u32;
 
         template<typename Type, ice::ContainerLogic Logic>
         inline void erase(ice::HashMap<Type, Logic>& map, FindResult const fr) noexcept;
 
         template<typename HashMapType> requires HashMapReadAccess<HashMapType>
-        inline auto find_or_fail(HashMapType const& map, ice::u64 key) noexcept -> ice::ucount;
+        inline auto find_or_fail(HashMapType const& map, ice::u64 key) noexcept -> ice::u32;
 
         template<typename Type, ice::ContainerLogic Logic>
-        inline auto find_or_make(ice::HashMap<Type, Logic>& map, ice::u64 key, bool& found) noexcept -> ice::ucount;
+        inline auto find_or_make(ice::HashMap<Type, Logic>& map, ice::u64 key, bool& found) noexcept -> ice::u32;
 
         template<typename Type, ice::ContainerLogic Logic>
         inline void find_and_erase(ice::HashMap<Type, Logic>& map, ice::u64 key) noexcept;
 
         template<typename Type, ice::ContainerLogic Logic>
-        inline void rehash(ice::HashMap<Type, Logic>& map, ice::ucount new_capacity) noexcept;
+        inline void rehash(ice::HashMap<Type, Logic>& map, ice::u32 new_capacity) noexcept;
 
         template<typename Type, ice::ContainerLogic Logic>
         inline auto find(ice::HashMap<Type, Logic>& map, typename ice::HashMap<Type, Logic>::ConstIterator it) noexcept -> FindResult;
@@ -217,22 +217,22 @@ namespace ice
 
         struct FindResult
         {
-            ice::ucount hash_i;
-            ice::ucount entry_prev;
-            ice::ucount entry_i;
+            ice::u32 hash_i;
+            ice::u32 entry_prev;
+            ice::u32 entry_i;
         };
 
 
-        constexpr auto calc_storage_capacity(ice::ucount max_count) noexcept -> ice::ucount
+        constexpr auto calc_storage_capacity(ice::u32 max_count) noexcept -> ice::u32
         {
-            return ice::ucount(max_count / Constant_HashMapMaxFill + 0.99f /* magic */);
+            return ice::u32(max_count / Constant_HashMapMaxFill + 0.99f /* magic */);
         }
 
         template<typename Type, ice::ContainerLogic Logic>
-        inline bool can_store_count(ice::HashMap<Type, Logic> const& map, ice::ucount expected_count) noexcept
+        inline bool can_store_count(ice::HashMap<Type, Logic> const& map, ice::u32 expected_count) noexcept
         {
-            ice::ucount const max_ucount = ice::ucount(map._capacity * Constant_HashMapMaxFill);
-            return max_ucount >= expected_count;
+            ice::u32 const max_u32 = ice::u32(map._capacity * Constant_HashMapMaxFill);
+            return max_u32 >= expected_count;
         }
 
         template<typename HashMapType> requires HashMapReadAccess<HashMapType>
@@ -266,7 +266,7 @@ namespace ice
         }
 
         template<typename Type, ice::ContainerLogic Logic>
-        inline auto make(ice::HashMap<Type, Logic>& map, ice::u64 key) noexcept -> ice::ucount
+        inline auto make(ice::HashMap<Type, Logic>& map, ice::u64 key) noexcept -> ice::u32
         {
             FindResult fr = ice::hashmap::detail::find(map, key);
             if (fr.hash_i == Constant_EndOfList)
@@ -275,7 +275,7 @@ namespace ice
             }
 
             // The count is now the new index.
-            ice::ucount const index = map._count;
+            ice::u32 const index = map._count;
 
             // Set the key we are use to make the new entry.
             map._entries[index].key = key;
@@ -366,13 +366,13 @@ namespace ice
         }
 
         template<typename HashMapType> requires HashMapReadAccess<HashMapType>
-        inline auto find_or_fail(HashMapType const& map, ice::u64 key) noexcept -> ice::ucount
+        inline auto find_or_fail(HashMapType const& map, ice::u64 key) noexcept -> ice::u32
         {
             return ice::hashmap::detail::find(map, key).entry_i;
         }
 
         template<typename Type, ice::ContainerLogic Logic>
-        inline auto find_or_make(ice::HashMap<Type, Logic>& map, ice::u64 key, bool& found) noexcept -> ice::ucount
+        inline auto find_or_make(ice::HashMap<Type, Logic>& map, ice::u64 key, bool& found) noexcept -> ice::u32
         {
             FindResult fr = ice::hashmap::detail::find(map, key);
 
@@ -389,7 +389,7 @@ namespace ice
             }
 
             // The count is now the new index.
-            ice::ucount const index = map._count;
+            ice::u32 const index = map._count;
 
             // Set the key we are use to make the new entry.
             map._entries[index].key = key;
@@ -417,32 +417,32 @@ namespace ice
         }
 
         template<typename Type, ice::ContainerLogic Logic>
-        inline void rehash(ice::HashMap<Type, Logic>& map, ice::ucount new_capacity) noexcept
+        inline void rehash(ice::HashMap<Type, Logic>& map, ice::u32 new_capacity) noexcept
         {
             using Entry = typename ice::HashMap<Type, Logic>::Entry;
 
             ICE_ASSERT_CORE(new_capacity * Constant_HashMapMaxFill >= map._count);
 
-            ice::ucount* new_hashes_ptr = nullptr;
+            ice::u32* new_hashes_ptr = nullptr;
             Entry* new_entries_ptr = nullptr;
             Type* new_value_ptr = nullptr;
 
             if (new_capacity > 0)
             {
-                ice::ucount const new_capacity_values = ice::ucount(new_capacity * Constant_HashMapMaxFill);
+                ice::u32 const new_capacity_values = ice::u32(new_capacity * Constant_HashMapMaxFill);
 
                 ice::meminfo alloc_info = ice::meminfo_of<ice::u32> * new_capacity;
                 ice::usize const offset_entries = alloc_info += ice::meminfo_of<Entry> * new_capacity_values;
                 ice::usize const offset_values = alloc_info += ice::meminfo_of<Type> * new_capacity_values;
 
                 ice::AllocResult const new_data = map._allocator->allocate(alloc_info);
-                new_hashes_ptr = reinterpret_cast<ice::ucount*>(new_data.memory);
+                new_hashes_ptr = reinterpret_cast<ice::u32*>(new_data.memory);
                 new_entries_ptr = reinterpret_cast<Entry*>(ice::ptr_add(new_data.memory, offset_entries));
                 new_value_ptr = reinterpret_cast<Type*>(ice::ptr_add(new_data.memory, offset_values));
 
                 // Prepare hashes memory
                 // TODO: memset?
-                for (ice::ucount& hashed_idx : ice::Span<ice::ucount>{ new_hashes_ptr, new_capacity })
+                for (ice::u32& hashed_idx : ice::Span<ice::u32>{ new_hashes_ptr, new_capacity })
                 {
                     hashed_idx = Constant_EndOfList;
                 }
@@ -547,7 +547,7 @@ namespace ice
         //!
         //! \note Keep in mind, the number of valies a hashmap can store is lower than it's total capacity.
         template<typename Type, ice::ContainerLogic Logic>
-        inline void reserve(ice::HashMap<Type, Logic>& map, ice::ucount new_count) noexcept
+        inline void reserve(ice::HashMap<Type, Logic>& map, ice::u32 new_count) noexcept
         {
             ice::hashmap::detail::rehash(map, ice::hashmap::detail::calc_storage_capacity(new_count));
         }
@@ -561,7 +561,7 @@ namespace ice
             }
 
             map._count = 0;
-            for (ice::ucount hash_idx = 0; hash_idx < map._capacity; ++hash_idx)
+            for (ice::u32 hash_idx = 0; hash_idx < map._capacity; ++hash_idx)
             {
                 // TODO: memset?
                 map._hashes[hash_idx] = ice::hashmap::detail::Constant_EndOfList;
@@ -584,7 +584,7 @@ namespace ice
             }
 
             bool found = false;
-            ice::ucount const index = ice::hashmap::detail::find_or_make(map, key, found);
+            ice::u32 const index = ice::hashmap::detail::find_or_make(map, key, found);
             if constexpr (Logic == ContainerLogic::Complex)
             {
                 // If the index was found we need to destroy the previous value.
@@ -618,7 +618,7 @@ namespace ice
             }
 
             bool found = false;
-            ice::ucount const index = ice::hashmap::detail::find_or_make(map, key, found);
+            ice::u32 const index = ice::hashmap::detail::find_or_make(map, key, found);
             if constexpr (Logic == ContainerLogic::Complex)
             {
                 // If the index was found we need to destroy the previous value.
@@ -651,7 +651,7 @@ namespace ice
                 ice::hashmap::set(map, key, ice::forward<Value>(value));
             }
 
-            ice::ucount const index = ice::hashmap::detail::find_or_fail(map, key);
+            ice::u32 const index = ice::hashmap::detail::find_or_fail(map, key);
             ICE_ASSERT_CORE(index != ice::hashmap::detail::Constant_EndOfList);
             return *(map._data + index);
         }
@@ -659,7 +659,7 @@ namespace ice
         template<typename Type, ice::ContainerLogic Logic>
         inline auto try_get(ice::HashMap<Type, Logic>& map, ice::u64 key) noexcept -> Type*
         {
-            ice::ucount const index = ice::hashmap::detail::find_or_fail(map, key);
+            ice::u32 const index = ice::hashmap::detail::find_or_fail(map, key);
             return index == ice::hashmap::detail::Constant_EndOfList
                 ? nullptr
                 : map._data + index;
@@ -680,7 +680,7 @@ namespace ice
 
 
         template<typename HashMapType> requires HashMapReadAccess<HashMapType>
-        inline auto count(HashMapType const& map) noexcept -> ice::ucount
+        inline auto count(HashMapType const& map) noexcept -> ice::u32
         {
             return map._count;
         }
@@ -688,7 +688,7 @@ namespace ice
         template<typename HashMapType> requires HashMapReadAccess<HashMapType>
         inline bool full(HashMapType const& map) noexcept
         {
-            ice::ucount const max_count = ice::ucount(map._capacity * ice::hashmap::detail::Constant_HashMapMaxFill);
+            ice::u32 const max_count = ice::u32(map._capacity * ice::hashmap::detail::Constant_HashMapMaxFill);
             ICE_ASSERT_CORE(max_count >= map._count);
 
             return max_count == map._count;
@@ -715,7 +715,7 @@ namespace ice
         template<typename HashMapType> requires HashMapReadAccess<HashMapType>
         inline auto get(HashMapType const& map, ice::u64 key, typename HashMapType::ValueType const& fallback_value) noexcept -> typename HashMapType::ValueType const&
         {
-            ice::ucount const index = ice::hashmap::detail::find_or_fail(map, key);
+            ice::u32 const index = ice::hashmap::detail::find_or_fail(map, key);
             return index == ice::hashmap::detail::Constant_EndOfList
                 ? fallback_value
                 : map._data[index];
@@ -724,7 +724,7 @@ namespace ice
         template<typename HashMapType> requires HashMapReadAccess<HashMapType>
         inline auto get(HashMapType const& map, ice::u64 key, std::nullptr_t) noexcept -> typename HashMapType::ValueType
         {
-            ice::ucount const index = ice::hashmap::detail::find_or_fail(map, key);
+            ice::u32 const index = ice::hashmap::detail::find_or_fail(map, key);
             return index == ice::hashmap::detail::Constant_EndOfList
                 ? nullptr
                 : map._data[index];
@@ -733,7 +733,7 @@ namespace ice
         template<typename HashMapType> requires HashMapReadAccess<HashMapType>
         inline auto try_get(HashMapType const& map, ice::u64 key) noexcept -> typename HashMapType::ValueType const*
         {
-            ice::ucount const index = ice::hashmap::detail::find_or_fail(map, key);
+            ice::u32 const index = ice::hashmap::detail::find_or_fail(map, key);
             return index == ice::hashmap::detail::Constant_EndOfList
                 ? nullptr
                 : map._data + index;
@@ -767,7 +767,7 @@ namespace ice
         template<typename Type, ice::ContainerLogic Logic>
         inline auto memory(ice::HashMap<Type, Logic>& map) noexcept -> ice::Memory
         {
-            ice::ucount const capacity_values = ice::ucount(map._capacity * ice::hashmap::detail::Constant_HashMapMaxFill);
+            ice::u32 const capacity_values = ice::u32(map._capacity * ice::hashmap::detail::Constant_HashMapMaxFill);
 
             // TODO: Easier way to calculate the allocated size.
             ice::meminfo alloc_info = ice::meminfo_of<ice::u32> * map._capacity;
@@ -795,7 +795,7 @@ namespace ice
                 ice::hashmap::detail::grow(map);
             }
 
-            ice::ucount const index = ice::hashmap::detail::make(map, key);
+            ice::u32 const index = ice::hashmap::detail::make(map, key);
             if constexpr (Logic == ContainerLogic::Complex)
             {
                 // If the index is below the current map._count we need to destroy the previous value.
@@ -827,7 +827,7 @@ namespace ice
                 ice::hashmap::detail::grow(map);
             }
 
-            ice::ucount const index = ice::hashmap::detail::make(map, key);
+            ice::u32 const index = ice::hashmap::detail::make(map, key);
             if constexpr (Logic == ContainerLogic::Complex)
             {
                 // If the index is below the current map._count we need to destroy the previous value.
@@ -871,11 +871,11 @@ namespace ice
         }
 
         template<typename Type, ice::ContainerLogic Logic>
-        inline auto count(ice::HashMap<Type, Logic> const& map, ice::u64 key) noexcept -> ice::ucount
+        inline auto count(ice::HashMap<Type, Logic> const& map, ice::u64 key) noexcept -> ice::u32
         {
             using ConstIterator = typename ice::HashMap<Type, Logic>::ConstIterator;
 
-            ice::ucount result = 0;
+            ice::u32 result = 0;
             ConstIterator it = ice::multi_hashmap::find_first(map, key);
             while (it._entry != nullptr)
             {
@@ -903,7 +903,7 @@ namespace ice
         {
             using ConstIterator = typename ice::HashMap<Type, Logic>::ConstIterator;
 
-            ice::ucount const index = ice::hashmap::detail::find_or_fail(map, key);
+            ice::u32 const index = ice::hashmap::detail::find_or_fail(map, key);
             if (index == ice::hashmap::detail::Constant_EndOfList)
             {
                 return ConstIterator{ nullptr, nullptr };
@@ -924,7 +924,7 @@ namespace ice
 
             using ConstIterator = typename ice::HashMap<Type, Logic>::ConstIterator;
 
-            ice::ucount index = it._entry->next;
+            ice::u32 index = it._entry->next;
             while (index != ice::hashmap::detail::Constant_EndOfList)
             {
                 if (map._entries[index].key == it._entry->key)

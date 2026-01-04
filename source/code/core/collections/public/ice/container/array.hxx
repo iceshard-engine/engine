@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -9,16 +9,16 @@ namespace ice::array
 {
 
     template<typename Type, ice::ContainerLogic Logic>
-    inline void set_capacity(ice::Array<Type, Logic>& arr, ice::ucount new_capacity) noexcept;
+    inline void set_capacity(ice::Array<Type, Logic>& arr, ice::u32 new_capacity) noexcept;
 
     template<typename Type, ice::ContainerLogic Logic>
-    inline void reserve(ice::Array<Type, Logic>& arr, ice::ucount min_capacity) noexcept;
+    inline void reserve(ice::Array<Type, Logic>& arr, ice::u32 min_capacity) noexcept;
 
     template<typename Type, ice::ContainerLogic Logic>
-    inline void grow(ice::Array<Type, Logic>& arr, ice::ucount min_capacity = 0) noexcept;
+    inline void grow(ice::Array<Type, Logic>& arr, ice::u32 min_capacity = 0) noexcept;
 
     template<typename Type, ice::ContainerLogic Logic>
-    inline void resize(ice::Array<Type, Logic>& arr, ice::ucount new_size) noexcept;
+    inline void resize(ice::Array<Type, Logic>& arr, ice::u32 new_size) noexcept;
 
     template<typename Type, ice::ContainerLogic Logic>
     inline void shrink(ice::Array<Type, Logic>& arr) noexcept;
@@ -29,8 +29,8 @@ namespace ice::array
     template<typename Type, ice::ContainerLogic Logic>
     inline auto slice(
         ice::Array<Type, Logic>& arr,
-        ice::ucount from_idx = 0,
-        ice::ucount count = ice::ucount_max
+        ice::u32 from_idx = 0,
+        ice::u32 count = ice::u32_max
     ) noexcept -> ice::Span<Type>;
 
     template<typename Type, ice::ContainerLogic Logic>
@@ -54,7 +54,7 @@ namespace ice::array
     inline void push_back(ice::Array<Type, Logic>& arr, ice::Span<Source const> items, Type(*fn)(Source const&) noexcept) noexcept;
 
     template<typename Type, ice::ContainerLogic Logic>
-    inline void pop_back(ice::Array<Type, Logic>& arr, ice::ucount count = 1) noexcept;
+    inline void pop_back(ice::Array<Type, Logic>& arr, ice::u32 count = 1) noexcept;
 
     template<typename Type, ice::ContainerLogic Logic>
     inline auto begin(ice::Array<Type, Logic>& arr) noexcept -> typename ice::Array<Type, Logic>::Iterator;
@@ -77,10 +77,10 @@ namespace ice::array
 
 
     template<typename Type, ice::ContainerLogic Logic>
-    inline auto count(ice::Array<Type, Logic> const& arr) noexcept -> ice::ucount;
+    inline auto count(ice::Array<Type, Logic> const& arr) noexcept -> ice::u32;
 
     template<typename Type, ice::ContainerLogic Logic>
-    inline auto capacity(ice::Array<Type, Logic> const& arr) noexcept -> ice::ucount;
+    inline auto capacity(ice::Array<Type, Logic> const& arr) noexcept -> ice::u32;
 
     template<typename Type, ice::ContainerLogic Logic>
     inline auto size_bytes(ice::Array<Type, Logic> const& arr) noexcept -> ice::usize;
@@ -94,8 +94,8 @@ namespace ice::array
     template<typename Type, ice::ContainerLogic Logic>
     inline auto slice(
         ice::Array<Type, Logic> const& arr,
-        ice::ucount from_idx = 0,
-        ice::ucount count = ice::ucount_max
+        ice::u32 from_idx = 0,
+        ice::u32 count = ice::u32_max
     )noexcept -> ice::Span<Type const>;
 
     template<typename Type, ice::ContainerLogic Logic>

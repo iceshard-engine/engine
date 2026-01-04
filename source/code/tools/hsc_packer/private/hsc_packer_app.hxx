@@ -1,12 +1,12 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/log.hxx>
 #include <ice/log_tag.hxx>
 #include <ice/mem_allocator.hxx>
-#include <ice/string/string.hxx>
-#include <ice/string/heap_string.hxx>
+#include <ice/string.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/string_utils.hxx>
 #include <ice/native_file.hxx>
 #include <ice/params.hxx>

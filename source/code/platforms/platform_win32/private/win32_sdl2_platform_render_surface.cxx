@@ -1,9 +1,8 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "win32_sdl2_platform_render_surface.hxx"
 #include <ice/render/render_surface.hxx>
-#include <ice/string/static_string.hxx>
 #include <ice/profiler.hxx>
 #include <ice/assert.hxx>
 
@@ -46,7 +45,7 @@ namespace ice::platform::win32::sdl2
         using ice::render::RenderDriverAPI;
         ice::i32 creation_flags = SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE;
         ice::StaticString<64> window_title{ surface_params.window_title };
-        if (ice::string::empty(window_title))
+        if (window_title.is_empty())
         {
             if (surface_params.driver == RenderDriverAPI::Vulkan)
             {
@@ -61,7 +60,7 @@ namespace ice::platform::win32::sdl2
         }
 
         _window = SDL_CreateWindow(
-            ice::string::data(window_title),
+            window_title.data(),
             SDL_WINDOWPOS_CENTERED,
             SDL_WINDOWPOS_CENTERED,
             surface_params.dimensions.x,

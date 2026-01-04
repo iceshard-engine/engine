@@ -1,9 +1,9 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/platform.hxx>
-#include <ice/string/string.hxx>
+#include <ice/string.hxx>
 #include <ice/shard.hxx>
 
 namespace ice::platform
