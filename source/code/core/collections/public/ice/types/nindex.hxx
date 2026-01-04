@@ -7,35 +7,26 @@
 namespace ice
 {
 
-    struct nindex : protected ice::detail::ncount_base<>
+    struct nindex : public ice::nvalue
     {
-        using ncount_base<>::base_type;
-        using ncount_base<>::ncount_base;
+        using nvalue::base_type;
+        using nvalue::base_signed_type;
 
-        constexpr nindex(ice::ncount count) noexcept
-            : nindex{ count.u64() }
-        { }
+        constexpr nindex() noexcept = default;
+        constexpr nindex(nvalue value) noexcept;
+        constexpr nindex(base_type value) noexcept;
+        constexpr nindex(base_type value, base_type width) noexcept;
 
-        // Helpers
-        constexpr bool is_valid(this nindex self) noexcept;
-
-        constexpr auto value_or(this nindex self, ice::concepts::native_count_type auto fallback) noexcept -> ice::nindex;
-
-        constexpr auto u8(this nindex self) noexcept { return static_cast<ice::u8>(self.value * self.width); }
-        constexpr auto u16(this nindex self) noexcept { return static_cast<ice::u16>(self.value * self.width); }
-        constexpr auto u32(this nindex self) noexcept { return static_cast<ice::u32>(self.value * self.width); }
-        constexpr auto u64(this nindex self) noexcept { return static_cast<ice::u64>(self.value * self.width); }
-        constexpr auto native(this nindex self) noexcept -> base_type { return static_cast<ice::u64>(self.value * self.width); }
 
         // Arithmetic
-        constexpr auto operator+(this nindex self, ice::concepts::native_count_type auto other) noexcept -> nindex;
-        constexpr auto operator-(this nindex self, ice::concepts::native_count_type auto other) noexcept -> nindex;
-        constexpr auto operator*(this nindex self, ice::concepts::native_count_type auto other) noexcept -> nindex;
-        constexpr auto operator/(this nindex self, ice::concepts::native_count_type auto other) noexcept -> nindex;
-        constexpr auto operator+=(this nindex& self, ice::concepts::native_count_type auto other) noexcept -> nindex&;
-        constexpr auto operator-=(this nindex& self, ice::concepts::native_count_type auto other) noexcept -> nindex&;
-        constexpr auto operator*=(this nindex& self, ice::concepts::native_count_type auto other) noexcept -> nindex&;
-        constexpr auto operator/=(this nindex& self, ice::concepts::native_count_type auto other) noexcept -> nindex&;
+        constexpr auto operator+(this nindex self, ice::concepts::NValueCompatibleType auto other) noexcept -> nindex;
+        constexpr auto operator-(this nindex self, ice::concepts::NValueCompatibleType auto other) noexcept -> nindex;
+        constexpr auto operator*(this nindex self, ice::concepts::NValueCompatibleType auto other) noexcept -> nindex;
+        constexpr auto operator/(this nindex self, ice::concepts::NValueCompatibleType auto other) noexcept -> nindex;
+        constexpr auto operator+=(this nindex& self, ice::concepts::NValueCompatibleType auto other) noexcept -> nindex&;
+        constexpr auto operator-=(this nindex& self, ice::concepts::NValueCompatibleType auto other) noexcept -> nindex&;
+        constexpr auto operator*=(this nindex& self, ice::concepts::NValueCompatibleType auto other) noexcept -> nindex&;
+        constexpr auto operator/=(this nindex& self, ice::concepts::NValueCompatibleType auto other) noexcept -> nindex&;
 
         // Increments
         constexpr auto operator++(this nindex& self) noexcept -> nindex&;
@@ -44,136 +35,132 @@ namespace ice
         constexpr auto operator--(this nindex& self, int) noexcept -> nindex;
 
         // Comparison
-        constexpr bool operator==(this nindex self, ice::concepts::native_count_type auto other) noexcept;
-        constexpr auto operator<=>(this nindex self, ice::concepts::native_count_type auto other) noexcept;
+        constexpr bool operator==(this nindex self, ice::concepts::NValueCompatibleType auto other) noexcept;
+        constexpr auto operator<=>(this nindex self, ice::concepts::NValueCompatibleType auto other) noexcept;
 
         // type colapsing
         constexpr explicit operator bool(this nindex self) noexcept;
         constexpr operator ice::isize(this nindex self) noexcept;
-        constexpr operator ice::ncount(this nindex self) noexcept;
         constexpr operator base_type(this nindex self) noexcept;
-        constexpr explicit operator base_type_signed(this nindex self) noexcept;
+        constexpr explicit operator base_signed_type(this nindex self) noexcept;
     };
 
-    struct nindex_invalid_t : nindex {};
+    constexpr nindex::nindex(nvalue value) noexcept
+        : nvalue{ value }
+    { }
+
+    constexpr nindex::nindex(base_type value) noexcept
+        : nvalue{ 1, static_cast<base_signed_type>(value) }
+    { }
+
+    constexpr nindex::nindex(base_type value, base_type width) noexcept
+        : nvalue{ width, static_cast<base_signed_type>(value) }
+    { }
+
+    struct nindex_invalid_t : nindex { };
 
     static constexpr ice::nindex_invalid_t none_index{ };
 
     static_assert(ice::size_of<nindex> == 8_B);
 
-    constexpr bool nindex::is_valid(this nindex self) noexcept
+    constexpr auto nindex::operator+(this nindex self, ice::concepts::NValueCompatibleType auto other) noexcept -> nindex
     {
-        return self.width > 0;
+        return nindex{ self._value + static_cast<base_type>(other), self._width };
     }
 
-    constexpr auto nindex::value_or(this nindex self, ice::concepts::native_count_type auto fallback) noexcept -> ice::nindex
+    constexpr auto nindex::operator-(this nindex self, ice::concepts::NValueCompatibleType auto other) noexcept -> nindex
     {
-        return self.is_valid() ? self : nindex{ static_cast<base_type>(fallback) };
+        return nindex{ self._value - static_cast<base_type>(other), self._width };
     }
 
-    constexpr auto nindex::operator+(this nindex self, ice::concepts::native_count_type auto other) noexcept -> nindex
+    constexpr auto nindex::operator*(this nindex self, ice::concepts::NValueCompatibleType auto other) noexcept -> nindex
     {
-        return nindex{ self.value + static_cast<base_type>(other), self.width };
+        return nindex{ self._value * static_cast<base_type>(other), self._width };
     }
 
-    constexpr auto nindex::operator-(this nindex self, ice::concepts::native_count_type auto other) noexcept -> nindex
+    constexpr auto nindex::operator/(this nindex self, ice::concepts::NValueCompatibleType auto other) noexcept -> nindex
     {
-        return nindex{ self.value - static_cast<base_type>(other), self.width };
+        return nindex{ self._value / static_cast<base_type>(other), self._width };
     }
 
-    constexpr auto nindex::operator*(this nindex self, ice::concepts::native_count_type auto other) noexcept -> nindex
+    constexpr auto nindex::operator+=(this nindex& self, ice::concepts::NValueCompatibleType auto other) noexcept -> nindex&
     {
-        return nindex{ self.value * static_cast<base_type>(other), self.width };
-    }
-
-    constexpr auto nindex::operator/(this nindex self, ice::concepts::native_count_type auto other) noexcept -> nindex
-    {
-        return nindex{ self.value / static_cast<base_type>(other), self.width };
-    }
-
-    constexpr auto nindex::operator+=(this nindex& self, ice::concepts::native_count_type auto other) noexcept -> nindex&
-    {
-        self.value += static_cast<base_type>(other);
+        self._value += static_cast<base_type>(other);
         return self;
     }
 
-    constexpr auto nindex::operator-=(this nindex& self, ice::concepts::native_count_type auto other) noexcept -> nindex&
+    constexpr auto nindex::operator-=(this nindex& self, ice::concepts::NValueCompatibleType auto other) noexcept -> nindex&
     {
-        self.value -= static_cast<base_type>(other);
+        self._value -= static_cast<base_type>(other);
         return self;
     }
 
-    constexpr auto nindex::operator*=(this nindex& self, ice::concepts::native_count_type auto other) noexcept -> nindex&
+    constexpr auto nindex::operator*=(this nindex& self, ice::concepts::NValueCompatibleType auto other) noexcept -> nindex&
     {
-        self.value *= static_cast<base_type>(other);
+        self._value *= static_cast<base_type>(other);
         return self;
     }
 
-    constexpr auto nindex::operator/=(this nindex& self, ice::concepts::native_count_type auto other) noexcept -> nindex&
+    constexpr auto nindex::operator/=(this nindex& self, ice::concepts::NValueCompatibleType auto other) noexcept -> nindex&
     {
-        self.value /= static_cast<base_type>(other);
+        self._value /= static_cast<base_type>(other);
         return self;
     }
 
     constexpr auto nindex::operator++(this nindex& self) noexcept -> nindex&
     {
-        self.value += 1;
+        self._value += 1;
         return self;
     }
 
     constexpr auto nindex::operator++(this nindex& self, int) noexcept -> nindex
     {
         const nindex old = self;
-        self.value += 1;
+        self._value += 1;
         return old;
     }
 
     constexpr auto nindex::operator--(this nindex& self) noexcept -> nindex&
     {
-        self.value -= 1;
+        self._value -= 1;
         return self;
     }
 
     constexpr auto nindex::operator--(this nindex& self, int) noexcept -> nindex
     {
         const nindex old = self;
-        self.value -= 1;
+        self._value -= 1;
         return old;
     }
 
-    constexpr bool nindex::operator==(this nindex self, ice::concepts::native_count_type auto other) noexcept
+    constexpr bool nindex::operator==(this nindex self, ice::concepts::NValueCompatibleType auto other) noexcept
     {
-        return static_cast<base_type>(self.value) == static_cast<base_type>(other);
+        return static_cast<base_type>(self._value) == static_cast<base_type>(other);
     }
 
-    constexpr auto nindex::operator<=>(this nindex self, ice::concepts::native_count_type auto other) noexcept
+    constexpr auto nindex::operator<=>(this nindex self, ice::concepts::NValueCompatibleType auto other) noexcept
     {
-        return static_cast<base_type>(self.value) <=> static_cast<base_type>(other);
+        return static_cast<base_type>(self._value) <=> static_cast<base_type>(other);
     }
 
     constexpr nindex::operator bool(this nindex self) noexcept
     {
-        return static_cast<bool>(self.value * self.width);
+        return static_cast<bool>(self._value * self._width);
     }
 
     constexpr nindex::operator ice::isize(this nindex self) noexcept
     {
-        return ice::isize{ static_cast<ice::isize::base_type>(self.value * self.width) };
-    }
-
-    constexpr nindex::operator ice::ncount(this nindex self) noexcept
-    {
-        return ice::ncount{ static_cast<ice::ncount::base_type>(self.value), self.width };
+        return ice::isize{ static_cast<ice::isize::base_type>(self._value * self._width) };
     }
 
     constexpr nindex::operator nindex::base_type(this nindex self) noexcept
     {
-        return std::max<base_type>(self.value, 0);
+        return std::max<base_type>(self._value, 0);
     }
 
-    constexpr nindex::operator nindex::base_type_signed(this nindex self) noexcept
+    constexpr nindex::operator nindex::base_signed_type(this nindex self) noexcept
     {
-        return std::max<base_type_signed>(self.value, 0);
+        return std::max<base_signed_type>(self._value, 0);
     }
 
     // special operators
