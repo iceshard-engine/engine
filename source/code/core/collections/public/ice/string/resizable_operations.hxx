@@ -29,7 +29,7 @@ namespace ice::string
         }
 
         template<ResizableStringType Self>
-        inline void grow(this Self& self, ice::ncount min_capacity = none_count) noexcept
+        inline void grow(this Self& self, ice::ncount min_capacity = ncount_none) noexcept
         {
             ice::ncount const new_capacity = ice::max(self.capacity() * 2 + 8, min_capacity);
             self.set_capacity(new_capacity);

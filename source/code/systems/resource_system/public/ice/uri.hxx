@@ -206,7 +206,7 @@ namespace ice
         , _query{ }
         , _fragment{ }
     {
-        ice::u8 scheme_size;
+        ice::u8 scheme_size = 0;
         if (detail::get_scheme_size(uri_raw, scheme_size))
         {
             _scheme = scheme_size;

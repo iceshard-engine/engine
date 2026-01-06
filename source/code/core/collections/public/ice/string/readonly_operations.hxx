@@ -47,7 +47,7 @@ namespace ice::string
                 return { };
             }
 
-            if (len == ice::none_count)
+            if (len == ice::ncount_none)
             {
                 return { self.data() + pos, size - pos };
             }
@@ -298,7 +298,7 @@ namespace ice::string
         template<StringType Self>
         constexpr auto operator[](this Self const& self, ice::nindex index) noexcept -> typename Self::ValueType
         {
-            return self.data()[index.native()];
+            return self.data()[index];
         }
 
         template<StringType Self>
