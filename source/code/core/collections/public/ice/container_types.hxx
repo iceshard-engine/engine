@@ -3,6 +3,8 @@
 
 #pragma once
 #include <ice/mem_allocator.hxx>
+#include <ice/container/contiguous_container.hxx>
+
 #include <ice/container_logic.hxx>
 #include <ice/string_types.hxx>
 #include <ice/span.hxx>
@@ -10,6 +12,16 @@
 
 namespace ice
 {
+    struct Test : ice::container::ContiguousContainer
+    {
+        using ValueType = int;
+
+        int foo[4];
+
+        template<typename Self>
+        constexpr auto data(this Self& self) noexcept -> ice::const_correct_t<Self, ValueType>* { return self.foo; }
+        constexpr ncount size() const noexcept { return 4; }
+    };
 
     //! \brief A simple contaier storing items in contignous memory.
     //!
