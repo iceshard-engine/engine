@@ -2,22 +2,22 @@
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
 
   <Type Name="ice::ncount">
-    <DisplayString Condition="width == 0">0 &lt;invalid&gt;</DisplayString>
-    <DisplayString>{value}</DisplayString>
+    <DisplayString Condition="_width == 0">0 &lt;invalid&gt;</DisplayString>
+    <DisplayString>{_value}</DisplayString>
     <Expand>
-      <Item Name="[value]">value</Item>
-      <Item Name="[width]">width</Item>
-      <Item Name="[bytes]">value * width</Item>
+      <Item Name="[value]">_value</Item>
+      <Item Name="[width]">_width</Item>
+      <Item Name="[bytes]">_value * _width</Item>
     </Expand>
   </Type>
 
   <Type Name="ice::nindex">
-    <DisplayString Condition="width == 0">0 &lt;invalid&gt;</DisplayString>
-    <DisplayString>{value} </DisplayString>
+    <DisplayString Condition="_width == 0">0 &lt;invalid&gt;</DisplayString>
+    <DisplayString>{_value} </DisplayString>
     <Expand>
-      <Item Name="[value]">value</Item>
-      <Item Name="[width]">width</Item>
-      <Item Name="[bytes]">value * width</Item>
+      <Item Name="[value]">_value</Item>
+      <Item Name="[width]">_width</Item>
+      <Item Name="[bytes]">_value * _width</Item>
     </Expand>
   </Type>
 

@@ -80,14 +80,27 @@ namespace ice
         ice::detail::nvalue_base_utype _width ICE_NVALUE_WIDTH_FIELD_BITS;
         ice::detail::nvalue_base_stype _value ICE_NVALUE_VALUE_FIELD_BITS;
 
-        // Checks if the value is valid. (_width > 0)
+        // Checks if the value is valid. (_width != 0)
         template<typename Self>
-        constexpr bool is_valid(this Self self) noexcept { return self._width > 0; }
+        constexpr bool is_valid(this Self self) noexcept { return static_cast<bool>(self._width); }
 
         template<typename Self>
         constexpr auto value_or(this Self self, ice::concepts::NValueCompatibleType auto fallback) noexcept
         {
             return self.is_valid() ? static_cast<std::remove_reference_t<decltype(fallback)>>(self.native()) : fallback;
+        }
+
+        template<typename Self>
+        constexpr auto min_value_or(
+            this Self self,
+            ice::concepts::NValueCompatibleType auto other,
+            ice::concepts::NValueCompatibleType auto fallback
+        ) noexcept
+        {
+            using ResultType = std::remove_reference_t<decltype(fallback)>;
+
+            ResultType const second_value = static_cast<ResultType>(other);
+            return self.is_valid() ? ice::min<ResultType>(static_cast<ResultType>(self.native()), second_value) : fallback;
         }
 
         // NOTE: In most cases we will use '_width' as a validation field instead of actually using it's value.
@@ -161,13 +174,26 @@ namespace ice
     {
         if constexpr (std::is_base_of_v<ice::nvalue, decltype(other)>)
         {
-            return self.native() == other.native();
+#if 0 // The naive approach (contains jump instructions even after optimization)
+            return self.is_valid() == other.is_valid() && (self.is_valid() == false || self.native() == other.native());
+#else // The mathematical approach (jump instructions are not present, branch predictor is happy)
+            return static_cast<bool>((self._width * other._width) * (self._value == other._value) + ((self._width + other._width) == 0));
+#endif
         }
         else
         {
             return self.native() == other;
         }
     }
+
+    //           (nvalue{W, V} == nvalue{W, V});
+    static_assert(nvalue{0, 0} == nvalue{0, 0}, "Invalid values are equal to each other");
+    static_assert(nvalue{0, 1} == nvalue{0, 1}, "Invalid values are equal to each other ('_value' is not '0')");
+    static_assert(nvalue{1, 0} == nvalue{1, 0}, "Valid values are equal if '_value' is the same.");
+    static_assert(nvalue{1, 4} == nvalue{2, 4}, "Valid values are equal if '_value' is the same. ('_width' differs)");
+    static_assert(nvalue{1, 0} != nvalue{0, 0}, "Valid values are not equal to invalid values. ('_value' is '0' in both)");
+    static_assert(nvalue{1, 0} != nvalue{1, 1}, "Valid values are not equal if '_value' differs ('_width' is '1' in both)");
+    static_assert(nvalue{1, 1} != nvalue{2, 2}, "Valid values are not equal if '_value' differs ('_width' and '_value' differs)");
 
     template<typename Self>
     inline constexpr auto nvalue::operator<=>(

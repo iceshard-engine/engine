@@ -14,6 +14,7 @@ namespace ice
     {
         using nvalue::base_type;
         using nvalue::base_signed_type;
+        using ice::nvalue::operator==;
 
         // support for allocation sizes
         constexpr auto bytes(this ncount self) noexcept -> ice::usize;
@@ -57,5 +58,10 @@ namespace ice
     static constexpr ice::ncount ncount_max{ ice::detail::nvalue_max_value() };
     static constexpr ice::ncount ncount_min{ ice::detail::nvalue_min_value() };
     static constexpr ice::ncount_invalid_t ncount_none{ };
+
+    constexpr auto operator""_count(unsigned long long value) noexcept -> ice::ncount
+    {
+        return ice::ncount{ value };
+    }
 
 } // namespace ice

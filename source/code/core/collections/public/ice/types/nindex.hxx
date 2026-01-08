@@ -13,6 +13,7 @@ namespace ice
     {
         using nvalue::base_type;
         using nvalue::base_signed_type;
+        using ice::nvalue::operator==;
 
         // support for allocation sizes
         constexpr auto offset(this nindex self) noexcept -> ice::usize;
@@ -52,6 +53,11 @@ namespace ice
 
     static constexpr ice::nindex nindex_max{ ice::detail::nvalue_max_value() };
     static constexpr ice::nindex nindex_min{ ice::detail::nvalue_min_value() };
-    static constexpr ice::nindex_invalid_t none_index{ };
+    static constexpr ice::nindex_invalid_t nindex_none{ };
+
+    constexpr auto operator""_index(unsigned long long value) noexcept -> ice::nindex
+    {
+        return ice::nindex{ value };
+    }
 
 } // namespace ice
