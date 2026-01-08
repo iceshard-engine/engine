@@ -162,14 +162,14 @@ namespace ice
         layer_idx = ice::count(_layers);
 
         // We reserve enough space to store all actual indices for accessed layer sources.
-        ice::u32 const layer_sources_count = ice::count(layer->sources());
+        ice::u32 const layer_sources_count = layer->sources().size().u32();
         ice::u32 const layer_sources_offset = ice::count(_layers_sources_indices);
         ice::array::reserve(_layers_sources_indices, layer_sources_offset + layer_sources_count);
 
         // Go through each resource and set the indices
         ice::u64 prev_name_hash = 0;
         ice::Span<ice::InputActionSourceInputInfo const> sources = layer->sources();
-        ice::u32 const count_sources = ice::count(sources);
+        ice::u32 const count_sources = sources.size().u32();
         for (ice::u32 idx = 0; idx < count_sources; ++idx)
         {
             ice::InputActionSourceInputInfo const& source = sources[idx];
@@ -403,7 +403,7 @@ namespace ice
         IPT_ZONE_SCOPED;
         using Iterator = ice::Array<ActiveStackLayer>::ConstReverseIterator;
 
-        ice::u32 remaining_events = ice::count(events);
+        ice::u32 remaining_events = events.size().u32();
         ice::Array<ice::input::InputEvent> events_copy{ _allocator, events };
         ice::Array<ice::InputActionSource*> source_values{ _allocator };
 

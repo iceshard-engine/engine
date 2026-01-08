@@ -212,13 +212,13 @@ namespace ice::render::vk
     auto VulkanRenderDevice::create_renderpass(ice::render::RenderpassInfo const& info) noexcept -> ice::render::Renderpass
     {
         ice::Array<VkAttachmentDescription> attachments{ _allocator };
-        ice::array::reserve(attachments, ice::count(info.attachments));
+        ice::array::reserve(attachments, info.attachments.size().u32());
 
         ice::Array<VkSubpassDescription> subpass_list{ _allocator };
-        ice::array::reserve(subpass_list, ice::count(info.subpasses));
+        ice::array::reserve(subpass_list, info.subpasses.size().u32());
 
         ice::Array<VkSubpassDependency> dependencies { _allocator };
-        ice::array::reserve(dependencies, ice::count(info.dependencies));
+        ice::array::reserve(dependencies, info.dependencies.size().u32());
 
         ice::Array<VkAttachmentReference> attachment_references{ _allocator };
 
@@ -250,8 +250,8 @@ namespace ice::render::vk
         ice::u64 reference_count = 0;
         for (RenderSubPass const& subpass_info : info.subpasses)
         {
-            reference_count += ice::count(subpass_info.color_attachments)
-                + ice::count(subpass_info.input_attachments)
+            reference_count += subpass_info.color_attachments.size()
+                + subpass_info.input_attachments.size()
                 + 1;
 
         }
@@ -278,12 +278,12 @@ namespace ice::render::vk
 
             VkSubpassDescription subpass{ }; // VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_2 };
             subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-            subpass.inputAttachmentCount = ice::count(subpass_info.input_attachments);
+            subpass.inputAttachmentCount = subpass_info.input_attachments.size().u32();
             if (subpass.inputAttachmentCount > 0)
             {
                 subpass.pInputAttachments = std::addressof(attachment_references[input_ref_idx]);
             }
-            subpass.colorAttachmentCount = ice::count(subpass_info.color_attachments);
+            subpass.colorAttachmentCount = subpass_info.color_attachments.size().u32();
             if (subpass.colorAttachmentCount > 0)
             {
                 subpass.pColorAttachments = std::addressof(attachment_references[color_ref_idx]);
@@ -343,7 +343,7 @@ namespace ice::render::vk
     ) noexcept -> ice::render::ResourceSetLayout
     {
         ice::Array<VkDescriptorSetLayoutBinding> vk_bindings{ _allocator };
-        ice::array::reserve(vk_bindings, ice::count(bindings));
+        ice::array::reserve(vk_bindings, bindings.size().u32());
 
         for (ResourceSetLayoutBinding const& binding : bindings)
         {
@@ -360,7 +360,7 @@ namespace ice::render::vk
         }
 
         VkDescriptorSetLayoutCreateInfo layout_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
-        layout_info.bindingCount = ice::count(bindings);
+        layout_info.bindingCount = bindings.size().u32();
         layout_info.pBindings = ice::begin(vk_bindings);
 
         VkDescriptorSetLayout vk_descriptor_set_layout = vk_nullptr;
@@ -402,7 +402,7 @@ namespace ice::render::vk
         );
 
         ICE_ASSERT(
-            ice::count(resource_set_layouts) == ice::count(resource_sets_out),
+            resource_set_layouts.size() == resource_sets_out.size(),
             "The output span size does not match the size of provided layouts span."
         );
 
@@ -410,7 +410,7 @@ namespace ice::render::vk
 
         VkDescriptorSetAllocateInfo descriptorset_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
         descriptorset_info.descriptorPool = _vk_descriptor_pool;
-        descriptorset_info.descriptorSetCount = ice::count(resource_set_layouts);
+        descriptorset_info.descriptorSetCount = resource_set_layouts.size().u32();
         descriptorset_info.pSetLayouts = reinterpret_cast<VkDescriptorSetLayout const*>(&resource_set_layouts[0]);
 
         VkResult result = vkAllocateDescriptorSets(
@@ -421,7 +421,7 @@ namespace ice::render::vk
         ICE_ASSERT(
             result == VkResult::VK_SUCCESS,
             "Couldn't allocate new {} descriptor sets.",
-            ice::count(resource_set_layouts)
+            resource_set_layouts.size()
         );
         return true;
     }
@@ -433,13 +433,13 @@ namespace ice::render::vk
         VkResult result = vkFreeDescriptorSets(
             _vk_device,
             _vk_descriptor_pool,
-            ice::count(resource_sets),
+            resource_sets.size().u32(),
             reinterpret_cast<VkDescriptorSet const*>(&resource_sets[0])
         );
         ICE_ASSERT(
             result == VkResult::VK_SUCCESS,
             "Failed to free given {} descriptor sets.",
-            ice::count(resource_sets)
+            resource_sets.size()
         );
     }
 
@@ -448,7 +448,7 @@ namespace ice::render::vk
     ) noexcept
     {
         ice::Array<VkWriteDescriptorSet> vk_writes{ _allocator };
-        ice::array::reserve(vk_writes, ice::count(update_infos));
+        ice::array::reserve(vk_writes, update_infos.size().u32());
 
         ice::Array<VkDescriptorImageInfo> write_image_info{ _allocator };
         ice::Array<VkDescriptorBufferInfo> write_buffer_info{ _allocator };
@@ -511,25 +511,25 @@ namespace ice::render::vk
             descriptor_set_write.dstBinding = update_info.binding_index;
             descriptor_set_write.dstArrayElement = update_info.array_element;
             descriptor_set_write.dstSet = native_handle(update_info.resource_set);
-            descriptor_set_write.descriptorCount = ice::count(update_info.resources);
+            descriptor_set_write.descriptorCount = update_info.resources.size().u32();
             descriptor_set_write.descriptorType = native_enum_value(update_info.resource_type);
 
             if (update_info.resource_type == ResourceType::SampledImage || update_info.resource_type == ResourceType::InputAttachment)
             {
                 descriptor_set_write.pImageInfo = ice::array::begin(write_image_info) + images_offset;
-                images_offset += ice::count(update_info.resources);
+                images_offset += update_info.resources.size().u32();
             }
 
             if (update_info.resource_type == ResourceType::Sampler)
             {
                 descriptor_set_write.pImageInfo = ice::array::begin(write_image_info) + images_offset;
-                images_offset += ice::count(update_info.resources);
+                images_offset += update_info.resources.size().u32();
             }
 
             if (update_info.resource_type == ResourceType::UniformBuffer)
             {
                 descriptor_set_write.pBufferInfo = ice::array::begin(write_buffer_info) + buffers_offset;
-                buffers_offset += ice::count(update_info.resources);
+                buffers_offset += update_info.resources.size().u32();
             }
 
             ice::array::push_back(vk_writes, descriptor_set_write);
@@ -548,10 +548,10 @@ namespace ice::render::vk
     ) noexcept -> ice::render::PipelineLayout
     {
         ice::Array<VkPushConstantRange> vk_push_constants{ _allocator };
-        ice::array::reserve(vk_push_constants, ice::count(info.push_constants));
+        ice::array::reserve(vk_push_constants, info.push_constants.size().u32());
 
         ice::Array<VkDescriptorSetLayout> vk_descriptorset_layouts{ _allocator };
-        ice::array::reserve(vk_descriptorset_layouts, ice::count(info.resource_layouts));
+        ice::array::reserve(vk_descriptorset_layouts, info.resource_layouts.size().u32());
 
         for (PipelinePushConstant const& push_constant : info.push_constants)
         {
@@ -574,9 +574,9 @@ namespace ice::render::vk
         }
 
         VkPipelineLayoutCreateInfo pipeline_info{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
-        pipeline_info.pushConstantRangeCount = ice::count(info.push_constants);
+        pipeline_info.pushConstantRangeCount = info.push_constants.size().u32();
         pipeline_info.pPushConstantRanges = ice::begin(vk_push_constants);
-        pipeline_info.setLayoutCount = ice::count(info.resource_layouts);
+        pipeline_info.setLayoutCount = info.resource_layouts.size().u32();
         pipeline_info.pSetLayouts = ice::begin(vk_descriptorset_layouts);
 
         VkPipelineLayout pipeline_layout = vk_nullptr;
@@ -644,7 +644,7 @@ namespace ice::render::vk
     ) noexcept -> ice::render::Pipeline
     {
         VkPipelineShaderStageCreateInfo shader_stages[10];
-        ice::u32 const stage_count = ice::count(info.shaders);
+        ice::u32 const stage_count = info.shaders.size().u32();
 
         uint32_t stage_idx = 0;
         for (; stage_idx < stage_count; ++stage_idx)
@@ -695,8 +695,8 @@ namespace ice::render::vk
         ice::Array<VkVertexInputBindingDescription> vertex_input_bindings{ _allocator };
         ice::Array<VkVertexInputAttributeDescription> vertex_input_attributes{ _allocator };
 
-        ice::array::reserve(vertex_input_bindings, ice::count(info.vertex_bindings));
-        ice::array::reserve(vertex_input_attributes, ice::count(info.vertex_bindings) * 4);
+        ice::array::reserve(vertex_input_bindings, info.vertex_bindings.size().u32());
+        ice::array::reserve(vertex_input_attributes, info.vertex_bindings.size().u32() * 4);
 
         for (ice::render::ShaderInputBinding const& binding : info.vertex_bindings)
         {
@@ -734,8 +734,9 @@ namespace ice::render::vk
         case CullMode::Disabled:
             rasterization.cullMode = VK_CULL_MODE_NONE;
             // [issue #34] Needs to be properly available in the creation API.
-            if (ice::count(info.shaders) == 5)
+            if (info.shaders.size() == 5)
             {
+                ICE_ASSERT(false, "Old workaround to play with geometry shaders!");
                 rasterization.polygonMode = VK_POLYGON_MODE_LINE;
             }
             break;
@@ -910,7 +911,7 @@ namespace ice::render::vk
         ice::Span<ice::render::BufferUpdateInfo const> update_infos
     ) noexcept
     {
-        ice::u32 const update_count = ice::count(update_infos);
+        ice::u32 const update_count = update_infos.size().u32();
 
         ice::u32 update_offset = 0;
         while(update_offset < update_count)
@@ -956,7 +957,7 @@ namespace ice::render::vk
         VkRenderPass vk_renderpass = reinterpret_cast<VkRenderPass>(static_cast<ice::uptr>(renderpass));
 
         ice::Array<VkImageView> vk_images{ _allocator };
-        ice::array::reserve(vk_images, ice::count(images));
+        ice::array::reserve(vk_images, images.size().u32());
 
         for (Image image : images)
         {

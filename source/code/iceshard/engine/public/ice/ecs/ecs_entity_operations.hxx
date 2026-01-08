@@ -58,7 +58,7 @@ namespace ice::ecs
 
         struct Result
         {
-            auto one() const noexcept -> ice::ecs::Entity { return ice::span::front(_builder.entities); }
+            auto one() const noexcept -> ice::ecs::Entity { return _builder.entities.first(); }
             auto all() const noexcept -> ice::Span<ice::ecs::Entity const> { return _builder.entities; }
 
             auto store(ice::Array<ice::ecs::Entity>& out_entities, bool append = true) const noexcept
@@ -295,10 +295,10 @@ namespace ice::ecs
         );
 
         static ice::ecs::OperationComponentInfo constexpr ComponentsInfo{
-            .names = ice::span::subspan(ice::span::from_std_const(HelperArchetype.component_identifiers), 1),
-            .sizes = ice::span::subspan(ice::span::from_std_const(HelperArchetype.component_sizes), 1),
+            .names = ice::span::from_std_const(HelperArchetype.component_identifiers).tailspan(1),
+            .sizes = ice::span::from_std_const(HelperArchetype.component_sizes).tailspan(1),
             // We store alignments in this span just for convenience
-            .offsets = ice::span::subspan(ice::span::from_std_const(HelperArchetype.component_alignments), 1)
+            .offsets = ice::span::from_std_const(HelperArchetype.component_alignments).tailspan(1)
         };
 
         ice::Data const unsorted_component_Data[]{
@@ -317,7 +317,7 @@ namespace ice::ecs
     template<ice::ecs::Component... Components>
     inline auto OperationBuilder::with_data(ice::Span<Components>&... out_component_spans) noexcept -> Result
     {
-        if (ice::span::empty(entities) && mode != 2)
+        if (entities.is_empty() && mode != 2)
         {
             return Result{ *this };
         }
@@ -329,10 +329,10 @@ namespace ice::ecs
         );
 
         static ice::ecs::OperationComponentInfo constexpr ComponentsInfo{
-            .names = ice::span::subspan(ice::span::from_std_const(HelperArchetype.component_identifiers), 1),
-            .sizes = ice::span::subspan(ice::span::from_std_const(HelperArchetype.component_sizes), 1),
+            .names = ice::span::from_std_const(HelperArchetype.component_identifiers).tailspan(1),
+            .sizes = ice::span::from_std_const(HelperArchetype.component_sizes).tailspan(1),
             // We store alignments in this span just for convenience
-            .offsets = ice::span::subspan(ice::span::from_std_const(HelperArchetype.component_alignments), 1)
+            .offsets = ice::span::from_std_const(HelperArchetype.component_alignments).tailspan(1)
         };
 
         ice::u32 const entity_count = mode == 2 ? index_create_count : ice::count(entities);
@@ -459,7 +459,7 @@ namespace ice::ecs
     template<ice::ecs::Component... Components>
     inline auto OperationBuilder::with_data(ice::Span<Components const>... component_spans) noexcept -> Result
     {
-        if (ice::span::empty(entities) && mode != 2)
+        if (entities.is_empty() && mode != 2)
         {
             return { *this };
         }
@@ -471,10 +471,10 @@ namespace ice::ecs
         );
 
         static ice::ecs::OperationComponentInfo constexpr ComponentsInfo{
-            .names = ice::span::subspan(ice::span::from_std_const(HelperArchetype.component_identifiers), 1),
-            .sizes = ice::span::subspan(ice::span::from_std_const(HelperArchetype.component_sizes), 1),
+            .names = ice::span::from_std_const(HelperArchetype.component_identifiers).tailspan(1),
+            .sizes = ice::span::from_std_const(HelperArchetype.component_sizes).tailspan(1),
             // We store alignments in this span just for convenience
-            .offsets = ice::span::subspan(ice::span::from_std_const(HelperArchetype.component_alignments), 1)
+            .offsets = ice::span::from_std_const(HelperArchetype.component_alignments).tailspan(1)
         };
 
         ice::u32 const entity_count = mode == 2 ? index_create_count : ice::count(entities);

@@ -56,10 +56,10 @@ namespace ice
         ice::UIRawInfo const& raw_info
     ) noexcept -> ice::UISizeInfo
     {
-        ice::u32 const count_elements = u32(ice::count(raw_info.elements));
-        ice::u32 const count_shards = u32(ice::count(raw_info.shards));
-        ice::u32 const count_resources = u32(ice::count(raw_info.resources));
-        ice::u32 const count_styles = u32(ice::count(raw_info.styles));
+        ice::u32 const count_elements = raw_info.elements.size().u32();
+        ice::u32 const count_shards = raw_info.shards.size().u32();
+        ice::u32 const count_resources = raw_info.resources.size().u32();
+        ice::u32 const count_styles = raw_info.styles.size().u32();
 
         ice::u32 count_fonts = 0;
         ice::u32 count_actions = 0;
@@ -155,10 +155,10 @@ namespace ice
     auto find_resource_idx(
         ice::Span<ice::RawResource> resources,
         ice::String name
-    ) noexcept -> ice::u16
+    ) noexcept -> ice::nindex
     {
-        ice::u16 idx = 0;
-        ice::u16 const count = ice::u16(ice::count(resources));
+        ice::nindex idx = 0;
+        ice::ncount const count = resources.size();
         for (; idx < count; ++idx)
         {
             if (resources[idx].ui_name == name)
@@ -166,7 +166,7 @@ namespace ice
                 break;
             }
         }
-        return idx == count ? ice::u16{ 0xffff } : idx;
+        return idx == count ? ice::nindex{ 0xffff } : idx;
     }
 
     struct ConstantData
@@ -200,13 +200,13 @@ namespace ice
                 text_size.bytes()
             );
 
-            constants.data_storage = ice::ptr_add(constants.data_storage, { text_size });
+            constants.data_storage = ice::ptr_add(constants.data_storage, text_size);
             constants.data_storage_offset += text_size.u32();
             constants.idx += 1;
         }
         else if (out_ref.source == DataSource::ValueResource)
         {
-            out_ref.source_i = find_resource_idx(resources, raw_data_ref.data_source);
+            out_ref.source_i = find_resource_idx(resources, raw_data_ref.data_source).u16();
         }
     }
 
@@ -223,7 +223,7 @@ namespace ice
         static auto store_span_info = [base_ptr = result.location](auto& span_value) noexcept
         {
             void* span_address = std::addressof(span_value);
-            ice::u32 const span_size = ice::u32(ice::count(span_value));
+            ice::u32 const span_size = span_value.size().u32();
             ice::u32 const span_offset = ice::u32(ice::ptr_distance(base_ptr, ice::span::data(span_value)).value);
 
             ice::u32* values = reinterpret_cast<ice::u32*>(span_address);
@@ -280,7 +280,7 @@ namespace ice
             {
                 ice::u16 font_idx = 0;
                 ice::u64 idx = 0;
-                ice::u64 const count = ice::count(raw_info.resources);
+                ice::u64 const count = raw_info.resources.size();
                 for (; idx < count; ++idx)
                 {
                     if (raw_info.resources[idx].type == ResourceType::Font)
@@ -298,7 +298,7 @@ namespace ice
             auto const find_shard_idx = [&raw_info](ice::String resource_name) noexcept -> ice::u16
             {
                 ice::u16 idx = 0;
-                ice::u64 const count = ice::count(raw_info.shards);
+                ice::u64 const count = raw_info.shards.size();
                 for (; idx < count; ++idx)
                 {
                     if (raw_info.shards[idx].ui_name == resource_name)

@@ -45,7 +45,7 @@ namespace ice
             ice::ResourceHandle resource;
 
             ice::u32 ext_idx = 0;
-            ice::u32 const ext_count = ice::u32(ice::count(definition.resource_extensions));
+            ice::u32 const ext_count = definition.resource_extensions.size().u32();
             ice::u32 const temp_name_len = temp_name.size().u32();
             while (resource == nullptr && ext_idx < ext_count)
             {
@@ -241,7 +241,7 @@ namespace ice
         , _devui_widget{ }
     {
         ice::Span<ice::AssetCategory const> categories = _asset_archive->categories();
-        ice::hashmap::reserve(_asset_shelves, ice::u32(ice::count(categories)));
+        ice::hashmap::reserve(_asset_shelves, categories.size().u32());
 
         ice::Array<ice::UniquePtr<ice::AssetShelve::DevUI>> shelves{ _allocator };
         for (ice::AssetCategory_Arg category : categories)

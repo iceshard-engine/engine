@@ -123,13 +123,13 @@ namespace ice
 
         auto load_constants(ice::Span<ice::f32> constants_span) const noexcept -> ice::u32 override
         {
-            ICE_ASSERT_CORE(ice::count(constants_span) >= Constant_CountInputActionConstants);
+            ICE_ASSERT_CORE(constants_span.size() >= Constant_CountInputActionConstants);
             for (ice::InputActionConstantInfo const constant : _constants)
             {
                 ice::u32 const idx = ice::u32(constant.identifier);
                 constants_span[idx] = _constant_values[constant.offset];
             }
-            return ice::count(_constants);
+            return _constants.size().u32();
         }
 
         auto process_inputs(
@@ -146,7 +146,7 @@ namespace ice
                 };
 
             ice::u32 count_processed = 0;
-            ice::u32 const count_events = ice::count(input_events);
+            ice::u32 const count_events = input_events.size().u32();
 
             // Reset the temporary events.
             for (ice::InputActionSourceInputInfo const& src : _sources)
@@ -263,7 +263,7 @@ namespace ice
                 }
 
                 bool series_success = false;
-                ice::Span const conditions = ice::span::subspan(_conditions, action.conditions);
+                ice::Span const conditions = _conditions.subspan(action.conditions);
                 for (ice::InputActionConditionData const& cond : conditions)
                 {
                     bool cond_result = false;
@@ -310,7 +310,7 @@ namespace ice
 
                     if (ice::has_all(cond.flags, RunSteps) && check_success)
                     {
-                        ice::Span const steps = ice::span::subspan(_steps, cond.steps);
+                        ice::Span const steps = _steps.subspan(cond.steps);
                         for (ice::InputActionStepData const& step : steps)
                         {
                             if (step.id < InputActionStep::Set)
@@ -409,7 +409,7 @@ namespace ice
                 // Update the final value and run modifiers over it.
                 runtime->value = { runtime->raw_value.x, runtime->raw_value.y };
 
-                ice::Span const mods = ice::span::subspan(_modifiers, action.mods);
+                ice::Span const mods = _modifiers.subspan(action.mods);
                 for (ice::InputActionModifierData const& mod : mods)
                 {
                     executor.execute_modifier(mod.id, runtime->value.v[0][mod.axis], mod.param);

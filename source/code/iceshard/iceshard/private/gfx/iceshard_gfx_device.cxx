@@ -164,7 +164,7 @@ namespace ice::gfx
         using ice::render::QueueID;
 
         ice::Array<ice::render::QueueInfo> queues{ alloc };
-        ice::array::reserve(queues, ice::count(render_queues));
+        ice::array::reserve(queues, render_queues.size().u32());
 
         auto find_queue_index = [](auto const& array_, QueueID id_, ice::u32& idx_out) noexcept -> bool
         {
@@ -239,7 +239,7 @@ namespace ice::gfx
                     pass_groups,
                     alloc.create<IceGfxQueueGroup>(
                         alloc,
-                        ice::count(render_queues)
+                        render_queues.size().u32()
                     )
                 );
             }

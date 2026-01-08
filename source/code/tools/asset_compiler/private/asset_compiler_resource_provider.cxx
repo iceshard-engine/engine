@@ -64,7 +64,7 @@ AssetCompilerResourceProvider::AssetCompilerResourceProvider(
     , _resources{ _allocator }
     , _data{ _allocator }
 {
-    ice::array::reserve(_resources, ice::count(files));
+    ice::array::reserve(_resources, files.size().u32());
 
     ice::u32 idx = 0;
     for (ice::String file : files)

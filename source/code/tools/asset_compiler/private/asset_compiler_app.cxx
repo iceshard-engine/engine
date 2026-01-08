@@ -42,14 +42,14 @@ public:
 
     bool parse_parameter(this AssetCompilerApp& self, ice::Span<ice::String const> results) noexcept
     {
-        if (ice::count(results) == 2)
+        if (results.size() == 2)
         {
             ice::array::push_back(
                 self._params,
                 ice::shard(results[0], results[1].begin())
             );
         }
-        if (ice::count(results) == 1)
+        if (results.size() == 1)
         {
             ice::array::push_back(
                 self._params,
@@ -417,7 +417,7 @@ public:
                 };
 
                 // Write all parts
-                for (ice::Data file_part : ice::span::subspan(ice::Span{ file_parts }, _output_raw ? 4 : 0))
+                for (ice::Data file_part : ice::Span{ file_parts }.subspan(_output_raw ? 4 : 0))
                 {
                     if (ice::native_file::append_file(output_file, file_part) != file_part.size)
                     {

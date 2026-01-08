@@ -50,7 +50,7 @@ namespace ice::ecs
                 if (components[cmp] != ice::StringID_Invalid)
                 {
                     ice::u32 in_arch_idx;
-                    bool const found = ice::binary_search(ice::span::subspan(info.component_identifiers, 1), components[cmp], in_arch_idx);
+                    bool const found = ice::binary_search(info.component_identifiers.subspan(1), components[cmp], in_arch_idx);
                     ICE_ASSERT_CORE(found);
                     out_sizes[cmp] = info.component_sizes[in_arch_idx + 1];
                     out_offsets[cmp] = info.component_offsets[in_arch_idx + 1];
@@ -92,10 +92,10 @@ namespace ice::ecs
         ) noexcept
         {
             IPT_ZONE_SCOPED;
-            ice::u32 const entity_count = ice::count(src_entities);
+            ice::u32 const entity_count = src_entities.size().u32();
 
-            ice::u32 const src_component_count = ice::count(src_info.names);
-            ice::u32 const dst_component_count = ice::count(dst_info.names);
+            ice::u32 const src_component_count = src_info.names.size().u32();
+            ice::u32 const dst_component_count = dst_info.names.size().u32();
             ice::u32 const max_component_count = ice::max(src_component_count, dst_component_count);
             bool const source_is_smaller = src_component_count < max_component_count;
 
@@ -193,8 +193,8 @@ namespace ice::ecs
         ) noexcept
         {
             IPT_ZONE_SCOPED;
-            ice::u32 const src_component_count = ice::count(src_info.names);
-            ice::u32 const dst_component_count = ice::count(dst_info.names);
+            ice::u32 const src_component_count = src_info.names.size().u32();
+            ice::u32 const dst_component_count = dst_info.names.size().u32();
             ice::u32 const max_component_count = ice::max(src_component_count, dst_component_count);
             bool const source_is_smaller = src_component_count < max_component_count;
 
@@ -259,8 +259,8 @@ namespace ice::ecs
         ) noexcept
         {
             IPT_ZONE_SCOPED;
-            ice::u32 const entity_count = ice::count(src_entities);
-            ice::u32 const component_count = ice::count(info.names);
+            ice::u32 const entity_count = src_entities.size().u32();
+            ice::u32 const component_count = info.names.size().u32();
 
             // Iterate over each component in the source archetype
             for (ice::u32 component_index = 0; component_index < component_count; ++component_index)
@@ -959,7 +959,7 @@ namespace ice::ecs
                                 src_data_details.block_offset = data_block_it_2->block_entity_count - 1; // Get the last entity
 
                                 ice::ecs::Entity const move_entities[1]{
-                                    ice::span::front(ice::ecs::detail::get_entity_array(src_component_info, src_data_details, 1))
+                                    ice::ecs::detail::get_entity_array(src_component_info, src_data_details, 1).first()
                                 };
 
                                 EntityDataSlot const move_slot{

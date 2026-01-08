@@ -81,7 +81,7 @@ namespace ice
         {
             ice::execute_detached_task(ice::move(task));
         }
-        return ice::span::any(tasks);
+        return tasks.not_empty();
     }
 
     bool schedule_task(ice::Task<> task, ice::TaskScheduler& scheduler) noexcept
@@ -100,7 +100,7 @@ namespace ice
         {
             ice::schedule_detached_task(ice::move(task), scheduler);
         }
-        return ice::span::any(tasks);
+        return tasks.not_empty();
     }
 
     bool schedule_queue(ice::TaskQueue& queue, ice::TaskScheduler& scheduler) noexcept

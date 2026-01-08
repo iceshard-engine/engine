@@ -144,7 +144,7 @@ namespace ice
 
         ice::nindex beg = 0;
         ice::nindex end = csv_data.find_first_of(',');
-        while (end != ice::none_index)
+        while (end != ice::nindex_none)
         {
             char const* val_beg = csv_data.begin() + beg;
             char const* val_end = csv_data.begin() + end;
@@ -191,7 +191,7 @@ namespace ice
 
         ice::nindex beg = 0;
         ice::nindex end = points.find_first_of(' ');
-        while (end != ice::none_index)
+        while (end != ice::nindex_none)
         {
             char const* val_beg = data + beg;
             char const* val_delim = data + points.find_first_of(',', beg);

@@ -132,7 +132,7 @@ namespace ice::config::detail
 
         // If this key has multiple parts recursively enter config search
         ice::nindex key_split_location = key.find_first_of({".|"});
-        while (key_split_location != ice::none_index && result)
+        while (key_split_location != ice::nindex_none && result)
         {
             bool const is_table = finalcfg._keys->type != CONFIG_KEYTYPE_STRING;
             ice::String const keyval = key.substr(0, key_split_location);

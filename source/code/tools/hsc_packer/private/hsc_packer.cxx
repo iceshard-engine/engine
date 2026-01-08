@@ -283,10 +283,10 @@ public:
         ice::Array<ice::ResourceHandle> resource_handles{ _allocator };
         ice::Array<std::string_view> resource_paths{ _allocator };
 
-        ice::array::resize(resource_data, ice::count(resources));
-        ice::array::resize(resource_metamap, ice::count(resources));
-        ice::array::resize(resource_handles, ice::count(resources));
-        ice::array::resize(resource_paths, ice::count(resources));
+        ice::array::resize(resource_data, resources.size().u32());
+        ice::array::resize(resource_metamap, resources.size().u32());
+        ice::array::resize(resource_handles, resources.size().u32());
+        ice::array::resize(resource_paths, resources.size().u32());
 
         // We serialize an empty meta object
         ice::ConfigBuilder meta{ _allocator };

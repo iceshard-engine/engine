@@ -22,7 +22,7 @@ namespace ice::devui
         void build_mainmenu(ice::StaticString<32>& temp, ice::String path, ice::String name, bool& state) noexcept
         {
             ice::nindex const separator_pos = path.find_first_of('/');
-            if (separator_pos != ice::none_index)
+            if (separator_pos != ice::nindex_none)
             {
                 temp = path.substr(0, separator_pos);
 
@@ -48,7 +48,7 @@ namespace ice::devui
     void ImGuiWidgetFrame::mainmenu(ice::DevUIWidgetInfo const& widget, ice::DevUIWidgetState& state) noexcept
     {
         ice::nindex const separator_pos = widget.category.find_first_of('/');
-        if (separator_pos == ice::none_index)
+        if (separator_pos == ice::nindex_none)
         {
             ImGui::MenuItem(widget.name.begin(), nullptr, &state.active);
             return;
@@ -205,7 +205,7 @@ namespace ice::devui
 
         // ImGui::NewLine(); ImGui::SeparatorText("Info");
         ImGui::NewLine(); ImGui::Separator();
-        ImGui::TextT("Widgets: {}", ice::count(_widget_manager.widgets()));
+        ImGui::TextT("Widgets: {}", _widget_manager.widgets().size());
 
         ImGui::NewLine(); ImGui::Separator();
         ImGui::TextT("Draw calls: {} ({:p})", stats.draw_calls, stats.draw_datasize);

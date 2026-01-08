@@ -444,7 +444,7 @@ namespace ice::native_file
             {
                 // Remove the top-most the directory explicitly.
                 ice::nindex const dirslash = dirpath.find_last_of(L"\\/");
-                if (dirslash == ice::none_index)
+                if (dirslash == ice::nindex_none)
                 {
                     return false;
                 }
@@ -794,7 +794,7 @@ namespace ice::native_file
             {
                 // Remove the top-most the directory explicitly.
                 ice::nindex const dirslash = ice::string::find_last_of(dirpath, ice::String{ "/" });
-                if (dirslash == ice::none_index)
+                if (dirslash == ice::nindex_none)
                 {
                     return false;
                 }

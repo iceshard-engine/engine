@@ -20,7 +20,7 @@ namespace ice::gfx
     ) noexcept
     {
         ice::u32 last_pass = 0;
-        for (ice::u32 idx = 0; idx < ice::count(snapshots); ++idx)
+        for (ice::u32 idx = 0; idx < snapshots.size().u32(); ++idx)
         {
             GfxGraphSnapshot& current = snapshots[idx];
             if (current.event & (GfxSnapshotEvent::EventBeginPass | GfxSnapshotEvent::EventNextSubPass | GfxSnapshotEvent::EventEndPass))
@@ -35,7 +35,7 @@ namespace ice::gfx
             }
 
             GfxGraphSnapshot prev{}, next{};
-            for (GfxGraphSnapshot const prev_candidate : ice::span::subspan(snapshots, 0, idx))
+            for (GfxGraphSnapshot const prev_candidate : snapshots.headspan(idx))
             {
                 if (current.resource == prev_candidate.resource)
                 {
@@ -43,7 +43,7 @@ namespace ice::gfx
                 }
             }
 
-            for (GfxGraphSnapshot const next_candidate : ice::span::subspan(snapshots, idx + 1))
+            for (GfxGraphSnapshot const next_candidate : snapshots.subspan(idx + 1))
             {
                 if (current.resource == next_candidate.resource)
                 {
@@ -113,8 +113,8 @@ namespace ice::gfx
         ice::Array<RenderSubPass> subpasses{ alloc };
         ice::Array<SubpassDependency> dependencies{ alloc };
 
-        ice::array::reserve(attachments, ice::count(resources));
-        ice::array::reserve(references, ice::count(graph_snapshots));
+        ice::array::reserve(attachments, resources.size().u32());
+        ice::array::reserve(references, graph_snapshots.size().u32());
 
         ice::array::push_back(
             attachments,
@@ -363,7 +363,7 @@ namespace ice::gfx
                 }
             }
 
-            ice::array::push_back(stages._counts, ice::u8(ice::count(pass.stages)));
+            ice::array::push_back(stages._counts, pass.stages.size().u8());
             pass_idx += 1;
         }
 

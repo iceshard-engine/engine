@@ -195,7 +195,7 @@ namespace ice
     ) noexcept
     {
         ice::Array<FileSystemTraverseRequest, ContainerLogic::Complex> requests{ _callbacks.allocator() };
-        ice::array::reserve(requests, ice::span::count(base_paths));
+        ice::array::reserve(requests, base_paths.size().u32());
 
         [[maybe_unused]]
         std::atomic_uint32_t remaining = 0;
@@ -217,7 +217,7 @@ namespace ice
         ice::TaskScheduler local_sched{ local_queue };
 
         ice::Array<FileSystemTraverseRequest, ContainerLogic::Complex> requests{ _callbacks.allocator() };
-        ice::array::reserve(requests, ice::span::count(base_paths));
+        ice::array::reserve(requests, base_paths.size().u32());
 
         std::atomic_uint32_t remaining = 0;
 

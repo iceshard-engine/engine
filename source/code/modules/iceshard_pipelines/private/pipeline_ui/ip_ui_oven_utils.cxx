@@ -135,7 +135,7 @@ namespace ice
         ice::nindex const separator = value.find_first_of(',');
 
         bool valid_values = true;
-        if (separator != ice::none_index)
+        if (separator != ice::nindex_none)
         {
             ice::String left = value.substr(0, separator);
             ice::String right = value.substr(separator + 1);
@@ -207,7 +207,7 @@ namespace ice
         ice::nindex const separator = value.find_first_of(',');
 
         bool valid_values = true;
-        if (separator != ice::none_index)
+        if (separator != ice::nindex_none)
         {
             ice::String left = value.substr(0, separator);
             ice::String right = value.substr(separator + 1);
@@ -276,7 +276,7 @@ namespace ice
         ice::nindex const sep3 = value.find_first_of(',', sep2 + 1);
 
         bool valid_values = true;
-        if (sep3 != ice::none_index && sep2 != ice::none_index && sep1 != ice::none_index)
+        if (sep3 != ice::nindex_none && sep2 != ice::nindex_none && sep1 != ice::nindex_none)
         {
             ice::String first = value.substr(0, sep1);
             ice::String second = value.substr(sep1 + 1, (sep2 - sep1) - 1);
@@ -328,7 +328,7 @@ namespace ice
                 }
             }
         }
-        else if (sep1 != ice::none_index)
+        else if (sep1 != ice::nindex_none)
         {
             ice::String first = value.substr(0, sep1);
             ice::String second = value.substr(sep1 + 1);
@@ -402,7 +402,7 @@ namespace ice
         ice::nindex const sep2 = value.find_first_of(',', sep1 + 1);
 
         bool valid_values = false;
-        if (sep1 != ice::none_index && sep2 != ice::none_index)
+        if (sep1 != ice::nindex_none && sep2 != ice::nindex_none)
         {
             ice::String first = value.substr(0, sep1);
             ice::String second = value.substr(sep1 + 1, (sep2 - sep1) - 1);
@@ -413,7 +413,7 @@ namespace ice
             ice::from_chars(third, out_color.blue);
             valid_values = true;
         }
-        else if (sep1 == ice::none_index && sep2 == ice::none_index)
+        else if (sep1 == ice::nindex_none && sep2 == ice::nindex_none)
         {
             ice::from_chars(value, out_color.red);
             out_color.green = out_color.red;

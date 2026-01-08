@@ -297,16 +297,16 @@ namespace ice::ecs
 
     void EntityOperations::destroy(ice::Span<ice::ecs::Entity const> entities) noexcept
     {
-        if (ice::span::empty(entities))
+        if (entities.is_empty())
         {
             return;
         }
 
         void* handle_loc;
-        EntityOperation* operation = new_storage_operation(ice::meminfo_of<ice::ecs::Entity> * ice::count(entities), handle_loc);
+        EntityOperation* operation = new_storage_operation(ice::meminfo_of<ice::ecs::Entity> * entities.size().u32(), handle_loc);
         operation->archetype = ice::ecs::Archetype::Invalid;
         operation->entities = reinterpret_cast<ice::ecs::Entity*>(handle_loc);
-        operation->entity_count = ice::count(entities);
+        operation->entity_count = entities.size().u32();
         operation->component_data = nullptr;
         operation->component_data_size = 0;
 
@@ -318,13 +318,13 @@ namespace ice::ecs
         ice::Span<ice::Data const> component_data
     ) noexcept -> Result
     {
-        if (ice::span::empty(entities) || (mode == 2 && index_create_count == 0) || mode == 0)
+        if (entities.is_empty() || (mode == 2 && index_create_count == 0) || mode == 0)
         {
             return Result{ *this };
         }
 
-        ice::u32 const entity_count = mode == 2 ? index_create_count : ice::count(entities);
-        ice::u32 const component_count = ice::count(component_info.names);
+        ice::u32 const entity_count = mode == 2 ? index_create_count : entities.size().u32();
+        ice::u32 const component_count = component_info.names.size().u32();
 
         ice::meminfo additional_data_size = ice::meminfo{ filter_data_size, ice::ualign::b_8 };
         additional_data_size += ice::meminfo_of<ice::ecs::Entity> * entity_count;
@@ -424,7 +424,7 @@ namespace ice::ecs
     {
         if (mode != 0)
         {
-            ice::u32 const entity_count = mode == 2 ? index_create_count : ice::count(entities);
+            ice::u32 const entity_count = mode == 2 ? index_create_count : entities.size().u32();
 
             ice::meminfo required_memory = ice::meminfo{ filter_data_size, ice::ualign::b_8 };
             required_memory += ice::meminfo_of<ice::ecs::Entity> * entity_count;

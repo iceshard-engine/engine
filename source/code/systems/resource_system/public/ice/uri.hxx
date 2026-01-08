@@ -143,7 +143,7 @@ namespace ice
         ) noexcept
         {
             ice::nindex path_separator = uri.find_first_of("?#");
-            if (path_separator == none_index)
+            if (path_separator == nindex_none)
             {
                 out_path = uri.size().u8();
                 return out_path > 0;
@@ -157,7 +157,7 @@ namespace ice
             {
                 // Get the next separator if necessary
                 path_separator = uri.find_last_of('#');
-                if (path_separator == none_index)
+                if (path_separator == nindex_none)
                 {
                     // We take te remaining query with the starting '?' character
                     out_query = (uri.size() - out_path).u8();

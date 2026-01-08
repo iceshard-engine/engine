@@ -96,7 +96,7 @@ namespace ice::ecs
         {
             ice::u32 const indices_taken = ice::queue::take_front(
                 _free_indices,
-                ice::span::subspan(ice::Span{indices}, 0, ice::min<ice::u32>(free_count, ice::count(indices)))
+                ice::Span{ indices }.headspan(free_count)
             );
 
             for (ice::u32 idx = 0; idx < indices_taken; ++idx)
@@ -110,7 +110,7 @@ namespace ice::ecs
         }
 
         ice::u32 gen_index = ice::array::count(_generation);
-        ice::u32 const missing_entities = ice::count(out_entities) - total_indices_taken;
+        ice::u32 const missing_entities = out_entities.size().u32() - total_indices_taken;
         ice::u32 const final_index = gen_index + missing_entities;
 
         if (final_index > 0)

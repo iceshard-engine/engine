@@ -11,11 +11,11 @@ bool ParamRange::param_parse_results(ParamRange& range, ice::Span<ice::String co
 {
     range.set = true;
 
-    ice::String value = ice::span::front(results);
+    ice::String value = results.first();
     ice::from_chars(value, value, range.start);
 
     // Assign the next value if we have multiple defined.
-    if (ice::span::count(results) > 1)
+    if (results.size() > 1)
     {
         value = results[1];
     }

@@ -30,7 +30,7 @@ namespace ice::path
             {
                 if (path.size() >= 3)
                 {
-                    return path[1] == Separators_Drive<CharType>[0] && Separators_Directory<CharType>.find_first_of(path[2]) != ice::none_index;
+                    return path[1] == Separators_Drive<CharType>[0] && Separators_Directory<CharType>.find_first_of(path[2]) != ice::nindex_none;
                 }
                 return false;
             }
@@ -48,7 +48,7 @@ namespace ice::path
                 // Only support single-letter drives
                 return path.size() == 3
                     && path[1] == Separators_Drive<CharType>[0]
-                    && path.find_first_of(Separators_Directory<CharType>, path[2]) != ice::none_index;
+                    && path.find_first_of(Separators_Directory<CharType>, path[2]) != ice::nindex_none;
             }
             else
             {
@@ -82,7 +82,7 @@ namespace ice::path
         constexpr auto directory(ice::BasicString<CharType> str) noexcept -> ice::BasicString<CharType>
         {
             ice::nindex const separator_pos = str.find_last_of(Separators_Directory<CharType>);
-            if (separator_pos == ice::none_index)
+            if (separator_pos == ice::nindex_none)
             {
                 return str.substr(str.size(), separator_pos);
             }
@@ -178,7 +178,7 @@ namespace ice::path
             it = beg;
 
             ice::nindex const begin = path.find_first_of(Separators_Drive<CharType>);
-            if (begin != ice::none_index)
+            if (begin != ice::nindex_none)
             {
                 it = it + begin + 1;
             }
@@ -222,7 +222,7 @@ namespace ice::path
         auto replace_filename(ice::HeapString<CharType>& str, ice::BasicString<CharType> name) noexcept -> ice::BasicString<CharType>
         {
             auto const separator_pos = str.find_last_of(Separators_Directory<CharType>);
-            if (separator_pos != ice::none_index)
+            if (separator_pos != ice::nindex_none)
             {
                 str.resize(separator_pos + 1);
             }
@@ -239,7 +239,7 @@ namespace ice::path
         auto replace_extension(ice::HeapString<CharType>& str, ice::BasicString<CharType> extension) noexcept -> ice::BasicString<CharType>
         {
             auto const separator_pos = str.find_last_of(Separators_Dot<CharType>[0]);
-            if (separator_pos != ice::none_index)
+            if (separator_pos != ice::nindex_none)
             {
                 str.resize(separator_pos);
             }

@@ -17,7 +17,7 @@ namespace ice
     {
         ice::nindex const left_bracket = inout_str.find_first_not_of(character);
         ice::nindex const right_bracket = inout_str.find_last_not_of(character);
-        if (left_bracket == ice::none_index && right_bracket == ice::none_index)
+        if (left_bracket == ice::nindex_none && right_bracket == ice::nindex_none)
         {
             return false;
         }
@@ -30,7 +30,7 @@ namespace ice
     {
         ice::nindex const left_bracket = inout_str.find_first_of('{');
         ice::nindex const right_bracket = inout_str.find_last_of('}');
-        if (left_bracket == ice::none_index || right_bracket == ice::none_index)
+        if (left_bracket == ice::nindex_none || right_bracket == ice::nindex_none)
         {
             return false;
         }
@@ -47,7 +47,7 @@ namespace ice
         ice::nindex const type_end = inout_str.find_first_of(' ');
 
         bool result = false;
-        if (type_end != ice::none_index)
+        if (type_end != ice::nindex_none)
         {
             ice::String const action_type = inout_str.substr(0, type_end);
             if (action_type == RawAction::Constant_ActionType_Shard)
@@ -111,7 +111,7 @@ namespace ice
 
         bool result = true;
         ice::nindex const data_start = inout_str.find_first_of('=');
-        if (data_start != ice::none_index)
+        if (data_start != ice::nindex_none)
         {
             ice::nindex const data_arg_start = inout_str.find_last_of(" ,"_str, data_start);
 

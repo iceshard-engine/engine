@@ -52,8 +52,7 @@ namespace ice
         {
             ice::ShaderTargetPlatform const target = param_shader_target(params);
             static ice::String supported_extensions[]{ ".asl", ".glsl", ".asl", ".hlsl" };
-            return ice::span::subspan(
-                ice::Span{ supported_extensions },
+            return ice::Span{ supported_extensions }.subspan(
                 // Select GLSL [0, 1] or HLSL span [2, 3]
                 target == ShaderTargetPlatform::GLSL ? 0 : 2,
                 // If we target 'WGSL' we only want to accept 'asl' files [0]

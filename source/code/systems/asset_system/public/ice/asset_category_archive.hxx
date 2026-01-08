@@ -12,7 +12,7 @@ namespace ice
 
     struct AssetCategoryDefinition
     {
-        constexpr auto valid() const noexcept { return ice::span::any(resource_extensions); }
+        constexpr auto valid() const noexcept { return resource_extensions.not_empty(); }
 
         ice::String name;
         ice::Span<ice::Shard const> asset_params;

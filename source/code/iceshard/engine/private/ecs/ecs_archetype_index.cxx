@@ -36,9 +36,9 @@ namespace ice::ecs
         {
             using QueryTypeInfo = ice::ecs::detail::QueryTypeInfo;
 
-            ice::u32 const tag_count = ice::count(in_required_tags);
-            ice::u32 const condition_count = ice::count(in_conditions);
-            ice::u32 const identifier_count = ice::count(checked_identifiers);
+            ice::u32 const tag_count = in_required_tags.size().u32();
+            ice::u32 const condition_count = in_conditions.size().u32();
+            ice::u32 const identifier_count = checked_identifiers.size().u32();
             ice::u32 const identifier_last_index = identifier_count - 1;
 
             ice::u32 tag_idx = 0;
@@ -121,7 +121,7 @@ namespace ice::ecs
             ice::usize& offset_values_out
         ) noexcept -> ice::meminfo
         {
-            ice::u32 const component_count = ice::span::count(info.component_identifiers);
+            ice::u32 const component_count = info.component_identifiers.size().u32();
 
             ice::meminfo result = ice::meminfo_of<ArchetypeDataHeader>;
             offset_name_out = result += ice::meminfo_of<ice::utf8> * (name.size() + 1);
@@ -191,7 +191,7 @@ namespace ice::ecs
             data_block_pool = _default_block_pool.get();
         }
 
-        ice::u32 const component_count = ice::count(archetype_info.component_identifiers);
+        ice::u32 const component_count = archetype_info.component_identifiers.size().u32();
 
         ICE_ASSERT(
             component_count >= 2,
@@ -335,12 +335,12 @@ namespace ice::ecs
 
         // We need to skip the first query entry if it's for `ice::ecs::Entity`
         // This is due to the fact that it's always there and is not taken into account when sorting components by identifiers.
-        if (ice::span::front(query_info).identifier == ice::ecs::Constant_ComponentIdentifier<ice::ecs::Entity>)
+        if (query_info.first().identifier == ice::ecs::Constant_ComponentIdentifier<ice::ecs::Entity>)
         {
-            query_info = ice::span::subspan(query_info, 1);
+            query_info = query_info.subspan(1);
         }
 
-        ice::u32 const required_tag_count = ice::count(query_tags);
+        ice::u32 const required_tag_count = query_tags.size().u32();
         ice::u32 const required_component_count = [](auto const& query_conditions) noexcept -> ice::u32
         {
             ice::u32 result = 0;
@@ -362,7 +362,7 @@ namespace ice::ecs
         {
             ice::ecs::detail::ArchetypeInstanceInfo const& archetype_info = entry->archetype_info;
 
-            ice::u32 const archetype_component_count = ice::count(archetype_info.component_identifiers);
+            ice::u32 const archetype_component_count = archetype_info.component_identifiers.size().u32();
             if (archetype_component_count < total_required_type_count)
             {
                 continue;
@@ -389,7 +389,7 @@ namespace ice::ecs
     ) const noexcept
     {
         ICE_ASSERT(
-            ice::count(archetypes) == ice::count(out_instance_infos),
+            archetypes.size() == out_instance_infos.size(),
             "Archetype instance fetch called with different input and output array sizes."
         );
 
@@ -417,7 +417,7 @@ namespace ice::ecs
     ) const noexcept
     {
         ICE_ASSERT(
-            ice::count(archetype_instances) == ice::count(out_instance_infos),
+            archetype_instances.size() == out_instance_infos.size(),
             "Archetype instance fetch called with different input and output array sizes."
         );
 
