@@ -101,7 +101,7 @@ namespace ice::string
             auto const* const beg = it;
             auto const* const it_end = self.cend();
 
-            while (it < it_end && character_values.find_first_of(*it) == none_index)
+            while (it < it_end && character_values.find_first_of(*it) == nindex_none)
             {
                 it += 1;
             }
@@ -149,7 +149,7 @@ namespace ice::string
                 start -= 1;
             }
 
-            while (it != it_end && character_values.find_first_of(*it) == none_index)
+            while (it != it_end && character_values.find_first_of(*it) == nindex_none)
             {
                 it += 1;
             }
@@ -187,7 +187,7 @@ namespace ice::string
             auto const* const beg = it;
             auto const* const it_end = self.cend();
 
-            while (it < it_end && character_values.find_first_of(*it) != ice::none_index)
+            while (it < it_end && character_values.find_first_of(*it) != ice::nindex_none)
             {
                 it += 1;
             }
@@ -235,7 +235,7 @@ namespace ice::string
                 start_idx -= 1;
             }
 
-            while (it != it_end && character_values.find_first_of(*it) != ice::none_index)
+            while (it != it_end && character_values.find_first_of(*it) != ice::nindex_none)
             {
                 it += 1;
             }

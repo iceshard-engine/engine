@@ -438,13 +438,13 @@ namespace ice
             requires std::copy_constructible<Type>
         inline void push_back(ice::Queue<Type, Logic>& queue, ice::Span<Type const> items) noexcept
         {
-            ice::u32 const required_capacity = queue._count + ice::span::count(items);
+            ice::u32 const required_capacity = queue._count + items.size().u32();
             if (required_capacity > queue._capacity)
             {
                 ice::queue::grow(queue, required_capacity);
             }
 
-            ice::u32 const span_count = ice::span::count(items);
+            ice::u32 const span_count = items.size().u32();
             ice::u32 const start_idx = (queue._offset + queue._count) % queue._capacity;
             ice::u32 const end_idx = ice::min(queue._capacity, start_idx + span_count);
 
@@ -502,7 +502,7 @@ namespace ice
                 );
             }
 
-            queue._count += ice::span::count(items);
+            queue._count += items.size().u32();
         }
 
         template<typename Type, ice::ContainerLogic Logic>
@@ -596,7 +596,7 @@ namespace ice
         template<typename Type, ice::ContainerLogic Logic>
         inline auto take_front(ice::Queue<Type, Logic>& queue, ice::Span<Type> out_values) noexcept -> ice::u32
         {
-            ice::u32 const taken_items = ice::min(ice::count(out_values), ice::count(queue));
+            ice::u32 const taken_items = ice::min(out_values.size().u32(), ice::count(queue));
 
             // (offset, end][0, remaining)
             ice::u32 const first_part = ice::min(queue._offset + taken_items, queue._capacity);

@@ -92,14 +92,14 @@ namespace ice
     constexpr bool binary_search(ice::Span<T> values, U const& predicate, ice::u32& out_index) noexcept
     {
         out_index = ice::lower_bound(values, predicate);
-        return (ice::count(values) != out_index) && (values[out_index] == predicate);
+        return (values.size() != out_index) && (values[out_index] == predicate);
     }
 
     template<typename T, typename Comp, typename U> requires (std::convertible_to<T, U>)
     constexpr bool binary_search(ice::Span<T> values, U const& predicate, Comp&& comp, ice::u32& out_index) noexcept
     {
         out_index = ice::lower_bound(values, predicate, ice::forward<Comp>(comp));
-        return (ice::count(values) != out_index) && (values[out_index] == predicate);
+        return (values.size() != out_index) && (values[out_index] == predicate);
     }
 
     template<typename T, typename U> requires (std::convertible_to<T, U>)
@@ -111,11 +111,11 @@ namespace ice
     template<typename T, typename Comp, typename U>
     constexpr bool search(ice::Span<T> values, U const& value, Comp&& comp, ice::u32& out_index) noexcept
     {
-        for (ice::u32 idx = 0; idx < ice::span::count(values); ++idx)
+        for (ice::nindex idx = 0; idx < values.size(); ++idx)
         {
             if (ice::forward<Comp>(comp)(values[idx], value))
             {
-                out_index = idx;
+                out_index = idx.u32();
                 return true;
             }
         }
@@ -125,7 +125,7 @@ namespace ice
     template<typename T, typename Comp, typename... U>
     constexpr bool search_with(ice::Span<T> values, Comp&& comp, ice::u32& out_index, U const&... params) noexcept
     {
-        for (ice::u32 idx = 0; idx < ice::span::count(values); ++idx)
+        for (ice::u32 idx = 0; idx < values.size(); ++idx)
         {
             if (ice::forward<Comp>(comp)(values[idx], idx, params...))
             {
@@ -300,7 +300,7 @@ namespace ice
     inline void sort_indices(ice::Span<K> keys, ice::Span<ice::u32> indices, Pred&& pred) noexcept
     {
         ice::i32 const first_index = 0;
-        ice::i32 const last_index = ice::count(keys) - 1;
+        ice::i32 const last_index = keys.size().u32() - 1;
 
         ice::detail::qsort_indices(keys, indices, std::forward<Pred>(pred), first_index, last_index);
     }
