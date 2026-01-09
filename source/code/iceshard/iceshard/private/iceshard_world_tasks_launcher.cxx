@@ -45,7 +45,7 @@ namespace ice
             shard.id
         );
 
-        auto out_it = ice::begin(tasks);
+        auto out_it = tasks.begin();
         auto it = ice::multi_hashmap::find_first(handlers, ice::hash(shard.id));
         while (it != nullptr)
         {

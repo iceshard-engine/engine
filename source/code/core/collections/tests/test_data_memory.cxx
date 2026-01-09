@@ -48,8 +48,8 @@ SCENARIO("ice :: Data")
 
         data = ice::data_view(values_span);
 
-        CHECK(data.location == ice::span::data(values_span));
-        CHECK(data.size == ice::span::size_bytes(values_span));
-        CHECK(data.alignment == ice::span::alignment(values_span));
+        CHECK(data.location == values_span.data());
+        CHECK(data.size == values_span.size());
+        CHECK(data.alignment == ice::align_of<ice::Span<ice::u64 const>::ValueType>);
     }
 }

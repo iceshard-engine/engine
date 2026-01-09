@@ -88,7 +88,7 @@ namespace ice::ecs
     bool EntityIndex::create_many(ice::Span<ice::ecs::Entity> out_entities) noexcept
     {
         ice::u32 total_indices_taken = 0;
-        auto out_it = ice::span::begin(out_entities);
+        auto out_it = out_entities.begin();
 
         ice::u32 indices[256];
         ice::i32 free_count = ice::i32(ice::queue::count(_free_indices)) - ice::ecs::Constant_MinimumFreeIndicesBeforeReuse;

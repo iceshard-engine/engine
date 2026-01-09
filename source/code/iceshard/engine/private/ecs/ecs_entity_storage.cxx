@@ -322,8 +322,8 @@ namespace ice::ecs
             ice::Span<ice::ecs::detail::DataBlock*> data_blocks
         ) noexcept
         {
-            auto const* it = ice::span::begin(entities_to_remove);
-            auto const* const end = ice::span::end(entities_to_remove);
+            auto const* it = entities_to_remove.begin();
+            auto const* const end = entities_to_remove.end();
 
             ArchetypeInstance archetype{};
             ArchetypeInstanceInfo const* archetype_infos[1]{ nullptr };

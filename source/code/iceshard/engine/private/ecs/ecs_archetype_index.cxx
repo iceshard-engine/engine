@@ -230,7 +230,7 @@ namespace ice::ecs
             ice::memcpy(mem_archetype_name, archetype_info.name.data_view());
 
             // Copy the component idnetifiers
-            ice::memcpy(mem_component_data, ice::span::data_view(archetype_info.component_identifiers));
+            ice::memcpy(mem_component_data, archetype_info.component_identifiers.data_view());
             component_identifiers = reinterpret_cast<ice::StringID const*>(mem_component_data.location);
 
             // Calculate where we start storing the u32 values...
@@ -238,12 +238,12 @@ namespace ice::ecs
 
             // Copy the size and alignment.
             component_sizes = reinterpret_cast<ice::u32 const*>(mem_component_data.location);
-            ice::memcpy(mem_component_data, ice::span::data_view(archetype_info.component_sizes));
-            mem_component_data = ice::ptr_add(mem_component_data, ice::span::size_bytes(archetype_info.component_sizes));
+            ice::memcpy(mem_component_data, archetype_info.component_sizes.data_view());
+            mem_component_data = ice::ptr_add(mem_component_data, archetype_info.component_sizes.size());
 
             component_alignments = reinterpret_cast<ice::u32 const*>(mem_component_data.location);
-            ice::memcpy(mem_component_data, ice::span::data_view(archetype_info.component_alignments));
-            mem_component_data = ice::ptr_add(mem_component_data, ice::span::size_bytes(archetype_info.component_alignments));
+            ice::memcpy(mem_component_data, archetype_info.component_alignments.data_view());
+            mem_component_data = ice::ptr_add(mem_component_data, archetype_info.component_alignments.size());
 
             // Save location to store calculated offsets
             component_offsets = reinterpret_cast<ice::u32*>(mem_component_data.location);

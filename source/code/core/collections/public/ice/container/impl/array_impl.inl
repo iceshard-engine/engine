@@ -83,13 +83,13 @@ namespace ice
             {
                 ice::mem_copy_construct_n_at(
                     ice::array::memory(*this),
-                    ice::span::data(values),
+                    values.data(),
                     values.size()
                 );
             }
             else
             {
-                ice::memcpy(_data, ice::span::data(values), ice::span::size_bytes(values));
+                ice::memcpy(_data, values.data(), values.size().bytes());
             }
 
             _count = values.size().u32();
@@ -362,7 +362,7 @@ namespace ice
             {
                 ice::mem_copy_construct_n_at<Type>(
                     Memory{ .location = arr._data + arr._count, .size = ice::size_of<Type> * missing_items, .alignment = ice::align_of<Type> },
-                    ice::span::data(items),
+                    items.data(),
                     items.size().u32()
                 );
             }
@@ -370,7 +370,7 @@ namespace ice
             {
                 ice::memcpy(
                     Memory{ .location = arr._data + arr._count, .size = ice::size_of<Type> * missing_items, .alignment = ice::align_of<Type> },
-                    ice::span::data_view(items)
+                    items.data_view()
                 );
             }
 

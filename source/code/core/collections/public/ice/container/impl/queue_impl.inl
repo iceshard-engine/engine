@@ -461,7 +461,7 @@ namespace ice
                         .size = ice::size_of<Type> * head_space,
                         .alignment = ice::align_of<Type>
                     },
-                    ice::span::data(items),
+                    items.data(),
                     head_space
                 );
                 ice::mem_copy_construct_n_at<Type>(
@@ -470,7 +470,7 @@ namespace ice
                         .size = ice::size_of<Type> * tail_space,
                         .alignment = ice::align_of<Type>
                     },
-                    ice::span::data(items) + head_space,
+                    items.data() + head_space,
                     tail_space
                 );
             }
@@ -483,7 +483,7 @@ namespace ice
                         .alignment = ice::align_of<Type>
                     },
                     Data{
-                        .location = ice::span::data(items),
+                        .location = items.data(),
                         .size = ice::size_of<Type> * head_space,
                         .alignment = ice::align_of<Type>
                     }
@@ -495,7 +495,7 @@ namespace ice
                         .alignment = ice::align_of<Type>
                     },
                     Data{
-                        .location = ice::span::data(items) + head_space,
+                        .location = items.data() + head_space,
                         .size = ice::size_of<Type> * tail_space,
                         .alignment = ice::align_of<Type>
                     }
@@ -605,13 +605,13 @@ namespace ice
 
             if constexpr (Logic == ContainerLogic::Complex)
             {
-                ice::mem_move_n_to(ice::span::begin(out_values), queue._data + queue._offset, first_part_count);
-                ice::mem_move_n_to(ice::span::begin(out_values) + first_part_count, queue._data, second_part);
+                ice::mem_move_n_to(out_values.begin(), queue._data + queue._offset, first_part_count);
+                ice::mem_move_n_to(out_values.begin() + first_part_count, queue._data, second_part);
             }
             else
             {
-                ice::memcpy(ice::span::begin(out_values), queue._data + queue._offset, first_part_count * sizeof(Type));
-                ice::memcpy(ice::span::begin(out_values) + first_part_count, queue._data, second_part * sizeof(Type));
+                ice::memcpy(out_values.begin(), queue._data + queue._offset, first_part_count * sizeof(Type));
+                ice::memcpy(out_values.begin() + first_part_count, queue._data, second_part * sizeof(Type));
             }
 
             ice::queue::pop_front(queue, taken_items);

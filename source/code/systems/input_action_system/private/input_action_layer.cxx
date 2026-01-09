@@ -35,10 +35,15 @@ namespace ice
     };
 
     template<typename T>
-    auto load_field_from_data(ice::Span<T const>& out_span, ice::Data data, ice::usize offset, ice::u32 count) noexcept
+    auto load_field_from_data(
+        ice::Span<T const>& out_span,
+        ice::Data data,
+        ice::usize offset,
+        ice::ncount count
+    ) noexcept -> ice::usize
     {
-        out_span = ice::span::from_data<T>(data, count, offset);
-        return ice::span::data_view(out_span).size;
+        ice::data::read_span(ice::ptr_add(data, offset), count, out_span);
+        return out_span.size();
     }
 
     auto load_from_data(ice::Data data) noexcept -> ice::Expected<ice::InputActionLayerInfo>

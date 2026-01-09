@@ -70,7 +70,7 @@ namespace ice::asl
 
         ice::u32 idx;
         ice::asl::TokenDefinition const needle{ .value = word.value };
-        if (ice::binary_search(ice::span::from_std_const(Constant_TokenDefinitions), needle, idx))
+        if (ice::binary_search(ice::make_span(Constant_TokenDefinitions), needle, idx))
         {
             result.type = Constant_TokenDefinitions[idx].type;
             word = processor.next();

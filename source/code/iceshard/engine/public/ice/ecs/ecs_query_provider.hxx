@@ -82,7 +82,7 @@ namespace ice::ecs
         ice::u32 const prev_arch_count = ice::count(out_instance_infos);
 
         this->query_internal(
-            ice::span::from_std_const(Part::Definition::Constant_Requirements),
+            ice::make_span(Part::Definition::Constant_Requirements),
             (RefIdx == 0 ? query_tags : ice::Span<ice::StringID const>{}), // We only want to apply tags on the main part
             out_access_trackers,
             out_instance_infos,

@@ -224,7 +224,7 @@ namespace ice
         {
             void* span_address = std::addressof(span_value);
             ice::u32 const span_size = span_value.size().u32();
-            ice::u32 const span_offset = ice::u32(ice::ptr_distance(base_ptr, ice::span::data(span_value)).value);
+            ice::u32 const span_offset = ice::u32(ice::ptr_distance(base_ptr, span_value.data()).value);
 
             ice::u32* values = reinterpret_cast<ice::u32*>(span_address);
             values[0] = span_offset;

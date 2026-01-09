@@ -67,25 +67,25 @@ namespace ice
     template<typename T, typename U> requires (std::convertible_to<T, U>)
     constexpr auto lower_bound(ice::Span<T> values, U const& value) noexcept -> ice::u32
     {
-        return static_cast<ice::u32>(std::lower_bound(ice::span::begin(values), ice::span::end(values), value) - ice::span::begin(values));
+        return static_cast<ice::u32>(std::lower_bound(values.begin(), values.end(), value) - values.begin());
     }
 
     template<typename T, typename Comp, typename U> requires (std::convertible_to<T, U>)
     constexpr auto lower_bound(ice::Span<T> values, U const& value, Comp&& comp) noexcept -> ice::u32
     {
-        return static_cast<ice::u32>(std::lower_bound(ice::span::begin(values), ice::span::end(values), value, ice::forward<Comp>(comp)) - ice::span::begin(values));
+        return static_cast<ice::u32>(std::lower_bound(values.begin(), values.end(), value, ice::forward<Comp>(comp)) - values.begin());
     }
 
     template<typename T, typename U> requires (std::convertible_to<T, U>)
     constexpr auto upper_bound(ice::Span<T> values, U const& value) noexcept -> ice::u32
     {
-        return static_cast<ice::u32>(std::upper_bound(ice::span::begin(values), ice::span::end(values), value) - ice::span::begin(values));
+        return static_cast<ice::u32>(std::upper_bound(values.begin(), values.end(), value) - values.begin());
     }
 
     template<typename T, typename Comp, typename U> requires (std::convertible_to<T, U>)
     constexpr auto upper_bound(ice::Span<T> values, U const& value, Comp&& comp) noexcept -> ice::u32
     {
-        return static_cast<ice::u32>(std::upper_bound(ice::span::begin(values), ice::span::end(values), value, ice::forward<Comp>(comp)) - ice::span::begin(values));
+        return static_cast<ice::u32>(std::upper_bound(values.begin(), values.end(), value, ice::forward<Comp>(comp)) - values.begin());
     }
 
     template<typename T, typename U> requires (std::convertible_to<T, U>)
@@ -274,7 +274,7 @@ namespace ice
     template<typename T, typename Pred>
     inline void sort(ice::Span<T> span, Pred&& pred) noexcept
     {
-        std::sort(ice::span::begin(span), ice::span::end(span), ice::forward<Pred>(pred));
+        std::sort(span.begin(), span.end(), ice::forward<Pred>(pred));
     }
 
     template<typename K, typename V, typename Pred>

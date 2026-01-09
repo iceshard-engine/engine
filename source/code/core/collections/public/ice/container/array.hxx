@@ -74,8 +74,6 @@ namespace ice::array
     template<typename Type, ice::ContainerLogic Logic>
     inline auto back(ice::Array<Type, Logic>& arr) noexcept -> Type&;
 
-
-
     template<typename Type, ice::ContainerLogic Logic>
     inline auto count(ice::Array<Type, Logic> const& arr) noexcept -> ice::u32;
 

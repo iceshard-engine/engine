@@ -310,7 +310,7 @@ namespace ice::ecs
         operation->component_data = nullptr;
         operation->component_data_size = 0;
 
-        ice::memcpy(operation->entities, ice::span::data(entities), ice::span::size_bytes(entities));
+        ice::memcpy(operation->entities, entities.data_view());
     }
 
     auto OperationBuilder::with_data(
@@ -331,9 +331,9 @@ namespace ice::ecs
 
         // Data for storing component info
         additional_data_size += ice::meminfo_of<ice::ecs::OperationComponentInfo>;
-        additional_data_size.size += ice::span::size_bytes(component_info.names);
-        additional_data_size.size += ice::span::size_bytes(component_info.sizes);
-        additional_data_size.size += ice::span::size_bytes(component_info.offsets);
+        additional_data_size.size += component_info.names.size().bytes();
+        additional_data_size.size += component_info.sizes.size().bytes();
+        additional_data_size.size += component_info.offsets.size().bytes();
 
         // Component data
         for (ice::Data const& data : component_data)
@@ -354,7 +354,7 @@ namespace ice::ecs
         ice::ecs::Entity* entities_ptr = reinterpret_cast<ice::ecs::Entity*>(operation_data);
         if (mode == 1)
         {
-            ice::memcpy(entities_ptr, ice::span::data(entities), ice::span::size_bytes(entities));
+            ice::memcpy(entities_ptr, entities.data_view());
         }
         else
         {
@@ -364,10 +364,10 @@ namespace ice::ecs
 
         // Set component info object
         ice::StringID* names_ptr = reinterpret_cast<ice::StringID*>(entities_ptr + entity_count);
-        ice::memcpy(names_ptr, ice::span::data(component_info.names), ice::span::size_bytes(component_info.names));
+        ice::memcpy(names_ptr, component_info.names.data_view());
 
         ice::u32* sizes_ptr = reinterpret_cast<ice::u32*>(names_ptr + component_count);
-        ice::memcpy(sizes_ptr, ice::span::data(component_info.sizes), ice::span::size_bytes(component_info.sizes));
+        ice::memcpy(sizes_ptr, component_info.sizes.data_view());
 
         ice::u32* offsets_ptr = reinterpret_cast<ice::u32*>(sizes_ptr + component_count);
 
@@ -439,7 +439,7 @@ namespace ice::ecs
             ice::ecs::Entity* entities_ptr = reinterpret_cast<ice::ecs::Entity*>(operation_data);
             if (mode == 1)
             {
-                ice::memcpy(entities_ptr, ice::span::data(entities), ice::span::size_bytes(entities));
+                ice::memcpy(entities_ptr, entities.data_view());
             }
             else
             {
@@ -455,7 +455,7 @@ namespace ice::ecs
             operation->filter_data = filter_ptr;
 
             ice::memcpy(operation_data, filter_data, filter_data_size);
-            ice::memcpy(operation->entities, ice::span::data(entities), ice::span::size_bytes(entities));
+            ice::memcpy(operation->entities, entities.data_view());
 
             if (mode == 2)
             {
