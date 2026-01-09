@@ -79,6 +79,31 @@ namespace ice::container
             return { self.data() + max_offset, max_offset - offset };
         }
 
+        // Iteration interface
+        template<ice::concepts::ContiguousContainer Self>
+        constexpr auto begin(this Self&& self) noexcept -> ice::container::Iterator<Self>
+        {
+            return { self.data() };
+        }
+
+        template<ice::concepts::ContiguousContainer Self>
+        constexpr auto end(this Self&& self) noexcept -> ice::container::Iterator<Self>
+        {
+            return { self.data() + self.size() };
+        }
+
+        template<ice::concepts::ContiguousContainer Self>
+        constexpr auto rbegin(this Self&& self) noexcept -> ice::container::ReverseIterator<Self>
+        {
+            return { self.data() + self.size() };
+        }
+
+        template<ice::concepts::ContiguousContainer Self>
+        constexpr auto rend(this Self&& self) noexcept -> ice::container::ReverseIterator<Self>
+        {
+            return { self.data() };
+        }
+
         // Operators
         template<ice::concepts::ContiguousContainer Self>
         constexpr auto operator[](this Self&& self, ice::nindex index) noexcept -> ice::container::ValueRef<Self>

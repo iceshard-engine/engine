@@ -48,4 +48,10 @@ namespace ice::container
     //using ValuePtr = ice::const_correct_t<std::remove_reference_t<ContainerT>, typename ContainerT::ValueType>*;
     using ValuePtr = typename std::remove_reference_t<ContainerT>::ValueType*;
 
+    template<ice::concepts::ContainerType ContainerT>
+    using Iterator = typename std::remove_reference_t<ContainerT>::Iterator;
+
+    template<ice::concepts::ContainerType ContainerT>
+    using ReverseIterator = typename std::remove_reference_t<ContainerT>::ReverseIterator;
+
 } // namespace ice::container

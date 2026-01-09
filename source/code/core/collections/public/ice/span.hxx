@@ -39,248 +39,113 @@ namespace ice
         constexpr auto operator=(ice::Span<Type>&& other) noexcept -> ice::Span<Type>& = default;
         constexpr auto operator=(ice::Span<Type> const& other) noexcept -> ice::Span<Type>& = default;
 
-        constexpr operator ice::Span<Type const>() noexcept { return { _data, _count }; }
-        constexpr operator ice::Span<Type const>() const noexcept { return { _data, _count }; }
-
         // API Requirements Of: Contiguous Container
         template<typename Self>
         constexpr auto data(this Self& self) noexcept -> ice::container::ValuePtr<Self> { return self._data; }
         constexpr auto size(this Span const& self) noexcept -> ice::ncount { return { self._count, sizeof(ValueType) }; }
+
+        // API Requirements Of: Data and Memory
+        constexpr auto data_view(this Span const& self) noexcept -> ice::Data;
+        constexpr auto memory_view(this Span const& self) noexcept -> ice::Memory
+            requires(not std::is_const_v<ValueType>);
+
+        // Implicit type conversions
+        constexpr operator ice::Span<Type const>() noexcept { return { _data, _count }; }
+        constexpr operator ice::Span<Type const>() const noexcept { return { _data, _count }; }
     };
 
-    template<typename T, ice::u64 Size> Span(T(&)[Size]) noexcept -> Span<T>;
     template<typename T> Span(ice::Span<T>&&) noexcept -> Span<T>;
     template<typename T> Span(ice::Span<T> const&) noexcept -> Span<T>;
     template<typename T, ContainerLogic Logic, template<typename, ContainerLogic> typename Container> Span(Container<T, Logic> const&) noexcept -> Span<T>;
+    template<typename T, ice::u64 Size> Span(T(&)[Size]) noexcept -> Span<T>;
 
-    namespace span
-    {
-
-        template<typename Type>
-        constexpr auto data_view(ice::Span<Type> span) noexcept -> ice::Data;
-
-        template<typename Type>
-        constexpr auto size_bytes(ice::Span<Type> span) noexcept -> ice::usize;
-
-        template<typename Type>
-        constexpr auto alignment(ice::Span<Type> span) noexcept -> ice::ualign;
-
-        template<typename Type>
-        constexpr auto begin(ice::Span<Type> span) noexcept -> typename ice::Span<Type>::Iterator;
-
-        template<typename Type>
-        constexpr auto end(ice::Span<Type> span) noexcept -> typename ice::Span<Type>::Iterator;
-
-        template<typename Type>
-        constexpr auto rbegin(ice::Span<Type> span) noexcept -> typename ice::Span<Type>::ReverseIterator;
-
-        template<typename Type>
-        constexpr auto rend(ice::Span<Type> span) noexcept -> typename ice::Span<Type>::ReverseIterator;
-
-        template<typename Type>
-        constexpr auto begin(ice::Span<Type const> span) noexcept -> typename ice::Span<Type const>::ConstIterator;
-
-        template<typename Type>
-        constexpr auto end(ice::Span<Type const> span) noexcept -> typename ice::Span<Type const>::ConstIterator;
-
-        template<typename Type>
-        constexpr auto rbegin(ice::Span<Type const> span) noexcept -> typename ice::Span<Type const>::ConstReverseIterator;
-
-        template<typename Type>
-        constexpr auto rend(ice::Span<Type const> span) noexcept -> typename ice::Span<Type const>::ConstReverseIterator;
-
-
-        template<typename Type, size_t Size>
-        constexpr auto from_std(std::array<Type, Size> const& std_array) noexcept -> ice::Span<Type>;
-
-        template<typename Type>
-        constexpr auto memory(ice::Span<Type> span) noexcept -> ice::Memory;
-
-    } // namespace span
-
-    namespace data
-    {
-
-        template<typename T>
-            requires (std::is_trivially_copyable_v<T> && !std::is_pointer_v<T>)
-        inline auto read_span(ice::Data source, ice::u64 count, ice::Span<T const>& out_value) noexcept -> ice::Data
-        {
-            ICE_ASSERT_CORE(source.alignment >= ice::align_of<T>);
-            out_value._count = count;
-            out_value._data = reinterpret_cast<T const*>(source.location);
-
-            ice::usize const consumed_size = ice::size_of<T> *count;
-            source.location = out_value.data() + count;
-            source.size = ice::usize::subtract(source.size, consumed_size);
-            source.alignment = ice::align_of<T>;
-            return source;
-        }
-
-    } // namespace data
+    template<typename Type, ice::u64 Size>
+    static constexpr auto make_span(std::array<Type, Size>& std_array) noexcept -> Span<Type>;
+    template<typename Type, ice::u64 Size>
+    static constexpr auto make_span(std::array<Type, Size> const& std_array) noexcept -> Span<Type const>;
 
     template<typename Type>
     constexpr Span<Type>::Span() noexcept
         : _count{ 0 }
         , _data{ nullptr }
-    {
-    }
+    { }
 
     template<typename Type>
     constexpr Span<Type>::Span(Type* location, ice::ncount count) noexcept
         : _count{ count.native() }
         , _data{ location }
-    {
-    }
+    { }
 
     template<typename Type>
     constexpr Span<Type>::Span(Type* from, Type* to) noexcept
         : _count{ static_cast<ice::u64>(to - from) }
         , _data{ from }
-    {
-    }
+    { }
 
     template<typename Type>
     template<ice::u64 Size>
     constexpr Span<Type>::Span(Type(&location)[Size]) noexcept
         : _count{ Size }
         , _data{ location }
+    { }
+
+    template<typename Type>
+    inline constexpr auto Span<Type>::data_view(this Span const& self) noexcept -> ice::Data
     {
+        return ice::Data{
+            .location = self.data(),
+            .size = self.size(),
+            .alignment = ice::align_of<Type>
+        };
     }
 
-    namespace span
+    template<typename Type>
+    inline constexpr auto Span<Type>::memory_view(this Span const& self) noexcept -> ice::Memory
+        requires(not std::is_const_v<ValueType>)
     {
+        return ice::Data{
+            .location = self.data(),
+            .size = self.size(),
+            .alignment = ice::align_of<Type>
+        };
+    }
 
-        template<typename Type>
-        constexpr auto data(ice::Span<Type> span) noexcept -> Type*
-        {
-            return span._data;
-        }
+    template<typename Type, ice::u64 Size>
+    inline constexpr auto make_span(std::array<Type, Size>& std_array) noexcept -> Span<Type>
+    {
+        return Span<Type>{ std_array.data(), std_array.size() };
+    }
 
-        template<typename Type>
-        constexpr auto data_view(ice::Span<Type> span) noexcept -> ice::Data
-        {
-            return Data{
-                .location = ice::span::data(span),
-                .size = ice::span::size_bytes(span),
-                .alignment = ice::span::alignment(span)
-            };
-        }
-
-        template<typename Type>
-        constexpr auto size_bytes(ice::Span<Type> span) noexcept -> ice::usize
-        {
-            return span.size();
-        }
-
-        template<typename Type>
-        constexpr auto alignment(ice::Span<Type> span) noexcept -> ice::ualign
-        {
-            return ice::align_of<Type>;
-        }
-
-        template<typename Type>
-        constexpr auto begin(ice::Span<Type> span) noexcept -> typename ice::Span<Type>::Iterator
-        {
-            return span._data;
-        }
-
-        template<typename Type>
-        constexpr auto end(ice::Span<Type> span) noexcept -> typename ice::Span<Type>::Iterator
-        {
-            return span._data + span._count;
-        }
-
-        template<typename Type>
-        constexpr auto rbegin(ice::Span<Type> span) noexcept -> typename ice::Span<Type>::ReverseIterator
-        {
-            return typename ice::Span<Type>::ReverseIterator{ span._data + span._count };
-        }
-
-        template<typename Type>
-        constexpr auto rend(ice::Span<Type> span) noexcept -> typename ice::Span<Type>::ReverseIterator
-        {
-            return typename ice::Span<Type>::ReverseIterator{ span._data };
-        }
-
-        template<typename Type>
-        constexpr auto begin(ice::Span<Type const> span) noexcept -> typename ice::Span<Type const>::ConstIterator
-        {
-            return span._data;
-        }
-
-        template<typename Type>
-        constexpr auto end(ice::Span<Type const> span) noexcept -> typename ice::Span<Type const>::ConstIterator
-        {
-            return span._data + span._count;
-        }
-
-        template<typename Type>
-        constexpr auto rbegin(ice::Span<Type const> span) noexcept -> typename ice::Span<Type const>::ConstReverseIterator
-        {
-            return typename ice::Span<Type const>::ConstReverseIterator{ span._data + span._count };
-        }
-
-        template<typename Type>
-        constexpr auto rend(ice::Span<Type const> span) noexcept -> typename ice::Span<Type const>::ConstReverseIterator
-        {
-            return typename ice::Span<Type const>::ConstReverseIterator{ span._data };
-        }
-
-
-        template<typename Type, size_t Size>
-        constexpr auto from_std(std::array<Type, Size>& std_array) noexcept -> ice::Span<Type>
-        {
-            return ice::Span<Type>{ std_array.data(), std_array.size() };
-        }
-
-        template<typename Type, size_t Size>
-        constexpr auto from_std_const(std::array<Type, Size> const& std_array) noexcept -> ice::Span<Type const>
-        {
-            return ice::Span<Type const>{ std_array.data(), std_array.size() };
-        }
-
-        // TODO: Move to another location or rename? Not sure this is properly named
-        template<typename Type>
-        constexpr auto memory(ice::Span<Type> span) noexcept -> ice::Memory
-        {
-            return ice::Memory{
-                .location = ice::span::begin(span),
-                .size = ice::span::size_bytes(span),
-                .alignment = ice::span::alignment(span)
-            };
-        }
-
-        template<typename Type>
-        constexpr auto from_memory(ice::Memory const& mem, ice::u64 count, ice::usize offset) noexcept -> ice::Span<Type>
-        {
-            static ice::meminfo minfo = ice::meminfo_of<Type>;
-
-            void* const ptr = ice::ptr_add(mem.location, offset);
-            ICE_ASSERT_CORE(ice::is_aligned(ptr, minfo.alignment));
-            ICE_ASSERT_CORE(ice::ptr_add(mem.location, mem.size) >= ice::ptr_add(ptr, minfo.size * count));
-            return ice::Span<Type>{ reinterpret_cast<Type*>(ptr), count };
-        }
-
-        // TODO: Move to another location or rename? Not sure this is properly named
-        template<typename Type>
-        constexpr auto from_data(ice::Data const& mem, ice::u64 count, ice::usize offset) noexcept -> ice::Span<Type const>
-        {
-            static ice::meminfo constexpr minfo = ice::meminfo_of<Type>;
-
-            void const* const ptr = ice::ptr_add(mem.location, offset);
-            ICE_ASSERT_CORE(ice::is_aligned(ptr, minfo.alignment));
-            ICE_ASSERT_CORE(ice::ptr_add(mem.location, mem.size) >= ice::ptr_add(ptr, minfo.size * count));
-            return { reinterpret_cast<Type const*>(ptr), count };
-        }
-
-    } // namespace span
-
-    using ice::span::data_view;
-
-    using ice::span::begin;
-    using ice::span::end;
-
+    template<typename Type, ice::u64 Size>
+    inline constexpr auto make_span(std::array<Type, Size> const& std_array) noexcept -> Span<Type const>
+    {
+        return Span<Type const>{ std_array.data(), std_array.size() };
+    }
 
     static_assert(ice::TrivialContainerLogicAllowed<ice::Span<ice::u32>>);
+
+    // TODO: Move to a data reader type
+    namespace data
+    {
+
+        template<typename T>
+            requires (std::is_trivially_copyable_v<T> && !std::is_pointer_v<T>)
+        inline auto read_span(
+            ice::Data source,
+            ice::ncount count,
+            ice::Span<T const>& out_value
+        ) noexcept -> ice::Data
+        {
+            ICE_ASSERT_CORE(source.alignment >= ice::align_of<T>);
+            out_value._count = count;
+            out_value._data = reinterpret_cast<T const*>(source.location);
+
+            source.location = out_value.data() + count;
+            source.size = ice::usize::subtract(source.size, out_value.size());
+            source.alignment = ice::align_of<T>;
+            return source;
+        }
+
+    } // namespace data
 
 } // namespace ice
