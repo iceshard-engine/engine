@@ -44,7 +44,7 @@ namespace ice::ecs
             _max_entity_count
         );
 
-        ice::array::reserve(_generation, estimated_entity_count);
+        _generation.reserve(estimated_entity_count);
 
         // #todo: decide if we need this
         [[maybe_unused]]
@@ -79,7 +79,7 @@ namespace ice::ecs
         else
         {
             index = _generation.size();
-            ice::array::push_back(_generation, ice::u8{ 0 });
+            _generation.push_back(ice::u8{ 0 });
         }
 
         return ice::ecs::detail::make_entity(index.u32(), _generation[index]);
@@ -156,7 +156,7 @@ namespace ice::ecs
     bool EntityIndex::recreate(ice::Array<ice::ecs::Entity>& entities, ice::u32 new_count) noexcept
     {
         destroy_many(entities);
-        ice::array::resize(entities, new_count);
+        entities.resize(new_count);
         create_many(entities);
         return false;
     }

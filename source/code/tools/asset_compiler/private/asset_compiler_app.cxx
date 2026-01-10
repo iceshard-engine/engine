@@ -44,15 +44,13 @@ public:
     {
         if (results.size() == 2)
         {
-            ice::array::push_back(
-                self._params,
+            self._params.push_back(
                 ice::shard(results[0], results[1].begin())
             );
         }
         if (results.size() == 1)
         {
-            ice::array::push_back(
-                self._params,
+            self._params.push_back(
                 ice::shard(results[0], true)
             );
         }
@@ -323,7 +321,7 @@ public:
             // If empty we add our own handle to the list
             if (sources.is_empty())
             {
-                ice::array::push_back(sources, res);
+                sources.push_back(res);
             }
 
             ice::Array<ice::URI> dependencies{ _allocator };
@@ -364,7 +362,7 @@ public:
                     _queue.process_all();
                 }
 
-                ice::array::push_back(results, result);
+                results.push_back(result);
             }
 
             if (ice::wait_for_result(resource_compiler->fn_build_metadata(ctx, res, *resource_tracker, results, dependencies, meta)) == false)

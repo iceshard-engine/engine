@@ -92,12 +92,12 @@ namespace ice
     void ASLImportTracker::track_script(ASLScriptFile* file) noexcept
     {
         // Store the tracker pointer in a list.
-        ice::array::push_back(_global, file);
+        _global.push_back(file);
     }
 
     void ASLImportTracker::add_visitor(arctic::SyntaxVisitor* visitor) noexcept
     {
-        ice::array::push_back(_script_visitors, visitor);
+        _script_visitors.push_back(visitor);
     }
 
     auto ASLImportTracker::find(arctic::String identifier) noexcept -> arctic::SyntaxNode<>
@@ -182,7 +182,7 @@ namespace ice
         }
 
         // Store the tracker pointer in a list.
-        ice::array::push_back(_global, import_entry.file.get());
+        _global.push_back(import_entry.file.get());
 
         // Store the whole entry.
         ice::multi_hashmap::insert(_imports, detail::arc_hash(node.data().path), ice::move(import_entry));
@@ -216,8 +216,8 @@ namespace ice
             result = ice::make_unique<ASLScriptFile>(alloc._backing, alloc, asl_alias);
 
             ice::Array<arctic::SyntaxVisitor*> final_visitors{ alloc._backing, visitors };
-            ice::array::push_back(final_visitors, &imports);
-            ice::array::push_back(final_visitors, result.get());
+            final_visitors.push_back(&imports);
+            final_visitors.push_back(result.get());
 
             if (parser->parse(lexer, alloc, final_visitors) == false)
             {

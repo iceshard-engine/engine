@@ -33,7 +33,7 @@ namespace ice
         {
             ice::native_file::path_from_string(base_path, path);
             ice::path::normalize(base_path);
-            ice::array::push_back(_base_paths, base_path);
+            _base_paths.push_back(base_path);
         }
     }
 
@@ -99,7 +99,7 @@ namespace ice
                     _named_allocator.deallocate(metadata_mem);
                 }
 
-                ice::array::push_back(out_uris, resource->uri());
+                out_uris.push_back(resource->uri());
                 collected += 1;
             }
         }
@@ -115,7 +115,7 @@ namespace ice
         out_changes.reserve(out_changes.size() + ice::hashmap::count(_resources));
         for (auto* resource : _resources)
         {
-            ice::array::push_back(out_changes, resource);
+            out_changes.push_back(resource);
         }
         return ice::hashmap::count(_resources);
     }
@@ -286,7 +286,7 @@ namespace ice
     ) noexcept -> ice::Result
     {
         resource->data_index = _resources_data.size().u32();
-        ice::array::push_back(_resources_data, ice::Memory{});
+        _resources_data.push_back(ice::Memory{});
 
         ice::u64 const hash = ice::hash(resource->origin());
         ICE_ASSERT(

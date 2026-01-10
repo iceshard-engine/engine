@@ -80,7 +80,7 @@ namespace ice
         out_changes.reserve(out_changes.size() + ice::hashmap::count(_resources));
         for (auto* resource : _resources)
         {
-            ice::array::push_back(out_changes, resource);
+            out_changes.push_back(resource);
         }
         return ice::hashmap::count(_resources);
     }

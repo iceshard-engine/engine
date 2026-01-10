@@ -124,7 +124,7 @@ namespace ice
                     /* is_app_context */ false
                 );
 
-                ice::array::push_back(_module_handles, ice::move(module_handle));
+                _module_handles.push_back(ice::move(module_handle));
                 return true;
             }
         }

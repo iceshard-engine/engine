@@ -53,7 +53,7 @@ namespace ice
         }
         else
         {
-            ice::array::push_back(_events, event);
+            _events.push_back(event);
         }
     }
 
@@ -71,7 +71,7 @@ namespace ice
         // Copy all current events into the _expired events list.
         //   We use copy+clean so we don't allocate one of the arrays every time.
         _events_expired = _events;
-        ice::array::clear(_events);
+        _events.clear();
 
         // Push shards into the out container. (ice::detail::TraitEvent decays into ice::Shard)
         for (ice::Shard shard : _events_expired)

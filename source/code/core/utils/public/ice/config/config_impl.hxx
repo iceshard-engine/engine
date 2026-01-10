@@ -132,13 +132,13 @@ namespace ice::config::detail
         }
 
         ice::ErrorCode result = S_Ok;
-        ice::array::reserve(out_values, table_size);
+        out_values.reserve(table_size);
         do
         {
             T temp_value;
             if (result = ice::config::detail::get(config, entry_key, entry_value, temp_value, flags); result == S_Ok)
             {
-                ice::array::push_back(out_values, temp_value);
+                out_values.push_back(temp_value);
             }
             else if (result != E_ConfigValueTypeMissmatch)
             {

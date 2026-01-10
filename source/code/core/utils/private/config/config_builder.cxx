@@ -91,8 +91,8 @@ namespace ice
     ) noexcept -> ice::usize
     {
         ice::usize result = 0_B;
-        ConfigBuilderEntry const* entry = ice::array::begin(config._entries);
-        ConfigBuilderEntry const* const entry_end = ice::array::end(config._entries);
+        ConfigBuilderEntry const* entry = config._entries.begin();
+        ConfigBuilderEntry const* const entry_end = config._entries.end();
 
         if (entry == entry_end)
         {
@@ -167,8 +167,8 @@ namespace ice
     {
         // First add all keys-values to the list
         ice::u32 keyoffset = 0;
-        ice::config::detail::ConfigBuilderEntry const* it_entry = ice::array::begin(config._entries);
-        ice::config::detail::ConfigBuilderEntry const* const it_end = ice::array::end(config._entries);
+        ice::config::detail::ConfigBuilderEntry const* it_entry = config._entries.begin();
+        ice::config::detail::ConfigBuilderEntry const* const it_end = config._entries.end();
         do
         {
             // Copy the whole key information and just update the str offset.
@@ -397,7 +397,7 @@ namespace ice
         char const* final_keystrings = reinterpret_cast<char const*>(final_keystrings_mem.location);
 
         // Reserve space to hold all keystring entries and build the string buffer.
-        ice::array::resize(keyoffsets, ice::hashmap::count(keystrings));
+        keyoffsets.resize(ice::hashmap::count(keystrings));
 
         ice::ncount keystr_offset = 0;
         for (CBKeyString const& keystr : ice::hashmap::values(keystrings))

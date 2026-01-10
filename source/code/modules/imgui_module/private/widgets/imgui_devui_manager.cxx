@@ -23,8 +23,8 @@ namespace ice::devui
         , _allocator{ alloc }
         , _widgets{ alloc }
     {
-        ice::array::reserve(_widgets, 100);
-        ice::array::push_back(_widgets, ice::make_unique<ImGuiDevUIWidget>(_allocator));
+        _widgets.reserve(100);
+        _widgets.push_back(ice::make_unique<ImGuiDevUIWidget>(_allocator));
     }
 
     ImGuiDevUIManager::~ImGuiDevUIManager() noexcept
@@ -48,7 +48,7 @@ namespace ice::devui
             owner_state = ice::addressof(_widgets[owner_idx]->state);
         }
 
-        ice::array::push_back(_widgets,
+        _widgets.push_back(
             ice::make_unique<ImGuiDevUIWidget>(_allocator,
                 ImGuiDevUIWidget{
                     .state = {.owner = owner_state },
@@ -104,7 +104,7 @@ namespace ice::devui
             ImGui::TableSetupColumn("Visible");
             ImGui::TableHeadersRow();
 
-            for (auto const& widget : ice::array::slice(_widgets, 1))
+            for (auto const& widget : _widgets.tailspan())
             {
                 ImGui::TableNextRow();
 

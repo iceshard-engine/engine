@@ -486,7 +486,7 @@ namespace ice
 
             void on_layer_parsed(ice::UniquePtr<ice::InputActionLayer> layer) noexcept override
             {
-                ice::array::push_back(results, ice::move(layer));
+                results.push_back(ice::move(layer));
             }
         } parser{ alloc };
 

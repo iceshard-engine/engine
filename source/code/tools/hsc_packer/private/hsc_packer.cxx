@@ -161,8 +161,8 @@ public:
                 {
                     for (ice::String ext : extensions)
                     {
-                        ice::array::push_back(_filter_extensions_heap, { _allocator, ext });
-                        ice::array::push_back(_filter_extensions, _filter_extensions_heap.last());
+                        _filter_extensions_heap.push_back({ _allocator, ext });
+                        _filter_extensions.push_back(_filter_extensions_heap.last());
                     }
                 }
                 HSCP_ERROR_IF(
@@ -241,7 +241,7 @@ public:
         files.reserve(_inputs.size());
         for (ice::String file : _inputs)
         {
-            ice::array::push_back(files, { .path = file });
+            files.push_back({ .path = file });
         }
 
         ice::UniquePtr<ice::ResourceProvider> fsprov = ice::create_resource_provider_files(
@@ -308,7 +308,7 @@ public:
 
                 ice::Data md;
                 ice::wait_for_result(ice::resource_meta(resource_handles[res_idx], md));
-                ice::array::push_back(resource_metas, hsdata_view(md));
+                resource_metas.push_back(hsdata_view(md));
 
                 ice::schedule_task(
                     read_resource_size(resource_handles[res_idx], resource_data[res_idx], res_count),
@@ -326,9 +326,9 @@ public:
             ice::current_thread::sleep(1_Tms);
         }
 
-        ice::array::resize(resource_paths, res_idx);
-        ice::array::resize(resource_data, res_idx);
-        ice::array::resize(resource_metamap, res_idx);
+        resource_paths.resize(res_idx);
+        resource_data.resize(res_idx);
+        resource_metamap.resize(res_idx);
 
         hailstorm::v1::HailstormWriteData const hsdata{
             .paths = resource_paths,

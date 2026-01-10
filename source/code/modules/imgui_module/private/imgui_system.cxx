@@ -77,7 +77,7 @@ namespace ice::devui
         , _widget_logger{ _allocator }
         , _widget_style{ _allocator }
     {
-        ice::array::push_back(_builtin_widgets, create_allocator_tree_widget(_allocator));
+        _builtin_widgets.push_back(create_allocator_tree_widget(_allocator));
         // ice::array::push_back(_builtin_widgets, (ice::UniquePtr<ice::DevUIWidget>) ice::make_unique<ImGuiLogger>(_allocator, _allocator));
 
         // Register all built-in's
@@ -100,10 +100,10 @@ namespace ice::devui
 
     void ImGuiSystem::setup_mainmenu(ice::Span<ice::String> categories) noexcept
     {
-        ice::array::clear(_menu_categories);
+        _menu_categories.clear();
         for (ice::String category : categories)
         {
-            ice::array::push_back(_menu_categories, ice::HeapString<>{ _allocator, category });
+            _menu_categories.push_back({ _allocator, category });
         }
     }
 

@@ -64,7 +64,7 @@ AssetCompilerResourceProvider::AssetCompilerResourceProvider(
     , _resources{ _allocator }
     , _data{ _allocator }
 {
-    ice::array::reserve(_resources, files.size().u32());
+    _resources.reserve(files.size().u32());
 
     ice::u32 idx = 0;
     for (ice::String file : files)
@@ -76,7 +76,7 @@ AssetCompilerResourceProvider::AssetCompilerResourceProvider(
 
         AssetCompilerResource* res = _allocator.create<AssetCompilerResource>(_allocator, ice::move(filehandle), file);
         res->idx = idx++;
-        ice::array::push_back(_resources, res);
+        _resources.push_back(res);
     }
 
     _data.resize(_resources.size());
@@ -109,7 +109,7 @@ auto AssetCompilerResourceProvider::refresh(
 {
     for (AssetCompilerResource* res : _resources)
     {
-        ice::array::push_back(out_changes, res);
+        out_changes.push_back(res);
     }
     return ice::ResourceProviderResult::Success;
 }

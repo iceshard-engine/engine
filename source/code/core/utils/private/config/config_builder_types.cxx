@@ -39,7 +39,7 @@ namespace ice::config::detail
         {
             cb_clear_value_type(_allocator, &entry);
         }
-        ice::array::clear(_entries);
+        _entries.clear();
     }
 
     ConfigBuilderContainer::~ConfigBuilderContainer() noexcept

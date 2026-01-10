@@ -45,7 +45,7 @@ namespace ice
     {
         if (count == 0) return { };
 
-        ice::array::push_back(_task_groups,
+        _task_groups.push_back(
             TaskGroup{
                 .tasks = ice::Array<ice::Task<>>{ _frame_data._fwd_allocator },
                 .barrier = _frame_data._fwd_allocator.create<ice::ManualResetBarrier>()
@@ -73,7 +73,7 @@ namespace ice
             {
                 for (ice::Task<>& task : group.tasks)
                 {
-                    ice::array::push_back(final_task_list, ice::move(task));
+                    final_task_list.push_back(ice::move(task));
                 }
                 group.tasks.clear();
             }

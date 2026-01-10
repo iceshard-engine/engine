@@ -67,8 +67,7 @@ namespace ice::gfx
 
                 if (current.event & GfxSnapshotEvent::EventReadRes)
                 {
-                    ice::array::push_back(
-                        out_barriers,
+                    out_barriers.push_back(
                         GraphBarrier{
                             .pass_idx = last_pass,
                             .source_layout = render::ImageLayout::Color,
@@ -80,8 +79,7 @@ namespace ice::gfx
                 }
                 else
                 {
-                    ice::array::push_back(
-                        out_barriers,
+                    out_barriers.push_back(
                         GraphBarrier{
                             .pass_idx = last_pass,
                             .source_layout = render::ImageLayout::Undefined,
@@ -113,11 +111,10 @@ namespace ice::gfx
         ice::Array<RenderSubPass> subpasses{ alloc };
         ice::Array<SubpassDependency> dependencies{ alloc };
 
-        ice::array::reserve(attachments, resources.size().u32());
-        ice::array::reserve(references, graph_snapshots.size().u32());
+        attachments.reserve(resources.size().u32());
+        references.reserve(graph_snapshots.size().u32());
 
-        ice::array::push_back(
-            attachments,
+        attachments.push_back(
             RenderAttachment{
                 .format = swapchain.image_format(),
                 .final_layout = ImageLayout::Present,
@@ -138,8 +135,7 @@ namespace ice::gfx
             }
             else if (type == GfxResourceType::RenderTarget)
             {
-                ice::array::push_back(
-                    attachments,
+                attachments.push_back(
                     RenderAttachment{
                         .format = swapchain.image_format(),
                         .final_layout = ImageLayout::ShaderReadOnly,
@@ -153,8 +149,7 @@ namespace ice::gfx
             }
             else // if (type == GfxResourceType::DepthStencil)
             {
-                ice::array::push_back(
-                    attachments,
+                attachments.push_back(
                     RenderAttachment{
                         .format = ImageFormat::SFLOAT_D32_UINT_S8,
                         .final_layout = ImageLayout::DepthStencil,
@@ -178,11 +173,10 @@ namespace ice::gfx
             {
                 if (subpass_idx > 1)
                 {
-                    ice::array::push_back(
-                        subpasses,
+                    subpasses.push_back(
                         RenderSubPass{
-                            .input_attachments = ice::array::slice(references, ref_subpass_idx, counts[0]),
-                            .color_attachments = ice::array::slice(references, ref_subpass_idx + counts[0], counts[1]),
+                            .input_attachments = references.subspan(ref_subpass_idx, counts[0]),
+                            .color_attachments = references.subspan(ref_subpass_idx + counts[0], counts[1]),
                             .depth_stencil_attachment = counts[2] == 0 ? AttachmentReference{ } : references[ref_subpass_idx + counts[0] + counts[1]],
                         }
                     );
@@ -195,8 +189,7 @@ namespace ice::gfx
                 {
                     if (subpass_idx == 2)
                     {
-                        ice::array::push_back(
-                            dependencies,
+                        dependencies.push_back(
                             SubpassDependency{
                                 .source_subpass = subpass_idx - 2,
                                 .source_stage = PipelineStage::ColorAttachmentOutput,
@@ -209,8 +202,7 @@ namespace ice::gfx
                     }
                     else
                     {
-                        ice::array::push_back(
-                            dependencies,
+                        dependencies.push_back(
                             SubpassDependency{
                                 .source_subpass = subpass_idx - 2,
                                 .source_stage = PipelineStage::ColorAttachmentOutput,
@@ -234,8 +226,7 @@ namespace ice::gfx
                     if (type == GfxResourceType::DepthStencil)
                     {
                         counts[2] += 1;
-                        ice::array::push_back(
-                            references,
+                        references.push_back(
                             AttachmentReference{
                                 .attachment_index = idx,
                                 .layout = ImageLayout::DepthStencil
@@ -245,8 +236,7 @@ namespace ice::gfx
                     else if (graph_snapshot.event & GfxSnapshotEvent::EventWriteRes)
                     {
                         counts[1] += 1;
-                        ice::array::push_back(
-                            references,
+                        references.push_back(
                             AttachmentReference{
                                 .attachment_index = idx,
                                 .layout = ImageLayout::Color
@@ -256,8 +246,7 @@ namespace ice::gfx
                     else
                     {
                         counts[0] += 1;
-                        ice::array::push_back(
-                            references,
+                        references.push_back(
                             AttachmentReference{
                                 .attachment_index = idx,
                                 .layout = ImageLayout::ShaderReadOnly
@@ -295,11 +284,10 @@ namespace ice::gfx
 
         ice::Array<GfxGraphSnapshot> snapshots{ alloc };
         ice::Array<GfxResource> resources{ alloc };
-        ice::array::push_back(resources, base_definition.get_framebuffer());
+        resources.push_back(base_definition.get_framebuffer());
 
         ice::u32 pass_idx = 0;
-        ice::array::push_back(
-            snapshots,
+        snapshots.push_back(
             GfxGraphSnapshot{
                 .subpass = 0,
                 .resource = { pass_idx++ },
@@ -311,8 +299,7 @@ namespace ice::gfx
         IceshardGfxGraphStages stages{ alloc };
         for (GfxGraphPass const& pass : base_definition.passes())
         {
-            ice::array::push_back(
-                snapshots,
+            snapshots.push_back(
                 GfxGraphSnapshot{
                     .subpass = pass_idx,
                     .resource = { pass_idx },
@@ -323,12 +310,11 @@ namespace ice::gfx
 
             for (GfxGraphStage const& stage : pass.stages)
             {
-                ice::array::push_back(stages._stage_names, stage.name);
+                stages._stage_names.push_back(stage.name);
 
                 for (GfxResource res : stage.inputs)
                 {
-                    ice::array::push_back(
-                        snapshots,
+                    snapshots.push_back(
                         GfxGraphSnapshot{
                             .subpass = pass_idx,
                             .resource = res,
@@ -339,8 +325,7 @@ namespace ice::gfx
                 }
                 for (GfxResource res : stage.outputs)
                 {
-                    ice::array::push_back(
-                        snapshots,
+                    snapshots.push_back(
                         GfxGraphSnapshot{
                             .subpass = pass_idx,
                             .resource = res,
@@ -351,8 +336,7 @@ namespace ice::gfx
                 }
                 for (GfxResource res : stage.depth_stencil)
                 {
-                    ice::array::push_back(
-                        snapshots,
+                    snapshots.push_back(
                         GfxGraphSnapshot{
                             .subpass = pass_idx,
                             .resource = res,
@@ -363,12 +347,11 @@ namespace ice::gfx
                 }
             }
 
-            ice::array::push_back(stages._counts, pass.stages.size().u8());
+            stages._counts.push_back(pass.stages.size().u8());
             pass_idx += 1;
         }
 
-        ice::array::push_back(
-            snapshots,
+        snapshots.push_back(
             GfxGraphSnapshot{
                 .subpass = pass_idx,
                 .resource = { pass_idx },
@@ -398,7 +381,7 @@ namespace ice::gfx
                 bool const res_created = (snapshot.event & GfxSnapshotEvent::EventCreateRes) != 0;
                 if (res_created)
                 {
-                    ice::array::push_back(resources, snapshot.resource);
+                    resources.push_back(snapshot.resource);
                 }
 
                 current_images += ice::u32(res_created);
@@ -407,7 +390,7 @@ namespace ice::gfx
         }
 
         ice::sort(
-            ice::array::slice(resources),
+            resources.tailspan(0),
             [](GfxResource lhs, GfxResource rhs) noexcept { return (lhs.value & 0xffff) < (rhs.value & 0xffff); }
         );
 

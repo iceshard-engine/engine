@@ -51,7 +51,7 @@ namespace ice
                 ? entry.path.size() - ice::path::filename(entry.path).size()
                 : entry.basepath.size();
 
-            ice::array::push_back(_file_paths, { .path = file_path, .basepath_size = basepath_size.u32() });
+            _file_paths.push_back({ .path = file_path, .basepath_size = basepath_size.u32() });
         }
     }
 
@@ -112,7 +112,7 @@ namespace ice
         if (resource != nullptr)
         {
             resource->data_index = _resources_data.size().u32();
-            ice::array::push_back(_resources_data, ice::Memory{});
+            _resources_data.push_back(ice::Memory{});
 
             ice::u64 const hash = ice::hash(resource->uri().path());
             ICE_ASSERT(
@@ -150,7 +150,7 @@ namespace ice
         out_changes.reserve(out_changes.size() + ice::hashmap::count(_resources));
         for (auto* resource : _resources)
         {
-            ice::array::push_back(out_changes, resource);
+            out_changes.push_back(resource);
         }
         return ice::hashmap::count(_resources);
     }

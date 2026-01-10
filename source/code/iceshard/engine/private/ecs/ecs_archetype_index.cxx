@@ -146,13 +146,13 @@ namespace ice::ecs
         , _archetype_names_index{ _allocator }
         , _archetype_data{ _allocator }
     {
-        ice::array::reserve(_archetype_data, ice::ecs::Constant_MaxArchetypeCount);
-        ice::array::push_back(_archetype_data, nullptr);
+        _archetype_data.reserve(ice::ecs::Constant_MaxArchetypeCount);
+        _archetype_data.push_back(nullptr);
     }
 
     ArchetypeIndex::~ArchetypeIndex() noexcept
     {
-        for (ArchetypeDataHeader* header : ice::array::slice(_archetype_data, 1))
+        for (ArchetypeDataHeader* header : _archetype_data.tailspan())
         {
             ice::usize const size = ArchetypeDataHeader::calculate_meminfo(header->archetype_name, header->archetype_info);
             _allocator.deallocate(
@@ -299,7 +299,7 @@ namespace ice::ecs
         ice::u32 const archetype_index = _archetype_data.size().u32();
         data_header->archetype_info.archetype_instance = ice::ecs::detail::ArchetypeInstance{ archetype_index };
 
-        ice::array::push_back(_archetype_data, data_header);
+        _archetype_data.push_back(data_header);
         ice::hashmap::set(_archetype_index, ice::hash(archetype_info.identifier), archetype_index);
 
         // Save the 'index' for the given name
@@ -331,7 +331,7 @@ namespace ice::ecs
         ice::Span<ice::StringID const> query_tags
     ) const noexcept
     {
-        ice::array::clear(out_archetypes);
+        out_archetypes.clear();
 
         // We need to skip the first query entry if it's for `ice::ecs::Entity`
         // This is due to the fact that it's always there and is not taken into account when sorting components by identifiers.
@@ -358,7 +358,7 @@ namespace ice::ecs
         );
 
         ice::u32 const total_required_type_count = required_component_count + required_tag_count;
-        for (ArchetypeDataHeader const* entry : ice::array::slice(_archetype_data, 1))
+        for (ArchetypeDataHeader const* entry : _archetype_data.tailspan())
         {
             ice::ecs::detail::ArchetypeInstanceInfo const& archetype_info = entry->archetype_info;
 
@@ -378,7 +378,7 @@ namespace ice::ecs
             //  #todo: we should probably also check for the existance of the EntityHandle in the query. Then the check should be `> 1`
             if (was_matched)
             {
-                ice::array::push_back(out_archetypes, entry->archetype_identifier);
+                out_archetypes.push_back(entry->archetype_identifier);
             }
         }
     }

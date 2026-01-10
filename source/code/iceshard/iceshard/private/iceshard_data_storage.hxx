@@ -74,7 +74,7 @@ namespace ice
         auto do_allocate(ice::AllocRequest request) noexcept -> ice::AllocResult override
         {
             ice::AllocResult const r = _backing.allocate(request);
-            ice::array::push_back(_allocated, r.memory);
+            _allocated.push_back(r.memory);
             return r;
         }
 

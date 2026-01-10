@@ -104,7 +104,7 @@ namespace ice
         ice::Array<ice::Resource*> temp_resources{ _allocator };
         for (auto const& provider : _resource_providers)
         {
-            ice::array::clear(temp_resources);
+            temp_resources.clear();
 
             this->sync_provider(temp_resources, *provider);
         }

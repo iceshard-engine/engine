@@ -141,7 +141,7 @@ namespace ice
         //   both data and metadata pointers are allocated separately, which doubles the required hashmap size.
         ice::u32 const estimated_pointer_count = _chunk.count_entries * (_chunk.type == 3 ? 2 : 1);
         ice::hashmap::reserve(_offset_map, estimated_pointer_count);
-        ice::array::resize(_pointers, estimated_pointer_count);
+        _pointers.resize(estimated_pointer_count);
     }
 
     HailstormChunkLoader_Regular::~HailstormChunkLoader_Regular() noexcept
@@ -309,7 +309,7 @@ namespace ice
                 FileOpenFlags::Exclusive
             ).value();
 
-            ice::array::resize(_loaders, _pack.header.count_chunks);
+            _loaders.resize(_pack.header.count_chunks);
             for (ice::u32 idx = 0; idx < _pack.header.count_chunks; ++idx)
             {
                 if (_pack.chunks[idx].persistance >= 2)
@@ -326,7 +326,7 @@ namespace ice
                 }
             }
 
-            ice::array::resize(_entries, _pack.header.count_resources);
+            _entries.resize(_pack.header.count_resources);
             for (ice::u32 idx = 0; idx < _pack.header.count_resources; ++idx)
             {
                 v1::HailstormResource const& res = _pack.resources[idx];
@@ -362,7 +362,7 @@ namespace ice
                 }
 
                 ice::multi_hashmap::insert(_entrymap, ice::hash(res_uri.path()), idx);
-                ice::array::push_back(out_changes, _entries[idx]);
+                out_changes.push_back(_entries[idx]);
             }
 
             return ResourceProviderResult::Success;

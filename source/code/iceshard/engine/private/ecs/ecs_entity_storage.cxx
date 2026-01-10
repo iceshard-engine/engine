@@ -561,8 +561,8 @@ namespace ice::ecs
         , _data_slots{ _allocator }
         , _destructors{ _allocator }
     {
-        ice::array::reserve(_head_blocks, 100); // 100 archetypes should suffice for now
-        ice::array::resize(_data_slots, Constant_InitialEntityCount);
+        _head_blocks.reserve(100); // 100 archetypes should suffice for now
+        _data_slots.resize(Constant_InitialEntityCount);
     }
 
     EntityStorage::~EntityStorage() noexcept
@@ -628,8 +628,8 @@ namespace ice::ecs
             return; // Don't remove archetype headblocks because queries might still reference them.
         }
 
-        ice::array::resize(_head_blocks, archetype_count);
-        ice::array::resize(_data_blocks, archetype_count);
+        _head_blocks.resize(archetype_count);
+        _data_blocks.resize(archetype_count);
         ice::hashmap::reserve(_destructors, archetype_count);
 
         // Setup the empty head blocks for new archetypes.
@@ -1153,7 +1153,7 @@ namespace ice::ecs
         IPT_ZONE_SCOPED;
         ice::StackAllocator<512_B> archetypes_alloc{};
         ice::Array<ice::ecs::Archetype> archetypes{ archetypes_alloc };
-        ice::array::reserve(archetypes, (u32) ice::mem_max_capacity<ice::ecs::Archetype>(archetypes_alloc.Constant_InternalCapacity));
+        archetypes.reserve(ice::mem_max_capacity<ice::ecs::Archetype>(archetypes_alloc.Constant_InternalCapacity));
         _archetype_index.find_archetypes(archetypes, query_info, query_tags);
 
         ice::ncount const prev_archetype_count = out_instance_infos.size();
@@ -1166,7 +1166,7 @@ namespace ice::ecs
         for (ice::ecs::detail::ArchetypeInstanceInfo const* instance : out_instance_infos.tailspan(prev_archetype_count))
         {
             ice::u32 const instance_idx = static_cast<ice::u32>(instance->archetype_instance);
-            ice::array::push_back(out_data_blocks, _data_blocks[instance_idx]);
+            out_data_blocks.push_back(_data_blocks[instance_idx]);
         }
 
         // Find or create work trackers for queried components

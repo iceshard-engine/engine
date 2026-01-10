@@ -51,7 +51,7 @@ namespace ice
                 ice::hash(params.initial.graph.value),
                 _current_state.size().u32()
             );
-            ice::array::push_back(_current_state, initial_state);
+            _current_state.push_back(initial_state);
         }
         else
         {
@@ -73,7 +73,7 @@ namespace ice
                     ice::hash(params.initial.graph.value),
                     _current_state.size().u32()
                 );
-                ice::array::push_back(_current_state, initial_state);
+                _current_state.push_back(initial_state);
             }
 
             ice::hashmap::set(
@@ -117,7 +117,7 @@ namespace ice
                 ice::hash(engine_state.graph.value),
                 _current_state.size().u32()
             );
-            ice::array::push_back(_current_state, engine_state);
+            _current_state.push_back(engine_state);
         }
         return true;
     }
@@ -167,9 +167,8 @@ namespace ice
     {
         ice::StackAllocator<512_B> temp_alloc;
         ice::ShardContainer temp_shards{ temp_alloc };
-        ice::array::reserve(
-            temp_shards._data,
-            (u32)ice::mem_max_capacity(
+        temp_shards._data.reserve(
+            ice::mem_max_capacity(
                 ice::size_of<ice::Shard>,
                 decltype(temp_alloc)::Constant_InternalCapacity
             )

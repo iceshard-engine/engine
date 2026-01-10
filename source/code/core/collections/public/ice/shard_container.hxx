@@ -21,7 +21,7 @@ namespace ice
         inline auto operator=(ice::ShardContainer&& other) noexcept -> ice::ShardContainer&;
         inline auto operator=(ice::ShardContainer const& other) noexcept -> ice::ShardContainer&;
 
-        inline operator ice::Span<ice::Shard const>() const noexcept { return ice::array::slice(_data); }
+        inline operator ice::Span<ice::Shard const>() const noexcept { return _data; }
 
         ice::Array<ice::Shard> _data;
     };
@@ -129,22 +129,22 @@ namespace ice
 
         inline void reserve(ice::ShardContainer& container, ice::u32 new_capacity) noexcept
         {
-            ice::array::reserve(container._data, new_capacity);
+            container._data.reserve(new_capacity);
         }
 
         inline void resize(ice::ShardContainer& container, ice::u32 new_size) noexcept
         {
-            ice::array::resize(container._data, new_size);
+            container._data.resize(new_size);
         }
 
         inline void clear(ice::ShardContainer& container) noexcept
         {
-            ice::array::clear(container._data);
+            container._data.clear();
         }
 
         inline void push_back(ice::ShardContainer& container, ice::Shard value) noexcept
         {
-            ice::array::push_back(container._data, value);
+            container._data.push_back(value);
         }
 
         inline void push_back(ice::ShardContainer& container, ice::Span<ice::Shard const> values) noexcept
@@ -171,12 +171,12 @@ namespace ice
 
         inline auto begin(ice::ShardContainer& container) noexcept -> ice::ShardContainer::Iterator
         {
-            return ice::array::begin(container._data);
+            return container._data.begin();
         }
 
         inline auto end(ice::ShardContainer& container) noexcept -> ice::ShardContainer::Iterator
         {
-            return ice::array::end(container._data);
+            return container._data.end();
         }
 
 
@@ -212,8 +212,8 @@ namespace ice
 
         inline auto find_first_of(ice::ShardContainer const& container, ice::ShardID shard, ice::u32 offset) noexcept -> ice::Shard
         {
-            auto it = ice::array::begin(container._data);
-            auto const end = ice::array::end(container._data);
+            auto it = container._data.begin();
+            auto const end = container._data.end();
 
             if (offset != ~0)
             {
@@ -238,8 +238,8 @@ namespace ice
 
         inline auto find_last_of(ice::ShardContainer const& container, ice::ShardID shard, ice::u32 offset) noexcept -> ice::Shard
         {
-            auto it = ice::array::rbegin(container._data);
-            auto const end = ice::array::rend(container._data);
+            auto it = container._data.rbegin();
+            auto const end = container._data.rend();
 
             if (offset != ~0)
             {
@@ -299,7 +299,7 @@ namespace ice
             {
                 if (shard == shard_type && ice::shard_inspect(shard, payload))
                 {
-                    ice::array::push_back(payloads, payload);
+                    payloads.push_back(payload);
                     count += 1;
                 }
             }
@@ -331,8 +331,8 @@ namespace ice
         template<typename T, ice::usize::base_type Size>
         inline bool inspect_first(ice::ShardContainer const& container, ice::ShardID shard_type, T(&payload)[Size]) noexcept
         {
-            auto it = ice::array::begin(container._data);
-            auto const end = ice::array::end(container._data);
+            auto it = container._data.begin();
+            auto const end = container._data.end();
 
             ice::u32 idx = 0;
             while (it != end && idx < Size)
@@ -361,12 +361,12 @@ namespace ice
 
         inline auto begin(ice::ShardContainer const& container) noexcept -> ice::ShardContainer::ConstIterator
         {
-            return ice::array::begin(container._data);
+            return container._data.begin();
         }
 
         inline auto end(ice::ShardContainer const& container) noexcept -> ice::ShardContainer::ConstIterator
         {
-            return ice::array::end(container._data);
+            return container._data.end();
         }
     }
 

@@ -45,7 +45,7 @@ namespace ice::input
         : _device{ device }
         , _controls{ alloc }
     {
-        ice::array::resize(_controls, mouse_button_num + 5);
+        _controls.resize(mouse_button_num + 5);
         for (detail::ControlState& control : _controls)
         {
             control.id = InputID::Invalid;
@@ -122,13 +122,13 @@ namespace ice::input
         event.axis_idx = 0;
         event.value.axis.value_i32 = _position[0];
         event.value_type = InputValueType::AxisInt;
-        ice::array::push_back(events_out, event);
+        events_out.push_back(event);
 
         event.identifier = input_identifier(DeviceType::Mouse, MouseInput::PositionY);
         event.axis_idx = 1;
         event.value.axis.value_i32 = _position[1];
         event.value_type = InputValueType::AxisInt;
-        ice::array::push_back(events_out, event);
+        events_out.push_back(event);
 
         if (_position_relative[0] != 0)
         {
@@ -136,7 +136,7 @@ namespace ice::input
             event.axis_idx = 0;
             event.value.axis.value_i32 = _position_relative[0];
             event.value_type = InputValueType::AxisInt;
-            ice::array::push_back(events_out, event);
+            events_out.push_back(event);
         }
         if (_position_relative[1] != 0)
         {
@@ -144,7 +144,7 @@ namespace ice::input
             event.axis_idx = 1;
             event.value.axis.value_i32 = _position_relative[1];
             event.value_type = InputValueType::AxisInt;
-            ice::array::push_back(events_out, event);
+            events_out.push_back(event);
         }
 
         // All other events have an axis_idx == 0
@@ -153,14 +153,14 @@ namespace ice::input
         {
             event.identifier = input_identifier(DeviceType::Mouse, MouseInput::Wheel);
             event.value.axis.value_i32 = _wheel;
-            ice::array::push_back(events_out, event);
+            events_out.push_back(event);
         }
 
         for (detail::ControlState& control : _controls)
         {
             if (detail::prepared_input_event(control, event))
             {
-                ice::array::push_back(events_out, event);
+                events_out.push_back(event);
             }
         }
     }

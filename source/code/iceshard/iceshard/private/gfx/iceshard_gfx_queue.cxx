@@ -28,7 +28,7 @@ namespace ice::gfx
         , _primary{ alloc }
         , _secondary{ alloc }
     {
-        ice::array::resize(_primary, 1);
+        _primary.resize(1);
         _render_queue->allocate_buffers(
             _queue_pool_index,
             ice::render::CommandBufferType::Primary,
@@ -90,11 +90,10 @@ namespace ice::gfx
         if (available < required)
         {
             cmds.resize(used + required);
-            _render_queue->allocate_buffers(_queue_pool_index, type, ice::array::slice(cmds, used));
+            _render_queue->allocate_buffers(_queue_pool_index, type, cmds.tailspan(used));
         }
 
-        auto from = ice::array::slice(cmds, used);
-
+        ice::Span from = cmds.tailspan(used);
         for (ice::u32 idx = 0; idx < required; ++idx)
         {
             out_buffers[idx] = from[idx];

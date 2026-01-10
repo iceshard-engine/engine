@@ -58,7 +58,7 @@ namespace ice::render::vk
                 {
                     result |= supported.extension;
                     out_count += 1;
-                    ice::array::push_back(out_names, supported.identifier);
+                    out_names.push_back(supported.identifier);
                 }
             }
         }
@@ -94,7 +94,7 @@ namespace ice::render::vk
                 {
                     result |= supported.extension;
                     out_count += 1;
-                    ice::array::push_back(out_names, supported.identifier);
+                    out_names.push_back(supported.identifier);
                 }
             }
         }
@@ -130,7 +130,7 @@ namespace ice::render::vk
                 {
                     result |= supported.extension;
                     out_count += 1;
-                    ice::array::push_back(out_names, supported.identifier);
+                    out_names.push_back(supported.identifier);
                 }
             }
         }

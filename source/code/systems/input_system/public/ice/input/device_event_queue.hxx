@@ -59,8 +59,7 @@ namespace ice::input
         ice::input::DeviceMessage message
     ) noexcept
     {
-        ice::array::push_back(
-            _events,
+        _events.push_back(
             DeviceEvent{
                 .device = device,
                 .message = message,
@@ -104,7 +103,7 @@ namespace ice::input
             event.payload_data.val_f32 = payload_value;
         }
 
-        ice::array::push_back(_events, event);
+        _events.push_back(event);
     }
 
     template<typename T> requires std::is_enum_v<T>

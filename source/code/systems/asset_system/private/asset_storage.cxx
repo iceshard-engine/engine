@@ -93,11 +93,11 @@ namespace ice
             // If empty we add our own handle to the list
             if (sources.is_empty())
             {
-                ice::array::push_back(sources, resource);
+                sources.push_back(resource);
             }
 
             ice::Array<ice::Task<>> tasks{ alloc };
-            ice::array::reserve(tasks, sources.size());
+            tasks.reserve(sources.size());
 
             auto fn_validate = [&ctx](
                 ice::ResourceCompiler const& compiler,
@@ -116,12 +116,12 @@ namespace ice
             std::atomic_bool all_sources_valid = true;
             for (ice::ResourceHandle const& source : sources)
             {
-                ice::array::push_back(tasks, fn_validate(compiler, source, resource_tracker, all_sources_valid));
+                tasks.push_back(fn_validate(compiler, source, resource_tracker, all_sources_valid));
             }
 
             co_await ice::await_tasks(tasks);
 
-            ice::array::clear(tasks);
+            tasks.clear();
 
             // Validation failed
             if (all_sources_valid == false)
@@ -156,8 +156,7 @@ namespace ice
             ice::u32 source_idx = 0;
             for (ice::ResourceHandle const& source : sources)
             {
-                ice::array::push_back(
-                    tasks,
+                tasks.push_back(
                     fn_compile(
                         compiler,
                         source,
@@ -256,7 +255,7 @@ namespace ice
 
             if constexpr (ice::build::is_debug || ice::build::is_develop)
             {
-                ice::array::push_back(shelves, ice::make_unique<AssetShelve::DevUI>(_allocator, *shelve));
+                shelves.push_back(ice::make_unique<AssetShelve::DevUI>(_allocator, *shelve));
             }
         }
 

@@ -47,8 +47,8 @@ namespace ice
         , _created_threads{ _allocator }
         , _user_threads{ _allocator }
     {
-        ice::array::reserve(_thread_pool, info.thread_count);
-        ice::array::reserve(_managed_threads, info.thread_count);
+        _thread_pool.reserve(info.thread_count);
+        _managed_threads.reserve(info.thread_count);
         ice::hashmap::reserve(_created_threads, info.thread_count);
         ice::hashmap::reserve(_user_threads, info.thread_count);
 
@@ -64,8 +64,7 @@ namespace ice
             detail::format_string(thread_name, info.debug_name_format, idx);
 
             thread_info.debug_name = thread_name;
-            ice::array::push_back(
-                _managed_threads,
+            _managed_threads.push_back(
                 ice::make_unique<ice::NativeTaskThread>(
                     _allocator,
                     _queue,
@@ -79,8 +78,7 @@ namespace ice
         {
             detail::format_string(thread_name, "ice.aio {}", idx);
 
-            ice::array::push_back(
-                _managed_threads,
+            _managed_threads.push_back(
                 ice::make_unique<ice::NativeTaskThread>(
                     _allocator,
                     _queue,
@@ -101,8 +99,8 @@ namespace ice
     {
         ice::hashmap::clear(_user_threads);
         ice::hashmap::clear(_created_threads);
-        ice::array::clear(_managed_threads);
-        ice::array::clear(_thread_pool);
+        _managed_threads.clear();
+        _thread_pool.clear();
     }
 
     auto TaskThreadPoolImplementation::thread_count() const noexcept -> ice::u32

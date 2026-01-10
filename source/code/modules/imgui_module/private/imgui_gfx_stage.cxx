@@ -188,14 +188,8 @@ namespace ice::devui
         _pipeline = device.create_pipeline(pipeline_info);
 
         _index_buffer_host = _index_buffers._allocator->allocate<ice::u16>(1024 * 1024 * 32);
-        ice::array::push_back(
-            _index_buffers,
-            device.create_buffer(BufferType::Index, 1024 * 1024 * 64)
-        );
-        ice::array::push_back(
-            _vertex_buffers,
-            device.create_buffer(BufferType::Vertex, 1024 * 1024 * 64)
-        );
+        _index_buffers.push_back(device.create_buffer(BufferType::Index, 1024 * 1024 * 64));
+        _vertex_buffers.push_back(device.create_buffer(BufferType::Vertex, 1024 * 1024 * 64));
 
         co_return;
     }
@@ -215,8 +209,8 @@ namespace ice::devui
         {
             device.destroy_buffer(buffer);
         }
-        ice::array::clear(_index_buffers);
-        ice::array::clear(_vertex_buffers);
+        _index_buffers.clear();
+        _vertex_buffers.clear();
 
         device.destroy_buffer(_uniform_buffer);
         device.destroy_pipeline(_pipeline);

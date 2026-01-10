@@ -100,7 +100,7 @@ namespace ice
 
         void execute(ice::Task<> task) noexcept override
         {
-            ice::array::push_back(_pending_tasks, ice::move(task));
+            _pending_tasks.push_back(ice::move(task));
         }
 
         auto execute_internal(ice::Task<> task) noexcept -> ice::Task<>
@@ -119,7 +119,7 @@ namespace ice
                 // We schedule the task on the given scheduler.
                 ice::schedule_task(execute_internal(ice::move(pending_task)), _scheduler);
             }
-            ice::array::clear(_pending_tasks);
+            _pending_tasks.clear();
         }
 
         void wait_all() noexcept

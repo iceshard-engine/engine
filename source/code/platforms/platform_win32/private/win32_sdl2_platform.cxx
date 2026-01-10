@@ -20,7 +20,7 @@ namespace ice::platform::win32::sdl2
         , _render_surface{ }
     {
         ice::shards::reserve(_system_events, 32);
-        ice::array::reserve(_input_events._events, 512);
+        _input_events._events.reserve(512);
 
         SDL_InitSubSystem(SDL_INIT_EVENTS);
 

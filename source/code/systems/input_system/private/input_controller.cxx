@@ -47,7 +47,7 @@ namespace ice::input
         : _device{ device }
         , _controls{ alloc }
     {
-        ice::array::resize(_controls, controller_button_num + 5);
+        _controls.resize(controller_button_num + 5);
     }
 
     void ControllerDevice::on_tick(ice::Timer const& timer) noexcept
@@ -143,7 +143,7 @@ namespace ice::input
                 event.axis_idx = axis_index;
                 event.value.axis.value_f32 = value;
                 event.value_type = InputValueType::AxisFloat;
-                ice::array::push_back(events_out, event);
+                events_out.push_back(event);
             }
             else if (reset == false)
             {
@@ -152,7 +152,7 @@ namespace ice::input
                 event.axis_idx = axis_index;
                 event.value.axis.value_f32 = 0.0f;
                 event.value_type = InputValueType::AxisFloat;
-                ice::array::push_back(events_out, event);
+                events_out.push_back(event);
             }
         };
 
@@ -167,7 +167,7 @@ namespace ice::input
         {
             if (detail::prepared_input_event(control, event))
             {
-                ice::array::push_back(events_out, event);
+                events_out.push_back(event);
             }
         }
     }

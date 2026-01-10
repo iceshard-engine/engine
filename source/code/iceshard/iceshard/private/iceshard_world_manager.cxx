@@ -126,7 +126,7 @@ namespace ice
                 if (trait != nullptr)
                 {
                     trait_context->trait = ice::move(trait);
-                    ice::array::push_back(world_traits, ice::move(trait_context));
+                    world_traits.push_back(ice::move(trait_context));
                 }
             }
         }
@@ -190,14 +190,14 @@ namespace ice
         {
             if (entry.is_active)
             {
-                ice::array::push_back(out_worlds, entry.world->worldID);
+                out_worlds.push_back(entry.world->worldID);
             }
         }
     }
 
     void IceshardWorldManager::query_pending_events(ice::ShardContainer& out_events) noexcept
     {
-        ice::shards::push_back(out_events, ice::array::slice(_pending_events._data));
+        ice::shards::push_back(out_events, _pending_events._data);
         ice::shards::clear(_pending_events);
     }
 

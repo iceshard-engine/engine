@@ -123,7 +123,7 @@ namespace ice
 
                 for (auto* resource : _resources)
                 {
-                    ice::array::push_back(out_changes, resource);
+                    out_changes.push_back(resource);
                 }
             }
             return ResourceProviderResult::Success;

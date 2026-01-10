@@ -96,10 +96,10 @@ namespace ice
             query_apis(Type::Constant_APIName, Type::Constant_APIVersion, temp_tab, &num_apis);
 
             // Fill the array with the found APIs
-            ice::array::reserve(out_apis, num_apis);
+            out_apis.reserve(num_apis);
             for (ice::u32 idx = 0; idx < num_apis; ++idx)
             {
-                ice::array::push_back(out_apis, *reinterpret_cast<Type*>(temp_tab[idx].api_ptr));
+                out_apis.push_back(*reinterpret_cast<Type*>(temp_tab[idx].api_ptr));
             }
         }
         return num_apis > 0;

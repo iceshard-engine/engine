@@ -292,19 +292,19 @@ SCENARIO("collections 'ice/shard_container.hxx'", "[shard][collection]")
                         CHECK(payload == payloads[0]);
                     }
 
-                    ice::array::clear(payloads);
+                    payloads.clear();
                     ice::shards::inspect_all(test_container, test_shard_2, payloads);
 
                     REQUIRE(payloads.size() == 0);
 
-                    ice::array::clear(payloads);
+                    payloads.clear();
                     ice::shards::inspect_all(test_container, test_shard_3, payloads);
 
                     REQUIRE(payloads.size() == 2);
                     CHECK(payloads[0] == test_u32_payload_value2);
                     CHECK(payloads[1] == test_u32_payload_value1);
 
-                    ice::array::clear(payloads);
+                    payloads.clear();
                     ice::shards::inspect_all(test_container, test_shard_4, payloads);
 
                     REQUIRE(payloads.size() == 1);

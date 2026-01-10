@@ -79,7 +79,7 @@ namespace ice::input
         , _device{ device }
         , _controls{ alloc }
     {
-        ice::array::resize(_controls, keyboard_key_num + keyboard_mod_num + 10);
+        _controls.resize(keyboard_key_num + keyboard_mod_num + 10);
         for (detail::ControlState& control : _controls)
         {
             control.id = InputID::Invalid;
@@ -158,7 +158,7 @@ namespace ice::input
         {
             if (detail::prepared_input_event(control, event))
             {
-                ice::array::push_back(events_out, event);
+                events_out.push_back(event);
             }
         }
     }

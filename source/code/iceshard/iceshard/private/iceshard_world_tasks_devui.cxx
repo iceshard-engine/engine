@@ -17,7 +17,7 @@ namespace ice
         , _snapshots{ _allocator }
     {
         ice::devui_register_widget(this);
-        ice::array::resize(_tracked_task_events, 500);
+        _tracked_task_events.resize(500);
     }
 
     auto TraitTasksTrackerDevUI::report_resume(ice::u32 id) noexcept -> ice::u32
@@ -62,8 +62,8 @@ namespace ice
         _stat_events = _current_event_count.exchange(1, std::memory_order_relaxed);
         if (_stat_events >= _tracked_task_events.size())
         {
-            ice::array::grow(_tracked_task_events, _stat_events);
-            ice::array::resize(_tracked_task_events, _stat_events);
+            _tracked_task_events.grow(_stat_events);
+            _tracked_task_events.resize(_stat_events);
         }
     }
 
@@ -72,7 +72,9 @@ namespace ice
         ImGui::TextT("Collected events: {}", _stat_events - 1);
         if (ImGui::Button("Take snapshot"))
         {
-            ice::array::push_back(_snapshots, TraitTasksSnapshot{ _allocator, ice::array::slice(_tracked_task_events, 0, _stat_events) });
+            _snapshots.push_back(
+                TraitTasksSnapshot{ _allocator, _tracked_task_events.headspan(_stat_events) }
+            );
         }
 
         for (ice::TraitTasksSnapshot& snapshot : _snapshots)
@@ -80,7 +82,7 @@ namespace ice
             if (snapshot._release == true)
             {
                 snapshot._release = false;
-                ice::array::clear(snapshot._events);
+                snapshot._events.clear();
             }
             else if (snapshot._events.not_empty())
             {
@@ -98,7 +100,7 @@ namespace ice
 
         ice::u32 first_entry = 1;
         ice::u32 const last_entry = _events.size().u32();
-        EventEntry const* entries = ice::begin(_events);
+        EventEntry const* entries = _events.begin();
 
         ice::u32 running = 0;
         EventEntry const* concurrent[32]{};

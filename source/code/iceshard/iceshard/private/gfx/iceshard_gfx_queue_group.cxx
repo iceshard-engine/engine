@@ -112,7 +112,7 @@ namespace ice::gfx
     {
         for (IceGfxQueue* queue : _gfx_queues)
         {
-            ice::array::push_back(out_names, ice::stringid_hash(queue->name()));
+            out_names.push_back(ice::stringid_hash(queue->name()));
         }
     }
 
@@ -135,8 +135,7 @@ namespace ice::gfx
             ice::render::RenderQueue* render_queue = queue->render_queue();
             if (has_queue(queues_out, render_queue) == false)
             {
-                ice::array::push_back(
-                    queues_out,
+                queues_out.push_back(
                     render_queue
                 );
             }

@@ -122,7 +122,7 @@ namespace ice
                     xml_prop = ice::xml_next_sibling(xml_prop);
                 }
 
-                ice::array::push_back(styles, style);
+                styles.push_back(style);
             }
 
             xml_child = ice::xml_next_sibling(
@@ -212,10 +212,7 @@ namespace ice
 
             if (uiref && res.type != ResourceType::None)
             {
-                ice::array::push_back(
-                    shards,
-                    res
-                );
+                shards.push_back(res);
             }
 
             xml_child = ice::xml_next_sibling(
@@ -252,8 +249,7 @@ namespace ice
 
             if (uiref && attr_name)
             {
-                ice::array::push_back(
-                    shards,
+                shards.push_back(
                     ice::RawShard
                     {
                         .ui_name = ice::xml_value(uiref),
@@ -279,10 +275,7 @@ namespace ice
     {
         ice::u16 const element_index = elements.size().u16();
 
-        ice::array::push_back(
-            elements,
-            ice::RawElement{ .parent = parent_idx }
-        );
+        elements.push_back(ice::RawElement{ .parent = parent_idx });
 
         parse_element_attribs(
             alloc,

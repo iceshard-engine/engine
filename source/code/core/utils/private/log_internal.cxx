@@ -16,7 +16,7 @@ namespace ice::detail
         , _tags{ _allocator }
         , _sinks{ _allocator }
     {
-        ice::array::resize(_sinks, 5);
+        _sinks.resize(5);
     }
 
     LogState::~LogState() noexcept = default;
@@ -36,7 +36,7 @@ namespace ice::detail
         // Pottentially an error when sinks are added and remove all the time!
         // NOTE: Once added sinks should only be reset when a module was reloaded!
         ICE_ASSERT_CORE(sinkidx < 50);
-        ice::array::push_back(_sinks, Sink{ fn_sink, userdata });
+        _sinks.push_back(Sink{ fn_sink, userdata });
         return static_cast<ice::LogSinkID>(sinkidx);
     }
 

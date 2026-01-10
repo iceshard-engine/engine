@@ -77,7 +77,7 @@ namespace ice::input
             pointer = ice::input::DeviceHandle::Invalid;
         }
 
-        ice::array::resize(_controls, Constant_MaxPointerCount + 1);
+        _controls.resize(Constant_MaxPointerCount + 1);
         for (detail::ControlState& control : _controls)
         {
             control.id = InputID::Invalid;
@@ -164,7 +164,7 @@ namespace ice::input
             event.identifier = input_identifier(DeviceType::TouchScreen, TouchInput::TouchPointerCount);
             event.value_type = InputValueType::AxisInt;
             event.value.axis.value_i32 = _pointer_count;
-            ice::array::push_back(events_out, event);
+            events_out.push_back(event);
         }
 
         event.value_type = InputValueType::AxisFloat;
@@ -178,11 +178,11 @@ namespace ice::input
             event.device = _pointers[idx];
             event.identifier = input_identifier(DeviceType::TouchScreen, TouchInput::TouchPosX);
             event.value.axis.value_f32 = (_positions[idx].x / _screen_size.x) - 0.5f;
-            ice::array::push_back(events_out, event);
+            events_out.push_back(event);
 
             event.identifier = input_identifier(DeviceType::TouchScreen, TouchInput::TouchPosY);
             event.value.axis.value_f32 = (_positions[idx].y / _screen_size.y) - 0.5f;
-            ice::array::push_back(events_out, event);
+            events_out.push_back(event);
             remaining -= 1;
         }
 
@@ -192,7 +192,7 @@ namespace ice::input
             event.device = make_device_handle(DeviceType::TouchPointer, DeviceIndex(control_index++));
             if (detail::prepared_input_event(control, event))
             {
-                ice::array::push_back(events_out, event);
+                events_out.push_back(event);
             }
         }
     }

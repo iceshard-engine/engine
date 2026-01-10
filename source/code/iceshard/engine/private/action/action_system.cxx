@@ -163,10 +163,7 @@ namespace ice::action
         if (instance != nullptr)
         {
             instance->stage_timeline = ice::timeline::create_timeline(_clock);
-            ice::array::push_back(
-                _actions,
-                instance
-            );
+            _actions.push_back(instance);
         }
     }
 

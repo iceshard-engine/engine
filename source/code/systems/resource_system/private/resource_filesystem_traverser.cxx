@@ -195,13 +195,13 @@ namespace ice
     ) noexcept
     {
         ice::Array<FileSystemTraverseRequest, ContainerLogic::Complex> requests{ _callbacks.allocator() };
-        ice::array::reserve(requests, base_paths.size().u32());
+        requests.reserve(base_paths.size().u32());
 
         [[maybe_unused]]
         std::atomic_uint32_t remaining = 0;
         for (ice::native_file::FilePath base_path : base_paths)
         {
-            ice::array::push_back(requests, { *this, base_path, remaining, nullptr, nullptr });
+            requests.push_back({ *this, base_path, remaining, nullptr, nullptr });
             ice::native_file::traverse_directories(
                 base_path, traverse_callback, &requests.last()
             );
@@ -217,14 +217,14 @@ namespace ice
         ice::TaskScheduler local_sched{ local_queue };
 
         ice::Array<FileSystemTraverseRequest, ContainerLogic::Complex> requests{ _callbacks.allocator() };
-        ice::array::reserve(requests, base_paths.size().u32());
+        requests.reserve(base_paths.size().u32());
 
         std::atomic_uint32_t remaining = 0;
 
         // Traverse directories synchronously but create resources asynchronously.
         for (ice::native_file::FilePath base_path : base_paths)
         {
-            ice::array::push_back(requests, { *this, base_path, remaining, ice::addressof(scheduler), &local_sched });
+            requests.push_back({ *this, base_path, remaining, ice::addressof(scheduler), &local_sched });
             ice::native_file::traverse_directories(
                 base_path, traverse_callback, &requests.last()
             );

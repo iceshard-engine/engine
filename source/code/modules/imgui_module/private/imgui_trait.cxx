@@ -483,7 +483,7 @@ namespace ice::devui
         IPT_ZONE_SCOPED;
         _stats = {}; // reset stats
 
-        ice::array::clear(_imgui_gfx_stage->draw_commands);
+        _imgui_gfx_stage->draw_commands.clear();
 
         ImDrawData* draw_data = ImGui::GetDrawData();
         if (draw_data == nullptr)
@@ -492,8 +492,7 @@ namespace ice::devui
         }
 
         // Reserve enough space for all possible commands
-        ice::array::reserve(
-            _imgui_gfx_stage->draw_commands,
+        _imgui_gfx_stage->draw_commands.reserve(
             detail::total_command_count(*draw_data)
         );
 
@@ -529,7 +528,7 @@ namespace ice::devui
                     curr_resource_idx += 1;
                 }
 
-                ice::array::push_back(out_draw_cmds, ImGuiGfxStage::DrawCommand{});
+                out_draw_cmds.push_back(ImGuiGfxStage::DrawCommand{});
                 ImGuiGfxStage::DrawCommand& cmd = out_draw_cmds.last();
                 cmd.resource_set_idx = curr_resource_idx;
 

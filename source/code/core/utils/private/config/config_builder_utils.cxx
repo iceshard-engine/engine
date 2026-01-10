@@ -89,10 +89,10 @@ namespace ice::config::detail
             container._keystrings.push_back(key);
 
             // Add the new entry
-            ice::array::push_back(container._entries, ConfigKey{ 0, CONFIG_KEYTYPE_STRING, CONFIG_VALTYPE_NONE, offset.u32(), key.size().u32()});
+            container._entries.push_back(ConfigKey{ 0, CONFIG_KEYTYPE_STRING, CONFIG_VALTYPE_NONE, offset.u32(), key.size().u32()});
 
             // Return the entry
-            result = ice::array::begin(container._entries) + idx;
+            result = container._entries.begin() + idx;
         }
 
         return result;
@@ -111,7 +111,7 @@ namespace ice::config::detail
         ice::config::detail::ConfigBuilderEntry* result;
         if (idx < container._entries.size())
         {
-            result = ice::array::begin(container._entries) + idx;
+            result = container._entries.begin() + idx;
             if (clean)
             {
                 cb_clear_value_type(alloc, result);
@@ -126,11 +126,11 @@ namespace ice::config::detail
 
             while(container._entries.size() <= idx)
             {
-                ice::array::push_back(container._entries, ConfigKey{ 0, CONFIG_KEYTYPE_NONE, CONFIG_VALTYPE_NONE, 0, 0 });
+                container._entries.push_back(ConfigKey{ 0, CONFIG_KEYTYPE_NONE, CONFIG_VALTYPE_NONE, 0, 0 });
             }
 
             // Return the entry
-            result = ice::array::begin(container._entries) + idx;
+            result = container._entries.begin() + idx;
         }
 
         return result;

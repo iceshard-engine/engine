@@ -29,7 +29,7 @@ namespace ice::devui
         ) noexcept;
 
         void remove_widget(ice::DevUIWidget* widget) noexcept;
-        auto widgets() noexcept -> ice::Span<ice::UniquePtr<ImGuiDevUIWidget> const> { return ice::array::slice(_widgets, 1); }
+        auto widgets() noexcept -> ice::Span<ice::UniquePtr<ImGuiDevUIWidget> const> { return _widgets.tailspan(); }
 
         void build_content() noexcept override;
 

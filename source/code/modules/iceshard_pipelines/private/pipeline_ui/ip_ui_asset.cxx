@@ -525,18 +525,18 @@ namespace ice
 
         {
             ice::Array<ice::RawShard> uishards{ alloc };
-            ice::array::reserve(uishards, 25);
-            ice::array::push_back(uishards, RawShard{ });
+            uishards.reserve(25);
+            uishards.push_back(RawShard{ });
 
             ice::Array<ice::RawResource> uires{ alloc };
-            ice::array::reserve(uires, 25);
+            uires.reserve(25);
 
             ice::Array<ice::RawStyle> styles{ alloc };
-            ice::array::reserve(styles, 25);
-            ice::array::push_back(styles, RawStyle{ .flags = ice::ui::StyleFlags::None });
+            styles.reserve(25);
+            styles.push_back(RawStyle{ .flags = ice::ui::StyleFlags::None });
 
             ice::Array<ice::RawElement> elements{ alloc };
-            ice::array::reserve(elements, 50);
+            elements.reserve(50);
 
             rapidxml_ns::xml_document<char>* doc = alloc.create<rapidxml_ns::xml_document<char>>();
             doc->parse<rapidxml_ns::parse_default>(reinterpret_cast<char*>(data_copy.location));

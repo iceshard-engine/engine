@@ -97,7 +97,7 @@ namespace ice::ecs
 
         // Copy values to the array
         ice::u32* it = out_argument_idx_map.begin() + prev_arim_count;
-        for (ice::ecs::detail::ArchetypeInstanceInfo const* instance : ice::array::slice(out_instance_infos, prev_arch_count))
+        for (ice::ecs::detail::ArchetypeInstanceInfo const* instance : out_instance_infos.tailspan(prev_arch_count))
         {
             auto const archetype_argument_idx_map = ice::ecs::detail::make_argument_idx_map<QueryComponents...>(*instance);
             ice::memcpy(it, archetype_argument_idx_map.data(), archetype_argument_idx_map.size() * sizeof(ice::u32));

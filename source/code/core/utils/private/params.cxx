@@ -336,7 +336,7 @@ namespace ice
         {
             for (std::string const& result : results)
             {
-                ice::array::push_back(out_values, { result.data(), static_cast<ice::u32>(result.size()) });
+                out_values.push_back({ result.data(), static_cast<ice::u32>(result.size()) });
             }
             return true;
         };
@@ -356,7 +356,7 @@ namespace ice
         {
             for (std::string const& result : results)
             {
-                ice::array::push_back(out_values, { alloc, ice::String{ std::string_view{ result } } });
+                out_values.push_back({ alloc, ice::String{ std::string_view{ result } } });
             }
             return true;
         };
@@ -383,7 +383,7 @@ namespace ice
             );
             ice::StackAllocator<ice::size_of<ice::String> * 8> stack_alloc;
             ice::Array<ice::String> ice_results{ result_count <= 8 ? stack_alloc : alloc };
-            ice::array::reserve(ice_results, result_count);
+            ice_results.reserve(result_count);
 
             auto it = results.begin();
             auto const end = results.end();
@@ -395,11 +395,11 @@ namespace ice
                 if (ice_results.size() == result_count || result.empty())
                 {
                     valid &= ice_callback(ice_userdata, ice_results);
-                    ice::array::clear(ice_results);
+                    ice_results.clear();
                 }
                 else if (result.empty() == false)
                 {
-                    ice::array::push_back(ice_results, result);
+                    ice_results.push_back(result);
                 }
                 it += 1;
             }

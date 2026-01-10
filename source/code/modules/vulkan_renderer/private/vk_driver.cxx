@@ -310,7 +310,7 @@ namespace ice::render::vk
         }
 
         ice::u32 queue_index = 0;
-        ice::array::reserve(queue_info, queue_count);
+        queue_info.reserve(queue_count);
         for (VkQueueFamilyProperties const& queue_family_props : _vk_queue_family_properties)
         {
             QueueFlags flags = QueueFlags::None;
@@ -332,8 +332,7 @@ namespace ice::render::vk
                 flags = flags | QueueFlags::Present;
             }
 
-            ice::array::push_back(
-                queue_info,
+            queue_info.push_back(
                 QueueFamilyInfo{
                     .id = QueueID{ queue_index },
                     .flags = flags,
@@ -357,7 +356,7 @@ namespace ice::render::vk
         };
 
         ice::Array<VkDeviceQueueCreateInfo> queue_create_infos{ _allocator };
-        ice::array::reserve(queue_create_infos, 3);
+        queue_create_infos.reserve(3);
 
         for (QueueInfo const& queue_info : queue_infos)
         {
@@ -368,7 +367,7 @@ namespace ice::render::vk
             queue_create_info.queueCount = queue_info.count;
             queue_create_info.pQueuePriorities = queue_priorities;
 
-            ice::array::push_back(queue_create_infos, queue_create_info);
+            queue_create_infos.push_back(queue_create_info);
         }
 
         ice::u32 count_extensions = 0;
@@ -387,8 +386,8 @@ namespace ice::render::vk
         VkDeviceCreateInfo device_create_info{ .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
         device_create_info.pEnabledFeatures = &enabled_device_features;
         device_create_info.enabledExtensionCount = count_extensions;
-        device_create_info.ppEnabledExtensionNames = ice::array::begin(extension_names);
-        device_create_info.pQueueCreateInfos = ice::array::begin(queue_create_infos);
+        device_create_info.ppEnabledExtensionNames = extension_names.begin();
+        device_create_info.pQueueCreateInfos = queue_create_infos.begin();
         device_create_info.queueCreateInfoCount = queue_create_infos.size().u32();
 
         VkDevice vk_device;

@@ -138,7 +138,7 @@ namespace ice
     {
         for (StackLayer const& layer : _layers)
         {
-            ice::array::push_back(out_layers, layer.layer);
+            out_layers.push_back(layer.layer);
         }
         return _layers.size().u32();
     }
@@ -186,12 +186,12 @@ namespace ice
                     values_index = ice::hashmap::try_get(_sources, source_name_hash)->index;
 
                     // Stores the index for the source
-                    ice::array::push_back(_layers_sources_indices, values_index);
+                    _layers_sources_indices.push_back(values_index);
 
                     if (source.type == InputActionSourceType::Axis2d)
                     {
                         // Stores the index for the source
-                        ice::array::push_back(_layers_sources_indices, values_index);
+                        _layers_sources_indices.push_back(values_index);
                     }
                 }
             }
@@ -199,23 +199,23 @@ namespace ice
             {
                 values_index = _sources_runtime_values.size().u32();
 
-                ice::array::push_back(_sources_runtime_values, InputActionSource{});
+                _sources_runtime_values.push_back(InputActionSource{});
                 // If we have an Axis2d source, we need to actually push back two values for both axis
                 if (source.type == InputActionSourceType::Axis2d)
                 {
-                    ice::array::push_back(_sources_runtime_values, InputActionSource{});
+                    _sources_runtime_values.push_back(InputActionSource{});
                 }
 
                 // Save the index where we store the runtime value(s)
                 ice::hashmap::set(_sources, source_name_hash, { values_index });
 
                 // Stores the index for the source
-                ice::array::push_back(_layers_sources_indices, values_index);
+                _layers_sources_indices.push_back(values_index);
 
                 if (source.type == InputActionSourceType::Axis2d)
                 {
                     // Stores the index for the source
-                    ice::array::push_back(_layers_sources_indices, values_index);
+                    _layers_sources_indices.push_back(values_index);
                 }
             }
 
@@ -245,8 +245,7 @@ namespace ice
         }
 
         // Stores the layer along with a ref where it's indices for all sources are stored.
-        ice::array::push_back(
-            _layers,
+        _layers.push_back(
             StackLayer{ layer, { layer_sources_offset.u16(), (_layers_sources_indices.size() - layer_sources_offset).u16() } }
         );
         return S_Ok;
@@ -256,12 +255,12 @@ namespace ice
         ice::Array<ice::InputActionLayer const*>& out_layers
     ) const noexcept -> ice::u32
     {
-        auto it = ice::array::rbegin(_layers_active);
-        auto const end = ice::array::rend(_layers_active);
+        auto it = _layers_active.rbegin();
+        auto const end = _layers_active.rend();
 
         while (it != end)
         {
-            ice::array::push_back(out_layers, _layers[it->index].layer);
+            out_layers.push_back(_layers[it->index].layer);
             it += 1;
         }
         return _layers_active.size().u32();
@@ -285,7 +284,7 @@ namespace ice
         }
 
         // Push back the new active layer.
-        ice::array::push_back(_layers_active, { idx });
+        _layers_active.push_back({ idx });
     }
 
     void SimpleInputActionStack::pop_layer(
@@ -296,7 +295,7 @@ namespace ice
         if (ice::search(ice::Span{ _layers }, layer, compare_layers, idx))
         {
             // We just cut anything below this index, because we want to pop everything up to this layer
-            ice::array::resize(_layers, idx);
+            _layers.resize(idx);
             ice::array::pop_back(_layers); // And pop the item itself
         }
     }
@@ -408,25 +407,25 @@ namespace ice
         ice::Array<ice::InputActionSource*> source_values{ _allocator };
 
         // We go in reverse order since, the recently pushed layers should be processed first as they might override inputs.
-        Iterator const start = ice::array::rbegin(_layers_active);
-        Iterator const end = ice::array::rend(_layers_active);
+        Iterator const start = _layers_active.rbegin();
+        Iterator const end = _layers_active.rend();
 
         for (Iterator it = start; it != end; ++it)
         {
             StackLayer const& layer = _layers[it->index];
-            for (ice::u32 offset : ice::array::slice(_layers_sources_indices, layer.sources_indices))
+            for (ice::u32 offset : _layers_sources_indices.subspan(layer.sources_indices))
             {
-                ice::array::push_back(source_values, ice::addressof(_sources_runtime_values[offset]));
+                source_values.push_back(ice::addressof(_sources_runtime_values[offset]));
             }
 
             ice::u32 const processed_events = layer.layer->process_inputs(
-                ice::array::slice(events_copy, 0, remaining_events),
+                events_copy.headspan(remaining_events),
                 source_values
             );
             ICE_ASSERT_CORE(processed_events <= remaining_events);
             remaining_events -= processed_events;
 
-            ice::array::clear(source_values);
+            source_values.clear();
 
             // TODO: Should we change how this loop is finishing?
             if (remaining_events == 0)
@@ -439,15 +438,15 @@ namespace ice
         for (Iterator it = start; it != end; ++it)
         {
             StackLayer const& layer = _layers[it->index];
-            for (ice::u32 offset : ice::array::slice(_layers_sources_indices, layer.sources_indices))
+            for (ice::u32 offset : _layers_sources_indices.subspan(layer.sources_indices))
             {
-                ice::array::push_back(source_values, ice::addressof(_sources_runtime_values[offset]));
+                source_values.push_back(ice::addressof(_sources_runtime_values[offset]));
             }
 
             ex.prepare_constants(*layer.layer);
             layer.layer->update_actions(ex, source_values, _actions);
 
-            ice::array::clear(source_values);
+            source_values.clear();
         }
     }
 

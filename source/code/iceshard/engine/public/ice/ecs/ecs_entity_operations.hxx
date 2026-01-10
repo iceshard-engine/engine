@@ -63,7 +63,7 @@ namespace ice::ecs
 
             auto store(ice::Array<ice::ecs::Entity>& out_entities, bool append = true) const noexcept
             {
-                if (append == false) ice::array::clear(out_entities);
+                if (append == false) out_entities.clear();
                 ice::array::push_back(out_entities, all());
             }
 

@@ -36,16 +36,16 @@ namespace ice::render::vk
         instance_create_info.flags = 0;
         instance_create_info.pApplicationInfo = &app_info;
         instance_create_info.enabledLayerCount = layer_count;
-        instance_create_info.ppEnabledLayerNames = ice::array::begin(names);
+        instance_create_info.ppEnabledLayerNames = names.begin();
         instance_create_info.enabledExtensionCount = extension_count;
-        instance_create_info.ppEnabledExtensionNames = ice::array::begin(names) + layer_count;
+        instance_create_info.ppEnabledExtensionNames = names.begin() + layer_count;
 
         VkInstance vk_instance;
         VkResult const vk_create_result = vkCreateInstance(&instance_create_info, vk_alloc->vulkan_callbacks(), &vk_instance);
         ICE_ASSERT(vk_create_result == VkResult::VK_SUCCESS, "Creation of Vulkan instance failed!");
 
         // Release the array backing data
-        ice::array::set_capacity(names, 0);
+        names.set_capacity(0);
 
         return alloc.create<VulkanRenderDriver>(alloc, ice::move(vk_alloc), vk_instance, extensions);
     }

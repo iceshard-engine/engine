@@ -98,8 +98,7 @@ namespace ice
                 : _traits[handler.trait_idx]->trait.get();
 
             //ICE_ASSERT(ice::array::count(out_tasks) < ice::array::capacity(out_tasks), "Maximum number of tasks suppored by default launcher reached!");
-            ice::array::push_back(
-                out_tasks,
+            out_tasks.push_back(
                 handler.procedure(userdata, params, shard)
             );
 

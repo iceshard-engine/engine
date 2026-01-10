@@ -125,20 +125,17 @@ namespace ice
             : allocator{ alloc }
             , conditions{ alloc }
         {
-            ice::array::reserve(conditions, 4);
+            conditions.reserve(4);
         }
 
         void add_step(ActionBuilderStep&& step) noexcept
         {
-            ice::array::push_back(
-                conditions.last().steps,
-                ice::move(step)
-            );
+            conditions.last().steps.push_back(ice::move(step));
         }
 
         void add_condition(ActionBuilderCondition&& condition) noexcept
         {
-            ice::array::push_back(conditions, ice::move(condition));
+            conditions.push_back(ice::move(condition));
         }
 
         void finalize() noexcept
@@ -168,8 +165,8 @@ namespace ice
             , cond_series{ alloc }
             , modifiers{ alloc }
         {
-            ice::array::reserve(cond_series, 3);
-            ice::array::reserve(modifiers, 2);
+            cond_series.reserve(3);
+            modifiers.reserve(2);
         }
 
         ice::Allocator& allocator;
@@ -181,7 +178,7 @@ namespace ice
 
         auto add_condition_series() noexcept -> InputActionBuilder::ConditionSeries
         {
-            ice::array::push_back(cond_series, Internal<InputActionBuilder::ConditionSeries>{ allocator });
+            cond_series.push_back(Internal<InputActionBuilder::ConditionSeries>{ allocator });
             Internal<InputActionBuilder::ConditionSeries>* const series_ptr = ice::addressof(cond_series.last());
             return { series_ptr };
         }
@@ -212,7 +209,7 @@ namespace ice
         {
             ice::hashmap::reserve(_sources, 16);
             ice::hashmap::reserve(_actions, 10);
-            ice::array::push_back(_constants, { InputActionConstant::Nil, 0.0f });
+            _constants.push_back({ InputActionConstant::Nil, 0.0f });
         }
 
         ~SimpleInputActionLayerBuilder()
@@ -233,7 +230,7 @@ namespace ice
             ice::f32 value
         ) noexcept override
         {
-            ice::array::push_back(_constants, { constant, value });
+            _constants.push_back({ constant, value });
         }
 
         auto define_source(
@@ -274,7 +271,7 @@ namespace ice
             {
                 if (ice::hashmap::empty(source.events))
                 {
-                    ice::array::push_back(final_sources,
+                    final_sources.push_back(
                         InputActionSourceInputInfo{
                             .name = { strings.size().u16(), source.name.size().u16() },
                             .input = ice::input::InputID::Invalid,
@@ -287,7 +284,7 @@ namespace ice
 
                 for (ice::input::InputID input_event : source.events)
                 {
-                    ice::array::push_back(final_sources,
+                    final_sources.push_back(
                         InputActionSourceInputInfo{
                             .name = { strings.size().u16(), source.name.size().u16() },
                             .input = input_event,
@@ -316,7 +313,7 @@ namespace ice
             {
                 ice::u32 idx_found = ice::u32_max;
                 bool const found = ice::search(
-                    ice::array::slice(final_sources),
+                    final_sources.tailspan(0),
                     source_name,
                     [&strings](ice::InputActionSourceInputInfo const& source, ice::String expected) noexcept
                     {
@@ -337,7 +334,7 @@ namespace ice
             {
                 ice::u32 idx_found = ice::u32_max;
                 bool const found = ice::search(
-                    ice::array::slice(final_actions),
+                    final_actions.tailspan(0),
                     source_name,
                     [&strings](ice::InputActionInfo const& action, ice::String expected) noexcept
                     {
@@ -374,7 +371,7 @@ namespace ice
                         {
                             if (step.step < InputActionStep::Set)
                             {
-                                ice::array::push_back(final_steps,
+                                final_steps.push_back(
                                     InputActionStepData{
                                         .source = { 0, 0 },
                                         .id = step.step,
@@ -384,7 +381,7 @@ namespace ice
                             }
                             else
                             {
-                                ice::array::push_back(final_steps,
+                                final_steps.push_back(
                                     InputActionStepData{
                                         .source = {
                                             .source_index = find_source_storage_index(step.source),
@@ -422,7 +419,7 @@ namespace ice
                             source_index.source_axis = condition.axis;
                         }
 
-                        ice::array::push_back(final_conditions,
+                        final_conditions.push_back(
                             InputActionConditionData{
                                 .source = source_index,
                                 .id = condition.condition,
@@ -440,7 +437,7 @@ namespace ice
                 modifier_count = action.modifiers.size().u8();
                 ice::array::push_back(final_modifiers, action.modifiers);
 
-                ice::array::push_back(final_actions,
+                final_actions.push_back(
                     InputActionInfo{
                         .name = { strings.size().u16(), action.name.size().u16() },
                         .type = action.type,
@@ -461,8 +458,8 @@ namespace ice
             for (auto [constant, value] : _constants)
             {
                 ice::u8 const offset = final_constant_values.size().u8();
-                ice::array::push_back(final_constants, { .identifier = constant, .offset = offset });
-                ice::array::push_back(final_constant_values, value);
+                final_constants.push_back({ .identifier = constant, .offset = offset });
+                final_constant_values.push_back(value);
             }
 
             ice::InputActionLayerInfoHeader final_info{
@@ -478,25 +475,25 @@ namespace ice
 
             // Allocate memory and copy all data
             ice::meminfo minfo_layer = ice::meminfo_of<ice::InputActionLayerInfoHeader>;
-            ice::usize const offset_sources = minfo_layer += ice::array::meminfo(final_sources);
-            ice::usize const offset_actions = minfo_layer += ice::array::meminfo(final_actions);
-            ice::usize const offset_conditions = minfo_layer += ice::array::meminfo(final_conditions);
-            ice::usize const offset_steps = minfo_layer += ice::array::meminfo(final_steps);
-            ice::usize const offset_modifiers = minfo_layer += ice::array::meminfo(final_modifiers);
-            ice::usize const offset_constant_values = minfo_layer += ice::meminfo_of<ice::f32> * final_constant_values.size();
-            ice::usize const offset_constants = minfo_layer += ice::array::meminfo(final_constants);
+            ice::usize const offset_sources = minfo_layer += final_sources.meminfo();
+            ice::usize const offset_actions = minfo_layer += final_actions.meminfo();
+            ice::usize const offset_conditions = minfo_layer += final_conditions.meminfo();
+            ice::usize const offset_steps = minfo_layer += final_steps.meminfo();
+            ice::usize const offset_modifiers = minfo_layer += final_modifiers.meminfo();
+            ice::usize const offset_constant_values = minfo_layer += final_constant_values.meminfo();
+            ice::usize const offset_constants = minfo_layer += final_constants.meminfo();
             ice::usize const offset_strings = minfo_layer += strings.meminfo();
             final_info.offset_strings = ice::u32(offset_strings.value);
 
             ice::Memory const final_memory = alloc.allocate(minfo_layer);
             ice::memcpy(final_memory, ice::data_view(final_info));
-            ice::memcpy(ice::ptr_add(final_memory, offset_sources), ice::array::data_view(final_sources));
-            ice::memcpy(ice::ptr_add(final_memory, offset_actions), ice::array::data_view(final_actions));
-            ice::memcpy(ice::ptr_add(final_memory, offset_conditions), ice::array::data_view(final_conditions));
-            ice::memcpy(ice::ptr_add(final_memory, offset_steps), ice::array::data_view(final_steps));
-            ice::memcpy(ice::ptr_add(final_memory, offset_modifiers), ice::array::data_view(final_modifiers));
-            ice::memcpy(ice::ptr_add(final_memory, offset_constant_values), ice::array::data_view(final_constant_values));
-            ice::memcpy(ice::ptr_add(final_memory, offset_constants), ice::array::data_view(final_constants));
+            ice::memcpy(ice::ptr_add(final_memory, offset_sources), final_sources.data_view());
+            ice::memcpy(ice::ptr_add(final_memory, offset_actions), final_actions.data_view());
+            ice::memcpy(ice::ptr_add(final_memory, offset_conditions), final_conditions.data_view());
+            ice::memcpy(ice::ptr_add(final_memory, offset_steps), final_steps.data_view());
+            ice::memcpy(ice::ptr_add(final_memory, offset_modifiers), final_modifiers.data_view());
+            ice::memcpy(ice::ptr_add(final_memory, offset_constant_values), final_constant_values.data_view());
+            ice::memcpy(ice::ptr_add(final_memory, offset_constants), final_constants.data_view());
             ice::memcpy(ice::ptr_add(final_memory, offset_strings), strings.data_view());
             return ice::create_input_action_layer(alloc, final_memory);
         }
@@ -684,7 +681,7 @@ namespace ice
             ICE_ASSERT_CORE(axis_component >= 'x' && axis_component <= 'z'); // .xyz
 
             ice::u8 const axis = axis_component - 'x';
-            ice::array::push_back(internal().modifiers, { .id = modifier, .axis = axis, .param = param });
+            internal().modifiers.push_back({ .id = modifier, .axis = axis, .param = param });
         }
         return *this;
     }

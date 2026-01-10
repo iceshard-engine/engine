@@ -340,8 +340,8 @@ auto ice_setup(
         ice::path::normalize(config.dev_dirs.assets);
         config.dev_dirs.shaders.push_back('/');
         config.dev_dirs.assets.push_back('/');
-        ice::array::push_back(resource_paths, config.dev_dirs.assets);
-        ice::array::push_back(resource_paths, config.dev_dirs.shaders);
+        resource_paths.push_back(config.dev_dirs.assets);
+        resource_paths.push_back(config.dev_dirs.shaders);
     }
     else
     {
@@ -593,7 +593,7 @@ auto ice_game_frame(
     co_await runtime.runner->pre_update(new_frame->shards());
 
     // Push input events
-    ice::array::clear(runtime.input_events);
+    runtime.input_events.clear();
     runtime.input_tracker->process_device_events(state.platform.core->input_events(), runtime.input_events);
     ice_process_input_events(runtime.input_events, new_frame->shards());
 

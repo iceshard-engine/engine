@@ -9,17 +9,30 @@ namespace ice
 {
 
     template<typename T, typename... Args>
+    auto mem_construct_at(void* memory_ptr, Args&&... args) noexcept -> T*
+    {
+        // TODO: Assert (align + size)
+        return new (memory_ptr) T{ ice::forward<Args>(args)... };
+    }
+
+    template<typename T, typename... Args>
     auto mem_construct_at(ice::Memory memory, Args&&... args) noexcept -> T*
     {
         // TODO: Assert (align + size)
-        return new (memory.location) T{ ice::forward<Args>(args)... };
+        return mem_construct_at<T>(memory.location, ice::forward<Args>(args)...);
+    }
+
+    template<typename T>
+    auto mem_move_construct_at(void* memory_ptr, T&& other) noexcept -> T*
+    {
+        return new (memory_ptr) T{ ice::move(other) };
     }
 
     template<typename T>
     auto mem_move_construct_at(ice::Memory memory, T&& other) noexcept -> T*
     {
         // TODO: Assert (align + size)
-        return new (memory.location) T{ ice::move(other) };
+        return mem_move_construct_at<T>(memory.location, ice::move(other));
     }
 
     template<typename T>

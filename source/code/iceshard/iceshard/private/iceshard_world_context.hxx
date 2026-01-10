@@ -40,6 +40,7 @@ namespace ice
         void close_checkpoints() noexcept;
 
     private:
+        ice::HeapString<> _world_name;
         ice::ProxyAllocator _allocator;
         ice::UniquePtr<ice::IceshardWorld> _world;
 
