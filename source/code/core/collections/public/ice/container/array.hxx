@@ -9,24 +9,6 @@ namespace ice::array
 {
 
     template<typename Type, ice::ContainerLogic Logic>
-    inline void set_capacity(ice::Array<Type, Logic>& arr, ice::u32 new_capacity) noexcept;
-
-    template<typename Type, ice::ContainerLogic Logic>
-    inline void reserve(ice::Array<Type, Logic>& arr, ice::u32 min_capacity) noexcept;
-
-    template<typename Type, ice::ContainerLogic Logic>
-    inline void grow(ice::Array<Type, Logic>& arr, ice::u32 min_capacity = 0) noexcept;
-
-    template<typename Type, ice::ContainerLogic Logic>
-    inline void resize(ice::Array<Type, Logic>& arr, ice::u32 new_size) noexcept;
-
-    template<typename Type, ice::ContainerLogic Logic>
-    inline void shrink(ice::Array<Type, Logic>& arr) noexcept;
-
-    template<typename Type, ice::ContainerLogic Logic>
-    inline void clear(ice::Array<Type, Logic>& arr) noexcept;
-
-    template<typename Type, ice::ContainerLogic Logic>
     inline auto slice(
         ice::Array<Type, Logic>& arr,
         ice::u32 from_idx = 0,
@@ -69,25 +51,7 @@ namespace ice::array
     inline auto rend(ice::Array<Type, Logic>& arr) noexcept -> typename ice::Array<Type, Logic>::ReverseIterator;
 
     template<typename Type, ice::ContainerLogic Logic>
-    inline auto front(ice::Array<Type, Logic>& arr) noexcept -> Type&;
-
-    template<typename Type, ice::ContainerLogic Logic>
-    inline auto back(ice::Array<Type, Logic>& arr) noexcept -> Type&;
-
-    template<typename Type, ice::ContainerLogic Logic>
-    inline auto count(ice::Array<Type, Logic> const& arr) noexcept -> ice::u32;
-
-    template<typename Type, ice::ContainerLogic Logic>
-    inline auto capacity(ice::Array<Type, Logic> const& arr) noexcept -> ice::u32;
-
-    template<typename Type, ice::ContainerLogic Logic>
     inline auto size_bytes(ice::Array<Type, Logic> const& arr) noexcept -> ice::usize;
-
-    template<typename Type, ice::ContainerLogic Logic>
-    inline bool any(ice::Array<Type, Logic> const& arr) noexcept;
-
-    template<typename Type, ice::ContainerLogic Logic>
-    inline bool empty(ice::Array<Type, Logic> const& arr) noexcept;
 
     template<typename Type, ice::ContainerLogic Logic>
     inline auto slice(
@@ -108,12 +72,6 @@ namespace ice::array
     template<typename Type, ice::ContainerLogic Logic>
     inline auto rend(ice::Array<Type, Logic> const& arr) noexcept -> typename ice::Array<Type, Logic>::ConstReverseIterator;
 
-    template<typename Type, ice::ContainerLogic Logic>
-    inline auto front(ice::Array<Type, Logic> const& arr) noexcept -> Type const&;
-
-    template<typename Type, ice::ContainerLogic Logic>
-    inline auto back(ice::Array<Type, Logic> const& arr) noexcept -> Type const&;
-
 
 
     template<typename Type, ice::ContainerLogic Logic>
@@ -133,7 +91,6 @@ namespace ice::array
 namespace ice
 {
 
-    using ice::array::count;
     using ice::array::begin;
     using ice::array::end;
 

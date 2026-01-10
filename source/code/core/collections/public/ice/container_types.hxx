@@ -9,67 +9,10 @@
 #include <ice/string_types.hxx>
 #include <ice/span.hxx>
 #include <array>
+#include <ice/array.hxx>
 
 namespace ice
 {
-    struct Test : ice::container::ContiguousContainer
-    {
-        using ValueType = int;
-
-        int foo[4];
-
-        template<typename Self>
-        constexpr auto data(this Self& self) noexcept -> ice::const_correct_t<Self, ValueType>* { return self.foo; }
-        constexpr ncount size() const noexcept { return 4; }
-    };
-
-    //! \brief A simple contaier storing items in contignous memory.
-    //!
-    //! \details Manages a memory block big enough to hold the items that it holds.
-    //!
-    //! \tparam Logic The logic used during memory operations for the given type.
-    //!   This value cab be set by the user to enforce expected behavior for stored types.
-    template<typename Type, ice::ContainerLogic Logic = ice::Constant_DefaultContainerLogic<Type>>
-    struct Array
-    {
-        static_assert(
-            Logic == ContainerLogic::Complex || ice::TrivialContainerLogicAllowed<Type>,
-            "Collection element type is not allowed with 'Trivial' logic!"
-        );
-
-        using ValueType = Type;
-        using Iterator = Type*;
-        using ReverSeIterator = std::reverse_iterator<Type*>;
-        using ConstIterator = Type const*;
-        using ConstReverseIterator = std::reverse_iterator<Type const*>;
-
-        ice::Allocator* _allocator;
-        ice::u32 _capacity;
-        ice::u32 _count;
-        Type* _data;
-
-        inline explicit Array(ice::Allocator& alloc) noexcept;
-        inline Array(Array&& other) noexcept;
-        inline Array(Array const& other) noexcept
-            requires std::copy_constructible<Type>;
-        inline ~Array() noexcept;
-
-        inline Array(
-            ice::Allocator& alloc,
-            ice::Span<Type const> values
-        ) noexcept requires std::copy_constructible<Type>;
-
-        inline auto operator=(Array&& other) noexcept -> Array&;
-        inline auto operator=(Array const& other) noexcept -> Array&
-            requires std::copy_constructible<Type>;
-
-        inline auto operator[](ice::u32 idx) noexcept -> Type&;
-        inline auto operator[](ice::u32 idx) const noexcept -> Type const&;
-
-        inline operator ice::Span<Type>() noexcept;
-        inline operator ice::Span<Type const>() const noexcept;
-    };
-
 
     //! \brief A double ended queue build on a circular buffer.
     //!

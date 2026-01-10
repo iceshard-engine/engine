@@ -1,180 +1,15 @@
+#include "array.hxx"
 /// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 namespace ice
 {
 
-    template<typename Type, ice::ContainerLogic Logic>
-    inline Array<Type, Logic>::Array(ice::Allocator& alloc) noexcept
-        : _allocator{ &alloc }
-        , _capacity{ 0 }
-        , _count{ 0 }
-        , _data{ nullptr }
-    { }
-
-    template<typename Type, ice::ContainerLogic Logic>
-    inline Array<Type, Logic>::Array(Array&& other) noexcept
-        : _allocator{ other._allocator }
-        , _capacity{ ice::exchange(other._capacity, 0) }
-        , _count{ ice::exchange(other._count, 0) }
-        , _data{ ice::exchange(other._data, nullptr) }
-    {
-    }
-
-    template<typename Type, ice::ContainerLogic Logic>
-    inline Array<Type, Logic>::Array(Array const& other) noexcept
-        requires std::copy_constructible<Type>
-        : _allocator{ other._allocator }
-        , _capacity{ 0 }
-        , _count{ 0 }
-        , _data{ nullptr }
-    {
-        if (other._count > 0)
-        {
-            ice::array::set_capacity(*this, other._count);
-
-            if constexpr (Logic == ContainerLogic::Complex)
-            {
-                ice::mem_copy_construct_n_at(
-                    ice::array::memory(*this),
-                    other._data,
-                    other._count
-                );
-            }
-            else
-            {
-                ice::memcpy(
-                    ice::array::memory(*this),
-                    ice::array::data_view(other)
-                );
-            }
-
-            _count = other._count;
-        }
-    }
-
-    template<typename Type, ice::ContainerLogic Logic>
-    inline Array<Type, Logic>::~Array() noexcept
-    {
-        if constexpr (Logic == ContainerLogic::Complex)
-        {
-            ice::mem_destruct_n_at(_data, _count);
-        }
-
-        _allocator->deallocate(ice::array::memory(*this));
-    }
-
-    template<typename Type, ice::ContainerLogic Logic>
-    inline Array<Type, Logic>::Array(
-        ice::Allocator& alloc,
-        ice::Span<Type const> values
-    ) noexcept
-        requires std::copy_constructible<Type>
-        : _allocator{ &alloc }
-        , _capacity{ 0 }
-        , _count{ 0 }
-        , _data{ nullptr }
-    {
-        if (values.not_empty())
-        {
-            ice::array::set_capacity(*this, values.size().u32());
-
-            if constexpr (Logic == ContainerLogic::Complex)
-            {
-                ice::mem_copy_construct_n_at(
-                    ice::array::memory(*this),
-                    values.data(),
-                    values.size()
-                );
-            }
-            else
-            {
-                ice::memcpy(_data, values.data(), values.size().bytes());
-            }
-
-            _count = values.size().u32();
-        }
-    }
-
-    template<typename Type, ice::ContainerLogic Logic>
-    inline auto Array<Type, Logic>::operator=(Array&& other) noexcept -> Array&
-    {
-        if (this != &other)
-        {
-            ice::array::set_capacity(*this, 0);
-
-            _allocator = other._allocator;
-            _capacity = ice::exchange(other._capacity, 0);
-            _data = ice::exchange(other._data, nullptr);
-            _count = ice::exchange(other._count, 0);
-        }
-        return *this;
-    }
-
-    template<typename Type, ice::ContainerLogic Logic>
-    inline auto Array<Type, Logic>::operator=(Array const& other) noexcept -> Array&
-        requires std::copy_constructible<Type>
-    {
-        if (this != &other)
-        {
-            ice::array::clear(*this);
-            ice::array::reserve(*this, other._capacity);
-
-            if (other._count > 0)
-            {
-                if constexpr (Logic == ContainerLogic::Complex)
-                {
-                    ice::mem_copy_construct_n_at(
-                        ice::array::memory(*this),
-                        other._data,
-                        other._count
-                    );
-                }
-                else
-                {
-                    ice::memcpy(
-                        ice::array::memory(*this),
-                        ice::array::data_view(other)
-                    );
-                }
-            }
-
-            _count = other._count;
-        }
-        return *this;
-    }
-
-    template<typename Type, ice::ContainerLogic Logic>
-    inline auto Array<Type, Logic>::operator[](ice::u32 idx) noexcept -> Type&
-    {
-        // TODO: Assert
-        return _data[idx];
-    }
-
-    template<typename Type, ice::ContainerLogic Logic>
-    inline auto Array<Type, Logic>::operator[](ice::u32 idx) const noexcept -> Type const&
-    {
-        // TODO: Assert
-        return _data[idx];
-    }
-
-    template<typename Type, ice::ContainerLogic Logic>
-    inline Array<Type, Logic>::operator ice::Span<Type>() noexcept
-    {
-        return Span{ _data, _count };
-    }
-
-    template<typename Type, ice::ContainerLogic Logic>
-    inline Array<Type, Logic>::operator ice::Span<Type const>() const noexcept
-    {
-        return Span{ _data, _count };
-    }
-
     namespace array
     {
 
         template<typename Type, ice::ContainerLogic Logic>
-        inline void set_capacity(ice::Array<Type, Logic>& arr, ice::u32 new_capacity) noexcept
+        inline void set_capacity(ice::Array<Type, Logic>& arr, ice::ncount new_capacity) noexcept
         {
             if (new_capacity == arr._capacity)
             {
@@ -188,7 +23,7 @@ namespace ice
                     ice::mem_destruct_n_at(arr._data + new_capacity, arr._count - new_capacity);
                 }
 
-                arr._count = new_capacity;
+                arr._count = new_capacity.u32();
             }
 
             Type* new_data = nullptr;
@@ -213,11 +48,11 @@ namespace ice
 
             arr._allocator->deallocate(ice::array::memory(arr));
             arr._data = new_data;
-            arr._capacity = new_capacity;
+            arr._capacity = new_capacity.u32();
         }
 
         template<typename Type, ice::ContainerLogic Logic>
-        inline void reserve(ice::Array<Type, Logic>& arr, ice::u32 min_capacity) noexcept
+        inline void reserve(ice::Array<Type, Logic>& arr, ice::ncount min_capacity) noexcept
         {
             if (arr._capacity < min_capacity)
             {
@@ -226,9 +61,9 @@ namespace ice
         }
 
         template<typename Type, ice::ContainerLogic Logic>
-        inline void grow(ice::Array<Type, Logic>& arr, ice::u32 min_capacity) noexcept
+        inline void grow(ice::Array<Type, Logic>& arr, ice::ncount min_capacity) noexcept
         {
-            ice::u32 new_capacity = arr._capacity * 2 + 4;
+            ice::ncount new_capacity = arr._capacity * 2 + 4;
             if (new_capacity < min_capacity)
             {
                 new_capacity = min_capacity;
@@ -237,7 +72,7 @@ namespace ice
         }
 
         template<typename Type, ice::ContainerLogic Logic>
-        inline void resize(ice::Array<Type, Logic>& arr, ice::u32 new_count) noexcept
+        inline void resize(ice::Array<Type, Logic>& arr, ice::ncount new_count) noexcept
         {
             if (arr._capacity < new_count)
             {
@@ -246,7 +81,7 @@ namespace ice
 
             if (new_count > arr._count)
             {
-                ice::u32 const missing_items = new_count - arr._count;
+                ice::ncount const missing_items = new_count - arr._count;
 
                 // Even for trivial logic we construct items so at least the default ctor is called.
                 ice::mem_construct_n_at<Type>(
@@ -257,7 +92,7 @@ namespace ice
             else if constexpr (Logic == ContainerLogic::Complex)
             {
                 static_assert(Logic != ContainerLogic::Trivial);
-                ice::u32 const destroyed_items = arr._count - new_count;
+                ice::ncount const destroyed_items = arr._count - new_count;
 
                 ice::mem_destruct_n_at(
                     arr._data + new_count,
@@ -265,7 +100,7 @@ namespace ice
                 );
             }
 
-            arr._count = new_count;
+            arr._count = new_count.u32();
         }
 
         template<typename Type, ice::ContainerLogic Logic>
@@ -296,9 +131,9 @@ namespace ice
             requires std::move_constructible<Type>
         inline void push_back(ice::Array<Type, Logic>& arr, Type&& item) noexcept
         {
-            if (arr._count == arr._capacity)
+            if (arr.size() == arr.capacity())
             {
-                ice::array::grow(arr);
+                arr.grow();
             }
 
             if constexpr (Logic == ContainerLogic::Complex)
@@ -320,15 +155,15 @@ namespace ice
             requires std::copy_constructible<Type> && std::convertible_to<Value, Type>
         inline void push_back(ice::Array<Type, Logic>& arr, Value const& item) noexcept
         {
-            if (arr._count == arr._capacity)
+            if (arr.size() == arr.capacity())
             {
-                ice::array::grow(arr);
+                arr.grow();
             }
 
             if constexpr (Logic == ContainerLogic::Complex)
             {
                 ice::mem_copy_construct_at<Type>(
-                    Memory{ .location = arr._data + arr._count, .size = ice::size_of<Type>, .alignment = ice::align_of<Type> },
+                    ice::ptr_add(arr.memory_view(), arr.size()),
                     item
                 );
             }
@@ -438,49 +273,9 @@ namespace ice
         }
 
         template<typename Type, ice::ContainerLogic Logic>
-        inline auto front(ice::Array<Type, Logic>& arr) noexcept -> Type&
-        {
-            // #todo assert
-            return arr._data[0];
-        }
-
-        template<typename Type, ice::ContainerLogic Logic>
-        inline auto back(ice::Array<Type, Logic>& arr) noexcept -> Type&
-        {
-            // #todo assert
-            return arr._data[arr._count - 1];
-        }
-
-
-
-        template<typename Type, ice::ContainerLogic Logic>
-        inline auto count(ice::Array<Type, Logic> const& arr) noexcept -> ice::u32
-        {
-            return arr._count;
-        }
-
-        template<typename Type, ice::ContainerLogic Logic>
-        inline auto capacity(ice::Array<Type, Logic> const& arr) noexcept -> ice::u32
-        {
-            return arr._capacity;
-        }
-
-        template<typename Type, ice::ContainerLogic Logic>
         inline auto size_bytes(ice::Array<Type, Logic> const& arr) noexcept -> ice::usize
         {
             return ice::size_of<Type> * arr._count;
-        }
-
-        template<typename Type, ice::ContainerLogic Logic>
-        inline bool any(ice::Array<Type, Logic> const& arr) noexcept
-        {
-            return arr._count != 0;
-        }
-
-        template<typename Type, ice::ContainerLogic Logic>
-        inline bool empty(ice::Array<Type, Logic> const& arr) noexcept
-        {
-            return arr._count == 0;
         }
 
         template<typename Type, ice::ContainerLogic Logic>
@@ -521,21 +316,6 @@ namespace ice
             return typename ice::Array<Type, Logic>::ConstReverseIterator{ arr._data };
         }
 
-        template<typename Type, ice::ContainerLogic Logic>
-        inline auto front(ice::Array<Type, Logic> const& arr) noexcept -> Type const&
-        {
-            // #todo assert
-            return arr._data[0];
-        }
-
-        template<typename Type, ice::ContainerLogic Logic>
-        inline auto back(ice::Array<Type, Logic> const& arr) noexcept -> Type const&
-        {
-            // #todo assert
-            return arr._data[arr._size - 1];
-        }
-
-
 
         template<typename Type, ice::ContainerLogic Logic>
         inline auto data_view(ice::Array<Type, Logic> const& arr) noexcept -> ice::Data
@@ -568,7 +348,7 @@ namespace ice
         template<typename Type, ice::ContainerLogic Logic>
         inline auto meminfo(ice::Array<Type, Logic> const& arr) noexcept -> ice::meminfo
         {
-            return ice::meminfo_of<Type> * ice::array::count(arr);
+            return ice::meminfo_of<Type> * arr.size().native();
         }
 
     } // namespace array

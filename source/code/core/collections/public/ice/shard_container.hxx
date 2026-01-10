@@ -155,7 +155,7 @@ namespace ice
         inline void remove_all_of(ice::ShardContainer& container, ice::ShardID value) noexcept
         {
             ice::Array<ice::Shard>& data = container._data;
-            ice::u32 count = ice::array::count(data);
+            ice::ncount count = data.size();
 
             for (ice::u32 idx = 0; idx < count; ++idx)
             {
@@ -166,7 +166,7 @@ namespace ice
                 }
             }
 
-            ice::array::resize(data, count);
+            data.resize(count);
         }
 
         inline auto begin(ice::ShardContainer& container) noexcept -> ice::ShardContainer::Iterator
@@ -182,17 +182,17 @@ namespace ice
 
         inline auto empty(ice::ShardContainer const& container) noexcept -> bool
         {
-            return ice::array::empty(container._data);
+            return container._data.is_empty();
         }
 
         inline auto size(ice::ShardContainer const& container) noexcept -> ice::u32
         {
-            return ice::array::count(container._data);
+            return container._data.size().u32();
         }
 
         inline auto capacity(ice::ShardContainer const& container) noexcept -> ice::u32
         {
-            return ice::array::capacity(container._data);
+            return container._data.capacity().u32();
         }
 
         inline auto count(ice::ShardContainer const& container, ice::ShardID expected_shard) noexcept -> ice::u32

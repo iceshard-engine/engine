@@ -64,4 +64,10 @@ namespace ice
         return ice::ncount{ value };
     }
 
+    static constexpr ice::meminfo Test_Meminfo = ice::meminfo_of<ice::ncount>;
+    static_assert(Test_Meminfo.size == ice::size_of<ice::detail::nvalue_base_utype>);
+
+    static constexpr ice::meminfo Test_Meminfo_3 = Test_Meminfo * 3_count;
+    static_assert(Test_Meminfo_3.size == ice::size_of<ice::detail::nvalue_base_utype> * 3);
+
 } // namespace ice

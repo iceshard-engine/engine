@@ -46,7 +46,7 @@ SCENARIO("ice :: Data")
 
         ice::Span<ice::u64 const> values_span = values;
 
-        data = ice::data_view(values_span);
+        data = values_span.data_view();
 
         CHECK(data.location == values_span.data());
         CHECK(data.size == values_span.size());

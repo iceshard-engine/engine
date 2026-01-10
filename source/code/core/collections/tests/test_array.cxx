@@ -14,10 +14,10 @@ SCENARIO("collections 'ice/container/array.hxx'", "[collection][array][complex]"
 
     GIVEN("an empty Array object")
     {
-        CHECK(ice::array::empty(objects));
-        CHECK(ice::array::any(objects) == false);
-        CHECK(ice::array::capacity(objects) == 0);
-        CHECK(ice::array::count(objects) == 0);
+        CHECK(objects.is_empty());
+        CHECK(objects.not_empty() == false);
+        CHECK(objects.capacity() == 0);
+        CHECK(objects.size() == 0);
 
         // We force a capacity of 1, so we ensure a reallocation in later.
         ice::array::set_capacity(objects, 1);
@@ -26,12 +26,12 @@ SCENARIO("collections 'ice/container/array.hxx'", "[collection][array][complex]"
         {
             ice::array::push_back(objects, Test_TrackingObject{ });
 
-            REQUIRE(ice::array::capacity(objects) >= 1);
-            REQUIRE(ice::array::count(objects) == 1);
+            REQUIRE(objects.capacity() >= 1);
+            REQUIRE(objects.size() == 1);
 
             THEN("constructors are called")
             {
-                Test_TrackingObject& obj = ice::array::front(objects);
+                Test_TrackingObject& obj = objects.first();
 
                 CHECK(obj == Test_ObjectEvents{ .test_ctor_move = 1 });
 
@@ -47,7 +47,7 @@ SCENARIO("collections 'ice/container/array.hxx'", "[collection][array][complex]"
 
             AND_WHEN("resizing the array")
             {
-                Test_TrackingObject& obj = ice::array::front(objects);
+                Test_TrackingObject& obj = objects.first();
                 ice::u32 dtor_val = 0;
                 obj.data.test_dtor = &dtor_val;
 
@@ -56,15 +56,15 @@ SCENARIO("collections 'ice/container/array.hxx'", "[collection][array][complex]"
                 // The old object was moved to a new location (move ctor + dtor)
                 CHECK(dtor_val == 1);
 
-                CHECK(ice::array::any(objects));
-                CHECK(ice::array::empty(objects) == false);
-                CHECK(ice::array::capacity(objects) >= 10);
-                CHECK(ice::array::count(objects) == 10);
+                CHECK(objects.not_empty());
+                CHECK(objects.is_empty() == false);
+                CHECK(objects.capacity() >= 10);
+                CHECK(objects.size() == 10);
 
                 THEN("constructors are called")
                 {
-                    Test_TrackingObject& obj_front = ice::array::front(objects);
-                    Test_TrackingObject& obj_back = ice::array::back(objects);
+                    Test_TrackingObject& obj_front = objects.first();
+                    Test_TrackingObject& obj_back = objects.last();
 
                     CHECK(obj_front == Test_ObjectEvents{ .test_ctor_move = 1 });
                     CHECK(obj_back == Test_ObjectEvents{ .test_ctor = 1 });
@@ -75,10 +75,10 @@ SCENARIO("collections 'ice/container/array.hxx'", "[collection][array][complex]"
                     ice::Array array_copy = objects;
                     ice::array::push_back(objects, array_copy);
 
-                    CHECK(ice::array::capacity(objects) >= 20);
-                    CHECK(ice::array::any(objects));
-                    CHECK(ice::array::empty(objects) == false);
-                    CHECK(ice::array::count(objects) == 20);
+                    CHECK(objects.capacity() >= 20);
+                    CHECK(objects.not_empty());
+                    CHECK(objects.is_empty() == false);
+                    CHECK(objects.size() == 20);
 
                     ice::u32 copied_objects = 0;
                     ice::u32 moved_objects = 0;
@@ -101,10 +101,10 @@ SCENARIO("collections 'ice/container/array.hxx'", "[collection][array][complex]"
                         ice::array::clear(objects);
 
                         CHECK(dtor_val == 20);
-                        CHECK(ice::array::capacity(objects) > 0);
-                        CHECK(ice::array::empty(objects));
-                        CHECK(ice::array::any(objects) == false);
-                        CHECK(ice::array::count(objects) == 0);
+                        CHECK(objects.capacity() > 0);
+                        CHECK(objects.is_empty());
+                        CHECK(objects.not_empty() == false);
+                        CHECK(objects.size() == 0);
                     }
                 }
 
@@ -127,10 +127,10 @@ SCENARIO("collections 'ice/container/array.hxx'", "[collection][array][complex]"
                     ice::Array moved_objects = ice::move(objects);
                     CHECK(dtor_val == 0);
 
-                    CHECK(ice::array::capacity(objects) == 0);
-                    CHECK(ice::array::empty(objects));
-                    CHECK(ice::array::any(objects) == false);
-                    CHECK(ice::array::count(objects) == 0);
+                    CHECK(objects.capacity() == 0);
+                    CHECK(objects.is_empty());
+                    CHECK(objects.not_empty() == false);
+                    CHECK(objects.size() == 0);
 
                     total_events = Test_ObjectEvents{ };
                     for (Test_TrackingObject const& object : moved_objects)
@@ -155,32 +155,32 @@ SCENARIO("collections 'ice/container/array.hxx' (POD)", "[collection][array][pod
 
     GIVEN("an empty 'plain-old-data' Array")
     {
-        REQUIRE(ice::array::empty(objects));
-        REQUIRE(ice::array::capacity(objects) == 0);
+        REQUIRE(objects.is_empty());
+        REQUIRE(objects.capacity() == 0);
 
         WHEN("one element is pushed")
         {
             ice::array::push_back(objects, test_value_1);
 
-            CHECK(ice::array::count(objects) == 1);
-            CHECK(ice::array::any(objects) == true);
-            CHECK(ice::array::front(objects) == test_value_1);
-            CHECK(ice::array::back(objects) == test_value_1);
+            CHECK(objects.size() == 1);
+            CHECK(objects.not_empty() == true);
+            CHECK(objects.first() == test_value_1);
+            CHECK(objects.last() == test_value_1);
 
             THEN("one element is poped")
             {
                 ice::array::pop_back(objects);
 
-                CHECK(ice::array::count(objects) == 0);
-                CHECK(ice::array::any(objects) == false);
-                CHECK(ice::array::empty(objects) == true);
+                CHECK(objects.size() == 0);
+                CHECK(objects.not_empty() == false);
+                CHECK(objects.is_empty() == true);
 
                 THEN("array is shrunk")
                 {
                     ice::array::shrink(objects);
 
-                    REQUIRE(ice::array::count(objects) == 0);
-                    REQUIRE(ice::array::capacity(objects) == 0);
+                    REQUIRE(objects.size() == 0);
+                    REQUIRE(objects.capacity() == 0);
                 }
             }
 
@@ -188,9 +188,9 @@ SCENARIO("collections 'ice/container/array.hxx' (POD)", "[collection][array][pod
             {
                 ice::array::pop_back(objects, 10);
 
-                CHECK(ice::array::count(objects) == 0);
-                CHECK(ice::array::any(objects) == false);
-                CHECK(ice::array::empty(objects) == true);
+                CHECK(objects.size() == 0);
+                CHECK(objects.not_empty() == false);
+                CHECK(objects.is_empty() == true);
             }
         }
 
@@ -201,43 +201,43 @@ SCENARIO("collections 'ice/container/array.hxx' (POD)", "[collection][array][pod
                 ice::array::push_back(objects, test_value_2 + i);
             }
 
-            CHECK(ice::array::count(objects) == 100);
-            CHECK(ice::array::capacity(objects) >= 100);
-            CHECK(ice::array::any(objects) == true);
-            CHECK(ice::array::empty(objects) == false);
+            CHECK(objects.size() == 100);
+            CHECK(objects.capacity() >= 100);
+            CHECK(objects.not_empty() == true);
+            CHECK(objects.is_empty() == false);
 
-            CHECK(ice::array::front(objects) == test_value_2);
-            CHECK(ice::array::back(objects) == test_value_2 + 99);
+            CHECK(objects.first() == test_value_2);
+            CHECK(objects.last() == test_value_2 + 99);
 
             THEN("50 elements are poped")
             {
                 ice::array::pop_back(objects, 50);
 
-                CHECK(ice::array::any(objects) == true);
-                CHECK(ice::array::empty(objects) == false);
-                REQUIRE(ice::array::count(objects) == 50);
+                CHECK(objects.not_empty() == true);
+                CHECK(objects.is_empty() == false);
+                REQUIRE(objects.size() == 50);
 
                 THEN("array is shrunk")
                 {
                     ice::array::shrink(objects);
 
-                    CHECK(ice::array::any(objects) == true);
-                    CHECK(ice::array::empty(objects) == false);
-                    REQUIRE(ice::array::count(objects) == 50);
-                    REQUIRE(ice::array::capacity(objects) == 50);
+                    CHECK(objects.not_empty() == true);
+                    CHECK(objects.is_empty() == false);
+                    REQUIRE(objects.size() == 50);
+                    REQUIRE(objects.capacity() == 50);
                 }
             }
 
             THEN("array is cleared")
             {
-                ice::u32 const saved_capacity = ice::array::capacity(objects);
+                ice::ncount const saved_capacity = objects.capacity();
 
-                ice::array::clear(objects);
+                objects.clear();
 
-                CHECK(ice::array::any(objects) == false);
-                CHECK(ice::array::empty(objects) == true);
-                REQUIRE(ice::array::count(objects) == 0);
-                REQUIRE(ice::array::capacity(objects) == saved_capacity);
+                CHECK(objects.not_empty() == false);
+                CHECK(objects.is_empty() == true);
+                REQUIRE(objects.size() == 0);
+                REQUIRE(objects.capacity() == saved_capacity);
             }
 
             THEN("we can iterate over them")
@@ -248,7 +248,7 @@ SCENARIO("collections 'ice/container/array.hxx' (POD)", "[collection][array][pod
                     elements_seen += 1;
                 }
 
-                CHECK(elements_seen == ice::array::count(objects));
+                CHECK(elements_seen == objects.size());
             }
 
             THEN("we can iterate over a span")
@@ -259,7 +259,7 @@ SCENARIO("collections 'ice/container/array.hxx' (POD)", "[collection][array][pod
                     elements_seen += 1;
                 }
 
-                CHECK(elements_seen == ice::array::count(objects));
+                CHECK(elements_seen == objects.size());
             }
 
             THEN("we can iterate over a const span")
@@ -270,20 +270,20 @@ SCENARIO("collections 'ice/container/array.hxx' (POD)", "[collection][array][pod
                     elements_seen += 1;
                 }
 
-                CHECK(elements_seen == ice::array::count(objects));
+                CHECK(elements_seen == objects.size());
             }
 
             THEN("we can move them")
             {
                 ice::Array<ice::i32> moved_array = ice::move(objects);
 
-                CHECK(ice::array::count(moved_array) == 100);
+                CHECK(moved_array.size() == 100);
 
                 THEN("we can add new items")
                 {
                     ice::array::push_back(objects, 100);
 
-                    CHECK(ice::array::count(objects) == 1);
+                    CHECK(objects.size() == 1);
                     REQUIRE(objects[0] == 100);
                 }
             }
@@ -295,13 +295,13 @@ SCENARIO("collections 'ice/container/array.hxx' (POD)", "[collection][array][pod
 
                 moved_array = ice::move(objects);
 
-                CHECK(ice::array::count(moved_array) == 100);
+                CHECK(moved_array.size() == 100);
 
                 THEN("we can add new items")
                 {
                     ice::array::push_back(objects, 100);
 
-                    CHECK(ice::array::count(objects) == 1);
+                    CHECK(objects.size() == 1);
                     REQUIRE(objects[0] == 100);
 
                     THEN("we can move again")

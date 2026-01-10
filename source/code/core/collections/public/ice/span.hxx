@@ -2,13 +2,11 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/base.hxx>
 #include <ice/mem_data.hxx>
 #include <ice/mem_memory.hxx>
 #include <ice/container_logic.hxx>
 #include <ice/container/contiguous_container.hxx>
-#include <ice/types/ncount.hxx>
-#include <array> // TODO: Introduce our own static array object.
+#include <array>
 
 namespace ice
 {
@@ -18,6 +16,7 @@ namespace ice
     struct Span : public ice::container::ContiguousContainer
     {
         using ValueType = Type;
+        using ConstContainerValueType = Type;
         using Iterator = Type*;
         using ReverseIterator = std::reverse_iterator<Type*>;
         using ConstIterator = Type const*;
