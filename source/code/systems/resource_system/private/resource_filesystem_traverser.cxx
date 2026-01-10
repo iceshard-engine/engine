@@ -203,7 +203,7 @@ namespace ice
         {
             ice::array::push_back(requests, { *this, base_path, remaining, nullptr, nullptr });
             ice::native_file::traverse_directories(
-                base_path, traverse_callback, &ice::array::back(requests)
+                base_path, traverse_callback, &requests.last()
             );
         }
     }
@@ -226,7 +226,7 @@ namespace ice
         {
             ice::array::push_back(requests, { *this, base_path, remaining, ice::addressof(scheduler), &local_sched });
             ice::native_file::traverse_directories(
-                base_path, traverse_callback, &ice::array::back(requests)
+                base_path, traverse_callback, &requests.last()
             );
         }
 

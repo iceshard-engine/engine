@@ -190,7 +190,7 @@ public:
             Param_Verbose,
             ice::LogSeverity::Retail, ice::LogTag::Tool,
             "Creating asset '{}' from {} sources and {} metadata files.",
-            input_resource->name(), ice::count(_inputs), ice::count(_inputs_meta)
+            input_resource->name(), _inputs.size(), _inputs_meta.size()
         );
 
         ice::HeapString<> uristr{ _allocator, "file://<inputs>" };
@@ -321,7 +321,7 @@ public:
             }
 
             // If empty we add our own handle to the list
-            if (ice::array::empty(sources))
+            if (sources.is_empty())
             {
                 ice::array::push_back(sources, res);
             }

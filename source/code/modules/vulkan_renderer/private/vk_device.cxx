@@ -102,7 +102,7 @@ namespace ice::render::vk
         );
 
         ICE_ASSERT(
-            ice::array::empty(surface_formats) == false,
+            surface_formats.not_empty(),
             "No supported image formats found for given surface!"
         );
 
@@ -118,7 +118,7 @@ namespace ice::render::vk
             "Failed to query surface capabilities!"
         );
 
-        VkSurfaceFormatKHR selected_format = ice::array::front(surface_formats);
+        VkSurfaceFormatKHR selected_format = surface_formats.first();
         if constexpr (ice::build::is_linux)
         {
             // If possible select UNORM istead of SRGB
@@ -259,7 +259,7 @@ namespace ice::render::vk
 
         auto store_references = [&attachment_references](ice::Span<AttachmentReference const> references) noexcept -> ice::u32
         {
-            ice::u32 ref_index = ice::count(attachment_references);
+            ice::u32 ref_index = attachment_references.size().u32();
             for (AttachmentReference const& attachment_ref : references)
             {
                 VkAttachmentReference reference{ }; // VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2 };
@@ -312,12 +312,12 @@ namespace ice::render::vk
         }
 
         VkRenderPassCreateInfo renderpass_info{ VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
-        renderpass_info.attachmentCount = ice::array::count(attachments);
-        renderpass_info.pAttachments = ice::array::begin(attachments);
-        renderpass_info.subpassCount = ice::array::count(subpass_list);
-        renderpass_info.pSubpasses = ice::array::begin(subpass_list);
-        renderpass_info.dependencyCount = ice::array::count(dependencies);
-        renderpass_info.pDependencies = ice::array::begin(dependencies);
+        renderpass_info.attachmentCount = attachments.size().u32();
+        renderpass_info.pAttachments = attachments.begin();
+        renderpass_info.subpassCount = subpass_list.size().u32();
+        renderpass_info.pSubpasses = subpass_list.begin();
+        renderpass_info.dependencyCount = dependencies.size().u32();
+        renderpass_info.pDependencies = dependencies.begin();
 
         VkRenderPass renderpass;
         VkResult result = vkCreateRenderPass(_vk_device, &renderpass_info, nullptr, &renderpass);
@@ -537,8 +537,8 @@ namespace ice::render::vk
 
         vkUpdateDescriptorSets(
             _vk_device,
-            ice::count(vk_writes),
-            ice::begin(vk_writes),
+            vk_writes.size().u32(),
+            vk_writes.begin(),
             0, nullptr
         );
     }
@@ -718,10 +718,10 @@ namespace ice::render::vk
         }
 
         VkPipelineVertexInputStateCreateInfo vertex_input{ VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO };
-        vertex_input.vertexBindingDescriptionCount = ice::array::count(vertex_input_bindings);
-        vertex_input.pVertexBindingDescriptions = ice::array::begin(vertex_input_bindings);
-        vertex_input.vertexAttributeDescriptionCount = ice::array::count(vertex_input_attributes);
-        vertex_input.pVertexAttributeDescriptions = ice::array::begin(vertex_input_attributes);
+        vertex_input.vertexBindingDescriptionCount = vertex_input_bindings.size().u32();
+        vertex_input.pVertexBindingDescriptions = vertex_input_bindings.begin();
+        vertex_input.vertexAttributeDescriptionCount= vertex_input_attributes.size().u32();
+        vertex_input.pVertexAttributeDescriptions = vertex_input_attributes.begin();
 
         VkPipelineInputAssemblyStateCreateInfo input_assembly{ VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO };
         input_assembly.primitiveRestartEnable = VK_FALSE;
@@ -967,8 +967,8 @@ namespace ice::render::vk
 
         VkFramebufferCreateInfo fb_info{ VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
         fb_info.renderPass = vk_renderpass;
-        fb_info.attachmentCount = ice::array::count(vk_images);
-        fb_info.pAttachments = ice::array::begin(vk_images);
+        fb_info.attachmentCount = vk_images.size().u32();
+        fb_info.pAttachments = vk_images.begin();
         fb_info.width = extent.x;
         fb_info.height = extent.y;
         fb_info.layers = 1;

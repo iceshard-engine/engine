@@ -26,17 +26,16 @@ namespace ice
         ice::ShardID shardid
     ) noexcept -> ice::Span<ice::Task<>>
     {
-        ice::u32 const new_count = ice::array::count(_tasks) + count;
-
-        if (new_count > ice::array::capacity(_tasks))
+        ice::ncount const new_count = _tasks.size() + count;
+        if (new_count > _tasks.capacity())
         {
             // Updates the capacity of the array to fit the new tasks
-            ice::array::grow(_tasks, new_count);
+            _tasks.grow(new_count);
         }
 
         // Creates the tasks and returns a slice to them
-        ice::array::resize(_tasks, new_count);
-        return ice::array::slice(_tasks, ice::array::count(_tasks) - count, count);
+        _tasks.resize(new_count);
+        return _tasks.tailspan(_tasks.size() - count);
     }
 
     auto ScopedTaskContainer::await_tasks_scheduled_on(ice::TaskScheduler& scheduler, ice::TaskScheduler& resumer) noexcept -> ice::Task<>
@@ -46,14 +45,14 @@ namespace ice
 
     auto ScopedTaskContainer::execute_tasks() noexcept -> ice::u32
     {
-        ice::u32 const result = ice::array::count(_tasks);
+        ice::ncount const result = _tasks.size();
         if (result > 0)
         {
-            _barrier.reset(static_cast<ice::u8>(result));
+            _barrier.reset(result.u8());
             ice::manual_wait_for(_barrier, _tasks);
-            ice::array::clear(_tasks);
+            _tasks.clear();
         }
-        return result;
+        return result.u32();
     }
 
     auto ScopedTaskContainer::running_tasks() const noexcept -> ice::u32

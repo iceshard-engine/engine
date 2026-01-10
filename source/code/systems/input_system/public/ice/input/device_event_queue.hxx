@@ -46,12 +46,12 @@ namespace ice::input
 
     inline bool DeviceEventQueue::empty() const noexcept
     {
-        return ice::array::empty(_events);
+        return _events.is_empty();
     }
 
     inline void DeviceEventQueue::clear() noexcept
     {
-        ice::array::clear(_events);
+        _events.clear();
     }
 
     inline void DeviceEventQueue::push(

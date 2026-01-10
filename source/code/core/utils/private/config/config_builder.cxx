@@ -196,11 +196,11 @@ namespace ice
 
         // Then add all children key-values
         ice::u32 out_keyidx = 0;
-        it_entry = ice::array::begin(config._entries);
+        it_entry = config._entries.begin();
 
         if (config.vtype == CONFIG_VALTYPE_TABLE)
         {
-            ice::u32 const table_size = ice::count(config._entries);
+            ice::u32 const table_size = config._entries.size().u32();
 
             // Save table size in first key
             out_keylist[0].offset = table_size >> 8;
@@ -249,7 +249,7 @@ namespace ice
                 ConfigBuilderContainer& sub = *config._entries[out_keyidx].data.val_container;
 
                 // Set the value to the current 'keyoffset' value. This serves as the relative offset starting from the passed key.
-                out_vallist[out_keyidx].internal = ice::array::empty(sub._entries) ? ice::u32_max : keyoffset - out_keyidx;
+                out_vallist[out_keyidx].internal = sub._entries.is_empty() ? ice::u32_max : keyoffset - out_keyidx;
 
                 if (out_vallist[out_keyidx].internal != ice::u32_max)
                 {
@@ -371,7 +371,7 @@ namespace ice
         using ice::config::detail::ConfigValue;
 
         ice::config::detail::ConfigBuilderContainer& container = *_internal->data.val_container;
-        if (ice::array::empty(container._entries))
+        if (container._entries.is_empty())
         {
             return {};
         }

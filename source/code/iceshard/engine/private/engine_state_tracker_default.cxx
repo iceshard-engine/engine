@@ -49,7 +49,7 @@ namespace ice
             ice::multi_hashmap::insert(
                 _current_state_index,
                 ice::hash(params.initial.graph.value),
-                ice::count(_current_state)
+                _current_state.size().u32()
             );
             ice::array::push_back(_current_state, initial_state);
         }
@@ -71,7 +71,7 @@ namespace ice
                 ice::multi_hashmap::insert(
                     _current_state_index,
                     ice::hash(params.initial.graph.value),
-                    ice::count(_current_state)
+                    _current_state.size().u32()
                 );
                 ice::array::push_back(_current_state, initial_state);
             }
@@ -115,7 +115,7 @@ namespace ice
             ice::multi_hashmap::insert(
                 _current_state_index,
                 ice::hash(engine_state.graph.value),
-                ice::count(_current_state)
+                _current_state.size().u32()
             );
             ice::array::push_back(_current_state, engine_state);
         }

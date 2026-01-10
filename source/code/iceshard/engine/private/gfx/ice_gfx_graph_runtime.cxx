@@ -63,7 +63,7 @@ namespace ice::gfx
             ICE_ASSERT_CORE(prev.event != GfxSnapshotEvent::EventInvalid || next.event != GfxSnapshotEvent::EventInvalid);
             if (prev.event != GfxSnapshotEvent::EventInvalid)
             {
-                current.info = ice::array::count(out_barriers);
+                current.info = out_barriers.size().u32();
 
                 if (current.event & GfxSnapshotEvent::EventReadRes)
                 {

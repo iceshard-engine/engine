@@ -77,7 +77,7 @@ namespace ice
     {
         IPT_ZONE_SCOPED;
 
-        ice::array::reserve(out_changes, ice::array::count(out_changes) +  ice::hashmap::count(_resources));
+        out_changes.reserve(out_changes.size() + ice::hashmap::count(_resources));
         for (auto* resource : _resources)
         {
             ice::array::push_back(out_changes, resource);

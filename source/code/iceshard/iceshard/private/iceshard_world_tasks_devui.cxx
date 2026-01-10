@@ -23,7 +23,7 @@ namespace ice
     auto TraitTasksTrackerDevUI::report_resume(ice::u32 id) noexcept -> ice::u32
     {
         ice::u32 const eventidx = _current_event_count.fetch_add(1, std::memory_order_relaxed);
-        if (eventidx >= ice::count(_tracked_task_events))
+        if (eventidx >= _tracked_task_events.size())
         {
             return 0;
         }
@@ -45,7 +45,7 @@ namespace ice
     void TraitTasksTrackerDevUI::report_finish(ice::u32 id) noexcept
     {
         ice::u32 const eventidx = _current_event_count.fetch_add(1, std::memory_order_relaxed);
-        if (eventidx >= ice::count(_tracked_task_events))
+        if (eventidx >= _tracked_task_events.size())
         {
             return;
         }
@@ -60,7 +60,7 @@ namespace ice
     void TraitTasksTrackerDevUI::update_state(ice::DevUIWidgetState &state) noexcept
     {
         _stat_events = _current_event_count.exchange(1, std::memory_order_relaxed);
-        if (_stat_events >= ice::count(_tracked_task_events))
+        if (_stat_events >= _tracked_task_events.size())
         {
             ice::array::grow(_tracked_task_events, _stat_events);
             ice::array::resize(_tracked_task_events, _stat_events);
@@ -82,7 +82,7 @@ namespace ice
                 snapshot._release = false;
                 ice::array::clear(snapshot._events);
             }
-            else if (ice::array::any(snapshot._events))
+            else if (snapshot._events.not_empty())
             {
                 snapshot.draw();
             }
@@ -97,7 +97,7 @@ namespace ice
         ImVec2 const region = ImGui::GetWindowContentRegionMax();
 
         ice::u32 first_entry = 1;
-        ice::u32 const last_entry = ice::count(_events);
+        ice::u32 const last_entry = _events.size().u32();
         EventEntry const* entries = ice::begin(_events);
 
         ice::u32 running = 0;

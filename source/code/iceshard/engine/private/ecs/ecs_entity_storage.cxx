@@ -621,7 +621,7 @@ namespace ice::ecs
         using ice::ecs::detail::DataBlock;
         using ice::ecs::detail::ArchetypeInstance;
 
-        ice::u32 const existing_count = ice::count(_head_blocks);
+        ice::u32 const existing_count = _head_blocks.size().u32();
         ice::u32 const archetype_count = _archetype_index.registered_archetype_count();
         if (existing_count >= archetype_count)
         {
@@ -711,9 +711,9 @@ namespace ice::ecs
         // [Done] Set Component: {EntityHandle[*], None} // remove
 
         // Ensure we have enough data slots
-        if (ice::array::count(_data_slots) < _entity_index.count())
+        if (_data_slots.size() < _entity_index.count())
         {
-            ice::array::resize(_data_slots, _entity_index.count());
+            _data_slots.resize(_entity_index.count());
         }
 
         // Ensure all queries are finished
@@ -1156,21 +1156,21 @@ namespace ice::ecs
         ice::array::reserve(archetypes, (u32) ice::mem_max_capacity<ice::ecs::Archetype>(archetypes_alloc.Constant_InternalCapacity));
         _archetype_index.find_archetypes(archetypes, query_info, query_tags);
 
-        ice::u32 const prev_archetype_count = ice::count(out_instance_infos);
-        ice::u32 const new_archetype_count = ice::count(archetypes);
-        ice::array::resize(out_instance_infos, prev_archetype_count + new_archetype_count);
-        ice::array::reserve(out_data_blocks, prev_archetype_count + new_archetype_count);
+        ice::ncount const prev_archetype_count = out_instance_infos.size();
+        ice::ncount const new_archetype_count = archetypes.size();
+        out_instance_infos.resize(prev_archetype_count + new_archetype_count);
+        out_data_blocks.reserve(prev_archetype_count + new_archetype_count);
 
-        _archetype_index.fetch_archetype_instance_infos(archetypes, ice::array::slice(out_instance_infos, prev_archetype_count));
+        _archetype_index.fetch_archetype_instance_infos(archetypes, out_instance_infos.tailspan(prev_archetype_count));
 
-        for (ice::ecs::detail::ArchetypeInstanceInfo const* instance : ice::array::slice(out_instance_infos, prev_archetype_count))
+        for (ice::ecs::detail::ArchetypeInstanceInfo const* instance : out_instance_infos.tailspan(prev_archetype_count))
         {
             ice::u32 const instance_idx = static_cast<ice::u32>(instance->archetype_instance);
             ice::array::push_back(out_data_blocks, _data_blocks[instance_idx]);
         }
 
         // Find or create work trackers for queried components
-        ice::u32 idx = prev_archetype_count;
+        ice::nindex idx = prev_archetype_count;
         for (ice::ecs::detail::QueryTypeInfo const& type_info : query_info)
         {
             ice::ecs::QueryAccessTracker* tracker = ice::hashmap::get(_access_trackers, ice::hash(type_info.identifier), nullptr);

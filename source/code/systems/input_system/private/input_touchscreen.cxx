@@ -135,7 +135,7 @@ namespace ice::input
         if (input != InputID::Invalid)
         {
             ice::u32 const control_index = input_identifier_value(input) + pointer_index;
-            ICE_ASSERT_CORE(control_index < ice::array::count(_controls));
+            ICE_ASSERT_CORE(control_index < _controls.size());
 
             detail::ControlState control = _controls[control_index];
             control.id = input;

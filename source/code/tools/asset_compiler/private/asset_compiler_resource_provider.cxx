@@ -79,8 +79,8 @@ AssetCompilerResourceProvider::AssetCompilerResourceProvider(
         ice::array::push_back(_resources, res);
     }
 
-    ice::array::resize(_data, ice::count(_resources));
-    ice::memset(ice::begin(_data), '\0', ice::array::data_view(_data).size.value);
+    _data.resize(_resources.size());
+    ice::memset(_data.begin(), '\0', _data.size().bytes().value);
 }
 
 AssetCompilerResourceProvider::~AssetCompilerResourceProvider() noexcept

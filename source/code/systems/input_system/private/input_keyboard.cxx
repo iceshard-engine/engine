@@ -123,7 +123,7 @@ namespace ice::input
         }
 
         ice::u32 const control_index = detail::input_control_index(input);
-        ICE_ASSERT_CORE(control_index < ice::array::count(_controls));
+        ICE_ASSERT_CORE(control_index < _controls.size());
 
         detail::ControlState control = _controls[control_index];
         control.id = input;

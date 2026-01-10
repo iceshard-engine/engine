@@ -277,9 +277,7 @@ namespace ice
         ice::Array<RawElement>& elements
     ) noexcept
     {
-        ice::u16 const element_index = static_cast<ice::u16>(
-            ice::array::count(elements)
-        );
+        ice::u16 const element_index = elements.size().u16();
 
         ice::array::push_back(
             elements,

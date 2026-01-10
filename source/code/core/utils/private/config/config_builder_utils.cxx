@@ -64,7 +64,7 @@ namespace ice::config::detail
         ice::config::detail::ConfigBuilderContainer& container = *entry.data.val_container;
 
         ice::u32 idx = 0;
-        for (;idx < ice::count(container._entries); ++idx)
+        for (;idx < container._entries.size(); ++idx)
         {
             ice::String const entry_key = detail::cb_getkey(container._keystrings, container._entries[idx]);
             if (key == entry_key)
@@ -74,9 +74,9 @@ namespace ice::config::detail
         }
 
         ice::config::detail::ConfigBuilderEntry* result;
-        if (idx < ice::count(container._entries))
+        if (idx < container._entries.size())
         {
-            result = ice::array::begin(container._entries) + idx;
+            result = container._entries.begin() + idx;
             if (clean)
             {
                 cb_clear_value_type(alloc, result);
@@ -84,7 +84,7 @@ namespace ice::config::detail
         }
         else
         {
-            idx = ice::count(container._entries);
+            idx = container._entries.size().u32();
             ice::ncount const offset = container._keystrings.size();
             container._keystrings.push_back(key);
 
@@ -109,7 +109,7 @@ namespace ice::config::detail
         ice::config::detail::ConfigBuilderContainer& container = *entry.data.val_container;
 
         ice::config::detail::ConfigBuilderEntry* result;
-        if (idx < ice::count(container._entries))
+        if (idx < container._entries.size())
         {
             result = ice::array::begin(container._entries) + idx;
             if (clean)
@@ -121,10 +121,10 @@ namespace ice::config::detail
         {
             if (idx == ice::u32_max)
             {
-                idx = ice::count(container._entries);
+                idx = container._entries.size().u32();
             }
 
-            while(ice::count(container._entries) <= idx)
+            while(container._entries.size() <= idx)
             {
                 ice::array::push_back(container._entries, ConfigKey{ 0, CONFIG_KEYTYPE_NONE, CONFIG_VALTYPE_NONE, 0, 0 });
             }

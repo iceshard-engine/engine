@@ -111,8 +111,8 @@ namespace ice
 
         void execute_all() noexcept
         {
-            ice::u32 const num_tasks = ice::array::count(_pending_tasks);
-            _running_tasks.fetch_add(num_tasks, std::memory_order_relaxed);
+            ice::ncount const num_tasks = _pending_tasks.size();
+            _running_tasks.fetch_add(num_tasks.u32(), std::memory_order_relaxed);
 
             for (ice::Task<>& pending_task : _pending_tasks)
             {

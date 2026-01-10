@@ -107,12 +107,12 @@ namespace ice
 
     auto TaskThreadPoolImplementation::thread_count() const noexcept -> ice::u32
     {
-        return ice::array::count(_thread_pool);
+        return _thread_pool.size().u32();
     }
 
     auto TaskThreadPoolImplementation::managed_thread_count() const noexcept -> ice::u32
     {
-        return ice::array::count(_managed_threads) + ice::hashmap::count(_created_threads);
+        return _managed_threads.size().u32() + ice::hashmap::count(_created_threads);
     }
 
     auto TaskThreadPoolImplementation::estimated_task_count() const noexcept -> ice::u32

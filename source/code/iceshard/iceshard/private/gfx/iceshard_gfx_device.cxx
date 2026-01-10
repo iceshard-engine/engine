@@ -168,7 +168,7 @@ namespace ice::gfx
 
         auto find_queue_index = [](auto const& array_, QueueID id_, ice::u32& idx_out) noexcept -> bool
         {
-            ice::u32 const size = ice::array::count(array_);
+            ice::u32 const size = array_.size().u32();
 
             idx_out = 0;
             while (idx_out < size && array_[idx_out].id != id_)
@@ -176,7 +176,7 @@ namespace ice::gfx
                 idx_out += 1;
             }
 
-            return ice::array::count(array_) > idx_out;
+            return array_.size() > idx_out;
         };
 
         ice::HashMap<ice::u32> queue_index_tracker{ alloc };

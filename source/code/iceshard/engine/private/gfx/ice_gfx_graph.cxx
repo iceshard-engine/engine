@@ -36,7 +36,7 @@ namespace ice::gfx
                 .name = stage.name
             };
 
-            ice::u32 offset = ice::array::count(out_resources);
+            ice::u32 offset = out_resources.size().u32();
             for (ice::gfx::GfxResource res : stage.depth_stencil)
             {
                 ice::array::push_back(out_resources, res);
@@ -205,7 +205,7 @@ namespace ice::gfx
             _framebuffers
         );
 
-        ice::array::resize(_clears, ice::count(_resources));
+        _clears.resize(_resources.size());
         for (vec4f& ccolor : _clears)
         {
             ccolor = vec4f{ 0.2f };
@@ -265,7 +265,7 @@ namespace ice::gfx
         ice::Array<ice::gfx::GfxStage*> temp_stages{ _allocator };
         if (stage_registry.query_stages(_stages._stage_names, temp_stages))
         {
-            for (ice::u32 idx = 0; idx < ice::count(_stages._stage_names); ++idx)
+            for (ice::u32 idx = 0; idx < _stages._stage_names.size(); ++idx)
             {
                 ice::u64 const stage_hash = ice::hash(_stages._stage_names[idx]);
                 GfxStage* stage_ptr = temp_stages[idx];

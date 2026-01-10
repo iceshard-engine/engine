@@ -103,7 +103,7 @@ namespace ice::render::vk
 
         if (enumerate_objects(_vk_queue_family_properties, vkGetPhysicalDeviceQueueFamilyProperties, _vk_physical_device))
         {
-            VK_LOG(ice::LogSeverity::Debug, "Device has {} queue families", count(_vk_queue_family_properties));
+            VK_LOG(ice::LogSeverity::Debug, "Device has {} queue families", _vk_queue_family_properties.size());
         }
     }
 
@@ -389,7 +389,7 @@ namespace ice::render::vk
         device_create_info.enabledExtensionCount = count_extensions;
         device_create_info.ppEnabledExtensionNames = ice::array::begin(extension_names);
         device_create_info.pQueueCreateInfos = ice::array::begin(queue_create_infos);
-        device_create_info.queueCreateInfoCount = ice::array::count(queue_create_infos);
+        device_create_info.queueCreateInfoCount = queue_create_infos.size().u32();
 
         VkDevice vk_device;
         VkResult result = vkCreateDevice(

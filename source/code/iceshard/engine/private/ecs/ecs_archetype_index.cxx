@@ -167,7 +167,7 @@ namespace ice::ecs
 
     auto ArchetypeIndex::registered_archetype_count() const noexcept -> ice::u32
     {
-        return ice::array::count(_archetype_data);
+        return _archetype_data.size().u32();
     }
 
     auto ArchetypeIndex::register_archetype(
@@ -296,7 +296,7 @@ namespace ice::ecs
             }
         }
 
-        ice::u32 const archetype_index = ice::array::count(_archetype_data);
+        ice::u32 const archetype_index = _archetype_data.size().u32();
         data_header->archetype_info.archetype_instance = ice::ecs::detail::ArchetypeInstance{ archetype_index };
 
         ice::array::push_back(_archetype_data, data_header);
@@ -315,7 +315,7 @@ namespace ice::ecs
         ice::String name
     ) const noexcept -> ice::ecs::Archetype
     {
-        ice::u32 const instance_count = ice::array::count(_archetype_data);
+        ice::u32 const instance_count = _archetype_data.size().u32();
         ice::u32 const instance_idx = ice::hashmap::get(_archetype_names_index, ice::hash(name), ice::u32_max);
         if (instance_idx >= instance_count)
         {
@@ -393,7 +393,7 @@ namespace ice::ecs
             "Archetype instance fetch called with different input and output array sizes."
         );
 
-        ice::u32 const instance_count = ice::array::count(_archetype_data);
+        ice::u32 const instance_count = _archetype_data.size().u32();
 
         ice::u32 archetype_idx = 0;
         for (Archetype archetype : archetypes)
@@ -421,7 +421,7 @@ namespace ice::ecs
             "Archetype instance fetch called with different input and output array sizes."
         );
 
-        ice::u32 const instance_count = ice::array::count(_archetype_data);
+        ice::u32 const instance_count = _archetype_data.size().u32();
 
         ice::u32 archetype_idx = 0;
         for (ice::ecs::detail::ArchetypeInstance archetype_instance : archetype_instances)
@@ -443,7 +443,7 @@ namespace ice::ecs
         ice::ecs::detail::ArchetypeInstanceInfo const*& out_instance_info
     ) const noexcept
     {
-        ice::u32 const instance_count = ice::array::count(_archetype_data);
+        ice::u32 const instance_count = _archetype_data.size().u32();
         ice::u32 const instance_idx = index;
 
         if (instance_idx < instance_count)
@@ -464,7 +464,7 @@ namespace ice::ecs
         ice::ecs::detail::DataBlockPool*& out_block_pool
     ) const noexcept
     {
-        ice::u32 const instance_count = ice::array::count(_archetype_data);
+        ice::u32 const instance_count = _archetype_data.size().u32();
         ice::u32 const instance_idx = ice::hashmap::get(_archetype_index, ice::hash(archetype), ice::u32_max);
 
         if (instance_idx < instance_count)
@@ -486,7 +486,7 @@ namespace ice::ecs
         ice::ecs::detail::DataBlockPool*& out_block_pool
     ) const noexcept
     {
-        ice::u32 const instance_count = ice::array::count(_archetype_data);
+        ice::u32 const instance_count = _archetype_data.size().u32();
         ice::u32 const instance_idx = static_cast<ice::u32>(archetype_instance);
 
         if (instance_idx < instance_count)

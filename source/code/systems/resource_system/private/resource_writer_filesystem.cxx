@@ -107,7 +107,7 @@ namespace ice
     {
         IPT_ZONE_SCOPED;
 
-        ice::array::reserve(out_changes, ice::array::count(out_changes) +  ice::hashmap::count(_resources));
+        out_changes.reserve(out_changes.size() + ice::hashmap::count(_resources));
         for (auto* resource : _resources)
         {
             ice::array::push_back(out_changes, resource);
@@ -333,7 +333,7 @@ namespace ice
     {
         ice::WritableFileSystemResource* const resource = static_cast<ice::WritableFileSystemResource*>(fs_resource);
 
-        resource->data_index = ice::array::count(_resources_data);
+        resource->data_index = _resources_data.size().u32();
         ice::array::push_back(_resources_data, ice::Memory{});
 
         ice::u64 const hash = ice::hash(resource->origin());

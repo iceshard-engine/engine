@@ -63,7 +63,7 @@ namespace ice::devui
     {
         // TODO: ice::array::remove_at
 
-        ice::u32 const count = ice::array::count(_widgets);
+        ice::u32 const count = _widgets.size().u32();
         if (count == 0)
         {
             return;

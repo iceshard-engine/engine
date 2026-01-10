@@ -236,7 +236,7 @@ namespace ice::devui
         using namespace ice::render;
 
         ImDrawData* draw_data = ImGui::GetDrawData();
-        if (draw_data == nullptr || ice::array::empty(draw_commands))
+        if (draw_data == nullptr || draw_commands.is_empty())
         {
             return;
         }

@@ -131,7 +131,7 @@ namespace ice
         void add_step(ActionBuilderStep&& step) noexcept
         {
             ice::array::push_back(
-                ice::array::back(conditions).steps,
+                conditions.last().steps,
                 ice::move(step)
             );
         }
@@ -143,7 +143,7 @@ namespace ice
 
         void finalize() noexcept
         {
-            ActionBuilderCondition& final_condition = ice::array::back(conditions);
+            ActionBuilderCondition& final_condition = conditions.last();
 
             // Ensure this series is finished after this condition.
             final_condition.flags |= InputActionConditionFlags::SeriesFinish;
@@ -182,7 +182,7 @@ namespace ice
         auto add_condition_series() noexcept -> InputActionBuilder::ConditionSeries
         {
             ice::array::push_back(cond_series, Internal<InputActionBuilder::ConditionSeries>{ allocator });
-            Internal<InputActionBuilder::ConditionSeries>* const series_ptr = ice::addressof(ice::array::back(cond_series));
+            Internal<InputActionBuilder::ConditionSeries>* const series_ptr = ice::addressof(cond_series.last());
             return { series_ptr };
         }
 
@@ -328,7 +328,7 @@ namespace ice
                     idx_found
                 );
 
-                ICE_ASSERT_CORE(found && idx_found < ice::array::count(final_sources));
+                ICE_ASSERT_CORE(found && idx_found < final_sources.size());
                 ice::u16 const source_storage_idx = final_sources[idx_found].storage_offset;
                 return source_storage_idx;
             };
@@ -349,7 +349,7 @@ namespace ice
                     idx_found
                 );
 
-                ICE_ASSERT_CORE(found && idx_found < ice::array::count(final_actions));
+                ICE_ASSERT_CORE(found && idx_found < final_actions.size());
                 return ice::u16(idx_found);
             };
 
@@ -437,7 +437,7 @@ namespace ice
                     }
                 } // for (ConditionSeries& series : ...)
 
-                modifier_count = ice::u8(ice::count(action.modifiers));
+                modifier_count = action.modifiers.size().u8();
                 ice::array::push_back(final_modifiers, action.modifiers);
 
                 ice::array::push_back(final_actions,
@@ -460,19 +460,19 @@ namespace ice
             ice::Array<ice::InputActionConstantInfo> final_constants{ alloc };
             for (auto [constant, value] : _constants)
             {
-                ice::u8 const offset = (ice::u8) ice::count(final_constant_values);
+                ice::u8 const offset = final_constant_values.size().u8();
                 ice::array::push_back(final_constants, { .identifier = constant, .offset = offset });
                 ice::array::push_back(final_constant_values, value);
             }
 
             ice::InputActionLayerInfoHeader final_info{
                 .size_name = _name.size().u8(),
-                .count_constants = ice::u8(ice::count(final_constants)),
-                .count_sources = ice::u16(ice::count(final_sources)),
-                .count_actions = ice::u16(ice::count(final_actions)),
-                .count_conditions = ice::u16(ice::count(final_conditions)),
-                .count_steps = ice::u16(ice::count(final_steps)),
-                .count_modifiers = ice::u16(ice::count(final_modifiers)),
+                .count_constants = final_constants.size().u8(),
+                .count_sources = final_sources.size().u16(),
+                .count_actions = final_actions.size().u16(),
+                .count_conditions = final_conditions.size().u16(),
+                .count_steps = final_steps.size().u16(),
+                .count_modifiers = final_modifiers.size().u16(),
                 .offset_strings = 0,
             };
 
@@ -483,7 +483,7 @@ namespace ice
             ice::usize const offset_conditions = minfo_layer += ice::array::meminfo(final_conditions);
             ice::usize const offset_steps = minfo_layer += ice::array::meminfo(final_steps);
             ice::usize const offset_modifiers = minfo_layer += ice::array::meminfo(final_modifiers);
-            ice::usize const offset_constant_values = minfo_layer += ice::meminfo_of<ice::f32> * ice::count(final_constant_values);
+            ice::usize const offset_constant_values = minfo_layer += ice::meminfo_of<ice::f32> * final_constant_values.size();
             ice::usize const offset_constants = minfo_layer += ice::array::meminfo(final_constants);
             ice::usize const offset_strings = minfo_layer += strings.meminfo();
             final_info.offset_strings = ice::u32(offset_strings.value);
@@ -592,11 +592,11 @@ namespace ice
     {
         if (can_finalize_condition_checks)
         {
-            ice::array::back(internal().conditions).flags |= InputActionConditionFlags::Final;
+            internal().conditions.last().flags |= InputActionConditionFlags::Final;
         }
         else
         {
-            ice::array::back(internal().conditions).flags |= InputActionConditionFlags::SeriesFinish;
+            internal().conditions.last().flags |= InputActionConditionFlags::SeriesFinish;
         }
     }
 

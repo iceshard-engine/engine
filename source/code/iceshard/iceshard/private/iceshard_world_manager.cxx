@@ -120,7 +120,7 @@ namespace ice
             if (desc != nullptr)
             {
                 ice::UniquePtr<ice::IceshardTraitContext> trait_context = ice::make_unique<ice::IceshardTraitContext>(
-                    world_context->allocator(), *world_context.get(), ice::array::count(world_traits)
+                    world_context->allocator(), *world_context.get(), world_traits.size().u32()
                 );
                 ice::UniquePtr<ice::Trait> trait = desc->fn_factory(world_context->allocator(), *trait_context.get(), desc->fn_factory_userdata);
                 if (trait != nullptr)

@@ -91,13 +91,13 @@ namespace ice
             }
 
             // If empty we add our own handle to the list
-            if (ice::array::empty(sources))
+            if (sources.is_empty())
             {
                 ice::array::push_back(sources, resource);
             }
 
             ice::Array<ice::Task<>> tasks{ alloc };
-            ice::array::reserve(tasks, ice::array::count(sources));
+            ice::array::reserve(tasks, sources.size());
 
             auto fn_validate = [&ctx](
                 ice::ResourceCompiler const& compiler,
@@ -130,7 +130,7 @@ namespace ice
             }
 
             ice::Array<ice::ResourceCompilerResult> compiled_sources{ alloc };
-            ice::array::resize(compiled_sources, ice::array::count(sources));
+            compiled_sources.resize(sources.size());
 
             auto fn_compile = [&ctx](
                 ice::ResourceCompiler const& compiler,

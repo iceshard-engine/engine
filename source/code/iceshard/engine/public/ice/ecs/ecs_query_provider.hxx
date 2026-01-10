@@ -79,7 +79,7 @@ namespace ice::ecs
     {
         using Part = ice::ecs::detail::QueryObjectPart<RefIdx, QueryComponents...>;
 
-        ice::u32 const prev_arch_count = ice::count(out_instance_infos);
+        ice::u32 const prev_arch_count = out_instance_infos.size().u32();
 
         this->query_internal(
             ice::make_span(Part::Definition::Constant_Requirements),
@@ -89,14 +89,14 @@ namespace ice::ecs
             out_data_blocks
         );
 
-        ice::u32 const new_arch_count = ice::count(out_instance_infos);
+        ice::u32 const new_arch_count = out_instance_infos.size().u32();
         out_archetype_count = new_arch_count - prev_arch_count;
 
-        ice::u32 const prev_arim_count = ice::count(out_argument_idx_map);
-        ice::array::resize(out_argument_idx_map, prev_arim_count + out_archetype_count * Part::ComponentCount);
+        ice::u32 const prev_arim_count = out_argument_idx_map.size().u32();
+        out_argument_idx_map.resize(prev_arim_count + out_archetype_count * Part::ComponentCount);
 
         // Copy values to the array
-        ice::u32* it = ice::array::begin(out_argument_idx_map) + prev_arim_count;
+        ice::u32* it = out_argument_idx_map.begin() + prev_arim_count;
         for (ice::ecs::detail::ArchetypeInstanceInfo const* instance : ice::array::slice(out_instance_infos, prev_arch_count))
         {
             auto const archetype_argument_idx_map = ice::ecs::detail::make_argument_idx_map<QueryComponents...>(*instance);

@@ -14,7 +14,7 @@ namespace ice
         IceshardTaskExecutor::TaskList tasks
     ) noexcept
         : _allocator{ alloc }
-        , _task_count{ ice::count(tasks) }
+        , _task_count{ tasks.size().u32() }
         , _tasks{ ice::move(tasks) }
         , _sync_sem{ 0 }
     {
@@ -55,10 +55,10 @@ namespace ice
 
     void IceshardTaskExecutor::wait_ready() noexcept
     {
-        if (ice::array::any(_tasks))
+        if (_tasks.not_empty())
         {
             _sync_sem.wait();
-            ice::array::clear(_tasks);
+            _tasks.clear();
         }
     }
 

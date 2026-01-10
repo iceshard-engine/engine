@@ -392,7 +392,7 @@ namespace ice
             while (it != end && valid)
             {
                 std::string_view const result{ *it };
-                if (ice::count(ice_results) == result_count || result.empty())
+                if (ice_results.size() == result_count || result.empty())
                 {
                     valid &= ice_callback(ice_userdata, ice_results);
                     ice::array::clear(ice_results);

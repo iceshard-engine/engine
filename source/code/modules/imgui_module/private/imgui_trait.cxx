@@ -530,7 +530,7 @@ namespace ice::devui
                 }
 
                 ice::array::push_back(out_draw_cmds, ImGuiGfxStage::DrawCommand{});
-                ImGuiGfxStage::DrawCommand& cmd = ice::array::back(out_draw_cmds);
+                ImGuiGfxStage::DrawCommand& cmd = out_draw_cmds.last();
                 cmd.resource_set_idx = curr_resource_idx;
 
                 ImVec4 clip_rect;

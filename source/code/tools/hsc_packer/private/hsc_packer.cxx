@@ -162,7 +162,7 @@ public:
                     for (ice::String ext : extensions)
                     {
                         ice::array::push_back(_filter_extensions_heap, { _allocator, ext });
-                        ice::array::push_back(_filter_extensions, ice::array::back(_filter_extensions_heap));
+                        ice::array::push_back(_filter_extensions, _filter_extensions_heap.last());
                     }
                 }
                 HSCP_ERROR_IF(
@@ -176,7 +176,7 @@ public:
             }
         }
 
-        if (ice::array::empty(_filter_extensions))
+        if (_filter_extensions.is_empty())
         {
             HSCP_ERROR("No valid configuration files where provided.");
             return 1;
@@ -237,8 +237,8 @@ public:
         _param_output = hscp_process_directory(_allocator, _param_output);
 
         // The paths that will be searched for loose file resources.
-        ice::Array<ice::ResourceFileEntry> files{ _allocator,  };
-        ice::array::reserve(files, ice::count(_inputs));
+        ice::Array<ice::ResourceFileEntry> files{ _allocator };
+        files.reserve(_inputs.size());
         for (ice::String file : _inputs)
         {
             ice::array::push_back(files, { .path = file });
@@ -283,10 +283,10 @@ public:
         ice::Array<ice::ResourceHandle> resource_handles{ _allocator };
         ice::Array<std::string_view> resource_paths{ _allocator };
 
-        ice::array::resize(resource_data, resources.size().u32());
-        ice::array::resize(resource_metamap, resources.size().u32());
-        ice::array::resize(resource_handles, resources.size().u32());
-        ice::array::resize(resource_paths, resources.size().u32());
+        resource_data.resize(resources.size());
+        resource_metamap.resize(resources.size());
+        resource_handles.resize(resources.size());
+        resource_paths.resize(resources.size());
 
         // We serialize an empty meta object
         ice::ConfigBuilder meta{ _allocator };

@@ -140,7 +140,7 @@ namespace ice
         {
             ice::array::push_back(out_layers, layer.layer);
         }
-        return ice::count(_layers);
+        return _layers.size().u32();
     }
 
     auto SimpleInputActionStack::register_layer(
@@ -159,12 +159,12 @@ namespace ice
             return S_LayerAlreadyRegistered;
         }
 
-        layer_idx = ice::count(_layers);
+        layer_idx = _layers.size().u32();
 
         // We reserve enough space to store all actual indices for accessed layer sources.
-        ice::u32 const layer_sources_count = layer->sources().size().u32();
-        ice::u32 const layer_sources_offset = ice::count(_layers_sources_indices);
-        ice::array::reserve(_layers_sources_indices, layer_sources_offset + layer_sources_count);
+        ice::ncount const layer_sources_count = layer->sources().size().u32();
+        ice::ncount const layer_sources_offset = _layers_sources_indices.size();
+        _layers_sources_indices.reserve(layer_sources_offset + layer_sources_count);
 
         // Go through each resource and set the indices
         ice::u64 prev_name_hash = 0;
@@ -197,7 +197,7 @@ namespace ice
             }
             else
             {
-                values_index = ice::array::count(_sources_runtime_values);
+                values_index = _sources_runtime_values.size().u32();
 
                 ice::array::push_back(_sources_runtime_values, InputActionSource{});
                 // If we have an Axis2d source, we need to actually push back two values for both axis
@@ -247,7 +247,7 @@ namespace ice
         // Stores the layer along with a ref where it's indices for all sources are stored.
         ice::array::push_back(
             _layers,
-            StackLayer{ layer, { ice::u16(layer_sources_offset), ice::u16(ice::count(_layers_sources_indices) - layer_sources_offset) } }
+            StackLayer{ layer, { layer_sources_offset.u16(), (_layers_sources_indices.size() - layer_sources_offset).u16() } }
         );
         return S_Ok;
     }
@@ -264,7 +264,7 @@ namespace ice
             ice::array::push_back(out_layers, _layers[it->index].layer);
             it += 1;
         }
-        return ice::count(_layers_active);
+        return _layers_active.size().u32();
     }
 
     void SimpleInputActionStack::push_layer(
@@ -279,7 +279,7 @@ namespace ice
         }
 
         // Check if we are already at the top of the stack.
-        if (ice::array::any(_layers_active) && ice::array::back(_layers_active).index == idx)
+        if (_layers_active.not_empty() && _layers_active.last().index == idx)
         {
             return; // #TODO: Implement success with info.
         }

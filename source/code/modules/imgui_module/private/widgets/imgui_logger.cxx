@@ -78,7 +78,7 @@ namespace ice::devui
     void ImGuiLogger::add_entry(ice::LogSinkMessage const& message) noexcept
     {
         std::lock_guard lk{ mtx };
-        ice::array::push_back(_entries_visible, ice::array::count(_entries));
+        ice::array::push_back(_entries_visible, _entries.size().u32());
         ice::array::push_back(_entries, { message.severity, message.tag, message.tag_name, {LoggerAlloc,message.message} });
     }
 

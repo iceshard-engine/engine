@@ -56,7 +56,7 @@ namespace ice::ecs
 
     auto EntityIndex::count() const noexcept -> ice::u32
     {
-        return ice::array::count(_generation) - ice::queue::count(_free_indices);
+        return _generation.size().u32() - ice::queue::count(_free_indices);
     }
 
     bool EntityIndex::is_alive(ice::ecs::Entity entity) const noexcept
@@ -64,12 +64,12 @@ namespace ice::ecs
         using ice::ecs::EntityInfo;
 
         EntityInfo const info = ice::ecs::entity_info(entity);
-        return ice::count(_generation) > info.index && _generation[info.index] == info.generation;
+        return _generation.size() > info.index && _generation[info.index] == info.generation;
     }
 
     auto EntityIndex::create() noexcept -> ice::ecs::Entity
     {
-        ice::u32 index = 0;
+        ice::nindex index = 0;
 
         if (ice::queue::count(_free_indices) >= ice::ecs::Constant_MinimumFreeIndicesBeforeReuse)
         {
@@ -78,11 +78,11 @@ namespace ice::ecs
         }
         else
         {
-            index = ice::array::count(_generation);
+            index = _generation.size();
             ice::array::push_back(_generation, ice::u8{ 0 });
         }
 
-        return ice::ecs::detail::make_entity(index, _generation[index]);
+        return ice::ecs::detail::make_entity(index.u32(), _generation[index]);
     }
 
     bool EntityIndex::create_many(ice::Span<ice::ecs::Entity> out_entities) noexcept
@@ -109,7 +109,7 @@ namespace ice::ecs
             total_indices_taken += indices_taken;
         }
 
-        ice::u32 gen_index = ice::array::count(_generation);
+        ice::u32 gen_index = _generation.size().u32();
         ice::u32 const missing_entities = out_entities.size().u32() - total_indices_taken;
         ice::u32 const final_index = gen_index + missing_entities;
 
@@ -120,7 +120,7 @@ namespace ice::ecs
                 "Moved past the maximum allowed number of entities!"
             );
 
-            ice::array::resize(_generation, final_index);
+            _generation.resize(final_index);
         }
 
         while (gen_index < final_index)

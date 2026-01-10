@@ -346,7 +346,7 @@ namespace ice
             return;
         }
 
-        ice::u32 const new_count = ice::hashmap::count(_resources) + ice::array::count(out_resources);
+        ice::u32 const new_count = ice::hashmap::count(_resources) + out_resources.size().u32();
         ICE_ASSERT(
             new_count <= _info.predicted_resource_count,
             "Maximum resource capacity of {} entiries reached!",
