@@ -71,13 +71,13 @@ namespace ice::container
         template<ice::concepts::Container Self>
         constexpr auto rbegin(this Self&& self) noexcept -> ice::container::ReverseIterator<Self>
         {
-            return { self.data() + self.size() };
+            return ice::container::ReverseIterator<Self>{ self.data() + self.size() };
         }
 
         template<ice::concepts::Container Self>
         constexpr auto rend(this Self&& self) noexcept -> ice::container::ReverseIterator<Self>
         {
-            return { self.data() };
+            return ice::container::ReverseIterator<Self>{ self.data() };
         }
 
         // Operators
@@ -85,6 +85,21 @@ namespace ice::container
         constexpr auto operator[](this Self&& self, ice::nindex index) noexcept -> ice::container::ValueRef<Self>
         {
             return self.data()[index];
+        }
+
+        // Data API
+        template<ice::concepts::Container Self>
+        inline auto meminfo(this Self const& self) noexcept -> ice::meminfo
+        {
+            return ice::meminfo_of<typename Self::ValueType> * self.size();
+        }
+
+        template<ice::concepts::ResizableContainer Self> requires (ice::concepts::TrivialContainerLogic<Self>)
+        inline auto memset(this Self const& self, ice::u8 value) noexcept -> ice::Memory
+        {
+            ice::Memory mem{ self.data(), self.size(), ice::align_of<ice::container::ValueType<Self>> };
+            ice::memset(mem.location, value, mem.size.value);
+            return mem;
         }
     };
 

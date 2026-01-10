@@ -20,11 +20,11 @@ SCENARIO("collections 'ice/container/array.hxx'", "[collection][array][complex]"
         CHECK(objects.size() == 0);
 
         // We force a capacity of 1, so we ensure a reallocation in later.
-        ice::array::set_capacity(objects, 1);
+        objects.set_capacity(1);
 
         WHEN("adding a new object")
         {
-            ice::array::push_back(objects, Test_TrackingObject{ });
+            objects.push_back(Test_TrackingObject{ });
 
             REQUIRE(objects.capacity() >= 1);
             REQUIRE(objects.size() == 1);
@@ -51,7 +51,7 @@ SCENARIO("collections 'ice/container/array.hxx'", "[collection][array][complex]"
                 ice::u32 dtor_val = 0;
                 obj.data.test_dtor = &dtor_val;
 
-                ice::array::resize(objects, 10);
+                objects.resize(10);
 
                 // The old object was moved to a new location (move ctor + dtor)
                 CHECK(dtor_val == 1);
@@ -98,7 +98,7 @@ SCENARIO("collections 'ice/container/array.hxx'", "[collection][array][complex]"
                             object.data.test_dtor = &dtor_val;
                         }
 
-                        ice::array::clear(objects);
+                        objects.clear();
 
                         CHECK(dtor_val == 20);
                         CHECK(objects.capacity() > 0);
@@ -160,7 +160,7 @@ SCENARIO("collections 'ice/container/array.hxx' (POD)", "[collection][array][pod
 
         WHEN("one element is pushed")
         {
-            ice::array::push_back(objects, test_value_1);
+            objects.push_back(test_value_1);
 
             CHECK(objects.size() == 1);
             CHECK(objects.not_empty() == true);
@@ -177,7 +177,7 @@ SCENARIO("collections 'ice/container/array.hxx' (POD)", "[collection][array][pod
 
                 THEN("array is shrunk")
                 {
-                    ice::array::shrink(objects);
+                    objects.shrink();
 
                     REQUIRE(objects.size() == 0);
                     REQUIRE(objects.capacity() == 0);
@@ -198,7 +198,7 @@ SCENARIO("collections 'ice/container/array.hxx' (POD)", "[collection][array][pod
         {
             for (ice::i32 i = 0; i < 100; ++i)
             {
-                ice::array::push_back(objects, test_value_2 + i);
+                objects.push_back(test_value_2 + i);
             }
 
             CHECK(objects.size() == 100);
@@ -219,7 +219,7 @@ SCENARIO("collections 'ice/container/array.hxx' (POD)", "[collection][array][pod
 
                 THEN("array is shrunk")
                 {
-                    ice::array::shrink(objects);
+                    objects.shrink();
 
                     CHECK(objects.not_empty() == true);
                     CHECK(objects.is_empty() == false);
@@ -281,7 +281,7 @@ SCENARIO("collections 'ice/container/array.hxx' (POD)", "[collection][array][pod
 
                 THEN("we can add new items")
                 {
-                    ice::array::push_back(objects, 100);
+                    objects.push_back(100);
 
                     CHECK(objects.size() == 1);
                     REQUIRE(objects[0] == 100);
@@ -299,7 +299,7 @@ SCENARIO("collections 'ice/container/array.hxx' (POD)", "[collection][array][pod
 
                 THEN("we can add new items")
                 {
-                    ice::array::push_back(objects, 100);
+                    objects.push_back(100);
 
                     CHECK(objects.size() == 1);
                     REQUIRE(objects[0] == 100);
