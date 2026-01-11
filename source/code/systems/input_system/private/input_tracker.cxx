@@ -155,7 +155,7 @@ namespace ice::input
     {
         for (InputDevice* device : _devices)
         {
-            ice::array::push_back(devices_out, device->handle());
+            devices_out.push_back(device->handle());
         }
     }
 

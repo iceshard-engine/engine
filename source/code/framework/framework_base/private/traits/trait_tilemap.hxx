@@ -6,7 +6,7 @@
 #include <ice/game_physics.hxx>
 #include <ice/game_tilemap.hxx>
 
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 
 namespace ice
 {

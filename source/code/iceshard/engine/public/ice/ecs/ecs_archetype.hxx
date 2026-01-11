@@ -110,7 +110,7 @@ namespace ice::ecs
             component_alignments[idx] = sorted_components[idx - 1].alignment;
         }
 
-        identifier = ice::ecs::detail::make_archetype_identifier(ice::span::from_std_const(component_identifiers));
+        identifier = ice::ecs::detail::make_archetype_identifier(ice::make_span(component_identifiers));
     }
 
     template<ice::ecs::Component... Components>
@@ -125,9 +125,9 @@ namespace ice::ecs
     ) noexcept
         : name{ archetype_info.name }
         , identifier{ archetype_info.identifier }
-        , component_identifiers{ ice::span::from_std_const(archetype_info.component_identifiers) }
-        , component_sizes{ ice::span::from_std_const(archetype_info.component_sizes) }
-        , component_alignments{ ice::span::from_std_const(archetype_info.component_alignments) }
+        , component_identifiers{ ice::make_span(archetype_info.component_identifiers) }
+        , component_sizes{ ice::make_span(archetype_info.component_sizes) }
+        , component_alignments{ ice::make_span(archetype_info.component_alignments) }
     {
     }
 

@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <stdlib.h>
@@ -29,7 +29,7 @@ namespace ice
             {
                 ice::usize const filesize = ice::native_file::sizeof_file(handle);
                 ICE_ASSERT(
-                    filesize.value < ice::ucount_max,
+                    filesize.value < ice::u32_max,
                     "Trying to load file larger than supported!"
                 );
 

@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "asset_storage.hxx"
@@ -45,13 +45,13 @@ namespace ice
             ice::ResourceHandle resource;
 
             ice::u32 ext_idx = 0;
-            ice::u32 const ext_count = ice::count(definition.resource_extensions);
-            ice::u32 const temp_name_len = ice::size(temp_name);
+            ice::u32 const ext_count = definition.resource_extensions.size().u32();
+            ice::u32 const temp_name_len = temp_name.size().u32();
             while (resource == nullptr && ext_idx < ext_count)
             {
                 ice::String const extension = definition.resource_extensions[ext_idx++];
-                ice::string::resize(temp_name, temp_name_len);
-                ice::string::push_back(temp_name, extension);
+                temp_name.resize(temp_name_len);
+                temp_name.push_back(extension);
 
                 ice::URI const uri{ Scheme_URN, temp_name };
                 resource = resource_tracker.find_resource(uri, ice::ResourceFlags::None);
@@ -91,13 +91,13 @@ namespace ice
             }
 
             // If empty we add our own handle to the list
-            if (ice::array::empty(sources))
+            if (sources.is_empty())
             {
-                ice::array::push_back(sources, resource);
+                sources.push_back(resource);
             }
 
             ice::Array<ice::Task<>> tasks{ alloc };
-            ice::array::reserve(tasks, ice::array::count(sources));
+            tasks.reserve(sources.size());
 
             auto fn_validate = [&ctx](
                 ice::ResourceCompiler const& compiler,
@@ -116,12 +116,12 @@ namespace ice
             std::atomic_bool all_sources_valid = true;
             for (ice::ResourceHandle const& source : sources)
             {
-                ice::array::push_back(tasks, fn_validate(compiler, source, resource_tracker, all_sources_valid));
+                tasks.push_back(fn_validate(compiler, source, resource_tracker, all_sources_valid));
             }
 
             co_await ice::await_tasks(tasks);
 
-            ice::array::clear(tasks);
+            tasks.clear();
 
             // Validation failed
             if (all_sources_valid == false)
@@ -130,7 +130,7 @@ namespace ice
             }
 
             ice::Array<ice::ResourceCompilerResult> compiled_sources{ alloc };
-            ice::array::resize(compiled_sources, ice::array::count(sources));
+            compiled_sources.resize(sources.size());
 
             auto fn_compile = [&ctx](
                 ice::ResourceCompiler const& compiler,
@@ -156,8 +156,7 @@ namespace ice
             ice::u32 source_idx = 0;
             for (ice::ResourceHandle const& source : sources)
             {
-                ice::array::push_back(
-                    tasks,
+                tasks.push_back(
                     fn_compile(
                         compiler,
                         source,
@@ -241,7 +240,7 @@ namespace ice
         , _devui_widget{ }
     {
         ice::Span<ice::AssetCategory const> categories = _asset_archive->categories();
-        ice::hashmap::reserve(_asset_shelves, ice::count(categories));
+        ice::hashmap::reserve(_asset_shelves, categories.size().u32());
 
         ice::Array<ice::UniquePtr<ice::AssetShelve::DevUI>> shelves{ _allocator };
         for (ice::AssetCategory_Arg category : categories)
@@ -256,7 +255,7 @@ namespace ice
 
             if constexpr (ice::build::is_debug || ice::build::is_develop)
             {
-                ice::array::push_back(shelves, ice::make_unique<AssetShelve::DevUI>(_allocator, *shelve));
+                shelves.push_back(ice::make_unique<AssetShelve::DevUI>(_allocator, *shelve));
             }
         }
 

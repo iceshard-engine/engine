@@ -1,8 +1,8 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/ecs/ecs_archetype_index.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <ice/container/hashmap.hxx>
 #include <ice/assert.hxx>
 #include <ice/log.hxx>
@@ -36,9 +36,9 @@ namespace ice::ecs
         {
             using QueryTypeInfo = ice::ecs::detail::QueryTypeInfo;
 
-            ice::u32 const tag_count = ice::count(in_required_tags);
-            ice::u32 const condition_count = ice::count(in_conditions);
-            ice::u32 const identifier_count = ice::count(checked_identifiers);
+            ice::u32 const tag_count = in_required_tags.size().u32();
+            ice::u32 const condition_count = in_conditions.size().u32();
+            ice::u32 const identifier_count = checked_identifiers.size().u32();
             ice::u32 const identifier_last_index = identifier_count - 1;
 
             ice::u32 tag_idx = 0;
@@ -121,12 +121,12 @@ namespace ice::ecs
             ice::usize& offset_values_out
         ) noexcept -> ice::meminfo
         {
-            ice::ucount const component_count = ice::span::count(info.component_identifiers);
+            ice::u32 const component_count = info.component_identifiers.size().u32();
 
             ice::meminfo result = ice::meminfo_of<ArchetypeDataHeader>;
-            offset_name_out = result += ice::meminfo_of<ice::utf8> * (ice::string::size(name) + 1);
+            offset_name_out = result += ice::meminfo_of<ice::utf8> * (name.size() + 1);
             offset_ids_out = result += ice::meminfo_of<ice::StringID> * component_count;
-            offset_values_out = result += ice::meminfo_of<ice::ucount> * component_count * 3; // 3 = size, alignment, offset
+            offset_values_out = result += ice::meminfo_of<ice::u32> * component_count * 3; // 3 = size, alignment, offset
             return result;
         }
 
@@ -146,13 +146,13 @@ namespace ice::ecs
         , _archetype_names_index{ _allocator }
         , _archetype_data{ _allocator }
     {
-        ice::array::reserve(_archetype_data, ice::ecs::Constant_MaxArchetypeCount);
-        ice::array::push_back(_archetype_data, nullptr);
+        _archetype_data.reserve(ice::ecs::Constant_MaxArchetypeCount);
+        _archetype_data.push_back(nullptr);
     }
 
     ArchetypeIndex::~ArchetypeIndex() noexcept
     {
-        for (ArchetypeDataHeader* header : ice::array::slice(_archetype_data, 1))
+        for (ArchetypeDataHeader* header : _archetype_data.tailspan())
         {
             ice::usize const size = ArchetypeDataHeader::calculate_meminfo(header->archetype_name, header->archetype_info);
             _allocator.deallocate(
@@ -167,7 +167,7 @@ namespace ice::ecs
 
     auto ArchetypeIndex::registered_archetype_count() const noexcept -> ice::u32
     {
-        return ice::array::count(_archetype_data);
+        return _archetype_data.size().u32();
     }
 
     auto ArchetypeIndex::register_archetype(
@@ -191,7 +191,7 @@ namespace ice::ecs
             data_block_pool = _default_block_pool.get();
         }
 
-        ice::u32 const component_count = ice::count(archetype_info.component_identifiers);
+        ice::u32 const component_count = archetype_info.component_identifiers.size().u32();
 
         ICE_ASSERT(
             component_count >= 2,
@@ -227,10 +227,10 @@ namespace ice::ecs
         {
             // Copy archetype name
             ice::memset(mem_archetype_name, 0);
-            ice::memcpy(mem_archetype_name, ice::string::data_view(archetype_info.name));
+            ice::memcpy(mem_archetype_name, archetype_info.name.data_view());
 
             // Copy the component idnetifiers
-            ice::memcpy(mem_component_data, ice::span::data_view(archetype_info.component_identifiers));
+            ice::memcpy(mem_component_data, archetype_info.component_identifiers.data_view());
             component_identifiers = reinterpret_cast<ice::StringID const*>(mem_component_data.location);
 
             // Calculate where we start storing the u32 values...
@@ -238,12 +238,12 @@ namespace ice::ecs
 
             // Copy the size and alignment.
             component_sizes = reinterpret_cast<ice::u32 const*>(mem_component_data.location);
-            ice::memcpy(mem_component_data, ice::span::data_view(archetype_info.component_sizes));
-            mem_component_data = ice::ptr_add(mem_component_data, ice::span::size_bytes(archetype_info.component_sizes));
+            ice::memcpy(mem_component_data, archetype_info.component_sizes.data_view());
+            mem_component_data = ice::ptr_add(mem_component_data, archetype_info.component_sizes.size());
 
             component_alignments = reinterpret_cast<ice::u32 const*>(mem_component_data.location);
-            ice::memcpy(mem_component_data, ice::span::data_view(archetype_info.component_alignments));
-            mem_component_data = ice::ptr_add(mem_component_data, ice::span::size_bytes(archetype_info.component_alignments));
+            ice::memcpy(mem_component_data, archetype_info.component_alignments.data_view());
+            mem_component_data = ice::ptr_add(mem_component_data, archetype_info.component_alignments.size());
 
             // Save location to store calculated offsets
             component_offsets = reinterpret_cast<ice::u32*>(mem_component_data.location);
@@ -255,7 +255,7 @@ namespace ice::ecs
             );
         }
 
-        data_header->archetype_name = ice::String{ (char const*) mem_archetype_name.location, ice::size(archetype_info.name) };
+        data_header->archetype_name = ice::String{ (char const*) mem_archetype_name.location, archetype_info.name.size() };
         data_header->archetype_identifier = archetype_info.identifier;
         data_header->archetype_info.data_block_filter = data_block_filter;
         data_header->archetype_info.component_identifiers = ice::Span<ice::StringID const>{ component_identifiers, component_count };
@@ -267,7 +267,7 @@ namespace ice::ecs
         // We need now to calculate the number of entities that we can store in the remaining memory.
         //  Additionally calculate the offets each component array will be located at.
         {
-            ice::ucount const component_entity_count_max = ice::ecs::detail::calculate_entity_count_for_space(
+            ice::u32 const component_entity_count_max = ice::ecs::detail::calculate_entity_count_for_space(
                 data_header->archetype_info,
                 data_block_pool->provided_block_size()
             );
@@ -296,14 +296,14 @@ namespace ice::ecs
             }
         }
 
-        ice::u32 const archetype_index = ice::array::count(_archetype_data);
+        ice::u32 const archetype_index = _archetype_data.size().u32();
         data_header->archetype_info.archetype_instance = ice::ecs::detail::ArchetypeInstance{ archetype_index };
 
-        ice::array::push_back(_archetype_data, data_header);
+        _archetype_data.push_back(data_header);
         ice::hashmap::set(_archetype_index, ice::hash(archetype_info.identifier), archetype_index);
 
         // Save the 'index' for the given name
-        if (ice::string::any(data_header->archetype_name))
+        if (data_header->archetype_name.not_empty())
         {
             ice::hashmap::set(_archetype_names_index, ice::hash(data_header->archetype_name), archetype_index);
         }
@@ -315,7 +315,7 @@ namespace ice::ecs
         ice::String name
     ) const noexcept -> ice::ecs::Archetype
     {
-        ice::u32 const instance_count = ice::array::count(_archetype_data);
+        ice::u32 const instance_count = _archetype_data.size().u32();
         ice::u32 const instance_idx = ice::hashmap::get(_archetype_names_index, ice::hash(name), ice::u32_max);
         if (instance_idx >= instance_count)
         {
@@ -331,16 +331,16 @@ namespace ice::ecs
         ice::Span<ice::StringID const> query_tags
     ) const noexcept
     {
-        ice::array::clear(out_archetypes);
+        out_archetypes.clear();
 
         // We need to skip the first query entry if it's for `ice::ecs::Entity`
         // This is due to the fact that it's always there and is not taken into account when sorting components by identifiers.
-        if (ice::span::front(query_info).identifier == ice::ecs::Constant_ComponentIdentifier<ice::ecs::Entity>)
+        if (query_info.first().identifier == ice::ecs::Constant_ComponentIdentifier<ice::ecs::Entity>)
         {
-            query_info = ice::span::subspan(query_info, 1);
+            query_info = query_info.subspan(1);
         }
 
-        ice::u32 const required_tag_count = ice::count(query_tags);
+        ice::u32 const required_tag_count = query_tags.size().u32();
         ice::u32 const required_component_count = [](auto const& query_conditions) noexcept -> ice::u32
         {
             ice::u32 result = 0;
@@ -358,11 +358,11 @@ namespace ice::ecs
         );
 
         ice::u32 const total_required_type_count = required_component_count + required_tag_count;
-        for (ArchetypeDataHeader const* entry : ice::array::slice(_archetype_data, 1))
+        for (ArchetypeDataHeader const* entry : _archetype_data.tailspan())
         {
             ice::ecs::detail::ArchetypeInstanceInfo const& archetype_info = entry->archetype_info;
 
-            ice::u32 const archetype_component_count = ice::count(archetype_info.component_identifiers);
+            ice::u32 const archetype_component_count = archetype_info.component_identifiers.size().u32();
             if (archetype_component_count < total_required_type_count)
             {
                 continue;
@@ -378,7 +378,7 @@ namespace ice::ecs
             //  #todo: we should probably also check for the existance of the EntityHandle in the query. Then the check should be `> 1`
             if (was_matched)
             {
-                ice::array::push_back(out_archetypes, entry->archetype_identifier);
+                out_archetypes.push_back(entry->archetype_identifier);
             }
         }
     }
@@ -389,11 +389,11 @@ namespace ice::ecs
     ) const noexcept
     {
         ICE_ASSERT(
-            ice::count(archetypes) == ice::count(out_instance_infos),
+            archetypes.size() == out_instance_infos.size(),
             "Archetype instance fetch called with different input and output array sizes."
         );
 
-        ice::u32 const instance_count = ice::array::count(_archetype_data);
+        ice::u32 const instance_count = _archetype_data.size().u32();
 
         ice::u32 archetype_idx = 0;
         for (Archetype archetype : archetypes)
@@ -417,11 +417,11 @@ namespace ice::ecs
     ) const noexcept
     {
         ICE_ASSERT(
-            ice::count(archetype_instances) == ice::count(out_instance_infos),
+            archetype_instances.size() == out_instance_infos.size(),
             "Archetype instance fetch called with different input and output array sizes."
         );
 
-        ice::u32 const instance_count = ice::array::count(_archetype_data);
+        ice::u32 const instance_count = _archetype_data.size().u32();
 
         ice::u32 archetype_idx = 0;
         for (ice::ecs::detail::ArchetypeInstance archetype_instance : archetype_instances)
@@ -443,7 +443,7 @@ namespace ice::ecs
         ice::ecs::detail::ArchetypeInstanceInfo const*& out_instance_info
     ) const noexcept
     {
-        ice::u32 const instance_count = ice::array::count(_archetype_data);
+        ice::u32 const instance_count = _archetype_data.size().u32();
         ice::u32 const instance_idx = index;
 
         if (instance_idx < instance_count)
@@ -464,7 +464,7 @@ namespace ice::ecs
         ice::ecs::detail::DataBlockPool*& out_block_pool
     ) const noexcept
     {
-        ice::u32 const instance_count = ice::array::count(_archetype_data);
+        ice::u32 const instance_count = _archetype_data.size().u32();
         ice::u32 const instance_idx = ice::hashmap::get(_archetype_index, ice::hash(archetype), ice::u32_max);
 
         if (instance_idx < instance_count)
@@ -486,7 +486,7 @@ namespace ice::ecs
         ice::ecs::detail::DataBlockPool*& out_block_pool
     ) const noexcept
     {
-        ice::u32 const instance_count = ice::array::count(_archetype_data);
+        ice::u32 const instance_count = _archetype_data.size().u32();
         ice::u32 const instance_idx = static_cast<ice::u32>(archetype_instance);
 
         if (instance_idx < instance_count)

@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "resource_aio_request.hxx"
@@ -141,7 +141,7 @@ namespace ice
         //   both data and metadata pointers are allocated separately, which doubles the required hashmap size.
         ice::u32 const estimated_pointer_count = _chunk.count_entries * (_chunk.type == 3 ? 2 : 1);
         ice::hashmap::reserve(_offset_map, estimated_pointer_count);
-        ice::array::resize(_pointers, estimated_pointer_count);
+        _pointers.resize(estimated_pointer_count);
     }
 
     HailstormChunkLoader_Regular::~HailstormChunkLoader_Regular() noexcept
@@ -268,10 +268,10 @@ namespace ice
             }
 
             ice::HeapString<> prefix{ _allocator, _packname };
-            ice::string::push_back(prefix, "/");
+            prefix.push_back("/");
 
             ice::usize::base_type const size_extended_paths = hailstorm::v1::prefixed_resource_paths_size(
-                _pack.paths, (ice::ucount)_pack.resources.size(), ice::String{ prefix }
+                _pack.paths, (ice::u32)_pack.resources.size(), ice::String{ prefix }
             );
 
             // We allocate enough memory to keep all original paths prefixed with the resource file name and a slash.
@@ -293,7 +293,7 @@ namespace ice
 
             bool const prefixing_success = v1::prefix_resource_paths(
                 _pack.paths,
-                { resptr, (ice::ucount)_pack.resources.size() },
+                { resptr, (ice::u32)_pack.resources.size() },
                 { _paths_memory.location, _paths_memory.size.value, (size_t)_paths_memory.alignment },
                 ice::String{ prefix }
             );
@@ -309,7 +309,7 @@ namespace ice
                 FileOpenFlags::Exclusive
             ).value();
 
-            ice::array::resize(_loaders, _pack.header.count_chunks);
+            _loaders.resize(_pack.header.count_chunks);
             for (ice::u32 idx = 0; idx < _pack.header.count_chunks; ++idx)
             {
                 if (_pack.chunks[idx].persistance >= 2)
@@ -326,7 +326,7 @@ namespace ice
                 }
             }
 
-            ice::array::resize(_entries, _pack.header.count_resources);
+            _entries.resize(_pack.header.count_resources);
             for (ice::u32 idx = 0; idx < _pack.header.count_resources; ++idx)
             {
                 v1::HailstormResource const& res = _pack.resources[idx];
@@ -362,7 +362,7 @@ namespace ice
                 }
 
                 ice::multi_hashmap::insert(_entrymap, ice::hash(res_uri.path()), idx);
-                ice::array::push_back(out_changes, _entries[idx]);
+                out_changes.push_back(_entries[idx]);
             }
 
             return ResourceProviderResult::Success;
@@ -415,7 +415,7 @@ namespace ice
     ) noexcept -> ice::TaskExpected<ice::Data>
     {
         hailstorm::HailstormResource const& hsres = static_cast<ice::HailstormResource const*>(resource)->_handle;
-        if (ice::string::size(fragment) && fragment == "meta")
+        if (fragment.not_empty() && fragment == "meta")
         {
             co_return co_await _loaders[hsres.meta_chunk]->request_slice(hsres.meta_offset, hsres.meta_size, _aioport);
         }

@@ -3,7 +3,7 @@
 
 #pragma once
 #include <ice/devui_widget.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <atomic>
 
 #include "iceshard_world_tasks_launcher.hxx"
@@ -27,7 +27,7 @@ namespace ice
             : _events{ alloc }
             , _release{ false }
         {
-            ice::array::push_back(_events, events);
+            _events.push_back(events);
         }
 
         void draw() noexcept;

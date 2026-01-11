@@ -94,6 +94,11 @@ namespace ice
         return std::memcpy(dest, source, size.value);
     }
 
+    auto memcpy(void* dest, ice::Data source) noexcept -> void*
+    {
+        return std::memcpy(dest, source.location, source.size.value);
+    }
+
     auto memcpy(ice::Memory memory, ice::Data data) noexcept -> ice::Memory
     {
         ICE_ASSERT_CORE(memory.alignment >= data.alignment);

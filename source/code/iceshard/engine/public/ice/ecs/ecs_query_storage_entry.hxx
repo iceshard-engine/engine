@@ -59,7 +59,7 @@ namespace ice::ecs
     {
         if constexpr (sizeof...(Tags) > 0)
         {
-            provider.initialize_query_object(_query_object, ice::span::from_std_const(ice::ecs::QueryTagsDefinition<Tags...>::Constant_Tags));
+            provider.initialize_query_object(_query_object, ice::make_span(ice::ecs::QueryTagsDefinition<Tags...>::Constant_Tags));
         }
         else
         {

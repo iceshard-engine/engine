@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "engine_state_tracker_default.hxx"
@@ -49,9 +49,9 @@ namespace ice
             ice::multi_hashmap::insert(
                 _current_state_index,
                 ice::hash(params.initial.graph.value),
-                ice::count(_current_state)
+                _current_state.size().u32()
             );
-            ice::array::push_back(_current_state, initial_state);
+            _current_state.push_back(initial_state);
         }
         else
         {
@@ -71,9 +71,9 @@ namespace ice
                 ice::multi_hashmap::insert(
                     _current_state_index,
                     ice::hash(params.initial.graph.value),
-                    ice::count(_current_state)
+                    _current_state.size().u32()
                 );
-                ice::array::push_back(_current_state, initial_state);
+                _current_state.push_back(initial_state);
             }
 
             ice::hashmap::set(
@@ -89,10 +89,7 @@ namespace ice
             params.committer
         );
 
-        ice::array::push_back(
-            _available_triggers,
-            triggers
-        );
+        _available_triggers.push_back(triggers);
 
         return true;
     }
@@ -115,9 +112,9 @@ namespace ice
             ice::multi_hashmap::insert(
                 _current_state_index,
                 ice::hash(engine_state.graph.value),
-                ice::count(_current_state)
+                _current_state.size().u32()
             );
-            ice::array::push_back(_current_state, engine_state);
+            _current_state.push_back(engine_state);
         }
         return true;
     }
@@ -163,12 +160,11 @@ namespace ice
     auto EngineStateTracker_Default::update_states(
         ice::ShardContainer const& shards,
         ice::ShardContainer& out_shards
-    ) noexcept -> ice::ucount
+    ) noexcept -> ice::u32
     {
         ice::StackAllocator<512_B> temp_alloc;
         ice::ShardContainer temp_shards{ temp_alloc };
-        ice::array::reserve(
-            temp_shards._data,
+        temp_shards._data.reserve(
             ice::mem_max_capacity(
                 ice::size_of<ice::Shard>,
                 decltype(temp_alloc)::Constant_InternalCapacity

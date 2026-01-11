@@ -1,11 +1,11 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "input_devices.hxx"
 #include "input_state_helpers.hxx"
 
 #include <ice/input/input_keyboard.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 
 namespace ice::input
 {
@@ -79,7 +79,7 @@ namespace ice::input
         , _device{ device }
         , _controls{ alloc }
     {
-        ice::array::resize(_controls, keyboard_key_num + keyboard_mod_num + 10);
+        _controls.resize(keyboard_key_num + keyboard_mod_num + 10);
         for (detail::ControlState& control : _controls)
         {
             control.id = InputID::Invalid;
@@ -122,8 +122,8 @@ namespace ice::input
             break;
         }
 
-        ice::ucount const control_index = detail::input_control_index(input);
-        ICE_ASSERT_CORE(control_index < ice::array::count(_controls));
+        ice::u32 const control_index = detail::input_control_index(input);
+        ICE_ASSERT_CORE(control_index < _controls.size());
 
         detail::ControlState control = _controls[control_index];
         control.id = input;
@@ -158,7 +158,7 @@ namespace ice::input
         {
             if (detail::prepared_input_event(control, event))
             {
-                ice::array::push_back(events_out, event);
+                events_out.push_back(event);
             }
         }
     }

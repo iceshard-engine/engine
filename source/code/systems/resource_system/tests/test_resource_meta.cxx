@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <catch2/catch_test_macros.hpp>
@@ -14,7 +14,7 @@ namespace Catch
     {
         static std::string convert(ice::String const& value)
         {
-            return StringMaker<std::string_view>::convert({ value._data, value._size });
+            return StringMaker<std::string_view>::convert(value);
         }
     };
 }
@@ -59,6 +59,8 @@ SCENARIO("resource_system 'ice/resource_meta.hxx'", "[resource][metadata]")
             REQUIRE(meta._data != nullptr);
 
             ice::String meta_name;
+            meta_name == "asd";
+
             CHECK(ice::config::get(meta, "name", meta_name));
             CHECK(meta_name == "foo");
 
@@ -68,14 +70,14 @@ SCENARIO("resource_system 'ice/resource_meta.hxx'", "[resource][metadata]")
 
             ice::Array<ice::i32> meta_numbers{ alloc };
             CHECK(ice::config::get_array(meta, "details.numbers", meta_numbers));
-            CHECK(ice::array::count(meta_numbers) == 3);
+            CHECK(meta_numbers.size() == 3);
             CHECK(meta_numbers[0] == 1);
             CHECK(meta_numbers[1] == 2);
             CHECK(meta_numbers[2] == 3);
 
             ice::Array<ice::String> meta_strings{ alloc };
             CHECK(ice::config::get_array(meta, "details.strings", meta_strings));
-            CHECK(ice::array::count(meta_strings) == 4);
+            CHECK(meta_strings.size() == 4);
             CHECK(meta_strings[0] == "The");
             CHECK(meta_strings[2] == "brown");
 
@@ -101,14 +103,14 @@ SCENARIO("resource_system 'ice/resource_meta.hxx'", "[resource][metadata]")
 
                     ice::Array<ice::i32> meta_numbers_2{ alloc };
                     CHECK(ice::config::get_array(const_meta, "details.numbers", meta_numbers_2));
-                    CHECK(ice::array::count(meta_numbers_2) == 3);
+                    CHECK(meta_numbers_2.size() == 3);
                     CHECK(meta_numbers_2[0] == 1);
                     CHECK(meta_numbers_2[1] == 2);
                     CHECK(meta_numbers_2[2] == 3);
 
                     ice::Array<ice::String> meta_strings_2{ alloc };
                     CHECK(ice::config::get_array(const_meta, "details.strings", meta_strings_2));
-                    CHECK(ice::array::count(meta_strings_2) == 4);
+                    CHECK(meta_strings_2.size() == 4);
                     CHECK(meta_strings_2[0] == "The");
                     CHECK(meta_strings_2[2] == "brown");
                 }
@@ -214,10 +216,10 @@ SCENARIO("resource_system 'ice/resource_meta.hxx'", "[resource][metadata]")
                 CHECK(ice::config::get_array(empty_config, "value.float", meta_float_arr) == ice::E_Fail);
                 CHECK(ice::config::get_array(empty_config, "value.string", meta_string_arr) == ice::E_Fail);
 
-                CHECK(ice::array::count(meta_bool_arr) == 0);
-                CHECK(ice::array::count(meta_int32_arr) == 0);
-                CHECK(ice::array::count(meta_float_arr) == 0);
-                CHECK(ice::array::count(meta_string_arr) == 0);
+                CHECK(meta_bool_arr.size() == 0);
+                CHECK(meta_int32_arr.size() == 0);
+                CHECK(meta_float_arr.size() == 0);
+                CHECK(meta_string_arr.size() == 0);
             }
         }
     }

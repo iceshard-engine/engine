@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_gfx_image_storage_trait.hxx"
@@ -51,7 +51,7 @@ namespace ice::gfx
 
         ice::String const preview = selected < 0 ? "<asset-uri>" : ice::stringid_hint(images[selected].asset.name());
 
-        if (ImGui::BeginCombo("Loaded Image", ice::string::begin(preview)))
+        if (ImGui::BeginCombo("Loaded Image", preview.begin()))
         {
             if (ImGui::Selectable("##empty"))
             {

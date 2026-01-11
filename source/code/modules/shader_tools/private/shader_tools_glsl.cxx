@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "shader_tools_glsl.hxx"
@@ -7,7 +7,7 @@
 
 #include <ice/task_expected.hxx>
 #include <ice/resource_tracker.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <ice/container/hashmap.hxx>
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/string_utils.hxx>
@@ -115,9 +115,9 @@ namespace ice
                     syntax::Atom const& atom = node.to<syntax::Atom>().data();
                     if (atom.is_parenthized)
                     {
-                        ice::string::push_back(result, "(");
+                        result.push_back("(");
                         generate_expression(result, subs, func, arg, node.child());
-                        ice::string::push_back(result, ")");
+                        result.push_back(")");
                     }
                     else
                     {
@@ -130,7 +130,7 @@ namespace ice
                     generate_expression(result, subs, func, arg, node.child());
                     if (node.sibling())
                     {
-                        ice::string::push_back(result, ", ");
+                        result.push_back(", ");
                     }
                     break;
                 }
@@ -156,12 +156,12 @@ namespace ice
                     ice::string::push_format(result, "{}(", node.to<syntax::Call>().data().name.value);
                     // Call children groups
                     generate_expression(result, subs, func, arg, node.child());
-                    ice::string::push_back(result, ")");
+                    result.push_back(")");
                     break;
                 case SyntaxEntity::E_IndexOperator:
-                    ice::string::push_back(result, "[");
+                    result.push_back("[");
                     generate_expression(result, subs, func, arg, node.child());
-                    ice::string::push_back(result, "]");
+                    result.push_back("]");
                     break;
                 default:
                     break;
@@ -191,7 +191,7 @@ namespace ice
 
             if (SyntaxNode assignnode = typenode.sibling<syntax::Operator>(); assignnode)
             {
-                ice::string::push_back(result, " = ");
+                result.push_back(" = ");
 
                 generate_expression(result, subs, func, arg, assignnode.child());
             }
@@ -210,17 +210,17 @@ namespace ice
 
             while (fnentry)
             {
-                ice::string::push_back(result, "    ");
+                result.push_back("    ");
 
                 if (SyntaxNode var = fnentry.to<syntax::Variable>(); var)
                 {
                     generate_variable(result, subs, func, arg, ret, var);
-                    ice::string::push_back(result, ";\n");
+                    result.push_back(";\n");
                 }
                 else if (SyntaxNode exp = fnentry.to<syntax::Expression>(); exp)
                 {
                     generate_expression(result, subs, func, arg, exp.child());
-                    ice::string::push_back(result, ";\n");
+                    result.push_back(";\n");
                 }
                 fnentry = fnentry.sibling<>();
             }
@@ -261,7 +261,7 @@ namespace ice
                     ice::string::push_format(result, "    {} {};\n", type.name.value, member.data().name.value);
                     member = member.sibling<syntax::StructMember>();
                 }
-                ice::string::push_back(result, "};\n\n");
+                result.push_back("};\n\n");
             }
 
             // Generate function definitions
@@ -291,7 +291,7 @@ namespace ice
                 member = member.sibling<syntax::StructMember>();
             }
 
-            ice::string::push_back(result, "\n");
+            result.push_back("\n");
 
             member = shader._outputs.child<syntax::StructMember>();
             while (member)
@@ -308,7 +308,7 @@ namespace ice
                 member = member.sibling<syntax::StructMember>();
             }
 
-            ice::string::push_back(result, "\n");
+            result.push_back("\n");
 
             // Generate uniforms
             for (SyntaxNode<syntax::ContextVariable> variable : shader._uniforms)
@@ -342,7 +342,7 @@ namespace ice
                     {
                         ice::string::push_format(result, "[{}]", vartype.size_array.value);
                     }
-                    ice::string::push_back(result, ";\n\n");
+                    result.push_back(";\n\n");
                 }
                 else
                 {
@@ -382,7 +382,7 @@ namespace ice
             ice::string::push_format(result, "in {} _a_inputs, ", shader._inputs.data().name.value, arg.data().name.value);
             ice::string::push_format(result, "out {} _a_outputs) {{\n", shader._outputs.data().name.value, shader._mainfunc.data().name.value);
             generate_function(result, subs, shader._mainfunc.data(), arg.data(), ret.data(), body.child<>());
-            ice::string::push_back(result, "}\n");
+            result.push_back("}\n");
 
             ice::string::push_format(result, "\nvoid {}() {{\n", "main"); // GLSL requires 'main' as the function name
             ice::string::push_format(result, "    {0} inputs = {0}(", shader._inputs.data().name.value);
@@ -395,7 +395,7 @@ namespace ice
                     {
                         if (builtin == "position")
                         {
-                            ice::string::push_back(result, "gl_FragCoord, ");
+                            result.push_back("gl_FragCoord, ");
                         }
                     }
                     else
@@ -404,9 +404,9 @@ namespace ice
                     }
                     member = member.sibling<syntax::StructMember>();
                 }
-                ice::string::pop_back(result, 2);
+                result.pop_back(2);
             }
-            ice::string::push_back(result, ");\n");
+            result.push_back(");\n");
             ice::string::push_format(result, "    {} outputs;\n", shader._outputs.data().name.value);
             ice::string::push_format(result, "    asl_proxy_{}(inputs, outputs);\n", shader._mainfunc.data().name.value);
             {
@@ -428,7 +428,7 @@ namespace ice
                     member = member.sibling<syntax::StructMember>();
                 }
             }
-            ice::string::push_back(result, "}\n");
+            result.push_back("}\n");
 
             return result;
         };
@@ -517,7 +517,7 @@ namespace ice
                 );
 
                 // Failed to transpile
-                if (ice::string::empty(out_result))
+                if (out_result.is_empty())
                 {
                     co_return E_FailedToTranspileASLShaderToGLSL;
                 }
@@ -527,10 +527,7 @@ namespace ice
             {
                 out_entry_point = "main";
 
-                co_return ice::String{
-                    (char const*)result.data.location,
-                    (ice::ucount)result.data.size.value
-                };
+                co_return ice::string_from_data<char>(result.data);
             }
         }
 
@@ -547,7 +544,7 @@ namespace ice
 
             ice::String const path = ice::resource_origin(source);
             ice::String const ext = ice::path::extension(path);
-            bool const is_vertex_shader = ice::string::substr(path, ice::string::size(path) - (4 + ice::size(ext)), ice::size(ext)) == "vert";
+            bool const is_vertex_shader = path.substr(path.size() - (4 + ext.size()), ext.size()) == "vert";
 
             ice::render::ShaderStageFlags const shader_stage = is_vertex_shader
                 ? ice::render::ShaderStageFlags::VertexStage
@@ -579,11 +576,11 @@ namespace ice
                 shaderc::Compiler compiler{};
 
                 shaderc::SpvCompilationResult const spv_result = compiler.CompileGlslToSpv(
-                    ice::string::begin(glsl_source),
-                    ice::string::size(glsl_source),
+                    glsl_source.begin(),
+                    glsl_source.size(),
                     is_vertex_shader ? shaderc_shader_kind::shaderc_vertex_shader : shaderc_shader_kind::shaderc_fragment_shader,
-                    ice::string::begin(path),
-                    ice::string::begin(entry_point),
+                    path.begin(),
+                    entry_point.begin(),
                     compile_options
                 );
 
@@ -608,11 +605,11 @@ namespace ice
             else
             {
                 // Keep the string size so we can adjust the memory block result
-                ice::ucount const string_size = ice::size(transpiled_result);
-                result_mem = ice::string::extract_memory(transpiled_result);
+                ice::ncount const string_size = transpiled_result.size();
+                result_mem = transpiled_result.extract_memory();
 
                 // Ensure memory size is equal to string size not its capacity.
-                result_mem.size.value = string_size;
+                result_mem.size = string_size;
             }
 
             // Unload resource before continuing

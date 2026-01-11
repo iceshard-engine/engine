@@ -1,14 +1,13 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/input_action_stack.hxx>
 #include <ice/input_action_layer.hxx>
 #include <ice/input_action_info.hxx>
 #include <ice/input_action_executor.hxx>
-#include <ice/string/static_string.hxx>
-#include <ice/string/heap_string.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/container/hashmap.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <ice/container/queue.hxx>
 #include <ice/profiler.hxx>
 #include <ice/clock.hxx>
@@ -38,7 +37,7 @@ namespace ice
 
         auto registered_layers(
             ice::Array<ice::InputActionLayer const*>& out_layers
-        ) const noexcept -> ice::ucount override;
+        ) const noexcept -> ice::u32 override;
 
         auto register_layer(
             ice::InputActionLayer const* layer
@@ -47,7 +46,7 @@ namespace ice
 
         auto active_layers(
             ice::Array<ice::InputActionLayer const*>& out_layers
-        ) const noexcept -> ice::ucount override;
+        ) const noexcept -> ice::u32 override;
 
         void push_layer(
             ice::InputActionLayer const* layer
@@ -135,13 +134,13 @@ namespace ice
 
     auto SimpleInputActionStack::registered_layers(
         ice::Array<ice::InputActionLayer const*>& out_layers
-    ) const noexcept -> ice::ucount
+    ) const noexcept -> ice::u32
     {
         for (StackLayer const& layer : _layers)
         {
-            ice::array::push_back(out_layers, layer.layer);
+            out_layers.push_back(layer.layer);
         }
-        return ice::count(_layers);
+        return _layers.size().u32();
     }
 
     auto SimpleInputActionStack::register_layer(
@@ -154,23 +153,23 @@ namespace ice
             return E_NullPointer;
         }
 
-        ice::ucount layer_idx;
+        ice::u32 layer_idx;
         if (ice::search(ice::Span{ _layers }, layer, compare_layers, layer_idx))
         {
             return S_LayerAlreadyRegistered;
         }
 
-        layer_idx = ice::count(_layers);
+        layer_idx = _layers.size().u32();
 
         // We reserve enough space to store all actual indices for accessed layer sources.
-        ice::u32 const layer_sources_count = ice::count(layer->sources());
-        ice::u32 const layer_sources_offset = ice::count(_layers_sources_indices);
-        ice::array::reserve(_layers_sources_indices, layer_sources_offset + layer_sources_count);
+        ice::ncount const layer_sources_count = layer->sources().size().u32();
+        ice::ncount const layer_sources_offset = _layers_sources_indices.size();
+        _layers_sources_indices.reserve(layer_sources_offset + layer_sources_count);
 
         // Go through each resource and set the indices
         ice::u64 prev_name_hash = 0;
         ice::Span<ice::InputActionSourceInputInfo const> sources = layer->sources();
-        ice::ucount const count_sources = ice::count(sources);
+        ice::u32 const count_sources = sources.size().u32();
         for (ice::u32 idx = 0; idx < count_sources; ++idx)
         {
             ice::InputActionSourceInputInfo const& source = sources[idx];
@@ -187,36 +186,36 @@ namespace ice
                     values_index = ice::hashmap::try_get(_sources, source_name_hash)->index;
 
                     // Stores the index for the source
-                    ice::array::push_back(_layers_sources_indices, values_index);
+                    _layers_sources_indices.push_back(values_index);
 
                     if (source.type == InputActionSourceType::Axis2d)
                     {
                         // Stores the index for the source
-                        ice::array::push_back(_layers_sources_indices, values_index);
+                        _layers_sources_indices.push_back(values_index);
                     }
                 }
             }
             else
             {
-                values_index = ice::array::count(_sources_runtime_values);
+                values_index = _sources_runtime_values.size().u32();
 
-                ice::array::push_back(_sources_runtime_values, InputActionSource{});
+                _sources_runtime_values.push_back(InputActionSource{});
                 // If we have an Axis2d source, we need to actually push back two values for both axis
                 if (source.type == InputActionSourceType::Axis2d)
                 {
-                    ice::array::push_back(_sources_runtime_values, InputActionSource{});
+                    _sources_runtime_values.push_back(InputActionSource{});
                 }
 
                 // Save the index where we store the runtime value(s)
                 ice::hashmap::set(_sources, source_name_hash, { values_index });
 
                 // Stores the index for the source
-                ice::array::push_back(_layers_sources_indices, values_index);
+                _layers_sources_indices.push_back(values_index);
 
                 if (source.type == InputActionSourceType::Axis2d)
                 {
                     // Stores the index for the source
-                    ice::array::push_back(_layers_sources_indices, values_index);
+                    _layers_sources_indices.push_back(values_index);
                 }
             }
 
@@ -234,7 +233,7 @@ namespace ice
                 // Create the final name with the prefix and store it so the pointer reimains valid.
                 // #TODO: Consider using refs instead?
                 ice::HeapString<> final_name = _idprefix;
-                ice::string::push_back(final_name, action_name);
+                final_name.push_back(action_name);
                 ice::hashmap::set(_action_names, action_name_hash, ice::move(final_name));
 
                 ice::HeapString<> const* final_name_ptr = ice::hashmap::try_get(_action_names, action_name_hash);
@@ -246,33 +245,32 @@ namespace ice
         }
 
         // Stores the layer along with a ref where it's indices for all sources are stored.
-        ice::array::push_back(
-            _layers,
-            StackLayer{ layer, { ice::u16(layer_sources_offset), ice::u16(ice::count(_layers_sources_indices) - layer_sources_offset) } }
+        _layers.push_back(
+            StackLayer{ layer, { layer_sources_offset.u16(), (_layers_sources_indices.size() - layer_sources_offset).u16() } }
         );
         return S_Ok;
     }
 
     auto SimpleInputActionStack::active_layers(
         ice::Array<ice::InputActionLayer const*>& out_layers
-    ) const noexcept -> ice::ucount
+    ) const noexcept -> ice::u32
     {
-        auto it = ice::array::rbegin(_layers_active);
-        auto const end = ice::array::rend(_layers_active);
+        auto it = _layers_active.rbegin();
+        auto const end = _layers_active.rend();
 
         while (it != end)
         {
-            ice::array::push_back(out_layers, _layers[it->index].layer);
+            out_layers.push_back(_layers[it->index].layer);
             it += 1;
         }
-        return ice::count(_layers_active);
+        return _layers_active.size().u32();
     }
 
     void SimpleInputActionStack::push_layer(
         ice::InputActionLayer const* layer
     ) noexcept
     {
-        ice::ucount idx;
+        ice::u32 idx;
         if (ice::search(ice::Span{ _layers }, layer, compare_layers, idx) == false)
         {
             // #TODO: Create a proper error return value.
@@ -280,38 +278,38 @@ namespace ice
         }
 
         // Check if we are already at the top of the stack.
-        if (ice::array::any(_layers_active) && ice::array::back(_layers_active).index == idx)
+        if (_layers_active.not_empty() && _layers_active.last().index == idx)
         {
             return; // #TODO: Implement success with info.
         }
 
         // Push back the new active layer.
-        ice::array::push_back(_layers_active, { idx });
+        _layers_active.push_back({ idx });
     }
 
     void SimpleInputActionStack::pop_layer(
         ice::InputActionLayer const* layer
     ) noexcept
     {
-        ice::ucount idx;
+        ice::u32 idx;
         if (ice::search(ice::Span{ _layers }, layer, compare_layers, idx))
         {
             // We just cut anything below this index, because we want to pop everything up to this layer
-            ice::array::resize(_layers, idx);
-            ice::array::pop_back(_layers); // And pop the item itself
+            _layers.resize(idx);
+            _layers.pop_back(); // And pop the item itself
         }
     }
 
     auto SimpleInputActionStack::action(ice::String action_name) const noexcept -> ice::Expected<ice::InputAction const*>
     {
         ice::InputActionRuntime const* action = ice::hashmap::try_get(_actions, ice::hash(action_name));
-        if (action == nullptr && ice::string::starts_with(action_name, _idprefix))
+        if (action == nullptr && action_name.starts_with(_idprefix))
         {
             // Try again after removing the prefix
             action = ice::hashmap::try_get(
                 _actions,
                 ice::hash(
-                    ice::string::substr(action_name, ice::size(_idprefix))
+                    action_name.substr(_idprefix.size())
                 )
             );
         }
@@ -404,30 +402,30 @@ namespace ice
         IPT_ZONE_SCOPED;
         using Iterator = ice::Array<ActiveStackLayer>::ConstReverseIterator;
 
-        ice::ucount remaining_events = ice::count(events);
+        ice::u32 remaining_events = events.size().u32();
         ice::Array<ice::input::InputEvent> events_copy{ _allocator, events };
         ice::Array<ice::InputActionSource*> source_values{ _allocator };
 
         // We go in reverse order since, the recently pushed layers should be processed first as they might override inputs.
-        Iterator const start = ice::array::rbegin(_layers_active);
-        Iterator const end = ice::array::rend(_layers_active);
+        Iterator const start = _layers_active.rbegin();
+        Iterator const end = _layers_active.rend();
 
         for (Iterator it = start; it != end; ++it)
         {
             StackLayer const& layer = _layers[it->index];
-            for (ice::u32 offset : ice::array::slice(_layers_sources_indices, layer.sources_indices))
+            for (ice::u32 offset : _layers_sources_indices.subspan(layer.sources_indices))
             {
-                ice::array::push_back(source_values, ice::addressof(_sources_runtime_values[offset]));
+                source_values.push_back(ice::addressof(_sources_runtime_values[offset]));
             }
 
-            ice::ucount const processed_events = layer.layer->process_inputs(
-                ice::array::slice(events_copy, 0, remaining_events),
+            ice::u32 const processed_events = layer.layer->process_inputs(
+                events_copy.headspan(remaining_events),
                 source_values
             );
             ICE_ASSERT_CORE(processed_events <= remaining_events);
             remaining_events -= processed_events;
 
-            ice::array::clear(source_values);
+            source_values.clear();
 
             // TODO: Should we change how this loop is finishing?
             if (remaining_events == 0)
@@ -440,15 +438,15 @@ namespace ice
         for (Iterator it = start; it != end; ++it)
         {
             StackLayer const& layer = _layers[it->index];
-            for (ice::u32 offset : ice::array::slice(_layers_sources_indices, layer.sources_indices))
+            for (ice::u32 offset : _layers_sources_indices.subspan(layer.sources_indices))
             {
-                ice::array::push_back(source_values, ice::addressof(_sources_runtime_values[offset]));
+                source_values.push_back(ice::addressof(_sources_runtime_values[offset]));
             }
 
             ex.prepare_constants(*layer.layer);
             layer.layer->update_actions(ex, source_values, _actions);
 
-            ice::array::clear(source_values);
+            source_values.clear();
         }
     }
 

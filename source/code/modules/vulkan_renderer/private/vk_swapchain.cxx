@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "vk_swapchain.hxx"
@@ -126,7 +126,7 @@ namespace ice::render::vk
         // TODO: Can we do this differently?
         if (result != VK_SUCCESS)
         {
-            return ice::ucount_max;
+            return ice::u32_max;
         }
 
         //ICE_ASSERT(

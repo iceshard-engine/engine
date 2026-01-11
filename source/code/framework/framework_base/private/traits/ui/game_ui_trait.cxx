@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "render_ui_trait.hxx"
@@ -37,8 +37,7 @@
 #include <ice/input/input_mouse.hxx>
 
 #include <ice/platform_event.hxx>
-#include <ice/string/static_string.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <ice/shard_container.hxx>
 #include <ice/asset_storage.hxx>
 #include <ice/profiler.hxx>

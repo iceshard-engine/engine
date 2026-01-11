@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "resource_filesystem_traverser.hxx"
@@ -6,8 +6,7 @@
 #include <ice/task_scheduler.hxx>
 #include <ice/task_utils.hxx>
 #include <ice/mem_allocator_stack.hxx>
-#include <ice/string/heap_string.hxx>
-#include <ice/string/static_string.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/string_utils.hxx>
 #include <ice/path_utils.hxx>
 
@@ -51,9 +50,9 @@ namespace ice
             ice::native_file::FilePath const uribase = ice::path::directory(base_path);
             ice::native_file::FilePath const datafile = file_path;
             ice::native_file::HeapFilePath metafile{ temp_alloc };
-            ice::string::reserve(metafile, 512);
-            ice::string::push_back(metafile, file_path);
-            ice::string::push_back(metafile, ISP_PATH_LITERAL(".isrm"));
+            metafile.reserve(512);
+            metafile.push_back(file_path);
+            metafile.push_back(ISP_PATH_LITERAL(".isrm"));
 
             resource = _callbacks.create_loose_resource(
                 base_path,
@@ -104,9 +103,9 @@ namespace ice
             ice::native_file::FilePath const uribase = ice::path::directory(base_path);
             ice::native_file::FilePath const datafile = file_path;
             ice::native_file::HeapFilePath metafile{ temp_alloc };
-            ice::string::reserve(metafile, 512);
-            ice::string::push_back(metafile, file_path);
-            ice::string::push_back(metafile, ISP_PATH_LITERAL(".isrm"));
+            metafile.reserve(512);
+            metafile.push_back(file_path);
+            metafile.push_back(ISP_PATH_LITERAL(".isrm"));
 
             resource = _callbacks.create_loose_resource(
                 base_path,
@@ -196,15 +195,15 @@ namespace ice
     ) noexcept
     {
         ice::Array<FileSystemTraverseRequest, ContainerLogic::Complex> requests{ _callbacks.allocator() };
-        ice::array::reserve(requests, ice::span::count(base_paths));
+        requests.reserve(base_paths.size().u32());
 
         [[maybe_unused]]
         std::atomic_uint32_t remaining = 0;
         for (ice::native_file::FilePath base_path : base_paths)
         {
-            ice::array::push_back(requests, { *this, base_path, remaining, nullptr, nullptr });
+            requests.push_back({ *this, base_path, remaining, nullptr, nullptr });
             ice::native_file::traverse_directories(
-                base_path, traverse_callback, &ice::array::back(requests)
+                base_path, traverse_callback, &requests.last()
             );
         }
     }
@@ -218,16 +217,16 @@ namespace ice
         ice::TaskScheduler local_sched{ local_queue };
 
         ice::Array<FileSystemTraverseRequest, ContainerLogic::Complex> requests{ _callbacks.allocator() };
-        ice::array::reserve(requests, ice::span::count(base_paths));
+        requests.reserve(base_paths.size().u32());
 
         std::atomic_uint32_t remaining = 0;
 
         // Traverse directories synchronously but create resources asynchronously.
         for (ice::native_file::FilePath base_path : base_paths)
         {
-            ice::array::push_back(requests, { *this, base_path, remaining, ice::addressof(scheduler), &local_sched });
+            requests.push_back({ *this, base_path, remaining, ice::addressof(scheduler), &local_sched });
             ice::native_file::traverse_directories(
-                base_path, traverse_callback, &ice::array::back(requests)
+                base_path, traverse_callback, &requests.last()
             );
         }
 

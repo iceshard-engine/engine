@@ -3,7 +3,7 @@
 
 #pragma once
 #include <ice/render/render_framebuffer.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include "webgpu_utils.hxx"
 #include "webgpu_image.hxx"
 

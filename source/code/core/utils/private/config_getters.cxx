@@ -1,8 +1,8 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "config/config_detail.hxx"
-#include <ice/string/var_string.hxx>
+#include <ice/varstring.hxx>
 
 namespace ice::config::detail
 {
@@ -317,10 +317,10 @@ namespace ice::config::detail
         }
 
         char const* strdata = reinterpret_cast<char const*>(config._data) + value->internal;
-        ice::ucount varbytes = 0;
-        ice::ucount const size = ice::string::detail::read_varstring_size(strdata, varbytes);
+        ice::usize varbytes{};
+        ice::ncount const size = ice::varstring::read_size(strdata, varbytes);
 
-        out_value = { strdata + varbytes, size };
+        out_value = { strdata + varbytes.value, size };
         return S_Ok;
     }
 

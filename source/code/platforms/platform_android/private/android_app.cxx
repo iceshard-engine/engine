@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "android_app.hxx"
@@ -9,7 +9,7 @@
 #include <ice/log.hxx>
 #include <ice/assert.hxx>
 #include <ice/path_utils.hxx>
-#include <ice/string/heap_string.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/os/android.hxx>
 #include <ice/params.hxx>
 #include <thread>

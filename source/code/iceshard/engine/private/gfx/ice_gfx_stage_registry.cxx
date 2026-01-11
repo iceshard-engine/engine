@@ -62,7 +62,7 @@ namespace ice::gfx
         for (ice::StringID_Arg key : stage_keys)
         {
             ice::gfx::GfxStage* const* stage_ptr = ice::hashmap::try_get(_stages, ice::hash(key));
-            ice::array::push_back(out_stages, stage_ptr == nullptr ? nullptr : *stage_ptr);
+            out_stages.push_back(stage_ptr == nullptr ? nullptr : *stage_ptr);
             result |= stage_ptr != nullptr;
         }
         return result;

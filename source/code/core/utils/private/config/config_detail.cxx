@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "config_detail.hxx"
@@ -9,7 +9,7 @@ namespace ice::config::detail
     auto get_keyindex(ice::String key) noexcept -> ice::u32
     {
         ice::u32 idx = 0;
-        char const* k = ice::string::begin(key);
+        char const* k = key.begin();
         while(*k >= '0' && *k <= '9')
         {
             idx *= 10;
@@ -101,7 +101,7 @@ namespace ice::config::detail
         }
 
         // The first element holds the size of the whole table
-        ice::ucount const table_size = ( config._keys->offset << 8) |  config._keys->size;
+        ice::u32 const table_size = (config._keys->offset << 8) |  config._keys->size;
         if (index >= table_size) // OutOfBounds?
         {
             return E_ConfigIndexOutOfBounds;
@@ -131,11 +131,11 @@ namespace ice::config::detail
         Config finalcfg = config;
 
         // If this key has multiple parts recursively enter config search
-        ice::ucount key_split_location = ice::string::find_first_of(key, {".|"});
-        while (key_split_location != ice::String_NPos && result)
+        ice::nindex key_split_location = key.find_first_of({".|"});
+        while (key_split_location != ice::nindex_none && result)
         {
             bool const is_table = finalcfg._keys->type != CONFIG_KEYTYPE_STRING;
-            ice::String const keyval = ice::string::substr(key, 0, key_split_location);
+            ice::String const keyval = key.substr(0, key_split_location);
 
             if (is_table)
             {
@@ -146,8 +146,8 @@ namespace ice::config::detail
                 result = get_subconfig(finalcfg, keyval);
             }
 
-            key = ice::string::substr(key, key_split_location + 1);
-            key_split_location = ice::string::find_first_of(key, {".|"});
+            key = key.substr(key_split_location + 1);
+            key_split_location = key.find_first_of({".|"});
         }
 
         if (finalcfg._keys->type != CONFIG_KEYTYPE_STRING) [[unlikely]]

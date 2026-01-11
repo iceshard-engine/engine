@@ -1,8 +1,8 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <ice/shard_container.hxx>
 #include <ice/ecs/ecs_entity.hxx>
 #include <ice/ecs/ecs_archetype.hxx>
@@ -58,13 +58,13 @@ namespace ice::ecs
 
         struct Result
         {
-            auto one() const noexcept -> ice::ecs::Entity { return ice::span::front(_builder.entities); }
+            auto one() const noexcept -> ice::ecs::Entity { return _builder.entities.first(); }
             auto all() const noexcept -> ice::Span<ice::ecs::Entity const> { return _builder.entities; }
 
             auto store(ice::Array<ice::ecs::Entity>& out_entities, bool append = true) const noexcept
             {
-                if (append == false) ice::array::clear(out_entities);
-                ice::array::push_back(out_entities, all());
+                if (append == false) out_entities.clear();
+                out_entities.push_back(all());
             }
 
             Result(OperationBuilder& builder) noexcept : _builder{ builder } { }
@@ -82,7 +82,7 @@ namespace ice::ecs
             ice::ecs::EntityOperations& operations,
             ice::ecs::Archetype archetype,
             ice::ecs::EntityIndex& index,
-            ice::ucount entity_count
+            ice::u32 entity_count
         ) noexcept;
 
         ~OperationBuilder() noexcept;
@@ -241,7 +241,7 @@ namespace ice::ecs
         ice::ecs::EntityOperations& operations,
         ice::ecs::Archetype archetype,
         ice::ecs::EntityIndex& index,
-        ice::ucount entity_count
+        ice::u32 entity_count
     ) noexcept
         : operations{ operations }
         , archetype{ archetype }
@@ -270,7 +270,7 @@ namespace ice::ecs
 
     inline auto EntityOperations::create(
         ice::ecs::concepts::ArchetypeRef auto ref,
-        ice::ucount count
+        ice::u32 count
     ) noexcept -> ice::ecs::OperationBuilder
     {
         return OperationBuilder{ *this, this->get_archetype(ref), _entities, count };
@@ -291,14 +291,14 @@ namespace ice::ecs
         static ice::ecs::ArchetypeDefinition<Components...> constexpr HelperArchetype;
 
         static ice::StaticArray<ice::u32, sizeof...(Components)> constexpr ComponentIdxMap = ice::ecs::detail::make_argument_idx_map<Components...>(
-            ice::span::from_std_const(HelperArchetype.component_identifiers)
+            ice::make_span(HelperArchetype.component_identifiers)
         );
 
         static ice::ecs::OperationComponentInfo constexpr ComponentsInfo{
-            .names = ice::span::subspan(ice::span::from_std_const(HelperArchetype.component_identifiers), 1),
-            .sizes = ice::span::subspan(ice::span::from_std_const(HelperArchetype.component_sizes), 1),
+            .names = ice::make_span(HelperArchetype.component_identifiers).tailspan(1),
+            .sizes = ice::make_span(HelperArchetype.component_sizes).tailspan(1),
             // We store alignments in this span just for convenience
-            .offsets = ice::span::subspan(ice::span::from_std_const(HelperArchetype.component_alignments), 1)
+            .offsets = ice::make_span(HelperArchetype.component_alignments).tailspan(1)
         };
 
         ice::Data const unsorted_component_Data[]{
@@ -311,13 +311,13 @@ namespace ice::ecs
             sorted_data_array[ComponentIdxMap[idx] - 1] = unsorted_component_Data[idx];
         }
 
-        return this->with_data(ComponentsInfo, ice::span::from_std_const(sorted_data_array));
+        return this->with_data(ComponentsInfo, ice::make_span(sorted_data_array));
     }
 
     template<ice::ecs::Component... Components>
     inline auto OperationBuilder::with_data(ice::Span<Components>&... out_component_spans) noexcept -> Result
     {
-        if (ice::span::empty(entities) && mode != 2)
+        if (entities.is_empty() && mode != 2)
         {
             return Result{ *this };
         }
@@ -325,26 +325,26 @@ namespace ice::ecs
         static ice::ecs::ArchetypeDefinition<Components...> constexpr HelperArchetype;
 
         static ice::StaticArray<ice::u32, sizeof...(Components)> constexpr ComponentIdxMap = ice::ecs::detail::make_argument_idx_map<Components...>(
-                ice::span::from_std_const(HelperArchetype.component_identifiers)
+                ice::make_span(HelperArchetype.component_identifiers)
         );
 
         static ice::ecs::OperationComponentInfo constexpr ComponentsInfo{
-            .names = ice::span::subspan(ice::span::from_std_const(HelperArchetype.component_identifiers), 1),
-            .sizes = ice::span::subspan(ice::span::from_std_const(HelperArchetype.component_sizes), 1),
+            .names = ice::make_span(HelperArchetype.component_identifiers).tailspan(1),
+            .sizes = ice::make_span(HelperArchetype.component_sizes).tailspan(1),
             // We store alignments in this span just for convenience
-            .offsets = ice::span::subspan(ice::span::from_std_const(HelperArchetype.component_alignments), 1)
+            .offsets = ice::make_span(HelperArchetype.component_alignments).tailspan(1)
         };
 
-        ice::ucount const entity_count = mode == 2 ? index_create_count : ice::count(entities);
-        ice::ucount constexpr component_count = sizeof...(Components);
+        ice::u32 const entity_count = mode == 2 ? index_create_count : ice::count(entities);
+        ice::u32 constexpr component_count = sizeof...(Components);
         ice::meminfo additional_data_size = ice::meminfo{ filter_data_size, ice::ualign::b_8 };
         additional_data_size += ice::meminfo_of<ice::ecs::Entity> * entity_count;
 
         // Data for storing component info
         additional_data_size += ice::meminfo_of<ice::ecs::OperationComponentInfo>;
-        additional_data_size.size += ice::span::size_bytes(ComponentsInfo.names);
-        additional_data_size.size += ice::span::size_bytes(ComponentsInfo.sizes);
-        additional_data_size.size += ice::span::size_bytes(ComponentsInfo.offsets);
+        additional_data_size.size += ComponentsInfo.names.size();
+        additional_data_size.size += ComponentsInfo.sizes.size();
+        additional_data_size.size += ComponentsInfo.offsets.size();
 
         // Use folded expression to calculate all the size for the components...
         additional_data_size.size += ((ice::usize{ alignof(Components) } + ice::size_of<Components> * entity_count) + ...);
@@ -362,7 +362,7 @@ namespace ice::ecs
         ice::ecs::Entity* entities_ptr = reinterpret_cast<ice::ecs::Entity*>(operation_data);
         if (mode == 1)
         {
-            ice::memcpy(entities_ptr, ice::span::data(entities), ice::span::size_bytes(entities));
+            ice::memcpy(entities_ptr, entities.data_view());
         }
         else
         {
@@ -372,10 +372,10 @@ namespace ice::ecs
 
         // Set component info object
         ice::StringID* names_ptr = reinterpret_cast<ice::StringID*>(entities_ptr + entity_count);
-        ice::memcpy(names_ptr, ice::span::data(ComponentsInfo.names), ice::span::size_bytes(ComponentsInfo.names));
+        ice::memcpy(names_ptr, ComponentsInfo.names.data_view());
 
         ice::u32* sizes_ptr = reinterpret_cast<ice::u32*>(names_ptr + component_count);
-        ice::memcpy(sizes_ptr, ice::span::data(ComponentsInfo.sizes), ice::span::size_bytes(ComponentsInfo.sizes));
+        ice::memcpy(sizes_ptr, ComponentsInfo.sizes.data_view());
 
         ice::u32* offsets_ptr = reinterpret_cast<ice::u32*>(sizes_ptr + component_count);
 
@@ -416,7 +416,7 @@ namespace ice::ecs
             span_ptr->_count = entity_count;
 
             // Move to the next data location...
-            data_ptr = ice::ptr_add(data_ptr, ice::span::size_bytes(*span_ptr));
+            data_ptr = ice::ptr_add(data_ptr, span_ptr->size());
             return true;
         };
 
@@ -444,7 +444,7 @@ namespace ice::ecs
         operation->entities = entities_ptr;
         operation->entity_count = entity_count;
         operation->component_data = component_info_ptr;
-        operation->component_data_size = ice::ucount(ice::ptr_distance(component_info_ptr, component_info_ptr).value);
+        operation->component_data_size = ice::u32(ice::ptr_distance(component_info_ptr, component_info_ptr).value);
         operation->filter_data = filter_ptr;
 
         if (mode == 2)
@@ -459,7 +459,7 @@ namespace ice::ecs
     template<ice::ecs::Component... Components>
     inline auto OperationBuilder::with_data(ice::Span<Components const>... component_spans) noexcept -> Result
     {
-        if (ice::span::empty(entities) && mode != 2)
+        if (entities.is_empty() && mode != 2)
         {
             return { *this };
         }
@@ -467,26 +467,26 @@ namespace ice::ecs
         static ice::ecs::ArchetypeDefinition<Components...> constexpr HelperArchetype;
 
         static ice::StaticArray<ice::u32, sizeof...(Components)> constexpr ComponentIdxMap = ice::ecs::detail::make_argument_idx_map<Components...>(
-            ice::span::from_std_const(HelperArchetype.component_identifiers)
+            ice::make_span(HelperArchetype.component_identifiers)
         );
 
         static ice::ecs::OperationComponentInfo constexpr ComponentsInfo{
-            .names = ice::span::subspan(ice::span::from_std_const(HelperArchetype.component_identifiers), 1),
-            .sizes = ice::span::subspan(ice::span::from_std_const(HelperArchetype.component_sizes), 1),
+            .names = ice::make_span(HelperArchetype.component_identifiers).tailspan(1),
+            .sizes = ice::make_span(HelperArchetype.component_sizes).tailspan(1),
             // We store alignments in this span just for convenience
-            .offsets = ice::span::subspan(ice::span::from_std_const(HelperArchetype.component_alignments), 1)
+            .offsets = ice::make_span(HelperArchetype.component_alignments).tailspan(1)
         };
 
-        ice::ucount const entity_count = mode == 2 ? index_create_count : ice::count(entities);
-        ice::ucount constexpr component_count = sizeof...(Components);
+        ice::u32 const entity_count = mode == 2 ? index_create_count : ice::count(entities);
+        ice::u32 constexpr component_count = sizeof...(Components);
         ice::meminfo additional_data_size = ice::meminfo{ filter_data_size, ice::ualign::b_8 };
         additional_data_size += ice::meminfo_of<ice::ecs::Entity> * entity_count;
 
         // Data for storing component info
         additional_data_size += ice::meminfo_of<ice::ecs::OperationComponentInfo>;
-        additional_data_size.size += ice::span::size_bytes(ComponentsInfo.names);
-        additional_data_size.size += ice::span::size_bytes(ComponentsInfo.sizes);
-        additional_data_size.size += ice::span::size_bytes(ComponentsInfo.offsets);
+        additional_data_size.size += ComponentsInfo.names.size();
+        additional_data_size.size += ComponentsInfo.sizes.size();
+        additional_data_size.size += ComponentsInfo.offsets.size();
 
         // Use folded expression to calculate all the size for the components...
         additional_data_size.size += ((ice::usize{ alignof(Components) } + ice::size_of<Components> * entity_count) + ...);
@@ -504,7 +504,7 @@ namespace ice::ecs
         ice::ecs::Entity* entities_ptr = reinterpret_cast<ice::ecs::Entity*>(operation_data);
         if (mode == 1)
         {
-            ice::memcpy(entities_ptr, ice::span::data(entities), ice::span::size_bytes(entities));
+            ice::memcpy(entities_ptr, entities.data_view());
         }
         else
         {
@@ -514,10 +514,10 @@ namespace ice::ecs
 
         // Set component info object
         ice::StringID* names_ptr = reinterpret_cast<ice::StringID*>(entities_ptr + entity_count);
-        ice::memcpy(names_ptr, ice::span::data(ComponentsInfo.names), ice::span::size_bytes(ComponentsInfo.names));
+        ice::memcpy(names_ptr, ComponentsInfo.names.data_view());
 
         ice::u32* sizes_ptr = reinterpret_cast<ice::u32*>(names_ptr + component_count);
-        ice::memcpy(sizes_ptr, ice::span::data(ComponentsInfo.sizes), ice::span::size_bytes(ComponentsInfo.sizes));
+        ice::memcpy(sizes_ptr, ComponentsInfo.sizes.data_view());
 
         ice::u32* offsets_ptr = reinterpret_cast<ice::u32*>(sizes_ptr + component_count);
 
@@ -554,10 +554,10 @@ namespace ice::ecs
 
             // Update the span object...
             SpanType* span_ptr = reinterpret_cast<SpanType*>(span_raw_ptr);
-            ice::memcpy(data_ptr, span_ptr->_data, ice::span::size_bytes(*span_ptr));
+            ice::memcpy(data_ptr, span_ptr->data_view());
 
             // Move to the next data location...
-            data_ptr = ice::ptr_add(data_ptr, ice::span::size_bytes(*span_ptr));
+            data_ptr = ice::ptr_add(data_ptr, span_ptr->size());
             return true;
         };
 
@@ -585,7 +585,7 @@ namespace ice::ecs
         operation->entities = entities_ptr;
         operation->entity_count = entity_count;
         operation->component_data = component_info_ptr;
-        operation->component_data_size = ice::ucount(ice::ptr_distance(component_info_ptr, component_info_ptr).value);
+        operation->component_data_size = ice::u32(ice::ptr_distance(component_info_ptr, component_info_ptr).value);
         operation->filter_data = filter_ptr;
 
         if (mode == 2)

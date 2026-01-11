@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "resource_filesystem_writable.hxx"
@@ -268,8 +268,8 @@ namespace ice
 
             // TODO: Decide how to handle the basepath naming.
             bool const remove_slash = utf8_file_path[ice::path::length(base_path)] == '/';
-            ice::String utf8_origin_name = ice::string::substr(utf8_file_path, ice::path::length(base_path) + remove_slash);
-            ice::String utf8_uri_path = ice::string::substr(utf8_file_path, ice::path::length(uri_base_path));
+            ice::String const utf8_origin_name = utf8_file_path.substr(ice::path::length(base_path) + remove_slash);
+            ice::String const utf8_uri_path = utf8_file_path.substr(ice::path::length(uri_base_path));
 
             IPT_ZONE_SCOPED_NAMED("stage: create_writable_resource");
             main_resource = ice::create_resource_object<ice::WritableFileResource>(

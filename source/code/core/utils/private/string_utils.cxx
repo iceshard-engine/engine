@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/string_utils.hxx>
@@ -17,8 +17,8 @@ namespace ice
     {
 #if ISP_WINDOWS
         ice::u32 const comp_result = check_case == CaseSensitive::Yes
-            ? strncmp(ice::string::begin(left), ice::string::begin(right), count)
-            : strnicmp(ice::string::begin(left), ice::string::begin(right), count);
+            ? strncmp(left.begin(), right.begin(), count)
+            : strnicmp(left.begin(), right.begin(), count);
 #elif ISP_UNIX
         ice::u32 const comp_result = check_case == CaseSensitive::Yes
             ? strncmp(ice::string::begin(left), ice::string::begin(right), count)
@@ -34,11 +34,11 @@ namespace ice
         ice::CaseSensitive check_case /*= CaseSensitive::No*/
     ) noexcept -> ice::CompareResult
     {
-        ice::u32 const max_size = ice::min(ice::size(left), ice::size(right));
+        ice::ncount const max_size = ice::min(left.size(), right.size());
 #if ISP_WINDOWS
         ice::u32 const comp_result = check_case == CaseSensitive::Yes
-            ? strncmp(ice::string::begin(left), ice::string::begin(right), max_size)
-            : strnicmp(ice::string::begin(left), ice::string::begin(right), max_size);
+            ? strncmp(left.begin(), right.begin(), max_size)
+            : strnicmp(left.begin(), right.begin(), max_size);
 #elif ISP_UNIX
         ice::u32 const comp_result = check_case == CaseSensitive::Yes
             ? strncmp(ice::string::begin(left), ice::string::begin(right), max_size)
@@ -56,8 +56,8 @@ namespace ice
         ice::i32 const chars_written = MultiByteToWideChar(
             CP_UTF8,
             0,
-            ice::string::begin(utf8_str),
-            ice::string::size(utf8_str),
+            utf8_str.begin(),
+            utf8_str.size().u32(),
             nullptr,
             0
         );
@@ -74,28 +74,28 @@ namespace ice
     ) noexcept
     {
 #if ISP_WINDOWS
-        ice::i32 const required_size = MultiByteToWideChar(
+        ice::ncount const required_size = MultiByteToWideChar(
             CP_UTF8,
             0,
-            ice::string::begin(utf8_str),
-            ice::string::size(utf8_str),
+            utf8_str.begin(),
+            utf8_str.size().u32(),
             NULL,
             0
         );
 
         if (required_size != 0)
         {
-            ice::u32 const current_size = ice::string::size(out_str);
-            ice::u32 const total_size = static_cast<ice::u32>(required_size) + ice::string::size(out_str);
-            ice::string::resize(out_str, total_size);
+            ice::ncount const current_size = out_str.size();
+            ice::ncount const total_size = required_size + out_str.size();
+            out_str.resize(total_size);
 
-            ice::i32 const chars_written = MultiByteToWideChar(
+            ice::ncount const chars_written = MultiByteToWideChar(
                 CP_UTF8,
                 0,
-                ice::string::begin(utf8_str),
-                ice::string::size(utf8_str),
-                ice::string::begin(out_str) + current_size,
-                ice::string::size(out_str) - current_size
+                utf8_str.begin(),
+                utf8_str.size().u32(),
+                out_str.begin() + current_size,
+                out_str.size().u32() - current_size.u32()
             );
 
             ICE_ASSERT(
@@ -132,8 +132,8 @@ namespace ice
         ice::i32 const required_size = WideCharToMultiByte(
             CP_UTF8,
             0,
-            ice::string::begin(path),
-            ice::string::size(path),
+            path.begin(),
+            path.size().u32(),
             NULL,
             0,
             NULL,
@@ -152,20 +152,20 @@ namespace ice
     ) noexcept
     {
 #if ISP_WINDOWS
-        ice::i32 const required_size = wide_to_utf8_size(path);
+        ice::ncount const required_size = wide_to_utf8_size(path);
         if (required_size != 0)
         {
-            ice::u32 const current_size = ice::string::size(out_str);
-            ice::u32 const total_size = static_cast<ice::u32>(required_size) + ice::string::size(out_str);
-            ice::string::resize(out_str, total_size);
+            ice::ncount const current_size = out_str.size();
+            ice::ncount const total_size = required_size + out_str.size();
+            out_str.resize(total_size);
 
             ice::i32 const chars_written = WideCharToMultiByte(
                 CP_UTF8,
                 0,
-                ice::string::begin(path),
-                ice::string::size(path),
-                ice::string::begin(out_str) + current_size,
-                ice::string::size(out_str) - current_size,
+                path.begin(),
+                path.size().u32(),
+                out_str.begin() + current_size,
+                out_str.size().u32() - current_size.u32(),
                 NULL,
                 NULL
             );

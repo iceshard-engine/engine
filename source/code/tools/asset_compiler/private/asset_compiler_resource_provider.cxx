@@ -1,8 +1,8 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "asset_compiler_resource_provider.hxx"
-#include <ice/string/heap_string.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/resource_flags.hxx>
 
 AssetCompilerResource::AssetCompilerResource(
@@ -18,7 +18,7 @@ AssetCompilerResource::AssetCompilerResource(
 {
     ice::native_file::HeapFilePath metapath{ _allocator };
     ice::native_file::path_from_string(metapath, _path);
-    ice::string::push_back(metapath, ISP_PATH_LITERAL(".isrm"));
+    metapath.push_back(ISP_PATH_LITERAL(".isrm"));
 
     if (auto metafile = ice::native_file::open_file(metapath, ice::native_file::FileOpenFlags::Read); file)
     {
@@ -64,7 +64,7 @@ AssetCompilerResourceProvider::AssetCompilerResourceProvider(
     , _resources{ _allocator }
     , _data{ _allocator }
 {
-    ice::array::reserve(_resources, ice::count(files));
+    _resources.reserve(files.size().u32());
 
     ice::u32 idx = 0;
     for (ice::String file : files)
@@ -76,11 +76,11 @@ AssetCompilerResourceProvider::AssetCompilerResourceProvider(
 
         AssetCompilerResource* res = _allocator.create<AssetCompilerResource>(_allocator, ice::move(filehandle), file);
         res->idx = idx++;
-        ice::array::push_back(_resources, res);
+        _resources.push_back(res);
     }
 
-    ice::array::resize(_data, ice::count(_resources));
-    ice::memset(ice::begin(_data), '\0', ice::array::data_view(_data).size.value);
+    _data.resize(_resources.size());
+    ice::memset(_data.begin(), '\0', _data.size().bytes().value);
 }
 
 AssetCompilerResourceProvider::~AssetCompilerResourceProvider() noexcept
@@ -98,7 +98,7 @@ AssetCompilerResourceProvider::~AssetCompilerResourceProvider() noexcept
 
 auto AssetCompilerResourceProvider::collect(
     ice::Array<ice::Resource*>& out_changes
-) noexcept -> ice::ucount
+) noexcept -> ice::u32
 {
     return 0;
 }
@@ -109,7 +109,7 @@ auto AssetCompilerResourceProvider::refresh(
 {
     for (AssetCompilerResource* res : _resources)
     {
-        ice::array::push_back(out_changes, res);
+        out_changes.push_back(res);
     }
     return ice::ResourceProviderResult::Success;
 }

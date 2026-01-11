@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_frame.hxx"
@@ -20,7 +20,7 @@ namespace ice
         }
         , _task_groups{ _frame_data._fwd_allocator }
     {
-        ice::array::reserve(_task_groups, 32);
+        _task_groups.reserve(32);
     }
 
     IceshardEngineFrame::~IceshardEngineFrame() noexcept
@@ -30,7 +30,7 @@ namespace ice
             ICE_ASSERT_CORE(group.barrier->is_set() == true);
             _frame_data._fwd_allocator.deallocate(group.barrier);
         }
-        ice::array::clear(_task_groups);
+        _task_groups.clear();
         ice::hashmap::clear(_data._values);
 
         _frame_data._fwd_allocator.reset();
@@ -45,14 +45,14 @@ namespace ice
     {
         if (count == 0) return { };
 
-        ice::array::push_back(_task_groups,
+        _task_groups.push_back(
             TaskGroup{
                 .tasks = ice::Array<ice::Task<>>{ _frame_data._fwd_allocator },
                 .barrier = _frame_data._fwd_allocator.create<ice::ManualResetBarrier>()
             }
         );
-        ice::Array<ice::Task<>>& result = ice::array::back(_task_groups).tasks;
-        ice::array::resize(result, count);
+        ice::Array<ice::Task<>>& result = _task_groups.last().tasks;
+        result.resize(count);
         return result;
     }
 
@@ -61,55 +61,55 @@ namespace ice
         ice::u32 task_count = 0;
         for (TaskGroup& group : _task_groups)
         {
-            task_count += ice::count(group.tasks);
+            task_count += group.tasks.size().u32();
         }
 
         if (task_count > 0)
         {
             ice::Array<ice::Task<>> final_task_list{ _frame_data._fwd_allocator };
-            ice::array::reserve(final_task_list, task_count);
+            final_task_list.reserve(task_count);
 
             for (TaskGroup& group : _task_groups)
             {
                 for (ice::Task<>& task : group.tasks)
                 {
-                    ice::array::push_back(final_task_list, ice::move(task));
+                    final_task_list.push_back(ice::move(task));
                 }
-                ice::array::clear(group.tasks);
+                group.tasks.clear();
             }
 
             co_await ice::await_scheduled_on(final_task_list, scheduler, resumer);
         }
     }
 
-    auto IceshardEngineFrame::execute_tasks() noexcept -> ice::ucount
+    auto IceshardEngineFrame::execute_tasks() noexcept -> ice::u32
     {
-        ice::ucount total_count = 0;
+        ice::u32 total_count = 0;
         for (TaskGroup& group : _task_groups)
         {
-            ice::ucount const current_count = ice::count(group.tasks);
+            ice::u32 const current_count = group.tasks.size().u32();
 
             // Only reset the barrier if we actual have tasks to execute.
             if (current_count > 0)
             {
                 total_count += current_count;
 
-                ICE_ASSERT_CORE(ice::count(group.tasks) < ice::u8_max);
+                ICE_ASSERT_CORE(group.tasks.size() < ice::u8_max);
 
-                group.barrier->reset(ice::u8(ice::count(group.tasks)));
+                group.barrier->reset(group.tasks.size().u8());
                 ice::manual_wait_for(*group.barrier, group.tasks);
-                ice::array::clear(group.tasks);
+                group.tasks.clear();
             }
         }
         return total_count;
     }
 
-    auto IceshardEngineFrame::running_tasks() const noexcept -> ice::ucount
+    auto IceshardEngineFrame::running_tasks() const noexcept -> ice::u32
     {
-        ice::ucount result = 0;
+        ice::u32 result = 0;
         for (TaskGroup const& group : _task_groups)
         {
-            result += ice::ucount(group.barrier->is_set() == false);
+            result += ice::u32(group.barrier->is_set() == false);
         }
         return result;
     }

@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -100,7 +100,7 @@ namespace ice
 
         void execute(ice::Task<> task) noexcept override
         {
-            ice::array::push_back(_pending_tasks, ice::move(task));
+            _pending_tasks.push_back(ice::move(task));
         }
 
         auto execute_internal(ice::Task<> task) noexcept -> ice::Task<>
@@ -111,15 +111,15 @@ namespace ice
 
         void execute_all() noexcept
         {
-            ice::ucount const num_tasks = ice::array::count(_pending_tasks);
-            _running_tasks.fetch_add(num_tasks, std::memory_order_relaxed);
+            ice::ncount const num_tasks = _pending_tasks.size();
+            _running_tasks.fetch_add(num_tasks.u32(), std::memory_order_relaxed);
 
             for (ice::Task<>& pending_task : _pending_tasks)
             {
                 // We schedule the task on the given scheduler.
                 ice::schedule_task(execute_internal(ice::move(pending_task)), _scheduler);
             }
-            ice::array::clear(_pending_tasks);
+            _pending_tasks.clear();
         }
 
         void wait_all() noexcept

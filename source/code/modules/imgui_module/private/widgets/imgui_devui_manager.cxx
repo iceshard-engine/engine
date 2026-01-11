@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "imgui_devui_manager.hxx"
@@ -11,7 +11,7 @@ namespace ImGui
 {
     void StringUnformatted(ice::String str) noexcept
     {
-        TextUnformatted(ice::string::begin(str), ice::string::end(str));
+        TextUnformatted(str.begin(), str.end());
     }
 } // namespace ImGui
 
@@ -23,8 +23,8 @@ namespace ice::devui
         , _allocator{ alloc }
         , _widgets{ alloc }
     {
-        ice::array::reserve(_widgets, 100);
-        ice::array::push_back(_widgets, ice::make_unique<ImGuiDevUIWidget>(_allocator));
+        _widgets.reserve(100);
+        _widgets.push_back(ice::make_unique<ImGuiDevUIWidget>(_allocator));
     }
 
     ImGuiDevUIManager::~ImGuiDevUIManager() noexcept
@@ -42,13 +42,13 @@ namespace ice::devui
             };
 
         ice::DevUIWidgetState const* owner_state = nullptr;
-        ice::ucount owner_idx = 0;
+        ice::u32 owner_idx = 0;
         if (ice::search(ice::Span{ _widgets }, owning_widget, fn_compare, owner_idx))
         {
             owner_state = ice::addressof(_widgets[owner_idx]->state);
         }
 
-        ice::array::push_back(_widgets,
+        _widgets.push_back(
             ice::make_unique<ImGuiDevUIWidget>(_allocator,
                 ImGuiDevUIWidget{
                     .state = {.owner = owner_state },
@@ -63,7 +63,7 @@ namespace ice::devui
     {
         // TODO: ice::array::remove_at
 
-        ice::u32 const count = ice::array::count(_widgets);
+        ice::u32 const count = _widgets.size().u32();
         if (count == 0)
         {
             return;
@@ -78,7 +78,7 @@ namespace ice::devui
         }
 
         _widgets[idx] = ice::move(_widgets[count - 1]);
-        ice::array::pop_back(_widgets);
+        _widgets.pop_back();
     }
 
     void ImGuiDevUIManager::build_content() noexcept
@@ -104,7 +104,7 @@ namespace ice::devui
             ImGui::TableSetupColumn("Visible");
             ImGui::TableHeadersRow();
 
-            for (auto const& widget : ice::array::slice(_widgets, 1))
+            for (auto const& widget : _widgets.tailspan())
             {
                 ImGui::TableNextRow();
 

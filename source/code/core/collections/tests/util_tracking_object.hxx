@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -8,15 +8,15 @@
 
 struct Test_ObjectEvents
 {
-    ice::ucount test_ctor;
-    ice::ucount test_ctor_def;
-    ice::ucount test_ctor_move;
-    ice::ucount test_ctor_copy;
+    ice::u32 test_ctor;
+    ice::u32 test_ctor_def;
+    ice::u32 test_ctor_move;
+    ice::u32 test_ctor_copy;
 
-    ice::ucount test_op_move;
-    ice::ucount test_op_copy;
+    ice::u32 test_op_move;
+    ice::u32 test_op_copy;
 
-    ice::ucount* test_dtor = nullptr;
+    ice::u32* test_dtor = nullptr;
 };
 
 bool operator==(Test_ObjectEvents const& lhs, Test_ObjectEvents const& rhs) noexcept;

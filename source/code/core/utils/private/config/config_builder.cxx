@@ -1,10 +1,10 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/config/config_builder.hxx>
 #include <ice/container/hashmap.hxx>
-#include <ice/string/heap_string.hxx>
-#include <ice/string/heap_var_string.hxx>
+#include <ice/heap_string.hxx>
+#include <ice/heap_varstring.hxx>
 
 #include "config_builder.hxx"
 
@@ -91,8 +91,8 @@ namespace ice
     ) noexcept -> ice::usize
     {
         ice::usize result = 0_B;
-        ConfigBuilderEntry const* entry = ice::array::begin(config._entries);
-        ConfigBuilderEntry const* const entry_end = ice::array::end(config._entries);
+        ConfigBuilderEntry const* entry = config._entries.begin();
+        ConfigBuilderEntry const* const entry_end = config._entries.end();
 
         if (entry == entry_end)
         {
@@ -119,9 +119,9 @@ namespace ice
             }
             else if (entry->vtype == CONFIG_VALTYPE_STRING)
             {
-                ice::ucount bytes = 0;
-                ice::ucount const size = ice::string::detail::read_varstring_size(entry->data.val_varstr->_data, bytes);
-                out_data_size += { bytes + size + 1 }; // +1 for '\0'
+                ice::usize bytes = 0_B;
+                ice::ncount const size = ice::varstring::read_size(entry->data.val_varstr->_data, bytes);
+                out_data_size += bytes + size.bytes() + 1_B; // +1 for '\0'
             }
             else if (entry->vtype >= CONFIG_VALTYPE_LARGE)
             {
@@ -167,8 +167,8 @@ namespace ice
     {
         // First add all keys-values to the list
         ice::u32 keyoffset = 0;
-        ice::config::detail::ConfigBuilderEntry const* it_entry = ice::array::begin(config._entries);
-        ice::config::detail::ConfigBuilderEntry const* const it_end = ice::array::end(config._entries);
+        ice::config::detail::ConfigBuilderEntry const* it_entry = config._entries.begin();
+        ice::config::detail::ConfigBuilderEntry const* const it_end = config._entries.end();
         do
         {
             // Copy the whole key information and just update the str offset.
@@ -196,11 +196,11 @@ namespace ice
 
         // Then add all children key-values
         ice::u32 out_keyidx = 0;
-        it_entry = ice::array::begin(config._entries);
+        it_entry = config._entries.begin();
 
         if (config.vtype == CONFIG_VALTYPE_TABLE)
         {
-            ice::u32 const table_size = ice::count(config._entries);
+            ice::u32 const table_size = config._entries.size().u32();
 
             // Save table size in first key
             out_keylist[0].offset = table_size >> 8;
@@ -228,7 +228,7 @@ namespace ice
             else if (it_entry->vtype == CONFIG_VALTYPE_STRING)
             {
                 ice::HeapVarString<> const& varstr = *config._entries[out_keyidx].data.val_varstr;
-                ice::Data const in_data = ice::string::data_view(varstr);
+                ice::Data const in_data = varstr.data_view();
 
                 // Set the '\0' character
                 *(reinterpret_cast<char*>(out_data.memory.location) + (out_data.offset_strings - 1)) = '\0';
@@ -249,7 +249,7 @@ namespace ice
                 ConfigBuilderContainer& sub = *config._entries[out_keyidx].data.val_container;
 
                 // Set the value to the current 'keyoffset' value. This serves as the relative offset starting from the passed key.
-                out_vallist[out_keyidx].internal = ice::array::empty(sub._entries) ? ice::u32_max : keyoffset - out_keyidx;
+                out_vallist[out_keyidx].internal = sub._entries.is_empty() ? ice::u32_max : keyoffset - out_keyidx;
 
                 if (out_vallist[out_keyidx].internal != ice::u32_max)
                 {
@@ -371,7 +371,7 @@ namespace ice
         using ice::config::detail::ConfigValue;
 
         ice::config::detail::ConfigBuilderContainer& container = *_internal->data.val_container;
-        if (ice::array::empty(container._entries))
+        if (container._entries.is_empty())
         {
             return {};
         }
@@ -397,18 +397,18 @@ namespace ice
         char const* final_keystrings = reinterpret_cast<char const*>(final_keystrings_mem.location);
 
         // Reserve space to hold all keystring entries and build the string buffer.
-        ice::array::resize(keyoffsets, ice::hashmap::count(keystrings));
+        keyoffsets.resize(ice::hashmap::count(keystrings));
 
-        ice::u32 keystr_offset = 0;
+        ice::ncount keystr_offset = 0;
         for (CBKeyString const& keystr : ice::hashmap::values(keystrings))
         {
             // Copy and advance the pointer
-            ice::memcpy(final_keystrings_mem, ice::string::data_view(keystr.value));
-            final_keystrings_mem = ice::ptr_add(final_keystrings_mem, ice::string::data_view(keystr.value).size);
+            ice::memcpy(final_keystrings_mem, keystr.value.data_view());
+            final_keystrings_mem = ice::ptr_add(final_keystrings_mem, keystr.value.size());
 
             // Store the offset
-            keyoffsets[keystr.index] = keystr_offset;
-            keystr_offset += ice::string::size(keystr.value);
+            keyoffsets[keystr.index] = keystr_offset.u32();
+            keystr_offset += keystr.value.size();
         }
 
         // Build the new key and value arrays + copy large data.

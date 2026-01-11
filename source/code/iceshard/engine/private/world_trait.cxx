@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/world/world.hxx>
@@ -44,7 +44,7 @@ namespace ice
 
     void Trait::send(ice::ShardID shardid, ice::String value, SendMode mode) noexcept
     {
-        this->send(shardid | ice::string::begin(value), mode);
+        this->send(shardid | value.begin(), mode);
     }
 
     void Trait::send(ice::ShardID shardid, ice::Asset asset, SendMode mode) noexcept

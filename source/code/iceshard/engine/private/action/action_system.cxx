@@ -8,7 +8,7 @@
 
 #include <ice/mem_allocator.hxx>
 #include <ice/mem_allocator_ring.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <ice/clock.hxx>
 
 namespace ice::action
@@ -163,10 +163,7 @@ namespace ice::action
         if (instance != nullptr)
         {
             instance->stage_timeline = ice::timeline::create_timeline(_clock);
-            ice::array::push_back(
-                _actions,
-                instance
-            );
+            _actions.push_back(instance);
         }
     }
 

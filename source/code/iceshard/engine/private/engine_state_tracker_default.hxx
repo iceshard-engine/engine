@@ -1,9 +1,9 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/engine_state_tracker.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <ice/container/queue.hxx>
 #include <ice/container/hashmap.hxx>
 #include <ice/mem_allocator_stack.hxx>
@@ -58,7 +58,7 @@ namespace ice
         auto update_states(
             ice::ShardContainer const& shards,
             ice::ShardContainer& out_shards
-        ) noexcept -> ice::ucount override;
+        ) noexcept -> ice::u32 override;
 
         void collect_pending_state(
             ice::Shard trigger_shard,

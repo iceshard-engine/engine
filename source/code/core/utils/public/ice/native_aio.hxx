@@ -1,8 +1,8 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/string/string.hxx>
+#include <ice/string.hxx>
 
 namespace ice::native_aio
 {
@@ -11,7 +11,7 @@ namespace ice::native_aio
 
     struct AIOPortInfo
     {
-        ice::ucount worker_limit = 1;
+        ice::u32 worker_limit = 1;
         ice::String debug_name;
     };
 
@@ -68,6 +68,6 @@ namespace ice::native_aio
     auto aio_process_events(
         ice::native_aio::AIOPort port,
         ice::native_aio::AIOProcessLimits limits = {}
-    ) noexcept -> ice::ucount;
+    ) noexcept -> ice::u32;
 
 } // namespace ice::native_aio

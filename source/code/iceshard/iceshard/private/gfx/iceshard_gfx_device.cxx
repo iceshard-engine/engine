@@ -156,7 +156,7 @@ namespace ice::gfx
     ) noexcept -> ice::UniquePtr<ice::gfx::IceGfxDevice>
     {
         ice::Array<ice::render::QueueFamilyInfo> queue_families{ alloc };
-        ice::array::reserve(queue_families, 20);
+        queue_families.reserve(20);
         render_driver.query_queue_infos(queue_families);
 
         using ice::render::QueueFlags;
@@ -164,11 +164,11 @@ namespace ice::gfx
         using ice::render::QueueID;
 
         ice::Array<ice::render::QueueInfo> queues{ alloc };
-        ice::array::reserve(queues, ice::count(render_queues));
+        queues.reserve(render_queues.size().u32());
 
         auto find_queue_index = [](auto const& array_, QueueID id_, ice::u32& idx_out) noexcept -> bool
         {
-            ice::u32 const size = ice::array::count(array_);
+            ice::u32 const size = array_.size().u32();
 
             idx_out = 0;
             while (idx_out < size && array_[idx_out].id != id_)
@@ -176,7 +176,7 @@ namespace ice::gfx
                 idx_out += 1;
             }
 
-            return ice::array::count(array_) > idx_out;
+            return array_.size() > idx_out;
         };
 
         ice::HashMap<ice::u32> queue_index_tracker{ alloc };
@@ -195,8 +195,7 @@ namespace ice::gfx
             }
             else
             {
-                ice::array::push_back(
-                    queues,
+                queues.push_back(
                     QueueInfo{
                         .id = pass_queue_id,
                         .count = 1
@@ -231,15 +230,14 @@ namespace ice::gfx
         if (render_device != nullptr)
         {
             ice::Array<ice::gfx::IceGfxQueueGroup*> pass_groups{ alloc };
-            ice::array::reserve(pass_groups, pass_group_count);
+            pass_groups.reserve(pass_group_count);
 
             for (ice::u32 group_pool_index = 0; group_pool_index < pass_group_count; ++group_pool_index)
             {
-                ice::array::push_back(
-                    pass_groups,
+                pass_groups.push_back(
                     alloc.create<IceGfxQueueGroup>(
                         alloc,
-                        ice::count(render_queues)
+                        render_queues.size().u32()
                     )
                 );
             }

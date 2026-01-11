@@ -103,7 +103,7 @@ namespace ice
                 }
             }
 
-            ice::array::push_back(_types, category);
+            _types.push_back(category);
             ice::hashmap::set(
                 _definitions,
                 type_hash,

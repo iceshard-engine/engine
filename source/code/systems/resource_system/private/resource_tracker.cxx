@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "resource_tracker.hxx"
@@ -104,7 +104,7 @@ namespace ice
         ice::Array<ice::Resource*> temp_resources{ _allocator };
         for (auto const& provider : _resource_providers)
         {
-            ice::array::clear(temp_resources);
+            temp_resources.clear();
 
             this->sync_provider(temp_resources, *provider);
         }
@@ -153,7 +153,7 @@ namespace ice
         ice::ResourceProvider& provider,
         ice::ResourceFilter const& filter,
         ice::Array<ice::URI>& out_uris
-    ) const noexcept -> ice::TaskExpected<ice::ucount>
+    ) const noexcept -> ice::TaskExpected<ice::u32>
     {
         co_return co_await provider.filter_resource_uris(filter, out_uris);
     }
@@ -161,9 +161,9 @@ namespace ice
     auto ResourceTrackerImplementation::filter_resource_uris(
         ice::ResourceFilter const& filter,
         ice::Array<ice::URI>& out_uris
-    ) const noexcept -> ice::TaskExpected<ice::ucount>
+    ) const noexcept -> ice::TaskExpected<ice::u32>
     {
-        ice::ucount collected = 0;
+        ice::u32 collected = 0;
         for (ice::UniquePtr<ice::ResourceProvider> const& provider : _resource_providers)
         {
             static constexpr ice::String const keywords[]{ "blocked", "allowed" };
@@ -346,7 +346,7 @@ namespace ice
             return;
         }
 
-        ice::ucount const new_count = ice::hashmap::count(_resources) + ice::array::count(out_resources);
+        ice::u32 const new_count = ice::hashmap::count(_resources) + out_resources.size().u32();
         ICE_ASSERT(
             new_count <= _info.predicted_resource_count,
             "Maximum resource capacity of {} entiries reached!",
@@ -473,15 +473,15 @@ namespace ice
         {
             if constexpr (ice::build::is_windows)
             {
-                ice::string::push_back(result, ".dll");
+                result.push_back(".dll");
             }
             else
             {
                 // On unix we expect the library to be prepended with 'lib' and appended with '.so'
-                ice::string::clear(result);
-                ice::string::push_back(result, "lib");
-                ice::string::push_back(result, name);
-                ice::string::push_back(result, ".so");
+                result.clear();
+                result.push_back("lib");
+                result.push_back(name);
+                result.push_back(".so");
             }
         }
 

@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -43,7 +43,7 @@ namespace ice
         //! \note The span needs to hold at least `ice::Constant_CountInputActionConstants` number of entries.
         //! \param[in,out] constants_span The span into which individual constant values will be loaded.
         //! \returns Number of loaded constants or `0` if no constants are defined in this layer.
-        virtual auto load_constants(ice::Span<ice::f32> constants_span) const noexcept -> ice::ucount = 0;
+        virtual auto load_constants(ice::Span<ice::f32> constants_span) const noexcept -> ice::u32 = 0;
 
         //! \brief Updates all layer sources based on the input events passed.
         //! \param[in,out] events List of input events to be processed. If an event was processed it will be swapped with an
@@ -53,7 +53,7 @@ namespace ice
         virtual auto process_inputs(
             ice::Span<ice::input::InputEvent> events,
             ice::Span<ice::InputActionSource* const> source_values
-        ) const noexcept -> ice::ucount = 0;
+        ) const noexcept -> ice::u32 = 0;
 
         //! \brief Runs updates on all defined actions by this layer.
         //! \param[in] executor Executor object with context data, used to execute conditions, steps and modifiers.

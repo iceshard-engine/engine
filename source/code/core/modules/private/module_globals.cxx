@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/module_register.hxx>
@@ -10,9 +10,9 @@ namespace ice
     auto load_global_modules(
         ice::Allocator& alloc,
         ice::ModuleRegister& modules_register
-    ) noexcept -> ice::ucount
+    ) noexcept -> ice::u32
     {
-        ice::ucount loaded_modules = 0;
+        ice::u32 loaded_modules = 0;
 
         ice::ModulesEntry const* module_entry = Global_ModulesList;
         while(module_entry != nullptr)

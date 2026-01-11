@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "asset_shelve.hxx"
@@ -9,7 +9,7 @@
 #include <ice/container/hashmap.hxx>
 #include <ice/mem_allocator_utils.hxx>
 #include <ice/profiler.hxx>
-#include <ice/string/heap_string.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/task_utils.hxx>
 
 namespace ice

@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "resource_provider_custom.hxx"
@@ -42,9 +42,9 @@ namespace ice
         ice::native_file::FilePath const uribase = ice::path::directory(base_path);
         ice::native_file::FilePath const datafile = file_path;
         ice::native_file::HeapFilePath metafile{ temp_alloc };
-        ice::string::reserve(metafile, 512);
-        ice::string::push_back(metafile, file_path);
-        ice::string::push_back(metafile, ISP_PATH_LITERAL(".isrm"));
+        metafile.reserve(512);
+        metafile.push_back(file_path);
+        metafile.push_back(ISP_PATH_LITERAL(".isrm"));
 
         ice::FileSystemResource* const resource = create_resources_from_loose_files(
             _allocator,
@@ -73,14 +73,14 @@ namespace ice
 
     auto CustomResourceProvider::collect(
         ice::Array<ice::Resource*>& out_changes
-    ) noexcept -> ice::ucount
+    ) noexcept -> ice::u32
     {
         IPT_ZONE_SCOPED;
 
-        ice::array::reserve(out_changes, ice::array::count(out_changes) +  ice::hashmap::count(_resources));
+        out_changes.reserve(out_changes.size() + ice::hashmap::count(_resources));
         for (auto* resource : _resources)
         {
-            ice::array::push_back(out_changes, resource);
+            out_changes.push_back(resource);
         }
         return ice::hashmap::count(_resources);
     }
@@ -135,17 +135,13 @@ namespace ice
         ice::Resource const* root_resource
     ) const noexcept -> ice::Resource const*
     {
-        ice::u32 const origin_size = ice::string::size(root_resource->origin());
+        ice::ncount const origin_size = root_resource->origin().size();
 
         ice::HeapString<> predicted_path{ _allocator };
-        ice::string::reserve(predicted_path, origin_size + ice::string::size(relative_uri.path()));
+        predicted_path.reserve(origin_size + relative_uri.path().size());
 
-        predicted_path = ice::string::substr(
-            root_resource->origin(),
-            0,
-            origin_size - ice::string::size(
-                ice::path::filename(root_resource->name())
-            )
+        predicted_path = root_resource->origin().substr(
+            0, origin_size - ice::path::filename(root_resource->name()).size()
         );
 
         ice::path::join(predicted_path, relative_uri.path());

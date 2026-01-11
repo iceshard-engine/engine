@@ -3,7 +3,7 @@
 
 #pragma once
 #include <ice/input/device_event.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 
 namespace ice::input
 {
@@ -46,12 +46,12 @@ namespace ice::input
 
     inline bool DeviceEventQueue::empty() const noexcept
     {
-        return ice::array::empty(_events);
+        return _events.is_empty();
     }
 
     inline void DeviceEventQueue::clear() noexcept
     {
-        ice::array::clear(_events);
+        _events.clear();
     }
 
     inline void DeviceEventQueue::push(
@@ -59,8 +59,7 @@ namespace ice::input
         ice::input::DeviceMessage message
     ) noexcept
     {
-        ice::array::push_back(
-            _events,
+        _events.push_back(
             DeviceEvent{
                 .device = device,
                 .message = message,
@@ -104,7 +103,7 @@ namespace ice::input
             event.payload_data.val_f32 = payload_value;
         }
 
-        ice::array::push_back(_events, event);
+        _events.push_back(event);
     }
 
     template<typename T> requires std::is_enum_v<T>

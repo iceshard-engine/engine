@@ -1,8 +1,8 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include "vk_include.hxx"
 
 namespace ice::render::vk
@@ -56,13 +56,13 @@ namespace ice::render::vk
 
     auto extensions_gather_names(
         ice::Array<ExtensionName>& out_names,
-        ice::ucount& out_count,
+        ice::u32& out_count,
         ExtensionTarget target
     ) noexcept -> Extension;
 
     auto extensions_gather_names(
         ice::Array<ExtensionName>& out_names,
-        ice::ucount& out_count,
+        ice::u32& out_count,
         VkPhysicalDevice physical_device
     ) noexcept -> Extension;
 

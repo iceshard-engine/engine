@@ -5,7 +5,7 @@
 #include <ice/platform_core.hxx>
 #include <ice/platform_storage.hxx>
 #include <ice/mem_allocator_host.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <ice/shard_container.hxx>
 #include <ice/task_queue.hxx>
 #include <ice/task_thread.hxx>

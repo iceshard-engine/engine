@@ -1,3 +1,6 @@
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/config.hxx>
 #include <ice/path_utils.hxx>
@@ -39,14 +42,14 @@ namespace ice
 
         bool allows_hostname(ice::String hostname) const noexcept override
         {
-            return ice::string::empty(_hostname) || hostname == _hostname;
+            return _hostname.is_empty() || hostname == _hostname;
         }
 
         bool allows_resource(
             ice::Resource const* resource
         ) const noexcept override
         {
-            return ice::string::empty(_extension) || ice::path::extension(resource->origin()) == _extension;
+            return _extension.is_empty() || ice::path::extension(resource->origin()) == _extension;
         }
 
     private:

@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "ice_gfx_graph.hxx"
@@ -36,27 +36,27 @@ namespace ice::gfx
                 .name = stage.name
             };
 
-            ice::u32 offset = ice::array::count(out_resources);
+            ice::u32 offset = out_resources.size().u32();
             for (ice::gfx::GfxResource res : stage.depth_stencil)
             {
-                ice::array::push_back(out_resources, res);
+                out_resources.push_back(res);
             }
-            stage_copy.depth_stencil = ice::array::slice(out_resources, offset, ice::count(stage.depth_stencil));
-            offset += ice::count(stage.depth_stencil);
+            stage_copy.depth_stencil = out_resources.subspan(offset, stage.depth_stencil.size().u32());
+            offset += stage.depth_stencil.size().u32();
 
             for (ice::gfx::GfxResource res : stage.inputs)
             {
-                ice::array::push_back(out_resources, res);
+                out_resources.push_back(res);
             }
-            stage_copy.inputs = ice::array::slice(out_resources, offset, ice::count(stage.inputs));
-            offset += ice::count(stage.inputs);
+            stage_copy.inputs = out_resources.subspan(offset, stage.inputs.size().u32());
+            offset += stage.inputs.size().u32();
 
             for (ice::gfx::GfxResource res : stage.outputs)
             {
-                ice::array::push_back(out_resources, res);
+                out_resources.push_back(res);
             }
-            stage_copy.outputs = ice::array::slice(out_resources, offset, ice::count(stage.outputs));
-            offset += ice::count(stage.inputs);
+            stage_copy.outputs = out_resources.subspan(offset, stage.outputs.size().u32());
+            offset += stage.inputs.size().u32();
 
             return stage_copy;
         }
@@ -90,22 +90,22 @@ namespace ice::gfx
     {
         if (ice::hashmap::has(_objects, ice::hash(pass.name)) == false)
         {
-            ice::ucount res_count = 0;
+            ice::u32 res_count = 0;
             for (ice::gfx::GfxGraphStage const& stage : pass.stages)
             {
-                res_count += ice::count(stage.depth_stencil) + ice::count(stage.inputs) + ice::count(stage.outputs);
+                res_count += stage.depth_stencil.size().u32() + stage.inputs.size().u32() + stage.outputs.size().u32();
             }
 
             IceshardGfxGraphPassObjects gfxpass{ _allocator, pass.name };
-            ice::array::reserve(gfxpass.resources, res_count);
-            ice::array::reserve(gfxpass.stages, ice::count(pass.stages));
+            gfxpass.resources.reserve(res_count);
+            gfxpass.stages.reserve(pass.stages.size().u32());
 
             for (ice::gfx::GfxGraphStage const& stage : pass.stages)
             {
-                ice::array::push_back(gfxpass.stages, detail::copy_gfx_pass_stage(stage, gfxpass.resources));
+                gfxpass.stages.push_back(detail::copy_gfx_pass_stage(stage, gfxpass.resources));
             }
 
-            ice::array::push_back(_passes, GfxGraphPass{ .name = pass.name, .stages = gfxpass.stages });
+            _passes.push_back(GfxGraphPass{ .name = pass.name, .stages = gfxpass.stages });
             ice::hashmap::set(_objects, ice::hash(pass.name), ice::move(gfxpass));
         }
         return true;
@@ -130,13 +130,13 @@ namespace ice::gfx
 
         ice::vec2u extent = swapchain.extent();
 
-        ice::ucount const count_images = ice::count(resources);
+        ice::u32 const count_images = resources.size().u32();
 
-        ice::array::clear(out_images);
-        ice::array::reserve(out_images, count_images);
-        ice::array::push_back(out_images, Image::Invalid); // First image beeing framebuffer
+        out_images.clear();
+        out_images.reserve(count_images);
+        out_images.push_back(Image::Invalid); // First image beeing framebuffer
 
-        for (GfxResource res : ice::span::subspan(resources, 1))
+        for (GfxResource res : resources.subspan(1))
         {
             ImageInfo image_info {
                 .type = ImageType::Image2D,
@@ -156,10 +156,7 @@ namespace ice::gfx
                 image_info.usage = ImageUsageFlags::DepthStencilAttachment;
             }
 
-            ice::array::push_back(
-                out_images,
-                render_device.create_image(image_info, {})
-            );
+            out_images.push_back(render_device.create_image(image_info, {}));
         }
 
         ice::u32 fb_idx = 0;
@@ -193,7 +190,7 @@ namespace ice::gfx
         , _clears{ _allocator }
         , _stages{ ice::move(stages) }
     {
-        ice::array::resize(_framebuffers, _swapchain.image_count());
+        _framebuffers.resize(_swapchain.image_count());
 
         create_framebuffers(
             _allocator,
@@ -205,7 +202,7 @@ namespace ice::gfx
             _framebuffers
         );
 
-        ice::array::resize(_clears, ice::count(_resources));
+        _clears.resize(_resources.size());
         for (vec4f& ccolor : _clears)
         {
             ccolor = vec4f{ 0.2f };
@@ -230,7 +227,7 @@ namespace ice::gfx
         {
             device.destroy_framebuffer(framebuffer);
         }
-        for (ice::render::Image image : ice::array::slice(_framebuffer_images, 1))
+        for (ice::render::Image image : _framebuffer_images.tailspan())
         {
             device.destroy_image(image);
         }
@@ -265,7 +262,7 @@ namespace ice::gfx
         ice::Array<ice::gfx::GfxStage*> temp_stages{ _allocator };
         if (stage_registry.query_stages(_stages._stage_names, temp_stages))
         {
-            for (ice::u32 idx = 0; idx < ice::count(_stages._stage_names); ++idx)
+            for (ice::u32 idx = 0; idx < _stages._stage_names.size(); ++idx)
             {
                 ice::u64 const stage_hash = ice::hash(_stages._stage_names[idx]);
                 GfxStage* stage_ptr = temp_stages[idx];
@@ -373,10 +370,10 @@ namespace ice::gfx
             return false;
         }
 
-        ice::ucount const fb_idx = _context.next_frame();
+        ice::u32 const fb_idx = _context.next_frame();
 
         // TODO: Can we do this differently?
-        if (fb_idx == ice::ucount_max)
+        if (fb_idx == ice::u32_max)
         {
             return false;
         }
@@ -440,7 +437,7 @@ namespace ice::gfx
             }
             else if (GfxGraphSnapshot.event & GfxSnapshotEvent::EventNextSubPass && ice::exchange(first_skipped, true))
             {
-                for (ice::StringID_Arg stage : ice::array::slice(_stages._stage_names, stage_idx, _stages._counts[pass_idx]))
+                for (ice::StringID_Arg stage : _stages._stage_names.subspan(stage_idx, _stages._counts[pass_idx]))
                 {
                     // TODO: Separate update and draw?
                     _stages.apply_stages(stage, &GfxStage::update, frame, _context);
@@ -455,7 +452,7 @@ namespace ice::gfx
             {
                 {
                     IPT_ZONE_SCOPED_NAMED("graph_execute_stages");
-                    for (ice::StringID_Arg stage : ice::array::slice(_stages._stage_names, stage_idx, _stages._counts[pass_idx]))
+                    for (ice::StringID_Arg stage : _stages._stage_names.subspan( stage_idx, _stages._counts[pass_idx]))
                     {
                         // TODO: Separate update and draw?
                         _stages.apply_stages(stage, &GfxStage::update, frame, _context);
@@ -486,7 +483,7 @@ namespace ice::gfx
         GfxSnapshotEvent result = GfxSnapshotEvent::EventCreateRes;
 
         bool pass_boundary = false;
-        for (ice::u32 idx = ice::count(snapshots) - 1; idx >= 0; --idx)
+        for (ice::u32 idx = snapshots.size().u32() - 1; idx >= 0; --idx)
         {
             GfxGraphSnapshot const prev = snapshots[idx];
 

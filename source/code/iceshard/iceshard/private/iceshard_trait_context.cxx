@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_world.hxx"
@@ -46,14 +46,14 @@ namespace ice
 
     void IceshardTraitContext::send(ice::detail::TraitEvent event) noexcept
     {
-        ice::ucount idx = 0;
+        ice::u32 idx = 0;
         if (event.mode == TraitSendMode::Replace && ice::search(ice::Span{ _events }, event, detail::is_same_event, idx))
         {
             _events[idx] = event;
         }
         else
         {
-            ice::array::push_back(_events, event);
+            _events.push_back(event);
         }
     }
 
@@ -71,7 +71,7 @@ namespace ice
         // Copy all current events into the _expired events list.
         //   We use copy+clean so we don't allocate one of the arrays every time.
         _events_expired = _events;
-        ice::array::clear(_events);
+        _events.clear();
 
         // Push shards into the out container. (ice::detail::TraitEvent decays into ice::Shard)
         for (ice::Shard shard : _events_expired)

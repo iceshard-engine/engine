@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/framework_app.hxx>
@@ -58,7 +58,7 @@
 #include <ice/task_scoped_container.hxx>
 #include <ice/sync_manual_events.hxx>
 #include <ice/path_utils.hxx>
-#include <ice/string/heap_string.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/profiler.hxx>
 #include <ice/uri.hxx>
 
@@ -338,15 +338,15 @@ auto ice_setup(
         ice::path::join(config.dev_dirs.assets, "../source/data");
         ice::path::normalize(config.dev_dirs.shaders);
         ice::path::normalize(config.dev_dirs.assets);
-        ice::string::push_back(config.dev_dirs.shaders, '/');
-        ice::string::push_back(config.dev_dirs.assets, '/');
-        ice::array::push_back(resource_paths, config.dev_dirs.assets);
-        ice::array::push_back(resource_paths, config.dev_dirs.shaders);
+        config.dev_dirs.shaders.push_back('/');
+        config.dev_dirs.assets.push_back('/');
+        resource_paths.push_back(config.dev_dirs.assets);
+        resource_paths.push_back(config.dev_dirs.shaders);
     }
     else
     {
         dylib_path = storage->dylibs_location();
-        ice::array::push_back(resource_paths, storage->data_locations());
+        resource_paths.push_back(storage->data_locations());
     }
 
     ice::framework::Config game_config{
@@ -593,7 +593,7 @@ auto ice_game_frame(
     co_await runtime.runner->pre_update(new_frame->shards());
 
     // Push input events
-    ice::array::clear(runtime.input_events);
+    runtime.input_events.clear();
     runtime.input_tracker->process_device_events(state.platform.core->input_events(), runtime.input_events);
     ice_process_input_events(runtime.input_events, new_frame->shards());
 

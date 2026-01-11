@@ -9,7 +9,7 @@
 #include <ice/render/render_device.hxx>
 #include <ice/render/render_driver.hxx>
 #include <ice/mem_unique_ptr.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include "../iceshard_data_storage.hxx"
 
 namespace ice::gfx

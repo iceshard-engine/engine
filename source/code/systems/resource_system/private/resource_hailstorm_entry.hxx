@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -24,7 +24,7 @@ namespace ice
 
         virtual auto name() const noexcept -> ice::String override
         {
-            return ice::string::substr(_uri.path(), ice::string::find_first_of(_uri.path(), '.') + 5);
+            return _uri.path().substr(_uri.path().find_first_of('.') + 5);
         }
         virtual auto origin() const noexcept -> ice::String override { return _uri.path(); }
 

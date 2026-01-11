@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 
@@ -11,7 +11,7 @@
 #include <ice/input_action_layer_builder.hxx>
 #include <ice/input_action_definitions.hxx>
 #include <ice/input_action_executor.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <ice/container/hashmap.hxx>
 #include <ice/profiler.hxx>
 #include <ice/clock.hxx>
@@ -35,10 +35,15 @@ namespace ice
     };
 
     template<typename T>
-    auto load_field_from_data(ice::Span<T const>& out_span, ice::Data data, ice::usize offset, ice::ucount count) noexcept
+    auto load_field_from_data(
+        ice::Span<T const>& out_span,
+        ice::Data data,
+        ice::usize offset,
+        ice::ncount count
+    ) noexcept -> ice::usize
     {
-        out_span = ice::span::from_data<T>(data, count, offset);
-        return ice::span::data_view(out_span).size;
+        ice::data::read_span(ice::ptr_add(data, offset), count, out_span);
+        return out_span.size();
     }
 
     auto load_from_data(ice::Data data) noexcept -> ice::Expected<ice::InputActionLayerInfo>
@@ -61,12 +66,12 @@ namespace ice
         offset += load_field_from_data(result.constants, data, offset, header.count_constants);
 
         ICE_ASSERT_CORE(offset == ice::usize{ header.offset_strings });
-        result.strings = ice::string::from_data(
+        result.strings = ice::string_from_data<char>(
             data,
-            ice::usize{ header.offset_strings },
-            ice::ucount( data.size.value - header.offset_strings )
+            header.offset_strings,
+            data.size.value - header.offset_strings
         );
-        result.name = ice::string::substr(result.strings, 0, header.size_name);
+        result.name = result.strings.substr(0, header.size_name);
         return result;
     }
 
@@ -108,7 +113,7 @@ namespace ice
 
         auto source_name(ice::InputActionSourceInputInfo const& source) const noexcept -> ice::String override
         {
-            return ice::string::substr(_strings, source.name);
+            return _strings.substr(source.name);
         }
 
         auto actions() const noexcept -> ice::Span<ice::InputActionInfo const> override
@@ -118,24 +123,24 @@ namespace ice
 
         auto action_name(ice::InputActionInfo const& action) const noexcept -> ice::String override
         {
-            return ice::string::substr(_strings, action.name);
+            return _strings.substr(action.name);
         }
 
-        auto load_constants(ice::Span<ice::f32> constants_span) const noexcept -> ice::ucount override
+        auto load_constants(ice::Span<ice::f32> constants_span) const noexcept -> ice::u32 override
         {
-            ICE_ASSERT_CORE(ice::count(constants_span) >= Constant_CountInputActionConstants);
+            ICE_ASSERT_CORE(constants_span.size() >= Constant_CountInputActionConstants);
             for (ice::InputActionConstantInfo const constant : _constants)
             {
                 ice::u32 const idx = ice::u32(constant.identifier);
                 constants_span[idx] = _constant_values[constant.offset];
             }
-            return ice::count(_constants);
+            return _constants.size().u32();
         }
 
         auto process_inputs(
             ice::Span<ice::input::InputEvent> input_events,
             ice::Span<ice::InputActionSource* const> source_values
-        ) const noexcept -> ice::ucount override
+        ) const noexcept -> ice::u32 override
         {
             IPT_ZONE_SCOPED;
 
@@ -145,8 +150,8 @@ namespace ice
                     return ev.identifier == id;
                 };
 
-            ice::ucount count_processed = 0;
-            ice::ucount const count_events = ice::count(input_events);
+            ice::u32 count_processed = 0;
+            ice::u32 const count_events = input_events.size().u32();
 
             // Reset the temporary events.
             for (ice::InputActionSourceInputInfo const& src : _sources)
@@ -165,7 +170,7 @@ namespace ice
                 ice::InputActionSource* const values = source_values[src.storage_offset];
                 ice::u32 const count_values = 1 + ice::u32(src.type == InputActionSourceType::Axis2d);
 
-                ice::ucount event_index = 0;
+                ice::u32 event_index = 0;
                 if (ice::search(input_events, src.input, comp_event_id, event_index) == false)
                 {
                     // Reset any event that was a key-release event previously
@@ -253,7 +258,7 @@ namespace ice
 
             for (ice::InputActionInfo const& action : _actions)
             {
-                ice::String const action_name = ice::string::substr(_strings, action.name);
+                ice::String const action_name = _strings.substr(action.name);
 
                 ice::InputActionRuntime* const runtime = ice::hashmap::try_get(actions, ice::hash(action_name));
                 // TODO: Check if we need this
@@ -263,7 +268,7 @@ namespace ice
                 }
 
                 bool series_success = false;
-                ice::Span const conditions = ice::span::subspan(_conditions, action.conditions);
+                ice::Span const conditions = _conditions.subspan(action.conditions);
                 for (ice::InputActionConditionData const& cond : conditions)
                 {
                     bool cond_result = false;
@@ -273,7 +278,7 @@ namespace ice
                         if (cond.source.source_index != InputActionIndex::SelfIndex)
                         {
                             ice::InputActionInfo const checked_action_info = _actions[cond.source.source_index];
-                            ice::String const checked_action_name = ice::string::substr(_strings, checked_action_info.name);
+                            ice::String const checked_action_name = _strings.substr(checked_action_info.name);
                             checked_action = ice::hashmap::try_get(actions, ice::hash(checked_action_name));
                         }
                         ICE_ASSERT_CORE(checked_action != nullptr);
@@ -310,7 +315,7 @@ namespace ice
 
                     if (ice::has_all(cond.flags, RunSteps) && check_success)
                     {
-                        ice::Span const steps = ice::span::subspan(_steps, cond.steps);
+                        ice::Span const steps = _steps.subspan(cond.steps);
                         for (ice::InputActionStepData const& step : steps)
                         {
                             if (step.id < InputActionStep::Set)
@@ -373,7 +378,7 @@ namespace ice
 
             for (ice::InputActionInfo const& action : _actions)
             {
-                ice::String const action_name = ice::string::substr(_strings, action.name);
+                ice::String const action_name = _strings.substr(action.name);
                 ice::InputActionRuntime* const runtime = ice::hashmap::try_get(actions, ice::hash(action_name));
 
                 // Handles 'Toggle'. We only activate of the first press, which is `state == 1`.
@@ -409,7 +414,7 @@ namespace ice
                 // Update the final value and run modifiers over it.
                 runtime->value = { runtime->raw_value.x, runtime->raw_value.y };
 
-                ice::Span const mods = ice::span::subspan(_modifiers, action.mods);
+                ice::Span const mods = _modifiers.subspan(action.mods);
                 for (ice::InputActionModifierData const& mod : mods)
                 {
                     executor.execute_modifier(mod.id, runtime->value.v[0][mod.axis], mod.param);
@@ -481,7 +486,7 @@ namespace ice
 
             void on_layer_parsed(ice::UniquePtr<ice::InputActionLayer> layer) noexcept override
             {
-                ice::array::push_back(results, ice::move(layer));
+                results.push_back(ice::move(layer));
             }
         } parser{ alloc };
 

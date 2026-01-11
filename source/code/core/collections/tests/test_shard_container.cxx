@@ -266,7 +266,7 @@ SCENARIO("collections 'ice/shard_container.hxx'", "[shard][collection]")
                     ice::Array<ice::u32> payloads{ alloc };
                     ice::shards::inspect_all(test_container, test_shard_1, payloads);
 
-                    REQUIRE(ice::array::count(payloads) == 2);
+                    REQUIRE(payloads.size() == 2);
                     CHECK(payloads[0] == test_u32_payload_value1);
                     CHECK(payloads[1] == test_u32_payload_value2);
 
@@ -292,22 +292,22 @@ SCENARIO("collections 'ice/shard_container.hxx'", "[shard][collection]")
                         CHECK(payload == payloads[0]);
                     }
 
-                    ice::array::clear(payloads);
+                    payloads.clear();
                     ice::shards::inspect_all(test_container, test_shard_2, payloads);
 
-                    REQUIRE(ice::array::count(payloads) == 0);
+                    REQUIRE(payloads.size() == 0);
 
-                    ice::array::clear(payloads);
+                    payloads.clear();
                     ice::shards::inspect_all(test_container, test_shard_3, payloads);
 
-                    REQUIRE(ice::array::count(payloads) == 2);
+                    REQUIRE(payloads.size() == 2);
                     CHECK(payloads[0] == test_u32_payload_value2);
                     CHECK(payloads[1] == test_u32_payload_value1);
 
-                    ice::array::clear(payloads);
+                    payloads.clear();
                     ice::shards::inspect_all(test_container, test_shard_4, payloads);
 
-                    REQUIRE(ice::array::count(payloads) == 1);
+                    REQUIRE(payloads.size() == 1);
                     CHECK(payloads[0] == test_u32_payload_value2);
                 }
             }

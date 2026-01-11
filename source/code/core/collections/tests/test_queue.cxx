@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <catch2/catch_test_macros.hpp>
@@ -23,9 +23,9 @@ SCENARIO("collections 'ice/container/queue.hxx'", "[collection][queue][complex]"
         {
             queue::resize(test_queue, 5);
 
-            ice::ucount dtor_count = 0;
+            ice::u32 dtor_count = 0;
             Test_ObjectEvents events{};
-            for (ice::ucount idx = 0; idx < queue::count(test_queue); ++idx)
+            for (ice::u32 idx = 0; idx < queue::count(test_queue); ++idx)
             {
                 test_queue[idx].gather_ctors(events);
                 test_queue[idx].data.test_dtor = &dtor_count;
@@ -67,9 +67,9 @@ SCENARIO("collections 'ice/container/queue.hxx'", "[collection][queue][complex]"
                 CHECK(test_object.value == 42);
             }
 
-            ice::ucount dtor_count = 0;
+            ice::u32 dtor_count = 0;
             Test_ObjectEvents events{};
-            for (ice::ucount idx = 0; idx < queue::count(test_queue); ++idx)
+            for (ice::u32 idx = 0; idx < queue::count(test_queue); ++idx)
             {
                 test_queue[idx].gather_ctors(events);
                 test_queue[idx].data.test_dtor = &dtor_count;
@@ -90,8 +90,8 @@ SCENARIO("collections 'ice/container/queue.hxx'", "[collection][queue][complex]"
     {
         queue::resize(test_queue, 7);
 
-        ice::ucount dtor_count = 0;
-        for (ice::ucount idx = 0; idx < queue::count(test_queue); ++idx)
+        ice::u32 dtor_count = 0;
+        for (ice::u32 idx = 0; idx < queue::count(test_queue); ++idx)
         {
             test_queue[idx].data.test_dtor = &dtor_count;
         }
@@ -111,7 +111,7 @@ SCENARIO("collections 'ice/container/queue.hxx'", "[collection][queue][complex]"
         CHECK(test_queue._offset != 0);
         CHECK(test_queue._capacity < (test_queue._offset + test_queue._count));
 
-        for (ice::ucount idx = 0; idx < queue::count(test_queue); ++idx)
+        for (ice::u32 idx = 0; idx < queue::count(test_queue); ++idx)
         {
             test_queue[idx].data.test_dtor = &dtor_count;
         }
@@ -183,7 +183,7 @@ SCENARIO("collections 'ice/container/queue.hxx' (POD)", "[collection][queue][pod
 
         WHEN("we push 100 elements")
         {
-            for (ice::ucount i = 0; i < 100; ++i)
+            for (ice::u32 i = 0; i < 100; ++i)
             {
                 queue::push_back(test_queue, 0xd00b);
             }
@@ -197,12 +197,12 @@ SCENARIO("collections 'ice/container/queue.hxx' (POD)", "[collection][queue][pod
                 THEN("popping 50 front elements 'front' at once or one-by-one results in the same queue")
                 {
                     queue::pop_front(test_queue, 50);
-                    for (ice::ucount idx = 0; idx < 50; ++idx)
+                    for (ice::u32 idx = 0; idx < 50; ++idx)
                     {
                         queue::pop_front(test_copy);
                     }
 
-                    for (ice::ucount idx = 0; idx < ice::queue::count(test_copy); ++idx)
+                    for (ice::u32 idx = 0; idx < ice::queue::count(test_copy); ++idx)
                     {
                         CHECK(test_queue[idx] == test_copy[idx]);
                     }
@@ -211,12 +211,12 @@ SCENARIO("collections 'ice/container/queue.hxx' (POD)", "[collection][queue][pod
                 THEN("popping from back 50 elements at once or one-by-one results in the same queue")
                 {
                     queue::pop_back(test_queue, 50);
-                    for (ice::ucount idx = 0; idx < 50; ++idx)
+                    for (ice::u32 idx = 0; idx < 50; ++idx)
                     {
                         queue::pop_back(test_copy);
                     }
 
-                    for (ice::ucount idx = 0; idx < ice::queue::count(test_copy); ++idx)
+                    for (ice::u32 idx = 0; idx < ice::queue::count(test_copy); ++idx)
                     {
                         CHECK(test_queue[idx] == test_copy[idx]);
                     }
@@ -271,7 +271,7 @@ SCENARIO("collections 'ice/container/queue.hxx' (POD)", "[collection][queue][pod
 
             AND_THEN("the queue matches test values2")
             {
-                for (ice::ucount idx = 0; idx < ice::queue::count(test_queue); ++idx)
+                for (ice::u32 idx = 0; idx < ice::queue::count(test_queue); ++idx)
                 {
                     CHECK(test_values2[idx] == test_queue[idx]);
                 }
@@ -287,7 +287,7 @@ SCENARIO("collections 'ice/container/queue.hxx' (POD)", "[collection][queue][pod
                     CHECK(test_queue._offset != 0);
                     CHECK(queue::count(test_copy) == queue::count(test_queue));
 
-                    for (ice::ucount idx = 0; idx < ice::queue::count(test_copy); ++idx)
+                    for (ice::u32 idx = 0; idx < ice::queue::count(test_copy); ++idx)
                     {
                         CHECK(test_queue[idx] == test_copy[idx]);
                     }
@@ -319,15 +319,15 @@ SCENARIO("collections 'ice/container/queue.hxx' (POD)", "[collection][queue][pod
 
         THEN("Check if we iterate in the proper order over the queue")
         {
-            ice::ucount const queue_size = queue::count(test_queue);
-            for (ice::ucount i = 0; i < queue_size; ++i)
+            ice::u32 const queue_size = queue::count(test_queue);
+            for (ice::u32 i = 0; i < queue_size; ++i)
             {
                 CHECK(test_queue[i] == test_values_2[i]);
             }
 
             WHEN("using 'for_each' we iterate as expected in succession")
             {
-                ice::ucount idx = 0;
+                ice::u32 idx = 0;
                 ice::queue::for_each(
                     test_queue,
                     [&test_values_2, &idx](ice::i32 val) noexcept
@@ -340,7 +340,7 @@ SCENARIO("collections 'ice/container/queue.hxx' (POD)", "[collection][queue][pod
 
             WHEN("using 'for_each_reverse' we iterate as expected in reverse")
             {
-                ice::ucount idx = ice::count(test_values_2) - 1;
+                ice::u32 idx = ice::count(test_values_2) - 1;
                 ice::queue::for_each_reverse(
                     test_queue,
                     [&test_values_2, &idx](ice::i32 val) noexcept
@@ -355,7 +355,7 @@ SCENARIO("collections 'ice/container/queue.hxx' (POD)", "[collection][queue][pod
             {
                 if constexpr (ice::Allocator::HasDebugInformation)
                 {
-                    ice::ucount const alloc_count = alloc.allocation_total_count();
+                    ice::u32 const alloc_count = alloc.allocation_total_count();
 
                     queue::reserve(test_queue, 100);
 
@@ -369,7 +369,7 @@ SCENARIO("collections 'ice/container/queue.hxx' (POD)", "[collection][queue][pod
 
                 // Check the queue is still in tact
                 CHECK(queue_size == queue::count(test_queue));
-                for (ice::ucount i = 0; i < queue_size; ++i)
+                for (ice::u32 i = 0; i < queue_size; ++i)
                 {
                     CHECK(test_queue[i] == test_values_2[i]);
                 }

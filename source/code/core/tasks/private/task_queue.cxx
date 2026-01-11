@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/task_queue.hxx>
@@ -98,9 +98,9 @@ namespace ice
         return awaitable != nullptr;
     }
 
-    auto TaskQueue::process_all(void* result_value) noexcept -> ice::ucount
+    auto TaskQueue::process_all(void* result_value) noexcept -> ice::u32
     {
-        ice::ucount processed = 0;
+        ice::u32 processed = 0;
         for (ice::TaskAwaitableBase* const awaitable : ice::linked_queue::consume(_awaitables))
         {
             if (result_value != nullptr)
@@ -133,9 +133,9 @@ namespace ice
         return processed;
     }
 
-    // auto TaskQueue::prepare_all(void *result_value) noexcept -> ice::ucount
+    // auto TaskQueue::prepare_all(void *result_value) noexcept -> ice::u32
     // {
-    //     return ice::ucount();
+    //     return ice::u32();
     // }
 
     void TaskQueue::wait_any() noexcept

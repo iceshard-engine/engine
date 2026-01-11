@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_world_manager.hxx"
@@ -81,10 +81,10 @@ namespace ice
 
     IceshardWorldManager::~IceshardWorldManager() noexcept
     {
-        ice::ucount active_worlds = 0;
+        ice::u32 active_worlds = 0;
         for (Entry const& entry : _worlds)
         {
-            active_worlds += ice::ucount(entry.is_active);
+            active_worlds += ice::u32(entry.is_active);
         }
 
         ICE_ASSERT(
@@ -120,13 +120,13 @@ namespace ice
             if (desc != nullptr)
             {
                 ice::UniquePtr<ice::IceshardTraitContext> trait_context = ice::make_unique<ice::IceshardTraitContext>(
-                    world_context->allocator(), *world_context.get(), ice::array::count(world_traits)
+                    world_context->allocator(), *world_context.get(), world_traits.size().u32()
                 );
                 ice::UniquePtr<ice::Trait> trait = desc->fn_factory(world_context->allocator(), *trait_context.get(), desc->fn_factory_userdata);
                 if (trait != nullptr)
                 {
                     trait_context->trait = ice::move(trait);
-                    ice::array::push_back(world_traits, ice::move(trait_context));
+                    world_traits.push_back(ice::move(trait_context));
                 }
             }
         }
@@ -190,14 +190,14 @@ namespace ice
         {
             if (entry.is_active)
             {
-                ice::array::push_back(out_worlds, entry.world->worldID);
+                out_worlds.push_back(entry.world->worldID);
             }
         }
     }
 
     void IceshardWorldManager::query_pending_events(ice::ShardContainer& out_events) noexcept
     {
-        ice::shards::push_back(out_events, ice::array::slice(_pending_events._data));
+        ice::shards::push_back(out_events, _pending_events._data);
         ice::shards::clear(_pending_events);
     }
 

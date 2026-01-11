@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/config/config_builder.hxx>
@@ -51,7 +51,7 @@ namespace ice::config
                 else if (value.IsDouble()) config_table = value.GetDouble();
                 break;
             case rapidjson::Type::kStringType:
-                config_table = ice::String{ value.GetString(), ice::ucount(value.GetStringLength()) };
+                config_table = ice::String{ value.GetString(), value.GetStringLength() };
                 break;
             case rapidjson::Type::kArrayType:
                 deserialize_json_array(value.GetArray(), config_table);
@@ -96,7 +96,7 @@ namespace ice::config
     auto from_json(ice::ConfigBuilder& config_builder, ice::String json) noexcept -> ice::ErrorCode
     {
         rapidjson::Document doc;
-        if (doc.Parse(ice::string::begin(json),ice::string::size(json)).HasParseError() == false && doc.IsObject())
+        if (doc.Parse(json.begin(), json.size()).HasParseError() == false && doc.IsObject())
         {
             detail::deserialize_json_object(const_cast<rapidjson::Document const&>(doc).GetObject(), config_builder);
             return S_Ok;

@@ -1,8 +1,8 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/string/string.hxx>
+#include <ice/string.hxx>
 #include <ice/stringid.hxx>
 
 namespace ice
@@ -79,12 +79,12 @@ namespace ice
 
         constexpr bool get_scheme_size(ice::String raw_uri, ice::u8& out_size) noexcept
         {
-            ice::ucount const scheme_end = ice::string::find_first_of(raw_uri, ':');
-            if (scheme_end != ice::String_NPos)
+            ice::nindex const scheme_end = raw_uri.find_first_of(':');
+            if (scheme_end.is_valid())
             {
-                out_size = static_cast<ice::u8>(scheme_end + 1);
+                out_size = scheme_end.u8() + 1;
             }
-            return scheme_end != ice::String_NPos;
+            return scheme_end.is_valid();
         }
 
         constexpr bool get_authority_sizes(
@@ -97,39 +97,39 @@ namespace ice
         {
             if (uri[0] == '/' && uri[1] == '/')
             {
-                ice::ucount const authority_end = ice::string::find_first_of(uri, '/', 2);
-                ICE_ASSERT_CORE(authority_end != ice::String_NPos);
-                if (authority_end == ice::String_NPos)
+                ice::nindex const authority_end = uri.find_first_of('/', 2);
+                ICE_ASSERT_CORE(authority_end.is_valid());
+                if (authority_end.is_valid() == false)
                 {
                     return false;
                 }
 
-                out_authority = static_cast<ice::u8>(authority_end);
+                out_authority = authority_end.u8();
 
-                ice::ucount offset = 0;
-                ice::String const authority_uri = ice::string::substr(uri, 2, authority_end - 2);
-                ice::ucount const authority_user = ice::string::find_first_of(authority_uri, '@', offset);
-                if (authority_user != ice::String_NPos)
+                ice::nindex offset = 0;
+                ice::String const authority_uri = uri.substr(2, authority_end.u32() - 2);
+                ice::nindex const authority_user = authority_uri.find_first_of('@', offset);
+                if (authority_user.is_valid())
                 {
                     // Include the '@' character in the size, since it can be easily removed in the 'userinfo()' method
                     //  and helps with calculations.
-                    offset = out_user = static_cast<ice::u8>(authority_user - offset) + 1;
+                    offset = out_user = (authority_user - offset).u8() + 1;
                 }
 
-                ice::ucount const authority_port = ice::string::find_first_of(authority_uri, ':', offset);
-                if (authority_port != ice::String_NPos)
+                ice::nindex const authority_port = authority_uri.find_first_of(':', offset);
+                if (authority_port.is_valid())
                 {
                     // If we have a port set the length of host to up to the ':' character
-                    out_host = static_cast<ice::u8>(authority_port - offset);
+                    out_host = (authority_port - offset).u8();
 
                     // After that it's the 'port' value (without the ':') character
                     //  Because the host needs to exist we can always add +1, and keep the port size the actual size.
-                    out_port = static_cast<ice::u8>(ice::size(authority_uri) - (authority_port + 1));
+                    out_port = (authority_uri.size() - (authority_port + 1)).u8();
                 }
                 else
                 {
                     // The rest of the authority string is the host
-                    out_host = static_cast<ice::u8>(ice::size(authority_uri) - offset);
+                    out_host = (authority_uri.size() - offset).u8();
                 }
             }
             return true;
@@ -142,34 +142,34 @@ namespace ice
             ice::u8& out_fragment
         ) noexcept
         {
-            ice::ucount path_separator = ice::string::find_first_of(uri, ice::String{ "?#" });
-            if (path_separator == ice::String_NPos)
+            ice::nindex path_separator = uri.find_first_of("?#");
+            if (path_separator == nindex_none)
             {
-                out_path = static_cast<ice::u8>(ice::size(uri));
+                out_path = uri.size().u8();
                 return out_path > 0;
             }
 
             // We continue after assigning path length
-            out_path = static_cast<ice::u8>(path_separator);
+            out_path = path_separator.u8();
 
             // Do we have a query?
             if (uri[path_separator] == '?')
             {
                 // Get the next separator if necessary
-                path_separator = ice::string::find_last_of(uri, '#');
-                if (path_separator == ice::String_NPos)
+                path_separator = uri.find_last_of('#');
+                if (path_separator == nindex_none)
                 {
                     // We take te remaining query with the starting '?' character
-                    out_query = static_cast<ice::u8>(ice::size(uri) - out_path);
+                    out_query = (uri.size() - out_path).u8();
                     return true;
                 }
 
                 // The everything up to '#' including the '?' character.
-                out_query = static_cast<ice::u8>(path_separator - out_path);
+                out_query = (path_separator - out_path).u8();
             }
 
             // Take everything remaining including the '#' character.
-            out_fragment = static_cast<ice::u8>(ice::size(uri) - path_separator);
+            out_fragment = (uri.size() - path_separator).u8();
             return true;
         }
 
@@ -195,7 +195,7 @@ namespace ice
     }
 
     constexpr URI::URI(ice::String uri_raw) noexcept
-        : _uri{ ice::string::begin(uri_raw) }
+        : _uri{ uri_raw.begin() }
         , _forced_scheme{ }
         , _scheme{ }
         , _authority{ }
@@ -206,17 +206,17 @@ namespace ice
         , _query{ }
         , _fragment{ }
     {
-        ice::u8 scheme_size;
+        ice::u8 scheme_size = 0;
         if (detail::get_scheme_size(uri_raw, scheme_size))
         {
             _scheme = scheme_size;
         }
         detail::get_authority_sizes(
-            ice::string::substr(uri_raw, _scheme),
+            uri_raw.substr(_scheme),
             _authority, _userinfo, _host, _port
         );
         detail::get_path_query_fragment_sizes(
-            ice::string::substr(uri_raw, _scheme + _authority),
+            uri_raw.substr(_scheme + _authority),
             _path, _query, _fragment
         );
     }
@@ -300,7 +300,7 @@ namespace ice
 
     constexpr auto URI::userinfo() const noexcept -> ice::String
     {
-        return ice::String{ _uri + _scheme + 2 /* removes '//' */, ice::ucount(_userinfo - (_userinfo != 0)) };
+        return ice::String{ _uri + _scheme + 2 /* removes '//' */, ice::u32(_userinfo - (_userinfo != 0)) };
     }
 
     constexpr auto URI::host() const noexcept -> ice::String
@@ -316,7 +316,7 @@ namespace ice
     // Helpers
     constexpr auto operator""_uri(char const* raw_uri, std::size_t length) noexcept -> ice::URI
     {
-        return URI{ ice::String{ raw_uri, ice::ucount(length) } };
+        return URI{ ice::String{ raw_uri, length } };
     }
 
 } // namespace ice

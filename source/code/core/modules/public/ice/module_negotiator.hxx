@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -29,7 +29,7 @@ namespace ice
             ice::StringID_Hash api_name,
             ice::u32 api_version,
             ice::ModuleAPI* out_array,
-            ice::ucount* inout_array_size
+            ice::u32* inout_array_size
         ) noexcept;
 
         //! \brief Registers an API selector function for the given API name.
@@ -63,7 +63,7 @@ namespace ice
             ice::StringID_Arg api_name,
             ice::u32 api_version,
             ice::ModuleAPI* out_array,
-            ice::ucount* inout_array_size
+            ice::u32* inout_array_size
         ) const noexcept override;
 
         //! \brief Registers an API selector function with the given API name.

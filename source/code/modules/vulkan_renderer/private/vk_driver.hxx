@@ -5,7 +5,7 @@
 #include <ice/render/render_driver.hxx>
 #include <ice/mem_allocator_proxy.hxx>
 #include <ice/mem_unique_ptr.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include "vk_allocator.hxx"
 #include "vk_memory_allocator.hxx"
 #include "vk_extensions.hxx"

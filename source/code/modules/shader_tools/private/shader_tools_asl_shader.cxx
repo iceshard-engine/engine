@@ -77,7 +77,7 @@ namespace ice
                 prev = std::exchange(member, member.sibling<arctic::syntax::StructMember>());
             }
 
-            ice::array::push_back(_structs, ice::move(node));
+            _structs.push_back(ice::move(node));
         }
     }
 
@@ -146,7 +146,7 @@ namespace ice
             }
         }
 
-        ice::array::push_back(_functions, node);
+        _functions.push_back(node);
     }
 
     void ASLShader::visit(arctic::SyntaxNode<arctic::syntax::Variable> node) noexcept
@@ -181,7 +181,7 @@ namespace ice
                 else if (detail::arc_annotation(var, "uniform", annotation))
                 {
                     ICE_ASSERT_CORE(var.data().is_reference == false); // not supported in shaders
-                    ice::array::push_back(_uniforms, var);
+                    _uniforms.push_back(var);
                 }
                 else
                 {

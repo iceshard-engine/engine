@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "imgui_system.hxx"
@@ -7,8 +7,7 @@
 
 #include <ice/assert.hxx>
 #include <ice/devui_imgui.hxx>
-#include <ice/string/static_string.hxx>
-#include <ice/string/heap_string.hxx>
+#include <ice/heap_string.hxx>
 
 #if ISP_WINDOWS
 #include <imguizmo/ImGuizmo.h>
@@ -22,22 +21,22 @@ namespace ice::devui
 
         void build_mainmenu(ice::StaticString<32>& temp, ice::String path, ice::String name, bool& state) noexcept
         {
-            ice::ucount const separator_pos = ice::string::find_first_of(path, '/');
-            if (separator_pos != ice::String_NPos)
+            ice::nindex const separator_pos = path.find_first_of('/');
+            if (separator_pos != ice::nindex_none)
             {
-                temp = ice::string::substr(path, 0, separator_pos);
+                temp = path.substr(0, separator_pos);
 
-                if (ImGui::BeginMenu(ice::string::begin(temp)))
+                if (ImGui::BeginMenu(temp.begin()))
                 {
-                    build_mainmenu(temp, ice::string::substr(path, separator_pos + 1), name, state);
+                    build_mainmenu(temp, path.substr(separator_pos + 1), name, state);
                     ImGui::EndMenu();
                 }
             }
             else
             {
-                if (ImGui::BeginMenu(ice::string::begin(path)))
+                if (ImGui::BeginMenu(path.begin()))
                 {
-                    ImGui::MenuItem(ice::string::begin(name), nullptr, &state);
+                    ImGui::MenuItem(name.begin(), nullptr, &state);
                     ImGui::EndMenu();
                 }
             }
@@ -48,20 +47,20 @@ namespace ice::devui
 
     void ImGuiWidgetFrame::mainmenu(ice::DevUIWidgetInfo const& widget, ice::DevUIWidgetState& state) noexcept
     {
-        ice::ucount const separator_pos = ice::string::find_first_of(widget.category, '/');
-        if (separator_pos == ice::String_NPos)
+        ice::nindex const separator_pos = widget.category.find_first_of('/');
+        if (separator_pos == ice::nindex_none)
         {
-            ImGui::MenuItem(ice::string::begin(widget.name), nullptr, &state.active);
+            ImGui::MenuItem(widget.name.begin(), nullptr, &state.active);
             return;
         }
 
         ice::StaticString<32> helper;
-        detail::build_mainmenu(helper, ice::string::substr(widget.category, separator_pos + 1), widget.name, state.active);
+        detail::build_mainmenu(helper, widget.category.substr(separator_pos + 1), widget.name, state.active);
     }
 
     bool ImGuiWidgetFrame::begin(ice::DevUIWidgetInfo const& widget, ice::DevUIWidgetState& state) noexcept
     {
-        return ImGui::Begin(ice::string::begin(widget.name), &state.active);
+        return ImGui::Begin(widget.name.begin(), &state.active);
     }
 
     void ImGuiWidgetFrame::end() noexcept
@@ -78,7 +77,7 @@ namespace ice::devui
         , _widget_logger{ _allocator }
         , _widget_style{ _allocator }
     {
-        ice::array::push_back(_builtin_widgets, create_allocator_tree_widget(_allocator));
+        _builtin_widgets.push_back(create_allocator_tree_widget(_allocator));
         // ice::array::push_back(_builtin_widgets, (ice::UniquePtr<ice::DevUIWidget>) ice::make_unique<ImGuiLogger>(_allocator, _allocator));
 
         // Register all built-in's
@@ -101,10 +100,10 @@ namespace ice::devui
 
     void ImGuiSystem::setup_mainmenu(ice::Span<ice::String> categories) noexcept
     {
-        ice::array::clear(_menu_categories);
+        _menu_categories.clear();
         for (ice::String category : categories)
         {
-            ice::array::push_back(_menu_categories, ice::HeapString<>{ _allocator, category });
+            _menu_categories.push_back({ _allocator, category });
         }
     }
 
@@ -144,12 +143,12 @@ namespace ice::devui
             {
                 for (ice::String category : _menu_categories)
                 {
-                    if (ImGui::BeginMenu(ice::string::begin(category)))
+                    if (ImGui::BeginMenu(category.begin()))
                     {
                         for (auto const& runtime : _widget_manager.widgets())
                         {
                             ice::DevUIWidgetInfo const& info = runtime->widget->widget_info;
-                            if (ice::string::starts_with(info.category, category) && runtime->widget->build_mainmenu(runtime->state))
+                            if (info.category.starts_with(category) && runtime->widget->build_mainmenu(runtime->state))
                             {
                                 _widget_frame.mainmenu(info, runtime->state);
                             }
@@ -206,7 +205,7 @@ namespace ice::devui
 
         // ImGui::NewLine(); ImGui::SeparatorText("Info");
         ImGui::NewLine(); ImGui::Separator();
-        ImGui::TextT("Widgets: {}", ice::count(_widget_manager.widgets()));
+        ImGui::TextT("Widgets: {}", _widget_manager.widgets().size());
 
         ImGui::NewLine(); ImGui::Separator();
         ImGui::TextT("Draw calls: {} ({:p})", stats.draw_calls, stats.draw_datasize);

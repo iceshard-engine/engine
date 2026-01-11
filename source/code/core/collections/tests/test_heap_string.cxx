@@ -1,10 +1,12 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <catch2/catch_test_macros.hpp>
-#include <ice/string/string.hxx>
-#include <ice/string/heap_string.hxx>
+#include <ice/string.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/mem_allocator_host.hxx>
+
+constexpr char const test[] = "Dandielo";
 
 SCENARIO("ice :: HeapString")
 {
@@ -17,29 +19,29 @@ SCENARIO("ice :: HeapString")
         ice::HeapString test_string{ alloc };
 
         // Reserve some capacity for tests
-        ice::string::reserve(test_string, 10);
+        test_string.reserve(10);
 
-        CHECK(ice::string::size(test_string) == 0);
-        CHECK(ice::string::capacity(test_string) == 10);
-        CHECK(ice::string::empty(test_string) == true);
+        CHECK(test_string.size() == 0);
+        CHECK(test_string.capacity() == 10);
+        CHECK(test_string.is_empty());
 
         THEN("Assigning a value")
         {
             test_string = test_string_value;
 
-            ice::ucount const saved_size = ice::string::size(test_string);
-            ice::ucount const saved_capacity = ice::string::capacity(test_string);
+            ice::ncount const saved_size = test_string.size();
+            ice::ncount const saved_capacity = test_string.capacity();
 
-            CHECK(ice::string::size(test_string) == ice::string::size(test_string_value));
-            CHECK(ice::string::empty(test_string) == false);
+            CHECK(test_string.size() == test_string_value.size());
+            CHECK(test_string.not_empty());
 
             WHEN("Clearing the string")
             {
-                ice::string::clear(test_string);
+                test_string.clear();
 
-                CHECK(ice::string::size(test_string) == 0);
-                CHECK(ice::string::capacity(test_string) == saved_capacity);
-                CHECK(ice::string::empty(test_string) == true);
+                CHECK(test_string.size() == 0);
+                CHECK(test_string.capacity() == saved_capacity);
+                CHECK(test_string.is_empty());
 
                 REQUIRE(test_string == "");
             }
@@ -48,35 +50,35 @@ SCENARIO("ice :: HeapString")
             {
                 GIVEN("The value is zero")
                 {
-                    ice::string::resize(test_string, 0);
+                    test_string.resize(0);
 
-                    CHECK(ice::string::size(test_string) == 0);
-                    CHECK(ice::string::capacity(test_string) == saved_capacity);
-                    CHECK(ice::string::empty(test_string) == true);
+                    CHECK(test_string.size() == 0);
+                    CHECK(test_string.capacity() == saved_capacity);
+                    CHECK(test_string.is_empty());
 
                     REQUIRE(test_string == "");
                 }
 
                 GIVEN("A smaller value")
                 {
-                    ice::string::resize(test_string, 4);
+                    test_string.resize(4);
 
-                    CHECK(ice::string::size(test_string) == 4);
-                    CHECK(ice::string::capacity(test_string) == saved_capacity);
-                    CHECK(ice::string::empty(test_string) == false);
+                    CHECK(test_string.size() == 4);
+                    CHECK(test_string.capacity() == saved_capacity);
+                    CHECK(test_string.not_empty());
 
                     REQUIRE(test_string == "test");
                 }
 
                 GIVEN("A larger value")
                 {
-                    ice::string::resize(test_string, 100);
+                    test_string.resize(100);
 
-                    CHECK(ice::string::size(test_string) == 100);
-                    CHECK(ice::string::capacity(test_string) > saved_capacity);
-                    CHECK(ice::string::empty(test_string) == false);
+                    CHECK(test_string.size() == 100);
+                    CHECK(test_string.capacity() > saved_capacity);
+                    CHECK(test_string.not_empty());
 
-                    REQUIRE(ice::string::substr(test_string, 0, saved_size) == test_string_value);
+                    REQUIRE(test_string.substr(0, saved_size) == test_string_value);
                 }
             }
 
@@ -84,22 +86,22 @@ SCENARIO("ice :: HeapString")
             {
                 GIVEN("No minimal capacity")
                 {
-                    ice::string::grow(test_string);
+                    test_string.grow();
 
-                    CHECK(ice::string::size(test_string) == saved_size);
-                    CHECK(ice::string::capacity(test_string) > saved_capacity);
-                    CHECK(ice::string::empty(test_string) == false);
+                    CHECK(test_string.size() == saved_size);
+                    CHECK(test_string.capacity() > saved_capacity);
+                    CHECK(test_string.not_empty());
 
                     REQUIRE(test_string == test_string_value);
                 }
 
                 GIVEN("A minimal capacity")
                 {
-                    ice::string::grow(test_string, 100);
+                    test_string.grow(100);
 
-                    CHECK(ice::string::size(test_string) == saved_size);
-                    CHECK(ice::string::capacity(test_string) >= 100);
-                    CHECK(ice::string::empty(test_string) == false);
+                    CHECK(test_string.size() == saved_size);
+                    CHECK(test_string.capacity() >= 100);
+                    CHECK(test_string.not_empty());
 
                     REQUIRE(test_string == test_string_value);
                 }
@@ -109,34 +111,34 @@ SCENARIO("ice :: HeapString")
             {
                 GIVEN("The value is zero")
                 {
-                    ice::string::set_capacity(test_string, 0);
+                    test_string.set_capacity(0);
 
-                    CHECK(ice::string::size(test_string) == 0);
-                    CHECK(ice::string::capacity(test_string) == 0);
-                    CHECK(ice::string::empty(test_string) == true);
+                    CHECK(test_string.size() == 0);
+                    CHECK(test_string.capacity() == 0);
+                    CHECK(test_string.is_empty());
 
                     REQUIRE(test_string == "");
                 }
 
                 GIVEN("A smaller value")
                 {
-                    ice::string::set_capacity(test_string, 2);
+                    test_string.set_capacity(2);
 
-                    CHECK(ice::string::size(test_string) == 1);
-                    CHECK(ice::string::capacity(test_string) == 2);
-                    CHECK(ice::string::empty(test_string) == false);
+                    CHECK(test_string.size() == 1);
+                    CHECK(test_string.capacity() == 2);
+                    CHECK(test_string.not_empty());
 
-                    ice::string::resize(test_string, 1);
+                    test_string.resize(1);
                     REQUIRE(test_string == "t");
                 }
 
                 GIVEN("A larger value")
                 {
-                    ice::string::set_capacity(test_string, 100);
+                    test_string.set_capacity(100);
 
-                    CHECK(ice::string::size(test_string) == saved_size);
-                    CHECK(ice::string::capacity(test_string) == 100);
-                    CHECK(ice::string::empty(test_string) == false);
+                    CHECK(test_string.size() == saved_size);
+                    CHECK(test_string.capacity() == 100);
+                    CHECK(test_string.not_empty());
 
                     REQUIRE(test_string == test_string_value);
                 }
@@ -146,33 +148,33 @@ SCENARIO("ice :: HeapString")
             {
                 GIVEN("The value is zero")
                 {
-                    ice::string::reserve(test_string, 0);
+                    test_string.reserve(0);
 
-                    CHECK(ice::string::size(test_string) == saved_size);
-                    CHECK(ice::string::capacity(test_string) == saved_capacity);
-                    CHECK(ice::string::empty(test_string) == false);
+                    CHECK(test_string.size() == saved_size);
+                    CHECK(test_string.capacity() == saved_capacity);
+                    CHECK(test_string.not_empty());
 
                     REQUIRE(test_string == test_string_value);
                 }
 
                 GIVEN("A smaller value")
                 {
-                    ice::string::reserve(test_string, 2);
+                    test_string.reserve(2);
 
-                    CHECK(ice::string::size(test_string) == saved_size);
-                    CHECK(ice::string::capacity(test_string) == saved_capacity);
-                    CHECK(ice::string::empty(test_string) == false);
+                    CHECK(test_string.size() == saved_size);
+                    CHECK(test_string.capacity() == saved_capacity);
+                    CHECK(test_string.not_empty());
 
                     REQUIRE(test_string == test_string_value);
                 }
 
                 GIVEN("A larger value")
                 {
-                    ice::string::reserve(test_string, 100);
+                    test_string.reserve(100);
 
-                    CHECK(ice::string::size(test_string) == saved_size);
-                    CHECK(ice::string::capacity(test_string) >= 100);
-                    CHECK(ice::string::empty(test_string) == false);
+                    CHECK(test_string.size() == saved_size);
+                    CHECK(test_string.capacity() >= 100);
+                    CHECK(test_string.not_empty());
 
                     REQUIRE(test_string == test_string_value);
                 }
@@ -180,12 +182,12 @@ SCENARIO("ice :: HeapString")
 
             WHEN("Triming string memory")
             {
-                ice::string::shrink(test_string);
+                test_string.shrink();
 
-                CHECK(ice::string::size(test_string) == saved_size);
-                CHECK(ice::string::capacity(test_string) <= saved_capacity);
-                CHECK(ice::string::capacity(test_string) == 12);
-                CHECK(ice::string::empty(test_string) == false);
+                CHECK(test_string.size() == saved_size);
+                CHECK(test_string.capacity() <= saved_capacity);
+                CHECK(test_string.capacity() == 12);
+                CHECK(test_string.not_empty());
 
                 REQUIRE(test_string == test_string_value);
             }
@@ -193,41 +195,41 @@ SCENARIO("ice :: HeapString")
 
         THEN("Modyfing the string")
         {
-            auto saved_capacity = ice::string::capacity(test_string);
+            ice::ncount const saved_capacity = test_string.capacity();
 
             WHEN("Appending a character")
             {
-                ice::string::push_back(test_string, 'a');
+                test_string.push_back('a');
 
-                CHECK(ice::string::size(test_string) == 1);
-                CHECK(ice::string::capacity(test_string) == saved_capacity);
-                CHECK(ice::string::empty(test_string) == false);
+                CHECK(test_string.size() == 1);
+                CHECK(test_string.capacity() == saved_capacity);
+                CHECK(test_string.not_empty());
             }
 
             THEN("Appending a string")
             {
-                ice::string::push_back(test_string, "string");
+                test_string.push_back("string");
 
-                CHECK(ice::string::size(test_string) == 6);
-                CHECK(ice::string::capacity(test_string) == saved_capacity);
-                CHECK(ice::string::empty(test_string) == false);
+                CHECK(test_string.size() == 6);
+                CHECK(test_string.capacity() == saved_capacity);
+                CHECK(test_string.not_empty());
             }
 
-            ice::string::resize(test_string, 100);
+            test_string.resize(100);
 
             // Fill the new string with space characters.
-            std::memset(ice::string::begin(test_string), ' ', ice::string::size(test_string));
+            std::memset(test_string.begin(), ' ', test_string.size());
 
             ice::HeapString test_copy{ test_string };
 
             // We cannot push back ourselfs, as this will remove the old buffer before it even gets copied
-            ice::string::push_back(test_string, test_copy);
+            test_string.push_back(test_copy);
 
             THEN("Resizing the string and appending itself")
             {
-                CHECK(ice::string::size(test_string) == 200);
-                CHECK(ice::string::capacity(test_string) >= 201);
-                CHECK(ice::string::empty(test_string) == false);
+                CHECK(test_string.size() == 200);
+                CHECK(test_string.capacity() >= 201);
+                CHECK(test_string.not_empty());
             }
 
             //THEN("Poping a single character")
@@ -258,32 +260,32 @@ SCENARIO("ice :: HeapString")
 
         THEN("we can iterate over it")
         {
-            auto it = ice::string::begin(str);
-            auto const it_end = ice::string::end(str);
+            auto it = str.begin();
+            auto const it_end = str.end();
 
-            ice::ucount character_count = 0;
+            ice::ncount character_count = 0;
             while (it != it_end)
             {
                 it += 1;
                 character_count += 1;
             }
 
-            CHECK(character_count == ice::string::size(test_string_value));
+            CHECK(character_count == test_string_value.size());
         }
 
         THEN("we can reverse iterate over it")
         {
-            auto it = ice::string::rbegin(str);
-            auto const it_end = ice::string::rend(str);
+            auto it = str.rbegin();
+            auto const it_end = str.rend();
 
-            ice::ucount character_count = 0;
+            ice::ncount character_count = 0;
             while (it != it_end)
             {
                 it += 1;
                 character_count += 1;
             }
 
-            CHECK(character_count == ice::string::size(test_string_value));
+            CHECK(character_count == test_string_value.size());
         }
     }
 }

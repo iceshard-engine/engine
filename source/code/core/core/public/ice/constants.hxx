@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -22,8 +22,8 @@ namespace ice
     constexpr ice::u32 const u32_min = std::numeric_limits<ice::u32>::min();
     constexpr ice::u64 const u64_min = std::numeric_limits<ice::u64>::min();
 
-    constexpr ice::ucount const ucount_min = std::numeric_limits<ice::ucount>::min();
-    constexpr ice::icount const icount_min = std::numeric_limits<ice::icount>::min();
+    //constexpr ice::ncount const ncount_min = std::numeric_limits<ice::ncount>::min();
+    //constexpr ice::nindex const nindex_min = std::numeric_limits<ice::nindex>::min();
 
     // Max values
     constexpr ice::f32 const f32_max = std::numeric_limits<ice::f32>::max();
@@ -37,8 +37,8 @@ namespace ice
     constexpr ice::u32 const u32_max = std::numeric_limits<ice::u32>::max();
     constexpr ice::u64 const u64_max = std::numeric_limits<ice::u64>::max();
 
-    constexpr ice::ucount const ucount_max = std::numeric_limits<ice::ucount>::max();
-    constexpr ice::icount const icount_max = std::numeric_limits<ice::icount>::max();
+    //constexpr ice::ucount const ucount_max = std::numeric_limits<ice::ucount>::max();
+    //constexpr ice::icount const icount_max = std::numeric_limits<ice::icount>::max();
 
     // Special floating point values
     constexpr ice::f32 const f32_inf = std::numeric_limits<ice::f32>::infinity();
