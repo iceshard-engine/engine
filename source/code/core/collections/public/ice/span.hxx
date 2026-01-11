@@ -22,6 +22,7 @@ namespace ice
         using ConstIterator = Type const*;
         using ConstReverseIterator = std::reverse_iterator<Type const*>;
         using SizeType = ice::ncount;
+        using ContainerTag = ice::concepts::ContiguousContainerTag;
 
         SizeType::base_type _count;
         ValueType* _data;

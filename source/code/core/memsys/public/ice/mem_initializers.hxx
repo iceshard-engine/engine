@@ -43,7 +43,7 @@ namespace ice
     }
 
     template<typename T>
-    auto mem_construct_n_at(ice::Memory memory, ice::u64 count) noexcept -> T*
+    auto mem_default_construct_n_at(ice::Memory memory, ice::u64 count) noexcept -> T*
     {
         // TODO: Assert (align + size)
         T* target_mem = reinterpret_cast<T*>(memory.location);
@@ -88,6 +88,19 @@ namespace ice
         return target_mem;
     }
 
+    template<typename T, typename ItT>
+    auto mem_copy_construct_it_at(ice::Memory memory, ItT begin, ItT end) noexcept -> T*
+    {
+        T* const target_mem = reinterpret_cast<T*>(memory.location);
+        ice::u64 idx = 0;
+        while (begin != end)
+        {
+            new (target_mem + idx) T{ *begin };
+            begin += 1;
+            idx += 1;
+        }
+        return target_mem;
+    }
 
 
     template<typename T>

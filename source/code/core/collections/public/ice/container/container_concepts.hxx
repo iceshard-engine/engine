@@ -24,14 +24,6 @@ namespace ice::concepts
     };
 
     template<typename T>
-    concept TrivialContainerLogic = ContainerType<T>
-        && TrivialContainerLogicAllowed<typename std::remove_reference_t<T>::ValueType>;
-
-    template<typename T>
-    concept RegularContainerLogic = ContainerType<T>
-        && not TrivialContainerLogicAllowed<typename std::remove_reference_t<T>::ValueType>;
-
-    template<typename T>
     concept ResizableContainer = Container<T> && requires(T t, ice::ncount size) {
         { t.data() } -> std::convertible_to<typename std::remove_reference_t<T>::ValueType*>;
         { t.capacity() } -> std::convertible_to<ice::ncount>;
@@ -39,6 +31,22 @@ namespace ice::concepts
         { t.resize(size) } -> std::convertible_to<void>;
         { t.clear() } -> std::convertible_to<void>;
     };
+
+    struct ContiguousContainerTag{ };
+
+    template<typename T>
+    concept ContiguousContainer = Container<T> && requires(T t) {
+        std::is_same_v<typename std::remove_reference_t<T>::ContainerTag, ContiguousContainerTag>;
+        { t.data_view() } -> std::convertible_to<ice::Data>;
+    };
+
+    template<typename T>
+    concept TrivialContainerLogic = ContainerType<T>
+        && TrivialContainerLogicAllowed<typename std::remove_reference_t<T>::ValueType>;
+
+    template<typename T>
+    concept RegularContainerLogic = ContainerType<T>
+        && not TrivialContainerLogicAllowed<typename std::remove_reference_t<T>::ValueType>;
 
 } // namespace ice::concepts
 
@@ -96,3 +104,14 @@ namespace ice::container
     using SpanType = ice::Span<ice::container::ConstCorrectContainerValueType<ContainerT>>;
 
 } // namespace ice::container
+
+namespace ice::concepts
+{
+
+    template<typename T>
+    concept IterableContainer = ContainerType<T> && requires(T t) {
+        { t.begin() } -> std::convertible_to<ice::container::Iterator<T>>;
+        { t.end() } -> std::convertible_to<ice::container::Iterator<T>>;
+    };
+
+} // namespace ice::concepts

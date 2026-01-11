@@ -2,6 +2,7 @@
 #include <ice/container/contiguous_container.hxx>
 #include <ice/container/resizable_container.hxx>
 #include <ice/mem_initializers.hxx>
+#include <ice/span.hxx>
 
 namespace ice
 {
@@ -29,6 +30,7 @@ namespace ice
         using ConstIterator = Type const*;
         using ConstReverseIterator = std::reverse_iterator<Type const*>;
         using SizeType = ice::ncount;
+        using ContainerTag = ice::concepts::ContiguousContainerTag;
 
         ice::Allocator* _allocator;
         ice::u32 _capacity;
@@ -61,6 +63,13 @@ namespace ice
         template<typename ItemType = Type>
             requires std::convertible_to<ItemType, Type> && std::is_constructible_v<Type, ItemType>
         inline void push_back(ItemType&& item) noexcept;
+
+        template<ice::concepts::IterableContainer ContainerT>
+            requires (std::convertible_to<ice::container::ValueType<ContainerT>, Type>
+            && std::is_constructible_v<Type, ice::container::ValueType<ContainerT>>)
+        inline void push_back(ContainerT const& other) noexcept;
+
+        inline void pop_back(ice::ncount count = 1_count) noexcept;
 
         // API Requirements Of: Data and Memory
         constexpr auto data_view(this Array const& self) noexcept -> ice::Data;
@@ -287,7 +296,7 @@ namespace ice
             ice::ncount const missing_items = new_size - _count;
             ice::Memory const uninitialized_memory = ice::ptr_add(memory_view(), size());
 
-            ice::mem_construct_n_at<ValueType>(
+            ice::mem_default_construct_n_at<ValueType>(
                 uninitialized_memory,
                 missing_items
             );
@@ -338,29 +347,46 @@ namespace ice
         _count += 1;
     }
 
-    //template<typename Type, ice::ContainerLogic Logic, typename Value>
-    //    requires std::copy_constructible<Type>&& std::convertible_to<Value, Type>
-    //inline void push_back(ice::Array<Type, Logic>& arr, Value const& item) noexcept
-    //{
-    //    if (arr.size() == arr.capacity())
-    //    {
-    //        arr.grow();
-    //    }
+    template<typename Type, ice::ContainerLogic Logic>
+    template<ice::concepts::IterableContainer ContainerT>
+        requires (std::convertible_to<ice::container::ValueType<ContainerT>, Type>
+        && std::is_constructible_v<Type, ice::container::ValueType<ContainerT>>)
+    inline void ice::Array<Type, Logic>::push_back(ContainerT const& other) noexcept
+    {
+        ice::ncount const current_size = size();
+        ice::ncount const required_capacity = other.size() + current_size;
+        if (required_capacity > _capacity)
+        {
+            this->grow(required_capacity);
+        }
 
-    //    if constexpr (Logic == ContainerLogic::Complex)
-    //    {
-    //        ice::mem_copy_construct_at<Type>(
-    //            ice::ptr_add(arr.memory_view(), arr.size()),
-    //            item
-    //        );
-    //    }
-    //    else
-    //    {
-    //        arr._data[arr._count] = Type{ item };
-    //    }
+        ice::Memory target_memory = ice::ptr_add(memory_view(), current_size);
+        if constexpr (ice::concepts::ContiguousContainer<ContainerT> && Logic == ContainerLogic::Trivial)
+        {
+            ice::memcpy(target_memory, other.data_view());
+        }
+        else
+        {
+            ice::mem_copy_construct_it_at<Type>(
+                target_memory, other.begin(), other.end()
+            );
+        }
 
-    //    arr._count += 1;
-    //}
+        _count = required_capacity.u32();
+    }
+
+    template<typename Type, ice::ContainerLogic Logic>
+    inline void ice::Array<Type, Logic>::pop_back(ice::ncount count) noexcept
+    {
+        ice::ncount const current_count = size();
+        ice::ncount const final_count = current_count - ice::min(count, current_count);
+        if constexpr (Logic == ContainerLogic::Complex)
+        {
+            ice::mem_destruct_n_at(data() + final_count, current_count - final_count);
+        }
+
+        _count = final_count.u32();
+    }
 
     template<typename Type, ice::ContainerLogic Logic>
     inline constexpr auto Array<Type, Logic>::data_view(this Array const& self) noexcept -> ice::Data

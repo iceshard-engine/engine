@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #include <catch2/catch_test_macros.hpp>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <ice/mem_allocator_host.hxx>
 #include <ice/mem_allocator_null.hxx>
 #include "util_tracking_object.hxx"
@@ -39,7 +39,7 @@ SCENARIO("collections 'ice/container/array.hxx'", "[collection][array][complex]"
                 {
                     ice::u32 dtor_val = 0;
                     obj.data.test_dtor = &dtor_val;
-                    ice::array::pop_back(objects, 1);
+                    objects.pop_back();
 
                     CHECK(dtor_val == 1);
                 }
@@ -73,7 +73,7 @@ SCENARIO("collections 'ice/container/array.hxx'", "[collection][array][complex]"
                 AND_THEN("we can copy and push back the same elements")
                 {
                     ice::Array array_copy = objects;
-                    ice::array::push_back(objects, array_copy);
+                    objects.push_back(array_copy);
 
                     CHECK(objects.capacity() >= 20);
                     CHECK(objects.not_empty());
@@ -169,7 +169,7 @@ SCENARIO("collections 'ice/container/array.hxx' (POD)", "[collection][array][pod
 
             THEN("one element is poped")
             {
-                ice::array::pop_back(objects);
+                objects.pop_back();
 
                 CHECK(objects.size() == 0);
                 CHECK(objects.not_empty() == false);
@@ -186,7 +186,7 @@ SCENARIO("collections 'ice/container/array.hxx' (POD)", "[collection][array][pod
 
             THEN("10 elements are poped")
             {
-                ice::array::pop_back(objects, 10);
+                objects.pop_back(10);
 
                 CHECK(objects.size() == 0);
                 CHECK(objects.not_empty() == false);
@@ -211,7 +211,7 @@ SCENARIO("collections 'ice/container/array.hxx' (POD)", "[collection][array][pod
 
             THEN("50 elements are poped")
             {
-                ice::array::pop_back(objects, 50);
+                objects.pop_back(50);
 
                 CHECK(objects.not_empty() == true);
                 CHECK(objects.is_empty() == false);
