@@ -893,7 +893,7 @@ namespace ice
 
             while (it._entry != nullptr)
             {
-                ice::array::push_back(items, *it._value);
+                items.push_back(*it._value);
                 it = ice::multi_hashmap::find_next(map, it);
             }
         }

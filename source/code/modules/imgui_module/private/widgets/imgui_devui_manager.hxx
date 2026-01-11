@@ -4,7 +4,7 @@
 #pragma once
 #include <ice/devui_widget.hxx>
 #include <ice/devui_frame.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <ice/mem_unique_ptr.hxx>
 
 namespace ice::devui

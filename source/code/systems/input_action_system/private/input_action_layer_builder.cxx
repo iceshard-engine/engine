@@ -435,7 +435,7 @@ namespace ice
                 } // for (ConditionSeries& series : ...)
 
                 modifier_count = action.modifiers.size().u8();
-                ice::array::push_back(final_modifiers, action.modifiers);
+                final_modifiers.push_back(action.modifiers);
 
                 final_actions.push_back(
                     InputActionInfo{

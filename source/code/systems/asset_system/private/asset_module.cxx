@@ -3,7 +3,7 @@
 
 #include <ice/asset_module.hxx>
 #include <ice/mem_allocator_stack.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <ice/module_register.hxx>
 
 namespace ice

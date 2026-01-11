@@ -8,7 +8,7 @@
 #include <ice/render/render_swapchain.hxx>
 #include <ice/render/render_device.hxx>
 #include <ice/render/render_pass.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <ice/sort.hxx>
 
 namespace ice::gfx

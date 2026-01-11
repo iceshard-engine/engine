@@ -7,7 +7,7 @@
 #include "vk_include.hxx"
 #include "vk_utility.hxx"
 
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <ice/assert.hxx>
 
 extern "C"

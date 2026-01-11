@@ -3,7 +3,7 @@
 
 #pragma once
 #include <ice/input/device_event.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 
 namespace ice::input
 {

@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include "vk_include.hxx"
 
 namespace ice::render::vk

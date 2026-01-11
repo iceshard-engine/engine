@@ -89,10 +89,7 @@ namespace ice
             params.committer
         );
 
-        ice::array::push_back(
-            _available_triggers,
-            triggers
-        );
+        _available_triggers.push_back(triggers);
 
         return true;
     }

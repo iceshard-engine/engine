@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #include <ice/params.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <ice/string.hxx>
 #include <ice/heap_string.hxx>
 #include <ice/string_utils.hxx>

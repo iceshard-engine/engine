@@ -3,7 +3,7 @@
 
 #pragma once
 #include <ice/mem_allocator.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <ice/engine_frame.hxx>
 #include <ice/render/render_queue.hxx>
 #include <ice/gfx/gfx_queue.hxx>

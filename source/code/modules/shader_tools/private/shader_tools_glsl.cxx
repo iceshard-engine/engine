@@ -7,7 +7,7 @@
 
 #include <ice/task_expected.hxx>
 #include <ice/resource_tracker.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <ice/container/hashmap.hxx>
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/string_utils.hxx>

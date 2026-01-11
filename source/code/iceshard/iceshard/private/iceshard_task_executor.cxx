@@ -4,7 +4,7 @@
 #include <ice/task_utils.hxx>
 #include "iceshard_task_executor.hxx"
 #include <ice/sync_manual_events.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 
 namespace ice
 {

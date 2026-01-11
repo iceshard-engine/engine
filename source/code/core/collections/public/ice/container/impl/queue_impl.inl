@@ -336,7 +336,7 @@ namespace ice
                 ice::u32 const wrapped_end_idx = missing_items - (end_idx - start_idx);
 
                 // Construct until we hit end of the queue buffer
-                ice::mem_construct_n_at<Type>(
+                ice::mem_default_construct_n_at<Type>(
                     Memory{
                         .location = queue._data + start_idx,
                         .size = ice::size_of<Type> * (end_idx - start_idx),
@@ -345,7 +345,7 @@ namespace ice
                     (end_idx - start_idx)
                 );
                 // Construct the rest wrapped around the buffer
-                ice::mem_construct_n_at<Type>(
+                ice::mem_default_construct_n_at<Type>(
                     Memory{
                         .location = queue._data,
                         .size = ice::size_of<Type> * wrapped_end_idx,

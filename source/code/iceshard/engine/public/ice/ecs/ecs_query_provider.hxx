@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <ice/ecs/ecs_data_block.hxx>
 #include <ice/ecs/ecs_query_definition.hxx>
 #include <ice/ecs/ecs_query_object.hxx>

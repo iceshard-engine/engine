@@ -3,7 +3,7 @@
 
 #pragma once
 #include <ice/container_types.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <ice/mem_initializers.hxx>
 
 namespace ice

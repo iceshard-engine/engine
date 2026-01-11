@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <ice/shard_container.hxx>
 #include <ice/ecs/ecs_entity.hxx>
 #include <ice/ecs/ecs_archetype.hxx>
@@ -64,7 +64,7 @@ namespace ice::ecs
             auto store(ice::Array<ice::ecs::Entity>& out_entities, bool append = true) const noexcept
             {
                 if (append == false) out_entities.clear();
-                ice::array::push_back(out_entities, all());
+                out_entities.push_back(all());
             }
 
             Result(OperationBuilder& builder) noexcept : _builder{ builder } { }

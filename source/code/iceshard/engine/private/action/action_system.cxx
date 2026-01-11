@@ -8,7 +8,7 @@
 
 #include <ice/mem_allocator.hxx>
 #include <ice/mem_allocator_ring.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <ice/clock.hxx>
 
 namespace ice::action

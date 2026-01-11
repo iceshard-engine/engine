@@ -5,7 +5,7 @@
 #include <ice/span.hxx>
 #include <ice/stringid.hxx>
 #include <ice/mem_allocator.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <ice/render/render_declarations.hxx>
 #include <ice/render/render_queue.hxx>
 

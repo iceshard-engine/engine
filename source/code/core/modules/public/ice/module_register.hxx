@@ -7,7 +7,7 @@
 #include <ice/string_types.hxx>
 #include <ice/stringid.hxx>
 #include <ice/container_types.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <ice/module_negotiator.hxx>
 #include <ice/module_query.hxx>
 #include <ice/module.hxx>

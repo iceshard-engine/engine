@@ -346,7 +346,7 @@ auto ice_setup(
     else
     {
         dylib_path = storage->dylibs_location();
-        ice::array::push_back(resource_paths, storage->data_locations());
+        resource_paths.push_back(storage->data_locations());
     }
 
     ice::framework::Config game_config{

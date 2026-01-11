@@ -7,7 +7,7 @@
 #include <ice/input_action_executor.hxx>
 #include <ice/heap_string.hxx>
 #include <ice/container/hashmap.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <ice/container/queue.hxx>
 #include <ice/profiler.hxx>
 #include <ice/clock.hxx>
@@ -296,7 +296,7 @@ namespace ice
         {
             // We just cut anything below this index, because we want to pop everything up to this layer
             _layers.resize(idx);
-            ice::array::pop_back(_layers); // And pop the item itself
+            _layers.pop_back(); // And pop the item itself
         }
     }
 

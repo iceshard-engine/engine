@@ -5,7 +5,7 @@
 #include <ice/task.hxx>
 #include <ice/shard.hxx>
 #include <ice/span.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 
 namespace ice
 {

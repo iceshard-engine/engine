@@ -3,7 +3,7 @@
 
 #pragma once
 #include <ice/render/render_queue.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include "vk_command_buffer.hxx"
 #include "vk_swapchain.hxx"
 #include "vk_include.hxx"

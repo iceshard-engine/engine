@@ -2,10 +2,10 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#include <ice/array.hxx>
 #include <ice/stringid.hxx>
 #include <ice/module_info.hxx>
 #include <ice/module_concepts.hxx>
-#include <ice/container/array.hxx>
 
 namespace ice
 {

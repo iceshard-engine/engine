@@ -78,7 +78,7 @@ namespace ice::devui
         }
 
         _widgets[idx] = ice::move(_widgets[count - 1]);
-        ice::array::pop_back(_widgets);
+        _widgets.pop_back();
     }
 
     void ImGuiDevUIManager::build_content() noexcept

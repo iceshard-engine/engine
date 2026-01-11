@@ -4,7 +4,7 @@
 #pragma once
 #include <ice/math.hxx>
 #include <ice/shard.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <ice/ui_style.hxx>
 
 #include "ip_ui_oven.hxx"

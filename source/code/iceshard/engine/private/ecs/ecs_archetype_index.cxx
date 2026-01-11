@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #include <ice/ecs/ecs_archetype_index.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <ice/container/hashmap.hxx>
 #include <ice/assert.hxx>
 #include <ice/log.hxx>

@@ -3,7 +3,7 @@
 
 #pragma once
 #include <ice/engine_state_tracker.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <ice/container/queue.hxx>
 #include <ice/container/hashmap.hxx>
 #include <ice/mem_allocator_stack.hxx>

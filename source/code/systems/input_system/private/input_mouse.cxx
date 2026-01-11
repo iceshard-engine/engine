@@ -5,7 +5,7 @@
 #include "input_state_helpers.hxx"
 
 #include <ice/input/input_mouse.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 
 namespace ice::input
 {

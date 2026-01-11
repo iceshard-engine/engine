@@ -3,7 +3,7 @@
 
 #pragma once
 #include <ice/shard.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 
 namespace ice
 {
@@ -149,7 +149,7 @@ namespace ice
 
         inline void push_back(ice::ShardContainer& container, ice::Span<ice::Shard const> values) noexcept
         {
-            ice::array::push_back(container._data, values);
+            container._data.push_back(values);
         }
 
         inline void remove_all_of(ice::ShardContainer& container, ice::ShardID value) noexcept

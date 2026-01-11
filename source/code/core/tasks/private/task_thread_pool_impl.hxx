@@ -4,7 +4,7 @@
 #pragma once
 #include <ice/task_thread_pool.hxx>
 #include <ice/task_flags.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <ice/container/hashmap.hxx>
 #include "task_native_thread.hxx"
 

@@ -4,7 +4,7 @@
 #pragma once
 #include "ip_ui_oven_types.hxx"
 #include <ice/string.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <ice/ui_types.hxx>
 
 #include <rapidxml_ns/rapidxml_ns.hpp>

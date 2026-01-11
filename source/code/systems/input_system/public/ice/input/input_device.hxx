@@ -2,9 +2,9 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/mem_data.hxx>
+#include <ice/array.hxx>
 #include <ice/clock.hxx>
-#include <ice/container/array.hxx>
+#include <ice/mem_data.hxx>
 #include <ice/input/device_event.hxx>
 #include <ice/input/input_event.hxx>
 

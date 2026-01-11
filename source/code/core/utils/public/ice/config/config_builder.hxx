@@ -2,8 +2,8 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#include <ice/array.hxx>
 #include <ice/config/config_types.hxx>
-#include <ice/container/array.hxx>
 #include <ice/heap_varstring.hxx>
 
 namespace ice

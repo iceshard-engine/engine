@@ -6,7 +6,7 @@
 #include <ice/config/config_builder.hxx>
 #include <ice/heap_varstring.hxx>
 #include <ice/heap_string.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 
 namespace ice::config::detail
 {

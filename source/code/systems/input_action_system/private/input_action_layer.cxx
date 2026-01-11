@@ -11,7 +11,7 @@
 #include <ice/input_action_layer_builder.hxx>
 #include <ice/input_action_definitions.hxx>
 #include <ice/input_action_executor.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <ice/container/hashmap.hxx>
 #include <ice/profiler.hxx>
 #include <ice/clock.hxx>

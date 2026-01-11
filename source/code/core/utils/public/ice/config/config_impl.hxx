@@ -3,7 +3,7 @@
 
 #pragma once
 #include <ice/config/config_types.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 
 namespace ice::config::detail
 {

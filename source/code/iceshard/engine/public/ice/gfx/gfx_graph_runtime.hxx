@@ -3,7 +3,7 @@
 
 #pragma once
 #include <ice/gfx/gfx_graph.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/task.hxx>
 
