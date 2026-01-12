@@ -15,7 +15,7 @@ namespace ice
         , _current_state{ alloc }
         , _pending_states{ alloc }
     {
-        ice::queue::reserve(_pending_states, 16);
+        _pending_states.reserve(16);
     }
 
     // auto EngineStateTracker_Default::current_states() const noexcept -> ice::Span<ice::EngineStateCurrent const>
@@ -204,7 +204,7 @@ namespace ice
                     }
                 );
 
-                ice::queue::clear(_pending_states);
+                _pending_states.clear();
             }
             else
             {
@@ -280,8 +280,7 @@ namespace ice
                 trigger.to.value
             );
 
-            ice::queue::push_back(
-                _pending_states,
+            _pending_states.push_back(
                 EngineStatePending
                 {
                     .trigger_shard = trigger_shard,
@@ -368,8 +367,7 @@ namespace ice
                 );
 
                 // Push to the front so it's before all the current pending states
-                ice::queue::push_front(
-                    _pending_states,
+                _pending_states.push_front(
                     EngineStatePending
                     {
                         .trigger_shard = trigger_shard,
@@ -382,7 +380,7 @@ namespace ice
             }
         }
 
-        return ice::queue::any(_pending_states);
+        return _pending_states.not_empty();
     }
 
     auto create_state_tracker(ice::Allocator& alloc) noexcept -> ice::UniquePtr<ice::EngineStateTracker>

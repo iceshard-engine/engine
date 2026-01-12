@@ -10,45 +10,10 @@
 #include <ice/span.hxx>
 #include <array>
 #include <ice/array.hxx>
+#include <ice/queue.hxx>
 
 namespace ice
 {
-
-    //! \brief A double ended queue build on a circular buffer.
-    //!
-    //! \details Manages a memory block big enough to hold the items that it holds.
-    //!
-    //! \tparam Logic The logic used during memory operations for the given type.
-    //!   This value is set by the user to enforce expected behavior for stored types.
-    template<typename Type, ice::ContainerLogic Logic = ice::Constant_DefaultContainerLogic<Type>>
-    struct Queue
-    {
-        static_assert(
-            Logic == ContainerLogic::Complex || ice::TrivialContainerLogicAllowed<Type>,
-            "Collection element type is not allowed with 'Trivial' logic!"
-        );
-
-        using ValueType = Type;
-
-        ice::Allocator* _allocator;
-        ice::u32 _capacity;
-        ice::u32 _count;
-        ice::u32 _offset;
-        Type* _data;
-
-        inline explicit Queue(ice::Allocator& alloc) noexcept;
-        inline Queue(Queue&& other) noexcept;
-        inline Queue(Queue const& other) noexcept
-            requires std::copy_constructible<Type>;
-        inline ~Queue() noexcept;
-
-        inline auto operator=(Queue&& other) noexcept -> Queue&;
-        inline auto operator=(Queue const& other) noexcept -> Queue&
-            requires std::copy_constructible<Type>;
-
-        auto operator[](ice::u32 idx) noexcept -> Type&;
-        auto operator[](ice::u32 idx) const noexcept -> Type const&;
-    };
 
 
     //! \brief A hash map build on a single block of memory.

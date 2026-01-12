@@ -20,12 +20,11 @@ namespace ice::concepts
     template<typename T>
     concept Container = ContainerType<T> && requires(T t) {
         { t.size() } -> std::convertible_to<ice::ncount>;
-        { t.data() } -> std::convertible_to<typename std::remove_reference_t<T>::ValueType const*>;
     };
 
     template<typename T>
     concept ResizableContainer = Container<T> && requires(T t, ice::ncount size) {
-        { t.data() } -> std::convertible_to<typename std::remove_reference_t<T>::ValueType*>;
+        // { t.data() } -> std::convertible_to<typename std::remove_reference_t<T>::ValueType*>;
         { t.capacity() } -> std::convertible_to<ice::ncount>;
         { t.set_capacity(size) } -> std::convertible_to<void>;
         { t.resize(size) } -> std::convertible_to<void>;
@@ -37,7 +36,13 @@ namespace ice::concepts
     template<typename T>
     concept ContiguousContainer = Container<T> && requires(T t) {
         std::is_same_v<typename std::remove_reference_t<T>::ContainerTag, ContiguousContainerTag>;
+        { t.data() } -> std::convertible_to<typename std::remove_reference_t<T>::ValueType const*>;
         { t.data_view() } -> std::convertible_to<ice::Data>;
+    };
+
+    template<typename T>
+    concept ContiguousResizableContainer = ResizableContainer<T> && ContiguousContainer<T> && requires(T t) {
+        { t.memory_view() } -> std::convertible_to<ice::Memory>;
     };
 
     template<typename T>
@@ -89,6 +94,9 @@ namespace ice::container
     using ValueRef = ValueType<ContainerT>&;
 
     template<ice::concepts::ContainerType ContainerT>
+    using ValueRVal = ValueType<ContainerT>&&;
+
+    template<ice::concepts::ContainerType ContainerT>
     using ValuePtr = ValueType<ContainerT>*;
 
     template<ice::concepts::ContainerType ContainerT>
@@ -108,10 +116,23 @@ namespace ice::container
 namespace ice::concepts
 {
 
+    template<typename TargetT, typename SourceContainerT>
+    concept CompatibleContainer = std::convertible_to<
+        ice::container::ValueType<SourceContainerT>,
+        TargetT
+    >;// && std::is_constructible_v<Type, ice::container::ValueType<ContainerT>>)
+
+
     template<typename T>
-    concept IterableContainer = ContainerType<T> && requires(T t) {
+    concept IterableContainer = ice::concepts::Container<T> && requires(T t) {
         { t.begin() } -> std::convertible_to<ice::container::Iterator<T>>;
         { t.end() } -> std::convertible_to<ice::container::Iterator<T>>;
+    };
+
+    template<typename T>
+    concept ReverseIterableContainer = requires(T t) {
+        { t.rbegin() } -> std::convertible_to<ice::container::ReverseIterator<T>>;
+        { t.rend() } -> std::convertible_to<ice::container::ReverseIterator<T>>;
     };
 
 } // namespace ice::concepts

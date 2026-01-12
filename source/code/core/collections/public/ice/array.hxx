@@ -38,22 +38,27 @@ namespace ice
         ValueType* _data;
 
         inline explicit Array(ice::Allocator& alloc) noexcept;
+        inline ~Array() noexcept;
+
         inline Array(Array&& other) noexcept;
         inline Array(Array const& other) noexcept
             requires std::copy_constructible<Type>;
-        inline ~Array() noexcept;
 
         inline Array(
             ice::Allocator& alloc,
             ice::Span<Type const> values
         ) noexcept requires std::copy_constructible<Type>;
 
-        // API Requirements Of: Container and Resizable Container
-        template<typename Self>
-        constexpr auto data(this Self& self) noexcept -> ice::container::ValuePtr<Self> { return self._data; }
+        inline auto operator=(Array&& other) noexcept -> Array&;
+        inline auto operator=(Array const& other) noexcept -> Array&
+            requires std::copy_constructible<Type>;
+
+        // API Requirements Of: Container
         constexpr auto size() const noexcept -> ice::ncount { return { _count, sizeof(ValueType) }; }
 
         // API Requirements Of: Resizable Container
+        template<typename Self>
+        constexpr auto data(this Self& self) noexcept -> ice::container::ValuePtr<Self> { return self._data; }
         constexpr auto capacity() const noexcept -> ice::ncount { return { _capacity, sizeof(ValueType) }; }
         constexpr void set_capacity(ice::ncount new_capacity) noexcept;
         constexpr void resize(ice::ncount new_size) noexcept;
@@ -65,8 +70,7 @@ namespace ice
         inline void push_back(ItemType&& item) noexcept;
 
         template<ice::concepts::IterableContainer ContainerT>
-            requires (std::convertible_to<ice::container::ValueType<ContainerT>, Type>
-            && std::is_constructible_v<Type, ice::container::ValueType<ContainerT>>)
+            requires (ice::concepts::CompatibleContainer<Type, ContainerT>)
         inline void push_back(ContainerT const& other) noexcept;
 
         inline void pop_back(ice::ncount count = 1_count) noexcept;
@@ -75,19 +79,13 @@ namespace ice
         constexpr auto data_view(this Array const& self) noexcept -> ice::Data;
         constexpr auto memory_view(this Array& self) noexcept -> ice::Memory;
 
-        inline auto operator=(Array&& other) noexcept -> Array&;
-        inline auto operator=(Array const& other) noexcept -> Array&
-            requires std::copy_constructible<Type>;
-
+        // Operators and implicit conversions
         inline operator ice::Span<Type>() noexcept;
         inline operator ice::Span<Type const>() const noexcept;
     };
 
     template<typename Type, ice::ContainerLogic Logic>
-    auto data_view(ice::Array<Type, Logic> const& arr) noexcept -> ice::Data
-    {
-        return arr.data_view();
-    }
+    auto data_view(ice::Array<Type, Logic> const& arr) noexcept -> ice::Data = delete;
 
     template<typename Type, ice::ContainerLogic Logic>
     inline Array<Type, Logic>::Array(ice::Allocator& alloc) noexcept
@@ -96,6 +94,17 @@ namespace ice
         , _count{ 0 }
         , _data{ nullptr }
     { }
+
+    template<typename Type, ice::ContainerLogic Logic>
+    inline Array<Type, Logic>::~Array() noexcept
+    {
+        if constexpr (Logic == ContainerLogic::Complex)
+        {
+            ice::mem_destruct_n_at(_data, _count);
+        }
+
+        _allocator->deallocate(memory_view());
+    }
 
     template<typename Type, ice::ContainerLogic Logic>
     inline Array<Type, Logic>::Array(Array&& other) noexcept
@@ -138,23 +147,11 @@ namespace ice
     }
 
     template<typename Type, ice::ContainerLogic Logic>
-    inline Array<Type, Logic>::~Array() noexcept
-    {
-        if constexpr (Logic == ContainerLogic::Complex)
-        {
-            ice::mem_destruct_n_at(_data, _count);
-        }
-
-        _allocator->deallocate(memory_view());
-    }
-
-    template<typename Type, ice::ContainerLogic Logic>
     inline Array<Type, Logic>::Array(
         ice::Allocator& alloc,
         ice::Span<Type const> values
-    ) noexcept
-        requires std::copy_constructible<Type>
-    : _allocator{ &alloc }
+    ) noexcept requires std::copy_constructible<Type>
+        : _allocator{ &alloc }
         , _capacity{ 0 }
         , _count{ 0 }
         , _data{ nullptr }
@@ -226,18 +223,6 @@ namespace ice
             _count = other._count;
         }
         return *this;
-    }
-
-    template<typename Type, ice::ContainerLogic Logic>
-    inline Array<Type, Logic>::operator ice::Span<Type>() noexcept
-    {
-        return Span{ _data, _count };
-    }
-
-    template<typename Type, ice::ContainerLogic Logic>
-    inline Array<Type, Logic>::operator ice::Span<Type const>() const noexcept
-    {
-        return Span{ _data, _count };
     }
 
     template<typename Type, ice::ContainerLogic Logic>
@@ -349,8 +334,7 @@ namespace ice
 
     template<typename Type, ice::ContainerLogic Logic>
     template<ice::concepts::IterableContainer ContainerT>
-        requires (std::convertible_to<ice::container::ValueType<ContainerT>, Type>
-        && std::is_constructible_v<Type, ice::container::ValueType<ContainerT>>)
+        requires (ice::concepts::CompatibleContainer<Type, ContainerT>)
     inline void ice::Array<Type, Logic>::push_back(ContainerT const& other) noexcept
     {
         ice::ncount const current_size = size();
@@ -406,6 +390,18 @@ namespace ice
             .size = self.capacity(),
             .alignment = ice::align_of<ValueType>
         };
+    }
+
+    template<typename Type, ice::ContainerLogic Logic>
+    inline Array<Type, Logic>::operator ice::Span<Type>() noexcept
+    {
+        return Span{ _data, _count };
+    }
+
+    template<typename Type, ice::ContainerLogic Logic>
+    inline Array<Type, Logic>::operator ice::Span<Type const>() const noexcept
+    {
+        return Span{ _data, _count };
     }
 
 

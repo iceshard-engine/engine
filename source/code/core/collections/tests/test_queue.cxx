@@ -15,17 +15,17 @@ SCENARIO("collections 'ice/container/queue.hxx'", "[collection][queue][complex]"
     ice::ProxyAllocator alloc{ host_alloc, "queue_test" };
     ice::Queue<Test_TrackingObject, ice::ContainerLogic::Complex> test_queue{ alloc };
 
-    CHECK(queue::count(test_queue) == 0);
+    CHECK(test_queue.size() == 0);
 
     GIVEN("an empty queue")
     {
         WHEN("resizing constructs objects")
         {
-            queue::resize(test_queue, 5);
+            test_queue.resize(5);
 
             ice::u32 dtor_count = 0;
             Test_ObjectEvents events{};
-            for (ice::u32 idx = 0; idx < queue::count(test_queue); ++idx)
+            for (ice::u32 idx = 0; idx < test_queue.size(); ++idx)
             {
                 test_queue[idx].gather_ctors(events);
                 test_queue[idx].data.test_dtor = &dtor_count;
@@ -35,7 +35,7 @@ SCENARIO("collections 'ice/container/queue.hxx'", "[collection][queue][complex]"
 
             WHEN("cleared calls destructors")
             {
-                queue::clear(test_queue);
+                test_queue.clear();
 
                 CHECK(dtor_count == 5);
             }
@@ -44,24 +44,24 @@ SCENARIO("collections 'ice/container/queue.hxx'", "[collection][queue][complex]"
         WHEN("pushing a value move constructs an object")
         {
             {
-                queue::push_back(test_queue, { 24 });
-                Test_TrackingObject& test_object = queue::front(test_queue);
+                test_queue.push_back({ 24 });
+                Test_TrackingObject& test_object = test_queue.front();
 
                 CHECK(test_object == Test_ObjectEvents{ .test_ctor_move = 1 });
                 CHECK(test_object.value == 24);
             }
 
             {
-                queue::push_front(test_queue, { 33 });
-                Test_TrackingObject& test_object = queue::front(test_queue);
+                test_queue.push_front({ 33 });
+                Test_TrackingObject& test_object = test_queue.front();
 
                 CHECK(test_object == Test_ObjectEvents{ .test_ctor_move = 1 });
                 CHECK(test_object.value == 33);
             }
 
             {
-                queue::push_back(test_queue, { 42 });
-                Test_TrackingObject& test_object = queue::back(test_queue);
+                test_queue.push_back({ 42 });
+                Test_TrackingObject& test_object = test_queue.back();
 
                 CHECK(test_object == Test_ObjectEvents{ .test_ctor_move = 1 });
                 CHECK(test_object.value == 42);
@@ -69,7 +69,7 @@ SCENARIO("collections 'ice/container/queue.hxx'", "[collection][queue][complex]"
 
             ice::u32 dtor_count = 0;
             Test_ObjectEvents events{};
-            for (ice::u32 idx = 0; idx < queue::count(test_queue); ++idx)
+            for (ice::u32 idx = 0; idx < test_queue.size(); ++idx)
             {
                 test_queue[idx].gather_ctors(events);
                 test_queue[idx].data.test_dtor = &dtor_count;
@@ -79,7 +79,7 @@ SCENARIO("collections 'ice/container/queue.hxx'", "[collection][queue][complex]"
 
             WHEN("cleared calls destructors")
             {
-                queue::clear(test_queue);
+                test_queue.clear();
 
                 CHECK(dtor_count == 3);
             }
@@ -88,30 +88,30 @@ SCENARIO("collections 'ice/container/queue.hxx'", "[collection][queue][complex]"
 
     GIVEN("an wrapped queue")
     {
-        queue::resize(test_queue, 7);
+        test_queue.resize(7);
 
         ice::u32 dtor_count = 0;
-        for (ice::u32 idx = 0; idx < queue::count(test_queue); ++idx)
+        for (ice::u32 idx = 0; idx < test_queue.size(); ++idx)
         {
             test_queue[idx].data.test_dtor = &dtor_count;
         }
 
-        queue::pop_front(test_queue, 6); // We pop 6, as poping everything will reset the queue.
+        test_queue.pop_front(6); // We pop 6, as poping everything will reset the queue.
 
-        CHECK(queue::count(test_queue) == 1);
-        CHECK(queue::capacity(test_queue) == 7);
+        CHECK(test_queue.size() == 1);
+        CHECK(test_queue.capacity() == 7);
 
         for (Test_TrackingObject obj : { Test_TrackingObject{ 1 }, Test_TrackingObject{ 2 }, Test_TrackingObject{ 3 } })
         {
-            queue::push_back(test_queue, obj);
+            test_queue.push_back(obj);
         }
-        CHECK(queue::count(test_queue) == 4);
+        CHECK(test_queue.size() == 4);
 
         // Ensure we have a wrapped queue.
         CHECK(test_queue._offset != 0);
         CHECK(test_queue._capacity < (test_queue._offset + test_queue._count));
 
-        for (ice::u32 idx = 0; idx < queue::count(test_queue); ++idx)
+        for (ice::u32 idx = 0; idx < test_queue.size(); ++idx)
         {
             test_queue[idx].data.test_dtor = &dtor_count;
         }
@@ -119,7 +119,7 @@ SCENARIO("collections 'ice/container/queue.hxx'", "[collection][queue][complex]"
         // Clear the queue and calculate the dtor count;
         WHEN("cleared calls destructors")
         {
-            queue::clear(test_queue);
+            test_queue.clear();
 
             CHECK(dtor_count == 10);
         }
@@ -134,50 +134,50 @@ SCENARIO("collections 'ice/container/queue.hxx' (POD)", "[collection][queue][pod
     ice::ProxyAllocator alloc{ host_alloc, "queue_test" };
     ice::Queue<ice::i32> test_queue{ alloc };
 
-    CHECK(queue::count(test_queue) == 0);
+    CHECK(test_queue.size() == 0);
 
     GIVEN("An empty queue object")
     {
-        CHECK(queue::count(test_queue) == 0);
+        CHECK(test_queue.size() == 0);
 
         WHEN("we can push elements from the front and back")
         {
-            queue::push_back(test_queue, 0xd00b);
-            CHECK(queue::count(test_queue) == 1);
+            test_queue.push_back(0xd00b);
+            CHECK(test_queue.size() == 1);
 
-            CHECK(queue::front(test_queue) == 0xd00b);
-            CHECK(queue::back(test_queue) == 0xd00b);
+            CHECK(test_queue.front() == 0xd00b);
+            CHECK(test_queue.back() == 0xd00b);
 
-            queue::push_front(test_queue, 0x0db0);
-            CHECK(queue::count(test_queue) == 2);
+            test_queue.push_front(0x0db0);
+            CHECK(test_queue.size() == 2);
 
-            CHECK(queue::front(test_queue) == 0x0db0);
-            CHECK(queue::back(test_queue) == 0xd00b);
+            CHECK(test_queue.front() == 0x0db0);
+            CHECK(test_queue.back() == 0xd00b);
 
             AND_WHEN("we pop them 'back' then 'front' the queue ends up empty")
             {
-                queue::pop_back(test_queue, 1);
-                CHECK(queue::count(test_queue) == 1);
+                test_queue.pop_back(1);
+                CHECK(test_queue.size() == 1);
 
-                CHECK(queue::front(test_queue) == 0x0db0);
-                CHECK(queue::back(test_queue) == 0x0db0);
+                CHECK(test_queue.front() == 0x0db0);
+                CHECK(test_queue.back() == 0x0db0);
 
-                queue::pop_front(test_queue, 1);
-                CHECK(queue::count(test_queue) == 0);
-                CHECK(queue::empty(test_queue));
+                test_queue.pop_front(1);
+                CHECK(test_queue.size() == 0);
+                CHECK(test_queue.is_empty());
             }
 
             AND_WHEN("we pop them 'front' then 'back' the queue ends up empty")
             {
-                queue::pop_front(test_queue, 1);
-                CHECK(queue::count(test_queue) == 1);
+                test_queue.pop_front(1);
+                CHECK(test_queue.size() == 1);
 
-                CHECK(queue::front(test_queue) == 0xd00b);
-                CHECK(queue::back(test_queue) == 0xd00b);
+                CHECK(test_queue.front() == 0xd00b);
+                CHECK(test_queue.back() == 0xd00b);
 
-                queue::pop_back(test_queue, 1);
-                CHECK(queue::count(test_queue) == 0);
-                CHECK(queue::empty(test_queue));
+                test_queue.pop_back(1);
+                CHECK(test_queue.size() == 0);
+                CHECK(test_queue.is_empty());
             }
         }
 
@@ -185,10 +185,10 @@ SCENARIO("collections 'ice/container/queue.hxx' (POD)", "[collection][queue][pod
         {
             for (ice::u32 i = 0; i < 100; ++i)
             {
-                queue::push_back(test_queue, 0xd00b);
+                test_queue.push_back(0xd00b);
             }
 
-            CHECK(queue::count(test_queue) == 100);
+            CHECK(test_queue.size() == 100);
 
             AND_WHEN("we create a copy of the array")
             {
@@ -196,13 +196,13 @@ SCENARIO("collections 'ice/container/queue.hxx' (POD)", "[collection][queue][pod
 
                 THEN("popping 50 front elements 'front' at once or one-by-one results in the same queue")
                 {
-                    queue::pop_front(test_queue, 50);
+                    test_queue.pop_front(50);
                     for (ice::u32 idx = 0; idx < 50; ++idx)
                     {
-                        queue::pop_front(test_copy);
+                        test_copy.pop_front();
                     }
 
-                    for (ice::u32 idx = 0; idx < ice::queue::count(test_copy); ++idx)
+                    for (ice::u32 idx = 0; idx < test_copy.size(); ++idx)
                     {
                         CHECK(test_queue[idx] == test_copy[idx]);
                     }
@@ -210,13 +210,13 @@ SCENARIO("collections 'ice/container/queue.hxx' (POD)", "[collection][queue][pod
 
                 THEN("popping from back 50 elements at once or one-by-one results in the same queue")
                 {
-                    queue::pop_back(test_queue, 50);
+                    test_queue.pop_back(50);
                     for (ice::u32 idx = 0; idx < 50; ++idx)
                     {
-                        queue::pop_back(test_copy);
+                        test_copy.pop_back();
                     }
 
-                    for (ice::u32 idx = 0; idx < ice::queue::count(test_copy); ++idx)
+                    for (ice::u32 idx = 0; idx < test_copy.size(); ++idx)
                     {
                         CHECK(test_queue[idx] == test_copy[idx]);
                     }
@@ -225,23 +225,23 @@ SCENARIO("collections 'ice/container/queue.hxx' (POD)", "[collection][queue][pod
 
             THEN("we clear the queue by popping all elements (back)")
             {
-                queue::pop_back(test_queue, queue::count(test_queue));
+                test_queue.pop_back(test_queue.size().u32());
 
-                CHECK(queue::count(test_queue) == 0);
+                CHECK(test_queue.size() == 0);
             }
 
             THEN("we clear the queue by popping all elements (front)")
             {
-                queue::pop_front(test_queue, queue::count(test_queue));
+                test_queue.pop_front(test_queue.size().u32());
 
-                CHECK(queue::count(test_queue) == 0);
+                CHECK(test_queue.size() == 0);
             }
 
             THEN("we clear the queue by calling 'clear'")
             {
-                queue::clear(test_queue);
+                test_queue.clear();
 
-                CHECK(queue::count(test_queue) == 0);
+                CHECK(test_queue.size() == 0);
             }
         }
     }
@@ -249,21 +249,21 @@ SCENARIO("collections 'ice/container/queue.hxx' (POD)", "[collection][queue][pod
     GIVEN("A queue with 7 elements")
     {
         // Reserve space for 10 elements
-        queue::reserve(test_queue, 10);
-        CHECK(queue::count(test_queue) == 0);
+        test_queue.reserve(10);
+        CHECK(test_queue.size() == 0);
 
         ice::i32 const test_values[]{ 1, 2, 3, 4, 5, 6, 7 };
-        queue::push_back(test_queue, { test_values });
+        test_queue.push_back(ice::Span{ test_values });
 
         THEN("we preare it so the values are wrapped around the buffer")
         {
             ice::i32 const test_values2[]{ 7, 1, 2, 3, 4, 5, 6, 7 };
 
-            queue::pop_front(test_queue, 6); // We pop 6, as poping everything will reset the queue.
-            CHECK(queue::count(test_queue) == 1);
+            test_queue.pop_front(6); // We pop 6, as poping everything will reset the queue.
+            CHECK(test_queue.size() == 1);
 
-            queue::push_back(test_queue, { test_values });
-            CHECK(queue::count(test_queue) == 8);
+            test_queue.push_back(ice::Span{ test_values });
+            CHECK(test_queue.size() == 8);
 
             // Ensure we have a wrapped queue.
             CHECK(test_queue._offset != 0);
@@ -271,7 +271,7 @@ SCENARIO("collections 'ice/container/queue.hxx' (POD)", "[collection][queue][pod
 
             AND_THEN("the queue matches test values2")
             {
-                for (ice::u32 idx = 0; idx < ice::queue::count(test_queue); ++idx)
+                for (ice::u32 idx = 0; idx < test_queue.size(); ++idx)
                 {
                     CHECK(test_values2[idx] == test_queue[idx]);
                 }
@@ -285,9 +285,9 @@ SCENARIO("collections 'ice/container/queue.hxx' (POD)", "[collection][queue][pod
                 {
                     CHECK(test_copy._offset == 0);
                     CHECK(test_queue._offset != 0);
-                    CHECK(queue::count(test_copy) == queue::count(test_queue));
+                    CHECK(test_copy.size() == test_queue.size());
 
-                    for (ice::u32 idx = 0; idx < ice::queue::count(test_copy); ++idx)
+                    for (ice::u32 idx = 0; idx < test_copy.size(); ++idx)
                     {
                         CHECK(test_queue[idx] == test_copy[idx]);
                     }
@@ -296,31 +296,31 @@ SCENARIO("collections 'ice/container/queue.hxx' (POD)", "[collection][queue][pod
 
             WHEN("cleared it resets the interall offset")
             {
-                ice::queue::clear(test_queue);
+                test_queue.clear();
 
                 CHECK(test_queue._offset == 0);
-                CHECK(ice::queue::empty(test_queue));
+                CHECK(test_queue.is_empty());
             }
         }
 
-        queue::clear(test_queue);
-        queue::push_back(test_queue, { test_values });
+        test_queue.clear();
+        test_queue.push_back(ice::Span{ test_values });
 
-        REQUIRE(queue::count(test_queue) == 7);
+        REQUIRE(test_queue.size() == 7);
 
         // Popping 6 front elements
-        queue::pop_front(test_queue, 6);
+        test_queue.pop_front(6);
 
         // Push another 5 elements so we got 3 elements at the end of the ring buffer and 3 at the begining
         ice::i32 const test_values_2[]{ 7, 1, 2, 3, 4, 5 };
 
-        queue::push_back(test_queue, { test_values_2 + 1, 5 });
-        CHECK(queue::count(test_queue) == 6);
+        test_queue.push_back(ice::Span{ test_values_2 + 1, 5 });
+        CHECK(test_queue.size() == 6);
 
         THEN("Check if we iterate in the proper order over the queue")
         {
-            ice::u32 const queue_size = queue::count(test_queue);
-            for (ice::u32 i = 0; i < queue_size; ++i)
+            ice::ncount const queue_size = test_queue.size();
+            for (ice::nindex i = 0; i < queue_size; ++i)
             {
                 CHECK(test_queue[i] == test_values_2[i]);
             }
@@ -357,18 +357,18 @@ SCENARIO("collections 'ice/container/queue.hxx' (POD)", "[collection][queue][pod
                 {
                     ice::u32 const alloc_count = alloc.allocation_total_count();
 
-                    queue::reserve(test_queue, 100);
+                    test_queue.reserve(100);
 
                     // Check that we did force a reallocation
                     CHECK(alloc_count + 1 == alloc.allocation_total_count());
                 }
                 else
                 {
-                    queue::reserve(test_queue, 100);
+                    test_queue.reserve(100);
                 }
 
                 // Check the queue is still in tact
-                CHECK(queue_size == queue::count(test_queue));
+                CHECK(queue_size == test_queue.size());
                 for (ice::u32 i = 0; i < queue_size; ++i)
                 {
                     CHECK(test_queue[i] == test_values_2[i]);

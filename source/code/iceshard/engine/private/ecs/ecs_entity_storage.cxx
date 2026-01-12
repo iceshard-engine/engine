@@ -764,7 +764,7 @@ namespace ice::ecs
                 }
 
                 ICE_LOG_IF(
-                    same_archetype == true,
+                    same_archetype == false,
                     LogSeverity::Warning, LogTag::Engine,
                     "Entities in operation have different archetypes, not all operations can handle this yet! Check for possible bugs!"
                 );

@@ -10,7 +10,7 @@ namespace ice::container
     struct ContiguousContainer : ice::container::BasicContainer
     {
         // Accessing Data with Spans
-        template<ice::concepts::Container Self>
+        template<ice::concepts::ContiguousContainer Self>
         constexpr auto subspan(
             this Self&& self,
             ice::nindex from,
@@ -23,7 +23,7 @@ namespace ice::container
             return { self.data() + from_start.native(), count.min_value_or(remaining_count, remaining_count)};
         }
 
-        template<ice::concepts::Container Self>
+        template<ice::concepts::ContiguousContainer Self>
         constexpr auto subspan(
             this Self&& self,
             ice::ref32 refval
@@ -32,7 +32,7 @@ namespace ice::container
             return self.subspan(refval.offset, refval.size);
         }
 
-        template<ice::concepts::Container Self>
+        template<ice::concepts::ContiguousContainer Self>
         constexpr auto headspan(
             this Self&& self,
             ice::ncount count = 1
@@ -42,7 +42,7 @@ namespace ice::container
             return { self.data(), count.min_value_or(self.size(), 0_count) };
         }
 
-        template<ice::concepts::Container Self>
+        template<ice::concepts::ContiguousContainer Self>
         constexpr auto tailspan(
             this Self&& self,
             ice::nindex offset = 1
@@ -56,45 +56,45 @@ namespace ice::container
         }
 
         // Iteration interface
-        template<ice::concepts::Container Self>
+        template<ice::concepts::ContiguousContainer Self>
         constexpr auto begin(this Self&& self) noexcept -> ice::container::Iterator<Self>
         {
             return { self.data() };
         }
 
-        template<ice::concepts::Container Self>
+        template<ice::concepts::ContiguousContainer Self>
         constexpr auto end(this Self&& self) noexcept -> ice::container::Iterator<Self>
         {
             return { self.data() + self.size() };
         }
 
-        template<ice::concepts::Container Self>
+        template<ice::concepts::ContiguousContainer Self>
         constexpr auto rbegin(this Self&& self) noexcept -> ice::container::ReverseIterator<Self>
         {
             return ice::container::ReverseIterator<Self>{ self.data() + self.size() };
         }
 
-        template<ice::concepts::Container Self>
+        template<ice::concepts::ContiguousContainer Self>
         constexpr auto rend(this Self&& self) noexcept -> ice::container::ReverseIterator<Self>
         {
             return ice::container::ReverseIterator<Self>{ self.data() };
         }
 
         // Operators
-        template<ice::concepts::Container Self>
+        template<ice::concepts::ContiguousContainer Self>
         constexpr auto operator[](this Self&& self, ice::nindex index) noexcept -> ice::container::ValueRef<Self>
         {
             return self.data()[index];
         }
 
         // Data API
-        template<ice::concepts::Container Self>
+        template<ice::concepts::ContiguousContainer Self>
         inline auto meminfo(this Self const& self) noexcept -> ice::meminfo
         {
             return ice::meminfo_of<typename Self::ValueType> * self.size();
         }
 
-        template<ice::concepts::ResizableContainer Self> requires (ice::concepts::TrivialContainerLogic<Self>)
+        template<ice::concepts::ContiguousResizableContainer Self> requires (ice::concepts::TrivialContainerLogic<Self>)
         inline auto memset(this Self const& self, ice::u8 value) noexcept -> ice::Memory
         {
             ice::Memory mem{ self.data(), self.size(), ice::align_of<ice::container::ValueType<Self>> };

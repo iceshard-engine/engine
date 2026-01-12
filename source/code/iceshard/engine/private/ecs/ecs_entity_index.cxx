@@ -56,7 +56,7 @@ namespace ice::ecs
 
     auto EntityIndex::count() const noexcept -> ice::u32
     {
-        return _generation.size().u32() - ice::queue::count(_free_indices);
+        return (_generation.size() - _free_indices.size()).u32();
     }
 
     bool EntityIndex::is_alive(ice::ecs::Entity entity) const noexcept
@@ -71,10 +71,10 @@ namespace ice::ecs
     {
         ice::nindex index = 0;
 
-        if (ice::queue::count(_free_indices) >= ice::ecs::Constant_MinimumFreeIndicesBeforeReuse)
+        if (_free_indices.size() >= ice::ecs::Constant_MinimumFreeIndicesBeforeReuse)
         {
-            index = ice::queue::front(_free_indices);
-            ice::queue::pop_front(_free_indices);
+            index = _free_indices.front();
+            _free_indices.pop_front();
         }
         else
         {
@@ -91,7 +91,7 @@ namespace ice::ecs
         auto out_it = out_entities.begin();
 
         ice::u32 indices[256];
-        ice::i32 free_count = ice::i32(ice::queue::count(_free_indices)) - ice::ecs::Constant_MinimumFreeIndicesBeforeReuse;
+        ice::i32 free_count = ice::i32(_free_indices.size().u32()) - ice::ecs::Constant_MinimumFreeIndicesBeforeReuse;
         while(free_count > 0)
         {
             ice::u32 const indices_taken = ice::queue::take_front(
@@ -142,7 +142,7 @@ namespace ice::ecs
         EntityInfo const info = ice::ecs::entity_info(entity);
         _generation[info.index] += 1;
 
-        ice::queue::push_back(_free_indices, info.index);
+        _free_indices.push_back(info.index);
     }
 
     void EntityIndex::destroy_many(ice::Span<ice::ecs::Entity const> entities) noexcept
