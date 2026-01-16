@@ -609,4 +609,5 @@ namespace ice
         return self._data[(idx + self._offset) % self._capacity];
     }
 
+
 } // namespace ice
