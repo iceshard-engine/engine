@@ -14,14 +14,20 @@ namespace ice::concepts
         typename std::remove_reference_t<T>::SizeType;
         typename std::remove_reference_t<T>::ValueType;
         typename std::remove_reference_t<T>::ConstContainerValueType;
-        typename std::remove_reference_t<T>::Iterator;
-        typename std::remove_reference_t<T>::ReverseIterator;
-        typename std::remove_reference_t<T>::ConstIterator;
-        typename std::remove_reference_t<T>::ConstReverseIterator;
+    };
+
+    template<typename T>
+    concept AssociativeContainerType = ContainerType<T> && requires(T t) {
+        typename std::remove_reference_t<T>::EntryType;
     };
 
     template<typename T>
     concept Container = ContainerType<T> && requires(T t) {
+        { t.size() } -> std::convertible_to<ice::ncount>;
+    };
+
+    template<typename T>
+    concept AssociativeContainer = Container<T> && AssociativeContainerType<T> && requires(T t) {
         { t.size() } -> std::convertible_to<ice::ncount>;
     };
 
@@ -38,6 +44,10 @@ namespace ice::concepts
 
     template<typename T>
     concept ContiguousContainer = Container<T> && requires(T t) {
+        typename std::remove_reference_t<T>::Iterator;
+        typename std::remove_reference_t<T>::ReverseIterator;
+        typename std::remove_reference_t<T>::ConstIterator;
+        typename std::remove_reference_t<T>::ConstReverseIterator;
         std::is_same_v<typename std::remove_reference_t<T>::ContainerTag, ContiguousContainerTag>;
         { t.data() } -> std::convertible_to<typename std::remove_reference_t<T>::ValueType const*>;
         { t.data_view() } -> std::convertible_to<ice::Data>;

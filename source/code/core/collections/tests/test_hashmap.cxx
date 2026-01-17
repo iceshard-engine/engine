@@ -8,6 +8,8 @@
 
 SCENARIO("collections 'ice/container/hashmap.hxx'", "[collection][hash][complex]")
 {
+    using ice::operator""_count;
+
     namespace hash = ice::hashmap;
     namespace multi_hash = ice::multi_hashmap;
 
@@ -68,7 +70,7 @@ SCENARIO("collections 'ice/container/hashmap.hxx'", "[collection][hash][complex]
             obj.gather_ctors(test_events);
         }
 
-        CHECK(ice::hashmap::count(test_hash) == 3);
+        CHECK(test_hash.size() == 3_count);
         CHECK(test_events.test_ctor == 0);
         CHECK(test_events.test_ctor_move == 3);
         CHECK(test_events.test_ctor_copy == 0);
@@ -92,7 +94,7 @@ SCENARIO("collections 'ice/container/hashmap.hxx'", "[collection][hash][complex]
                 obj.gather_ctors(test_events);
             }
 
-            CHECK(ice::hashmap::count(test_hash) == 3);
+            CHECK(test_hash.size() == 3_count);
             CHECK(test_events.test_ctor == 0);
             CHECK(test_events.test_ctor_move == 3);
             CHECK(test_events.test_ctor_copy == 0);
@@ -155,11 +157,12 @@ SCENARIO("collections 'ice/container/hashmap.hxx' (POD)", "[collection][hash][po
 
             THEN("We got values to iterate over")
             {
+                ICE_ASSERT_CORE(false);
                 ice::i32 count = 0;
-                for (auto& entry : hash::entries(test_hash))
-                {
-                    count += (entry, 1);
-                }
+                //for (auto& entry : hash::entries(test_hash))
+                //{
+                //    count += (entry, 1);
+                //}
 
                 CHECK(count == 3);
             }

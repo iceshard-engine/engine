@@ -47,36 +47,27 @@ namespace ice
         inline auto values(ice::HashMap<Type, Logic>& map) noexcept -> ice::Span<Type>;
 
 
-        template<typename HashMapType> requires HashMapReadAccess<HashMapType>
-        inline auto count(HashMapType const& map) noexcept -> ice::u32;
-
-        template<typename HashMapType> requires HashMapReadAccess<HashMapType>
+        template<typename HashMapType>
         inline bool full(HashMapType const& map) noexcept;
 
-        template<typename HashMapType> requires HashMapReadAccess<HashMapType>
-        inline bool empty(HashMapType const& map) noexcept;
-
-        template<typename HashMapType> requires HashMapReadAccess<HashMapType>
-        inline bool any(HashMapType const& map) noexcept;
-
-        template<typename HashMapType> requires HashMapReadAccess<HashMapType>
+        template<typename HashMapType>
         inline bool has(HashMapType const& map, ice::u64 key) noexcept;
 
-        template<typename HashMapType> requires HashMapReadAccess<HashMapType>
+        template<typename HashMapType>
         inline auto get(
             HashMapType const& map,
             ice::u64 key,
             typename HashMapType::ValueType const& fallback_value
-        ) noexcept -> typename HashMapType::Value const&;
+        ) noexcept -> typename HashMapType::ValueType const&;
 
-        template<typename HashMapType> requires HashMapReadAccess<HashMapType>
+        template<typename HashMapType>
         inline auto get(
             HashMapType const& map,
             ice::u64 key,
             std::nullptr_t
         ) noexcept -> typename HashMapType::ValueType;
 
-        template<typename HashMapType> requires HashMapReadAccess<HashMapType>
+        template<typename HashMapType>
         inline auto try_get(HashMapType const& map, ice::u64 key) noexcept -> typename HashMapType::ValueType const*;
 
         template<typename Type, ice::ContainerLogic Logic>
@@ -85,10 +76,10 @@ namespace ice
         template<typename Type, ice::ContainerLogic Logic>
         inline auto end(ice::HashMap<Type, Logic> const& map) noexcept -> typename ice::HashMap<Type, Logic>::ConstIterator;
 
-        template<typename HashMapType> requires HashMapReadAccess<HashMapType>
+        template<typename HashMapType>
         inline auto values(HashMapType const& map) noexcept -> ice::Span<typename HashMapType::ValueType const>;
 
-        template<typename HashMapType> requires HashMapReadAccess<HashMapType>
+        template<typename HashMapType>
         inline auto entries(HashMapType const& map) noexcept -> ice::Span<typename HashMapType::Entry const>;
 
 

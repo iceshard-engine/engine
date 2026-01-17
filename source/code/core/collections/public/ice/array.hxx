@@ -57,14 +57,14 @@ namespace ice
             requires std::copy_constructible<Type>;
 
         // API Requirements Of: Container
-        constexpr auto size() const noexcept -> ice::ncount { return { _count, sizeof(ValueType) }; }
+        constexpr auto size() const noexcept -> SizeType { return { _count, sizeof(ValueType) }; }
 
         // API Requirements Of: Resizable Container
         template<typename Self>
         constexpr auto data(this Self& self) noexcept -> ice::container::ValuePtr<Self> { return self._data; }
-        constexpr auto capacity() const noexcept -> ice::ncount { return { _capacity, sizeof(ValueType) }; }
-        constexpr void set_capacity(ice::ncount new_capacity) noexcept;
-        constexpr void resize(ice::ncount new_size) noexcept;
+        constexpr auto capacity() const noexcept -> SizeType { return { _capacity, sizeof(ValueType) }; }
+        constexpr void set_capacity(SizeType new_capacity) noexcept;
+        constexpr void resize(SizeType new_size) noexcept;
         constexpr void clear() noexcept;
 
         // API Manipulation
@@ -229,7 +229,7 @@ namespace ice
     }
 
     template<typename Type, ice::ContainerLogic Logic>
-    inline constexpr void ice::Array<Type, Logic>::set_capacity(ice::ncount new_capacity) noexcept
+    inline constexpr void ice::Array<Type, Logic>::set_capacity(SizeType new_capacity) noexcept
     {
         if (new_capacity == _capacity)
         {
@@ -272,7 +272,7 @@ namespace ice
     }
 
     template<typename Type, ice::ContainerLogic Logic>
-    inline constexpr void ice::Array<Type, Logic>::resize(ice::ncount new_size) noexcept
+    inline constexpr void ice::Array<Type, Logic>::resize(SizeType new_size) noexcept
     {
         if (_capacity < new_size)
         {
@@ -281,7 +281,7 @@ namespace ice
 
         if (new_size > _count)
         {
-            ice::ncount const missing_items = new_size - _count;
+            SizeType const missing_items = new_size - _count;
             ice::Memory const uninitialized_memory = ice::ptr_add(memory_view(), size());
 
             ice::mem_default_construct_n_at<ValueType>(
