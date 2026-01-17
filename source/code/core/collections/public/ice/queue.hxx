@@ -1,3 +1,6 @@
+/// Copyright 2026 - 2026, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/container/container_concepts.hxx>
 #include <ice/container/basic_container.hxx>
