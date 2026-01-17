@@ -8,7 +8,6 @@
 #include <ice/heap_string.hxx>
 #include <ice/container/hashmap.hxx>
 #include <ice/array.hxx>
-#include <ice/container/queue.hxx>
 #include <ice/profiler.hxx>
 #include <ice/clock.hxx>
 #include <ice/sort.hxx>

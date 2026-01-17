@@ -7,7 +7,8 @@
     <Expand>
       <Item Name="[value]">_value</Item>
       <Item Name="[width]">_width</Item>
-      <Item Name="[bytes]">_value * _width</Item>
+      <Item Condition="_value &gt;= 0" Name="[bytes]">_value * _width</Item>
+      <Item Condition="_value &lt; 0" Name="[bytes]">0</Item>
     </Expand>
   </Type>
 
@@ -17,7 +18,7 @@
     <Expand>
       <Item Name="[value]">_value</Item>
       <Item Name="[width]">_width</Item>
-      <Item Name="[bytes]">_value * _width</Item>
+      <Item Name="[bytes]">_value * uint64_t(_width)</Item>
     </Expand>
   </Type>
 

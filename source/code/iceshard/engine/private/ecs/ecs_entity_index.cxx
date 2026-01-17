@@ -3,7 +3,6 @@
 
 #include <ice/ecs/ecs_entity_index.hxx>
 #include <ice/array.hxx>
-#include <ice/container/queue.hxx>
 #include <ice/assert.hxx>
 
 namespace ice::ecs
@@ -87,15 +86,14 @@ namespace ice::ecs
 
     bool EntityIndex::create_many(ice::Span<ice::ecs::Entity> out_entities) noexcept
     {
-        ice::u32 total_indices_taken = 0;
+        ice::ncount total_indices_taken = 0;
         auto out_it = out_entities.begin();
 
         ice::u32 indices[256];
-        ice::i32 free_count = ice::i32(_free_indices.size().u32()) - ice::ecs::Constant_MinimumFreeIndicesBeforeReuse;
+        ice::ncount free_count = _free_indices.size() - ice::ecs::Constant_MinimumFreeIndicesBeforeReuse;
         while(free_count > 0)
         {
-            ice::u32 const indices_taken = ice::queue::take_front(
-                _free_indices,
+            ice::ncount const indices_taken = _free_indices.take_front(
                 ice::Span{ indices }.headspan(free_count)
             );
 
@@ -110,8 +108,8 @@ namespace ice::ecs
         }
 
         ice::u32 gen_index = _generation.size().u32();
-        ice::u32 const missing_entities = out_entities.size().u32() - total_indices_taken;
-        ice::u32 const final_index = gen_index + missing_entities;
+        ice::u64 const missing_entities = out_entities.size() - total_indices_taken;
+        ice::u64 const final_index = missing_entities + gen_index;
 
         if (final_index > 0)
         {

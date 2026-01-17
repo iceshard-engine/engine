@@ -183,7 +183,7 @@ namespace ice
                 ice::shards::clear(temp_shards);
 
                 // Commit the new states and gather the new shards
-                ice::queue::for_each(_pending_states, [&temp_shards](EngineStatePending const& pending) noexcept
+                _pending_states.for_each([&temp_shards](EngineStatePending const& pending) noexcept
                     {
                         bool const success = pending.committer.commit(pending.trigger, pending.trigger_shard, temp_shards);
                         ICE_LOG_IF(success == false, LogSeverity::Error, LogTag::Engine,
@@ -261,7 +261,7 @@ namespace ice
 
             // Check that this pending state was not added already.
             bool already_added = false;
-            ice::queue::for_each(_pending_states, [&](ice::EngineStatePending const& pending) noexcept
+            _pending_states.for_each([&](ice::EngineStatePending const& pending) noexcept
                 {
                     already_added |= pending.trigger.to == trigger.to && pending.current.subname == from_state.subname;
                 }
@@ -328,7 +328,7 @@ namespace ice
                 ICE_ASSERT_CORE(from_state.graph == trigger.from.graph);
 
                 ice::Shard trigger_shard = ice::Shard_Invalid;
-                ice::queue::for_each(_pending_states, [&](ice::EngineStatePending const& pending) noexcept
+                _pending_states.for_each([&](ice::EngineStatePending const& pending) noexcept
                     {
                         // Not a valid 'before' trigger...
                         if (pending.trigger.to != trigger.before)

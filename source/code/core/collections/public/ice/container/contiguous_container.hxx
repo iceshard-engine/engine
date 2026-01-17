@@ -9,6 +9,18 @@ namespace ice::container
 
     struct ContiguousContainer : ice::container::BasicContainer
     {
+        template<ice::concepts::ContiguousContainer Self>
+        constexpr auto first(this Self && self) noexcept -> ice::container::ValueRef<Self>
+        {
+            return self.data()[0];
+        }
+
+        template<ice::concepts::ContiguousContainer Self>
+        constexpr auto last(this Self && self) noexcept -> ice::container::ValueRef<Self>
+        {
+            return self.data()[self.size() - 1];
+        }
+
         // Accessing Data with Spans
         template<ice::concepts::ContiguousContainer Self>
         constexpr auto subspan(

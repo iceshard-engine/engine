@@ -106,6 +106,7 @@ namespace ice
         // NOTE: In most cases we will use '_width' as a validation field instead of actually using it's value.
         //   I may come in handy for some operations (ncount -> usize) but it's purpose is to define a concrete 'invalid' state.
         constexpr auto native() const noexcept { return static_cast<base_type>(_value * (_width != 0)); }
+        constexpr auto internal() const noexcept { return static_cast<base_signed_type>(_value * (_width != 0)); }
         constexpr auto u8() const noexcept { return static_cast<ice::u8>(native()); }
         constexpr auto u16() const noexcept { return static_cast<ice::u16>(native()); }
         constexpr auto u32() const noexcept { return static_cast<ice::u32>(native()); }
@@ -202,11 +203,11 @@ namespace ice
     {
         if constexpr (std::is_base_of_v<ice::nvalue, decltype(other)>)
         {
-            return self.native() <=> other.native();
+            return self.internal() <=> other.internal();
         }
         else
         {
-            return self.native() <=> static_cast<ice::detail::nvalue_base_stype>(other);
+            return self.internal() <=> static_cast<ice::detail::nvalue_base_stype>(other);
         }
     }
 

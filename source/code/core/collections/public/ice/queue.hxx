@@ -80,6 +80,14 @@ namespace ice
         template<typename Self>
         constexpr auto back(this Self&& self) noexcept -> ice::container::ValueRef<Self>;
 
+        template<typename Self, typename Fn>
+        constexpr void for_each(this Self&& self, Fn&& fn) noexcept;
+        template<typename Self, typename Fn>
+        constexpr void for_each_reverse(this Self&& self, Fn&& fn) noexcept;
+
+        template<typename Self>
+        constexpr auto take_front(this Self&& self, ice::Span<Type> out_values) noexcept -> ice::ncount;
+
         // API Requirements Of: Memory
         constexpr auto memory_view(this Queue& self) noexcept -> ice::Memory;
 
@@ -588,6 +596,88 @@ namespace ice
     inline constexpr auto Queue<Type, Logic>::back(this Self&& self) noexcept -> ice::container::ValueRef<Self>
     {
         return self._data[((self._offset + self._count) - 1) % self._capacity];
+    }
+
+    template<typename Type, ice::ContainerLogic Logic>
+    template<typename Self, typename Fn>
+    inline constexpr void ice::Queue<Type, Logic>::for_each(this Self&& self, Fn&& fn) noexcept
+    {
+        if (self._count == 0)
+        {
+            return;
+        }
+
+        ice::u32 const first_part = ice::min(self._offset + self._count, self._capacity);
+        ice::u32 const second_part = (self._offset + self._count) - first_part;
+
+        for (ice::u32 idx = self._offset; idx < first_part; ++idx)
+        {
+            ice::forward<Fn>(fn)(self._data[idx]);
+        }
+
+        for (ice::u32 idx = 0; idx < second_part; ++idx)
+        {
+            ice::forward<Fn>(fn)(self._data[idx]);
+        }
+    }
+
+    template<typename Type, ice::ContainerLogic Logic>
+    template<typename Self, typename Fn>
+    inline constexpr void ice::Queue<Type, Logic>::for_each_reverse(this Self&& self, Fn&& fn) noexcept
+    {
+        if (self._count == 0)
+        {
+            return;
+        }
+
+        ice::u32 const first_part = ice::min(self._offset + self._count, self._capacity);
+        ice::u32 const second_part = (self._offset + self._count) - first_part;
+
+        if (second_part > 0)
+        {
+            for (ice::u32 idx = second_part - 1; idx > 0; --idx)
+            {
+                ice::forward<Fn>(fn)(self._data[idx]);
+            }
+
+            ice::forward<Fn>(fn)(self._data[0]);
+        }
+
+        for (ice::u32 idx = first_part - 1; idx > self._offset; --idx)
+        {
+            ice::forward<Fn>(fn)(self._data[idx]);
+        }
+
+        ice::forward<Fn>(fn)(self._data[self._offset]);
+    }
+
+    template<typename Type, ice::ContainerLogic Logic>
+    template<typename Self>
+    inline constexpr auto ice::Queue<Type, Logic>::take_front(
+        this Self&& self,
+        ice::Span<Type> out_values
+    ) noexcept -> ice::ncount
+    {
+        ice::ncount const taken_items = ice::min(out_values.size(), self.size());
+
+        // (offset, end][0, remaining)
+        ice::ncount const first_part = ice::min<ice::ncount>(self._offset + taken_items, self._capacity);
+        ice::ncount const second_part = (self._offset + taken_items) - first_part;
+        ice::ncount const first_part_count = first_part - self._offset;
+
+        if constexpr (Logic == ContainerLogic::Complex)
+        {
+            ice::mem_move_n_to(out_values.begin(), self._data + self._offset, first_part_count);
+            ice::mem_move_n_to(out_values.begin() + first_part_count, self._data, second_part);
+        }
+        else
+        {
+            ice::memcpy(out_values.begin(), self._data + self._offset, ice::size_of<Type> * first_part_count);
+            ice::memcpy(out_values.begin() + first_part_count, self._data, ice::size_of<Type> * second_part);
+        }
+
+        self.pop_front(taken_items);
+        return taken_items;
     }
 
     template<typename Type, ice::ContainerLogic Logic>

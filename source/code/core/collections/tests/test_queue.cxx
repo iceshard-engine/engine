@@ -4,7 +4,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <ice/mem_allocator_host.hxx>
 #include <ice/mem_allocator_proxy.hxx>
-#include <ice/container/queue.hxx>
+#include <ice/queue.hxx>
 #include "util_tracking_object.hxx"
 
 SCENARIO("collections 'ice/container/queue.hxx'", "[collection][queue][complex]")
@@ -328,8 +328,7 @@ SCENARIO("collections 'ice/container/queue.hxx' (POD)", "[collection][queue][pod
             WHEN("using 'for_each' we iterate as expected in succession")
             {
                 ice::u32 idx = 0;
-                ice::queue::for_each(
-                    test_queue,
+                test_queue.for_each(
                     [&test_values_2, &idx](ice::i32 val) noexcept
                     {
                         CHECK(val == test_values_2[idx]);
@@ -341,8 +340,7 @@ SCENARIO("collections 'ice/container/queue.hxx' (POD)", "[collection][queue][pod
             WHEN("using 'for_each_reverse' we iterate as expected in reverse")
             {
                 ice::u32 idx = ice::count(test_values_2) - 1;
-                ice::queue::for_each_reverse(
-                    test_queue,
+                test_queue.for_each_reverse(
                     [&test_values_2, &idx](ice::i32 val) noexcept
                     {
                         CHECK(val == test_values_2[idx]);

@@ -16,7 +16,7 @@ namespace ice
         using ice::nvalue::operator==;
 
         // support for allocation sizes
-        constexpr auto offset(this nindex self) noexcept -> ice::usize;
+        constexpr auto offset(this nindex self) noexcept -> ice::isize;
 
         constexpr nindex() noexcept = default;
         constexpr nindex(nvalue value) noexcept;
@@ -29,9 +29,9 @@ namespace ice
 
     struct nindex_invalid_t : nindex {};
 
-    inline constexpr auto nindex::offset(this nindex self) noexcept -> ice::usize
+    inline constexpr auto nindex::offset(this nindex self) noexcept -> ice::isize
     {
-        return { static_cast<ice::usize::base_type>(self._value) * self._width };
+        return { self._value * static_cast<ice::isize::base_type>(self._width) };
     }
 
     inline constexpr nindex::nindex(nvalue value) noexcept

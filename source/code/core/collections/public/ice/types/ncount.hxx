@@ -35,7 +35,7 @@ namespace ice
 
     inline constexpr auto ncount::bytes(this ncount self) noexcept -> ice::usize
     {
-        return { static_cast<ice::usize::base_type>(self._value) * self._width };
+        return { static_cast<ice::usize::base_type>(std::max<base_signed_type>(self._value, 0)) * self._width };
     }
 
     inline constexpr ncount::ncount(nvalue value) noexcept
