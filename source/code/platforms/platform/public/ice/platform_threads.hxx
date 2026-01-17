@@ -30,7 +30,7 @@ namespace ice::platform
 
         //! \brief Number of threads available in the threadpool.
         //! \note By default at least one (1), but can have more depending on platform capabilities.
-        virtual auto threadpool_size() const noexcept -> ice::u32 = 0;
+        virtual auto threadpool_size() const noexcept -> ice::ncount = 0;
 
         //! \returns Pointer to the threadpool object managed by the platform.
         virtual auto threadpool_object() noexcept -> ice::TaskThreadPool* = 0;

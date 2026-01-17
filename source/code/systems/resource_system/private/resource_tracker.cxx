@@ -346,14 +346,14 @@ namespace ice
             return;
         }
 
-        ice::u32 const new_count = ice::hashmap::count(_resources) + out_resources.size().u32();
+        ice::ncount const new_count = _resources.size() + out_resources.size();
         ICE_ASSERT(
             new_count <= _info.predicted_resource_count,
             "Maximum resource capacity of {} entiries reached!",
             _info.predicted_resource_count
         );
 
-        ice::hashmap::reserve(_resources, new_count);
+        ice::hashmap::reserve(_resources, new_count.u32());
 
         // Store all resource handles
         IPT_ZONE_SCOPED_NAMED("create_hash_entries");

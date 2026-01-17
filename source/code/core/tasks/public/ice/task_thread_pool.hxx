@@ -14,7 +14,7 @@ namespace ice
     struct TaskThreadPoolCreateInfo
     {
         //! \brief The thread count of this thread pool.
-        ice::u32 thread_count = 0;
+        ice::ncount thread_count = 0;
 
         //! \brief The AIO port to be used for internal AIO threads.
         ice::native_aio::AIOPort aioport = nullptr;
@@ -27,9 +27,9 @@ namespace ice
     {
     public:
         virtual ~TaskThreadPool() noexcept = default;
-        virtual auto thread_count() const noexcept -> ice::u32 = 0;
-        virtual auto managed_thread_count() const noexcept -> ice::u32 = 0;
-        virtual auto estimated_task_count() const noexcept -> ice::u32 = 0;
+        virtual auto thread_count() const noexcept -> ice::ncount = 0;
+        virtual auto managed_thread_count() const noexcept -> ice::ncount = 0;
+        virtual auto estimated_task_count() const noexcept -> ice::ncount = 0;
 
         //! \brief Creates an additonal thread with the given name (ID).
         //!

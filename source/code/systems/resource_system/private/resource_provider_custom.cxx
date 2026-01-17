@@ -77,12 +77,12 @@ namespace ice
     {
         IPT_ZONE_SCOPED;
 
-        out_changes.reserve(out_changes.size() + ice::hashmap::count(_resources));
+        out_changes.reserve(out_changes.size() + _resources.size());
         for (auto* resource : _resources)
         {
             out_changes.push_back(resource);
         }
-        return ice::hashmap::count(_resources);
+        return _resources.size().u32();
     }
 
     auto CustomResourceProvider::refresh(
@@ -90,7 +90,7 @@ namespace ice
     ) noexcept -> ice::ResourceProviderResult
     {
         IPT_ZONE_SCOPED;
-        if (ice::hashmap::empty(_resources))
+        if (_resources.is_empty())
         {
             collect(out_changes);
         }

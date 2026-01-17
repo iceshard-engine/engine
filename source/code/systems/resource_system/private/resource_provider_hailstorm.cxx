@@ -163,7 +163,7 @@ namespace ice
     ) noexcept
     {
         ice::u32 const ptr_idx = ice::hashmap::get_or_set(
-            _offset_map, offset, ice::hashmap::count(_offset_map)
+            _offset_map, offset, _offset_map.size().u32()
         );
         // Why would we free something that was never allocated?
         ICE_ASSERT_CORE(_pointers[ptr_idx] != nullptr);
@@ -177,7 +177,7 @@ namespace ice
     ) noexcept -> ice::Task<ice::Data>
     {
         ice::u32 const ptr_idx = ice::hashmap::get_or_set(
-            _offset_map, offset, ice::hashmap::count(_offset_map)
+            _offset_map, offset, _offset_map.size().u32()
         );
         if (_pointers[ptr_idx] == nullptr)
         {

@@ -83,8 +83,8 @@ namespace ice
 
             auto make_handler_list = [this](ice::String handler_type, auto const& hashmap) noexcept
                 {
-                    ImGui::TextT("{} handlers (count: {})", handler_type, ice::hashmap::count(hashmap));
-                    if (ice::hashmap::any(hashmap))
+                    ImGui::TextT("{} handlers (count: {})", handler_type, hashmap.size());
+                    if (hashmap.not_empty())
                     {
                         detail::devui_handlers_table(ice::hashmap::values(hashmap), _world._traits);
                     }

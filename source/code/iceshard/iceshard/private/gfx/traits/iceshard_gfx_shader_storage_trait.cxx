@@ -40,7 +40,7 @@ namespace ice::gfx
 
     void Trait_GfxShaderStorage::build_content() noexcept
     {
-        ImGui::TextT("Loaded shaders: {}", ice::hashmap::count(_loaded_shaders));
+        ImGui::TextT("Loaded shaders: {}", _loaded_shaders.size());
         if (ImGui::BeginCombo("##shader-list", "Shader to preview", ImGuiComboFlags_WidthFitPreview))
         {
             for (GfxShaderEntry& entry : ice::hashmap::values(_loaded_shaders))

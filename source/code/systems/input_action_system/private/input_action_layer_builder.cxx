@@ -269,7 +269,7 @@ namespace ice
             // Prepare data of all sources
             for (Internal<InputActionBuilder::Source> const& source : _sources)
             {
-                if (ice::hashmap::empty(source.events))
+                if (source.events.is_empty())
                 {
                     final_sources.push_back(
                         InputActionSourceInputInfo{

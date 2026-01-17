@@ -43,7 +43,7 @@ namespace ice
 
         // Always ensure same size
 
-        _entries.resize(ice::hashmap::count(_manager._worlds));
+        _entries.resize(_manager._worlds.size());
 
         [[maybe_unused]]
         ImVec2 const avail = ImGui::GetContentRegionAvail();

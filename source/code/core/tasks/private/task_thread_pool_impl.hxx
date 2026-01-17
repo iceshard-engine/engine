@@ -21,9 +21,9 @@ namespace ice
         ) noexcept;
         ~TaskThreadPoolImplementation() noexcept override;
 
-        auto thread_count() const noexcept -> ice::u32 override;
-        auto managed_thread_count() const noexcept -> ice::u32 override;
-        auto estimated_task_count() const noexcept -> ice::u32 override;
+        auto thread_count() const noexcept -> ice::ncount override;
+        auto managed_thread_count() const noexcept -> ice::ncount override;
+        auto estimated_task_count() const noexcept -> ice::ncount override;
 
         auto create_thread(ice::StringID name) noexcept -> ice::TaskThread& override;
         auto find_thread(ice::StringID name) noexcept -> ice::TaskThread* override;

@@ -117,7 +117,7 @@ namespace ice
             ice::Array<ice::Resource*>& out_changes
         ) noexcept -> ice::ResourceProviderResult override
         {
-            if (ice::hashmap::empty(_resources))
+            if (_resources.is_empty())
             {
                 initial_traverse();
 

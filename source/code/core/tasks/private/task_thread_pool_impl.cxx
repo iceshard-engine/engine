@@ -49,8 +49,8 @@ namespace ice
     {
         _thread_pool.reserve(info.thread_count);
         _managed_threads.reserve(info.thread_count);
-        ice::hashmap::reserve(_created_threads, info.thread_count);
-        ice::hashmap::reserve(_user_threads, info.thread_count);
+        ice::hashmap::reserve(_created_threads, info.thread_count.u32());
+        ice::hashmap::reserve(_user_threads, info.thread_count.u32());
 
         ice::TaskThreadInfo thread_info{
             .exclusive_queue = false,
@@ -103,17 +103,17 @@ namespace ice
         _thread_pool.clear();
     }
 
-    auto TaskThreadPoolImplementation::thread_count() const noexcept -> ice::u32
+    auto TaskThreadPoolImplementation::thread_count() const noexcept -> ice::ncount
     {
-        return _thread_pool.size().u32();
+        return _thread_pool.size();
     }
 
-    auto TaskThreadPoolImplementation::managed_thread_count() const noexcept -> ice::u32
+    auto TaskThreadPoolImplementation::managed_thread_count() const noexcept -> ice::ncount
     {
-        return _managed_threads.size().u32() + ice::hashmap::count(_created_threads);
+        return _managed_threads.size() + _created_threads.size();
     }
 
-    auto TaskThreadPoolImplementation::estimated_task_count() const noexcept -> ice::u32
+    auto TaskThreadPoolImplementation::estimated_task_count() const noexcept -> ice::ncount
     {
         return 0; // TODO:
     }
