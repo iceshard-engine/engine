@@ -21,7 +21,7 @@ namespace ice
     //!   This value can be forced by the user for specific behavior requirements.
     template<typename Type, ice::ContainerLogic Logic = ice::Constant_DefaultContainerLogic<Type>>
     struct HashMap
-        : public ice::container::AssociativeContainer
+        : public ice::container::AssociativeResizableContainer
         , public ice::container::ResizableContainer
     {
         static constexpr ContainerLogic OperationLogic = Logic;
@@ -37,7 +37,6 @@ namespace ice
         using ConstContainerValueType = Type const;
         using Iterator = ConstIterator;
         using SizeType = ice::ncount;
-        using ContainerTag = ice::concepts::ContiguousContainerTag;
 
         struct EntryType
         {
@@ -64,10 +63,20 @@ namespace ice
         inline auto operator=(HashMap const& other) noexcept -> HashMap&
             requires std::copy_constructible<Type>;
 
-        // API Requirements Of: AssociativeContainer
+        // API Requirements Of: Associative(Resizable)Container
         constexpr auto size() const noexcept -> SizeType { return { _count, sizeof(ValueType) }; }
         template<typename Self>
         constexpr auto find(this Self&& self, KeyType key) noexcept -> ice::container::ValuePtr<Self>;
+        template<typename Self>
+        constexpr bool remove(this Self& self, KeyType key) noexcept;
+
+        template<typename Self, typename InValueType = Type>
+        constexpr auto store(
+            this Self& self, KeyType key, InValueType&& in_value
+        ) noexcept -> ice::container::ValueRef<Self>;
+
+        // Take some of the extended methods from the container mixin.
+        using AssociativeResizableContainer::remove;
 
         // Additional functionality
         template<typename Self>
@@ -270,6 +279,47 @@ namespace ice
             _count = other._count;
         }
         return this;
+    }
+
+    template<typename Type, ice::ContainerLogic Logic>
+    template<typename Self, typename InValueType>
+    inline constexpr auto ice::HashMap<Type, Logic>::store(
+        this Self& self, KeyType key, InValueType&& in_value
+    ) noexcept -> ice::container::ValueRef<Self>
+    {
+        if (self.is_full())
+        {
+            self.grow();
+        }
+
+        bool found = false;
+        ice::u32 const index = ice::detail::hashmap::find_or_make(self, key, found);
+        if constexpr (OperationLogic == ContainerLogic::Complex)
+        {
+            // If the index was found we need to destroy the previous value.
+            if (found)
+            {
+                ice::mem_destruct_at(self._data + index);
+            }
+
+            ice::mem_construct_at<Type>(
+                Memory{ self._data + index, ice::size_of<Type>, ice::align_of<Type> },
+                std::forward<InValueType>(in_value)
+            );
+        }
+        else
+        {
+            self._data[index] = in_value;
+        }
+
+        return self._data[index];
+    }
+
+    template<typename Type, ice::ContainerLogic Logic>
+    template<typename Self>
+    inline constexpr bool ice::HashMap<Type, Logic>::remove(this Self& self, KeyType key) noexcept
+    {
+        return ice::detail::hashmap::find_and_erase(self, key);
     }
 
     template<typename Type, ice::ContainerLogic Logic>

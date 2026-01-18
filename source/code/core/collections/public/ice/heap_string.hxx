@@ -247,4 +247,9 @@ namespace ice
         };
     }
 
+    constexpr auto hash(ice::HeapString<> const& value) noexcept -> ice::u64
+    {
+        return ice::hash(ice::String{ value });
+    }
+
 } // namespace ice

@@ -3,24 +3,21 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include <ice/mem_allocator_host.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/multi_hashmap.hxx>
 #include "util_tracking_object.hxx"
 
 SCENARIO("collections 'ice/container/hashmap.hxx'", "[collection][hash][complex]")
 {
     using ice::operator""_count;
 
-    namespace hash = ice::hashmap;
-    namespace multi_hash = ice::multi_hashmap;
-
     ice::HostAllocator alloc{ };
     ice::HashMap<Test_TrackingObject, ice::ContainerLogic::Complex> test_hash{ alloc };
 
     GIVEN("an hashmap with a single element")
     {
-        ice::hashmap::set(test_hash, 0, Test_TrackingObject{ 42 });
+        test_hash.set(0, Test_TrackingObject{ 42 });
 
-        Test_TrackingObject* obj = ice::hashmap::try_get(test_hash, 0);
+        Test_TrackingObject* obj = test_hash.try_get(0);
         REQUIRE(obj != nullptr);
 
         {
@@ -38,9 +35,9 @@ SCENARIO("collections 'ice/container/hashmap.hxx'", "[collection][hash][complex]
             ice::u32 dtor_count = 0;
             obj->data.test_dtor = &dtor_count;
 
-            ice::hashmap::set(test_hash, 0, Test_TrackingObject{ 69 });
+            test_hash.set(0, Test_TrackingObject{ 69 });
 
-            obj = ice::hashmap::try_get(test_hash, 0);
+            obj = test_hash.try_get(0);
             REQUIRE(obj != nullptr);
 
             Test_ObjectEvents test_events{ };
@@ -61,7 +58,7 @@ SCENARIO("collections 'ice/container/hashmap.hxx'", "[collection][hash][complex]
 
         for (ice::u32 value : values)
         {
-            ice::hashmap::set(test_hash, value, Test_TrackingObject{ value });
+            test_hash.set(value, Test_TrackingObject{ value });
         }
 
         THEN("the returned 'size' properly stores the number and byte size of elements.")
@@ -94,7 +91,7 @@ SCENARIO("collections 'ice/container/hashmap.hxx'", "[collection][hash][complex]
 
             for (ice::u32 value : values)
             {
-                ice::hashmap::set(test_hash, value, Test_TrackingObject{ value });
+                test_hash.set(value, Test_TrackingObject{ value });
             }
 
             test_events = Test_ObjectEvents{};
@@ -115,11 +112,8 @@ SCENARIO("collections 'ice/container/hashmap.hxx'", "[collection][hash][complex]
 
 SCENARIO("collections 'ice/container/hashmap.hxx' (POD)", "[collection][hash][pod]")
 {
-    namespace hash = ice::hashmap;
-    namespace multi_hash = ice::multi_hashmap;
-
     ice::HostAllocator alloc{ };
-    ice::HashMap<ice::i32> test_hash{ alloc };
+    ice::MultiHashMap<ice::i32> test_hash{ alloc };
 
     test_hash.set_capacity(2);
 
@@ -127,42 +121,42 @@ SCENARIO("collections 'ice/container/hashmap.hxx' (POD)", "[collection][hash][po
     {
         WHEN("setting a single value")
         {
-            hash::set(test_hash, 0, 0xd00b);
+            test_hash.set(0, 0xd00b);
             CHECK(test_hash.has(0) == true);
-            CHECK(hash::get(test_hash, 0, 0xffff) == 0xd00b);
-            CHECK(hash::get(test_hash, 1, 0xffff) == 0xffff);
+            CHECK(test_hash.get(0, 0xffff) == 0xd00b);
+            CHECK(test_hash.get(1, 0xffff) == 0xffff);
         }
 
         WHEN("setting multiple values")
         {
-            hash::set(test_hash, 0, 0xd00b + 0);
-            hash::set(test_hash, 2, 0xd00b + 1);
-            hash::set(test_hash, 4, 0xd00b + 2);
-            hash::set(test_hash, 6, 0xd00b + 3);
+            test_hash.set(0, 0xd00b + 0);
+            test_hash.set(2, 0xd00b + 1);
+            test_hash.set(4, 0xd00b + 2);
+            test_hash.set(6, 0xd00b + 3);
 
             CHECK(test_hash.has(0) == true);
             CHECK(test_hash.has(2) == true);
             CHECK(test_hash.has(4) == true);
             CHECK(test_hash.has(6) == true);
 
-            hash::remove(test_hash, 0);
-            hash::remove(test_hash, 4);
+            test_hash.remove(0);
+            test_hash.remove(4);
 
             CHECK(test_hash.has(0) == false);
             CHECK(test_hash.has(2) == true);
             CHECK(test_hash.has(4) == false);
             CHECK(test_hash.has(6) == true);
 
-            hash::set(test_hash, 0, 0xd00b + 4);
-            hash::set(test_hash, 0, 0xd00b + 5); // Replaces the old value
+            test_hash.set(0, 0xd00b + 4);
+            test_hash.set(0, 0xd00b + 5); // Replaces the old value
 
             CHECK(test_hash.has(0) == true);
             CHECK(test_hash.has(2) == true);
             CHECK(test_hash.has(4) == false);
             CHECK(test_hash.has(6) == true);
 
-            CHECK(hash::get(test_hash, 0, 0xffff) == 0xd00b + 5);
-            hash::set(test_hash, 0, 0xd00b + 0);
+            CHECK(test_hash.get(0, 0xffff) == 0xd00b + 5);
+            test_hash.set(0, 0xd00b + 0);
 
             THEN("We got values to iterate over")
             {
@@ -191,44 +185,44 @@ SCENARIO("collections 'ice/container/hashmap.hxx' (POD)", "[collection][hash][po
     {
         WHEN("Setting a single value")
         {
-            multi_hash::insert(test_hash, 0, 0xd00b);
-            CHECK(multi_hash::count(test_hash, 0) == 1);
-            CHECK(multi_hash::find_first(test_hash, 0).value() == 0xd00b);
-            CHECK(multi_hash::find_first(test_hash, 1) == nullptr);
+            test_hash.insert(0, 0xd00b);
+            CHECK(test_hash.count_values(0) == 1);
+            CHECK(test_hash.find_values(0).value() == 0xd00b);
+            CHECK(test_hash.find_values(1).has_next() == false);
         }
 
         WHEN("Setting multiple values")
         {
-            multi_hash::insert(test_hash, 0, 0xd00b + 0);
-            multi_hash::insert(test_hash, 2, 0xd00b + 1);
-            multi_hash::insert(test_hash, 4, 0xd00b + 2);
-            multi_hash::insert(test_hash, 6, 0xd00b + 3);
+            test_hash.insert(0, 0xd00b + 0);
+            test_hash.insert(2, 0xd00b + 1);
+            test_hash.insert(4, 0xd00b + 2);
+            test_hash.insert(6, 0xd00b + 3);
 
-            CHECK(multi_hash::count(test_hash, 0) == 1);
-            CHECK(multi_hash::count(test_hash, 2) == 1);
-            CHECK(multi_hash::count(test_hash, 4) == 1);
-            CHECK(multi_hash::count(test_hash, 6) == 1);
+            CHECK(test_hash.count_values(0) == 1);
+            CHECK(test_hash.count_values(2) == 1);
+            CHECK(test_hash.count_values(4) == 1);
+            CHECK(test_hash.count_values(6) == 1);
 
-            multi_hash::remove_all(test_hash, 0);
-            multi_hash::remove_all(test_hash, 4);
+            test_hash.remove_all(0);
+            test_hash.remove_all(4);
 
-            CHECK(multi_hash::count(test_hash, 0) == 0);
-            CHECK(multi_hash::count(test_hash, 2) == 1);
-            CHECK(multi_hash::count(test_hash, 4) == 0);
-            CHECK(multi_hash::count(test_hash, 6) == 1);
+            CHECK(test_hash.count_values(0) == 0);
+            CHECK(test_hash.count_values(2) == 1);
+            CHECK(test_hash.count_values(4) == 0);
+            CHECK(test_hash.count_values(6) == 1);
 
-            multi_hash::insert(test_hash, 0, 0xd00b + 4);
-            multi_hash::insert(test_hash, 0, 0xd00b + 5); // Is added as the new head
+            test_hash.insert(0, 0xd00b + 4);
+            test_hash.insert(0, 0xd00b + 5); // Is added as the new head
 
-            CHECK(multi_hash::count(test_hash, 0) == 2);
-            CHECK(multi_hash::count(test_hash, 2) == 1);
-            CHECK(multi_hash::count(test_hash, 4) == 0);
-            CHECK(multi_hash::count(test_hash, 6) == 1);
+            CHECK(test_hash.count_values(0) == 2);
+            CHECK(test_hash.count_values(2) == 1);
+            CHECK(test_hash.count_values(4) == 0);
+            CHECK(test_hash.count_values(6) == 1);
 
-            CHECK(multi_hash::find_first(test_hash, 0).value() == 0xd00b + 5);
-            multi_hash::insert(test_hash, 0, 0xd00b + 0);
+            CHECK(test_hash.find_values(0).value() == 0xd00b + 5);
+            test_hash.insert(0, 0xd00b + 0);
 
-            CHECK(multi_hash::count(test_hash, 0) == 3);
+            CHECK(test_hash.count_values(0) == 3);
 
             THEN("We got values to iterate over")
             {
@@ -248,10 +242,10 @@ SCENARIO("collections 'ice/container/hashmap.hxx' (POD)", "[collection][hash][po
             {
                 test_hash.clear();
 
-                CHECK(multi_hash::count(test_hash, 0) == 0);
-                CHECK(multi_hash::count(test_hash, 2) == 0);
-                CHECK(multi_hash::count(test_hash, 4) == 0);
-                CHECK(multi_hash::count(test_hash, 6) == 0);
+                CHECK(test_hash.count_values(0) == 0);
+                CHECK(test_hash.count_values(2) == 0);
+                CHECK(test_hash.count_values(4) == 0);
+                CHECK(test_hash.count_values(6) == 0);
             }
         }
     }

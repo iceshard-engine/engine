@@ -258,13 +258,14 @@ namespace ice
         }
 
         template<ice::detail::hashmap::HashMapContainer ContainerT>
-        inline void find_and_erase(ContainerT& map, ice::u64 key) noexcept
+        inline bool find_and_erase(ContainerT& map, ice::u64 key) noexcept
         {
             FindResult const fr = ice::detail::hashmap::find(map, key);
             if (fr.entry_i != Constant_EndOfList)
             {
                 ice::detail::hashmap::erase(map, fr);
             }
+            return fr.entry_i != Constant_EndOfList;
         }
 
         template<ice::detail::hashmap::HashMapContainer ContainerT>

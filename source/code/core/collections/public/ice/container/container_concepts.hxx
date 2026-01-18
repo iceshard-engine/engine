@@ -31,7 +31,7 @@ namespace ice::concepts
 
     template<typename T>
     concept AssociativeContainer = Container<T> && AssociativeContainerType<T>
-        && requires(T t, typename std::remove_reference_t<T>::KeyType key) {
+        && requires(T t, typename std::remove_reference_t<T>::KeyType key, typename std::remove_reference_t<T>::ValueType&& val) {
         { t.size() } -> std::convertible_to<ice::ncount>;
         { t.find(key) } -> std::convertible_to<typename std::remove_reference_t<T>::ValueType const*>;
     };
@@ -41,6 +41,16 @@ namespace ice::concepts
         { t.capacity() } -> std::convertible_to<ice::ncount>;
         { t.set_capacity(size) } -> std::convertible_to<void>;
         { t.clear() } -> std::convertible_to<void>;
+    };
+
+    template<typename T>
+    concept AssociativeResizableContainer = AssociativeContainer<T> && ResizableContainer<T> && requires(
+        T t,
+        typename std::remove_reference_t<T>::KeyType key,
+        typename std::remove_reference_t<T>::ValueType&& val)
+    {
+        { t.store(key, val) } -> std::convertible_to<typename std::remove_reference_t<T>::ValueType&>;
+        { t.remove(key) } -> std::convertible_to<bool>;
     };
 
     struct ContiguousContainerTag{ };
@@ -70,7 +80,7 @@ namespace ice::concepts
         && not TrivialContainerLogicAllowed<typename std::remove_reference_t<T>::ValueType>;
 
     template<typename T>
-    concept HashableKeyType = not std::is_arithmetic_v<std::remove_reference_t<T>> && requires(T t) {
+    concept HashableKeyType = requires(T t) {
         { ice::hash(t) } -> std::convertible_to<ice::u64>;
     };
 
