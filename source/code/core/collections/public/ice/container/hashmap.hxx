@@ -12,15 +12,6 @@ namespace ice
     namespace hashmap
     {
 
-        template<typename Type, ice::ContainerLogic Logic>
-        inline void reserve(ice::HashMap<Type, Logic>& map, ice::u32 new_capacity) noexcept;
-
-        template<typename Type, ice::ContainerLogic Logic>
-        inline void clear(ice::HashMap<Type, Logic>& map) noexcept;
-
-        template<typename Type, ice::ContainerLogic Logic>
-        inline void shrink(ice::HashMap<Type, Logic>& map) noexcept;
-
         template<typename Type, ice::ContainerLogic Logic, typename Value = Type>
             requires std::copy_constructible<Type> && std::convertible_to<Value, Type>
         inline void set(ice::HashMap<Type, Logic>& map, ice::u64 key, Value const& value) noexcept;
@@ -43,16 +34,6 @@ namespace ice
         template<typename Type, ice::ContainerLogic Logic>
         inline void remove(ice::HashMap<Type, Logic>& map, ice::u64 key) noexcept;
 
-        template<typename Type, ice::ContainerLogic Logic>
-        inline auto values(ice::HashMap<Type, Logic>& map) noexcept -> ice::Span<Type>;
-
-
-        template<typename HashMapType>
-        inline bool full(HashMapType const& map) noexcept;
-
-        template<typename HashMapType>
-        inline bool has(HashMapType const& map, ice::u64 key) noexcept;
-
         template<typename HashMapType>
         inline auto get(
             HashMapType const& map,
@@ -69,18 +50,6 @@ namespace ice
 
         template<typename HashMapType>
         inline auto try_get(HashMapType const& map, ice::u64 key) noexcept -> typename HashMapType::ValueType const*;
-
-        template<typename Type, ice::ContainerLogic Logic>
-        inline auto begin(ice::HashMap<Type, Logic> const& map) noexcept -> typename ice::HashMap<Type, Logic>::ConstIterator;
-
-        template<typename Type, ice::ContainerLogic Logic>
-        inline auto end(ice::HashMap<Type, Logic> const& map) noexcept -> typename ice::HashMap<Type, Logic>::ConstIterator;
-
-        template<typename HashMapType>
-        inline auto values(HashMapType const& map) noexcept -> ice::Span<typename HashMapType::ValueType const>;
-
-        template<typename HashMapType>
-        inline auto entries(HashMapType const& map) noexcept -> ice::Span<typename HashMapType::Entry const>;
 
 
         template<typename Type, ice::ContainerLogic Logic>
@@ -121,14 +90,6 @@ namespace ice
         ) noexcept -> typename ice::HashMap<Type, Logic>::ConstIterator;
 
     } // namespace multi_hashmap
-
-} // namespace ice
-
-namespace ice
-{
-
-    using ice::hashmap::begin;
-    using ice::hashmap::end;
 
 } // namespace ice
 

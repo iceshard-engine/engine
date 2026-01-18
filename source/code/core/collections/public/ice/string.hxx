@@ -26,12 +26,6 @@ namespace ice
 
         constexpr BasicString() noexcept = default;
 
-        constexpr BasicString(BasicString&& other) noexcept = default;
-        constexpr BasicString(BasicString const& other) noexcept = default;
-
-        constexpr auto operator=(BasicString&& other) noexcept -> BasicString& = default;
-        constexpr auto operator=(BasicString const& other) noexcept -> BasicString& = default;
-
         constexpr BasicString(ValueType* ptr_array_nt) noexcept
             : _data{ ptr_array_nt }
             , _count{ ice::string::detail::strptr_size(ptr_array_nt) }

@@ -33,9 +33,6 @@ namespace ice
         inline void find_and_erase(ice::HashMap<Type, Logic>& map, ice::u64 key) noexcept;
 
         template<typename Type, ice::ContainerLogic Logic>
-        inline void rehash(ice::HashMap<Type, Logic>& map, ice::u32 new_capacity) noexcept;
-
-        template<typename Type, ice::ContainerLogic Logic>
         inline auto find(ice::HashMap<Type, Logic>& map, typename ice::HashMap<Type, Logic>::ConstIterator it) noexcept -> FindResult;
 
         template<typename Type, ice::ContainerLogic Logic>
@@ -50,44 +47,13 @@ namespace ice
     namespace hashmap
     {
 
-        //! \brief Allocates enough space in the hash map to hold the given amount of values.
-        //!
-        //! \note Keep in mind, the number of valies a hashmap can store is lower than it's total capacity.
-        template<typename Type, ice::ContainerLogic Logic>
-        inline void reserve(ice::HashMap<Type, Logic>& map, ice::u32 new_count) noexcept
-        {
-            ice::detail::hashmap::rehash(map, ice::detail::hashmap::calc_required_capacity(new_count).u32());
-        }
-
-        template<typename Type, ice::ContainerLogic Logic>
-        inline void clear(ice::HashMap<Type, Logic>& map) noexcept
-        {
-            if constexpr (Logic == ContainerLogic::Complex)
-            {
-                ice::mem_destruct_n_at(map._data, map._count);
-            }
-
-            map._count = 0;
-            for (ice::u32 hash_idx = 0; hash_idx < map._capacity; ++hash_idx)
-            {
-                // TODO: memset?
-                map._hashes[hash_idx] = ice::detail::hashmap::Constant_EndOfList;
-            }
-        }
-
-        template<typename Type, ice::ContainerLogic Logic>
-        inline void shrink(ice::HashMap<Type, Logic>& map) noexcept
-        {
-            ice::detail::hashmap::rehash(map, ice::detail::hashmap::calc_required_capacity(map._count).u32());
-        }
-
         template<typename Type, ice::ContainerLogic Logic, typename Value>
             requires std::copy_constructible<Type> && std::convertible_to<Value, Type>
         inline void set(ice::HashMap<Type, Logic>& map, ice::u64 key, Value const& value) noexcept
         {
-            if (ice::hashmap::full(map))
+            if (map.is_full())
             {
-                ice::detail::hashmap::grow(map);
+                map.grow();
             }
 
             bool found = false;
@@ -119,9 +85,9 @@ namespace ice
             requires std::move_constructible<Type> && std::convertible_to<Value, Type>
         inline void set(ice::HashMap<Type, Logic>& map, ice::u64 key, Value&& value) noexcept
         {
-            if (ice::hashmap::full(map))
+            if (map.is_full())
             {
-                ice::detail::hashmap::grow(map);
+                map.grow();
             }
 
             bool found = false;
@@ -153,7 +119,7 @@ namespace ice
             requires std::move_constructible<Type> && std::convertible_to<Value, Type>
         inline auto get_or_set(ice::HashMap<Type, Logic>& map, ice::u64 key, Value&& value) noexcept -> Type&
         {
-            if (ice::hashmap::has(map, key) == false)
+            if (map.missing(key))
             {
                 ice::hashmap::set(map, key, ice::forward<Value>(value));
             }
@@ -178,97 +144,33 @@ namespace ice
             ice::detail::hashmap::find_and_erase(map, key);
         }
 
-        template<typename Type, ice::ContainerLogic Logic>
-        inline auto values(ice::HashMap<Type, Logic>& map) noexcept -> ice::Span<Type>
+        template<typename HashMapType>
+        inline auto get(HashMapType const& map, ice::u64 key, typename HashMapType::ValueType const& fallback_value) noexcept -> typename HashMapType::ValueType const&
         {
-            return ice::Span{ map._data, map._count };
+            ice::u32 const index = ice::detail::hashmap::find_or_fail(map, key);
+            return index == ice::detail::hashmap::Constant_EndOfList
+                ? fallback_value
+                : map._data[index];
         }
 
+        template<typename HashMapType>
+        inline auto get(HashMapType const& map, ice::u64 key, std::nullptr_t) noexcept -> typename HashMapType::ValueType
+        {
+            ice::u32 const index = ice::detail::hashmap::find_or_fail(map, key);
+            return index == ice::detail::hashmap::Constant_EndOfList
+                ? nullptr
+                : map._data[index];
+        }
 
+        template<typename HashMapType>
+        inline auto try_get(HashMapType const& map, ice::u64 key) noexcept -> typename HashMapType::ValueType const*
+        {
+            ice::u32 const index = ice::detail::hashmap::find_or_fail(map, key);
+            return index == ice::detail::hashmap::Constant_EndOfList
+                ? nullptr
+                : map._data + index;
+        }
 
-        //template<typename HashMapType> requires HashMapReadAccess<HashMapType>
-        //inline auto count(HashMapType const& map) noexcept -> ice::u32
-        //{
-        //    return map._count;
-        //}
-
-        //template<typename HashMapType> requires HashMapReadAccess<HashMapType>
-        //inline bool full(HashMapType const& map) noexcept
-        //{
-        //    ice::u32 const max_count = ice::u32(map._capacity * ice::detail::hashmap::Constant_HashMapMaxFill);
-        //    ICE_ASSERT_CORE(max_count >= map._count);
-
-        //    return max_count == map._count;
-        //}
-
-        //template<typename HashMapType> requires HashMapReadAccess<HashMapType>
-        //inline bool empty(HashMapType const& map) noexcept
-        //{
-        //    return map._count == 0;
-        //}
-
-        //template<typename HashMapType> requires HashMapReadAccess<HashMapType>
-        //inline bool any(HashMapType const& map) noexcept
-        //{
-        //    return ice::hashmap::empty(map) == false;
-        //}
-
-        //template<typename HashMapType> requires HashMapReadAccess<HashMapType>
-        //inline bool has(HashMapType const& map, ice::u64 key) noexcept
-        //{
-        //    return ice::detail::hashmap::find_or_fail(map, key) != ice::detail::hashmap::Constant_EndOfList;
-        //}
-
-        //template<typename HashMapType> requires HashMapReadAccess<HashMapType>
-        //inline auto get(HashMapType const& map, ice::u64 key, typename HashMapType::ValueType const& fallback_value) noexcept -> typename HashMapType::ValueType const&
-        //{
-        //    ice::u32 const index = ice::detail::hashmap::find_or_fail(map, key);
-        //    return index == ice::detail::hashmap::Constant_EndOfList
-        //        ? fallback_value
-        //        : map._data[index];
-        //}
-
-        //template<typename HashMapType> requires HashMapReadAccess<HashMapType>
-        //inline auto get(HashMapType const& map, ice::u64 key, std::nullptr_t) noexcept -> typename HashMapType::ValueType
-        //{
-        //    ice::u32 const index = ice::detail::hashmap::find_or_fail(map, key);
-        //    return index == ice::detail::hashmap::Constant_EndOfList
-        //        ? nullptr
-        //        : map._data[index];
-        //}
-
-        //template<typename HashMapType> requires HashMapReadAccess<HashMapType>
-        //inline auto try_get(HashMapType const& map, ice::u64 key) noexcept -> typename HashMapType::ValueType const*
-        //{
-        //    ice::u32 const index = ice::detail::hashmap::find_or_fail(map, key);
-        //    return index == ice::detail::hashmap::Constant_EndOfList
-        //        ? nullptr
-        //        : map._data + index;
-        //}
-
-        //template<typename Type, ice::ContainerLogic Logic>
-        //inline auto begin(ice::HashMap<Type, Logic> const& map) noexcept -> typename ice::HashMap<Type, Logic>::ConstIterator
-        //{
-        //    return { map._entries, map._data };
-        //}
-
-        //template<typename Type, ice::ContainerLogic Logic>
-        //inline auto end(ice::HashMap<Type, Logic> const& map) noexcept -> typename ice::HashMap<Type, Logic>::ConstIterator
-        //{
-        //    return { map._entries + map._count, map._data + map._count };
-        //}
-
-        //template<typename HashMapType> requires HashMapReadAccess<HashMapType>
-        //inline auto values(HashMapType const& map) noexcept -> ice::Span<typename HashMapType::ValueType const>
-        //{
-        //    return ice::Span{ map._data, map._count };
-        //}
-
-        //template<typename HashMapType> requires HashMapReadAccess<HashMapType>
-        //inline auto entries(HashMapType const& map) noexcept -> ice::Span<typename HashMapType::Entry const>
-        //{
-        //    return ice::Span{ map._entries, map._count };
-        //}
 
 
         template<typename Type, ice::ContainerLogic Logic>
@@ -297,9 +199,9 @@ namespace ice
             requires std::move_constructible<Type> && std::convertible_to<Type, Type>
         inline void insert(ice::HashMap<Type, Logic>& map, ice::u64 key, Type&& value) noexcept
         {
-            if (ice::hashmap::full(map))
+            if (map.is_full())
             {
-                ice::detail::hashmap::grow(map);
+                map.grow();
             }
 
             ice::u32 const index = ice::detail::hashmap::make(map, key);
@@ -329,9 +231,9 @@ namespace ice
         template<typename Type, ice::ContainerLogic Logic>
         inline void insert(ice::HashMap<Type, Logic>& map, ice::u64 key, Type const& value) noexcept
         {
-            if (ice::hashmap::full(map))
+            if (map.is_full())
             {
-                ice::detail::hashmap::grow(map);
+                map.grow();
             }
 
             ice::u32 const index = ice::detail::hashmap::make(map, key);
@@ -371,7 +273,7 @@ namespace ice
         template<typename Type, ice::ContainerLogic Logic>
         inline void remove_all(ice::HashMap<Type, Logic>& map, ice::u64 key) noexcept
         {
-            while (ice::hashmap::has(map, key))
+            while (map.has(key))
             {
                 ice::hashmap::remove(map, key);
             }

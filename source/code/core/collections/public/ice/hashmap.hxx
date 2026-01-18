@@ -1,6 +1,7 @@
 #pragma once
 #include <ice/container/hashmap_details.hxx>
 #include <ice/container/associative_container.hxx>
+#include <ice/container/resizable_container.hxx>
 
 namespace ice
 {
@@ -18,6 +19,7 @@ namespace ice
     template<typename Type, ice::ContainerLogic Logic = ice::Constant_DefaultContainerLogic<Type>>
     struct HashMap
         : public ice::container::AssociativeContainer
+        , public ice::container::ResizableContainer
     {
         static constexpr ContainerLogic OperationLogic = Logic;
         static_assert(
@@ -27,6 +29,7 @@ namespace ice
 
         struct ConstIterator;
 
+        using KeyType = ice::u64;
         using ValueType = Type;
         using ConstContainerValueType = Type const;
         using Iterator = ConstIterator;
@@ -35,7 +38,7 @@ namespace ice
 
         struct EntryType
         {
-            ice::u64 key;
+            KeyType key;
             ice::u32 next;
         };
 
@@ -59,7 +62,32 @@ namespace ice
             requires std::copy_constructible<Type>;
 
         // API Requirements Of: AssociativeContainer
-        constexpr auto size() const noexcept -> SizeType { return _count; }
+        constexpr auto size() const noexcept -> SizeType { return { _count, sizeof(ValueType) }; }
+        template<typename Self>
+        constexpr auto find(this Self&& self, KeyType key) noexcept -> ice::container::ValuePtr<Self>;
+
+        // Additional functionality
+        template<typename Self>
+        constexpr auto values(this Self&& self) noexcept -> ice::container::SpanType<Self>;
+
+        // API Requirements Of: ResizableContainer
+        constexpr auto capacity() const noexcept -> SizeType { return { _capacity, sizeof(ValueType) }; }
+        constexpr void set_capacity(ice::ncount new_capacity) noexcept;
+        constexpr void clear() noexcept;
+
+        // API Requirements Of: IterableContainer
+        template<typename Self>
+        constexpr auto begin(this Self&& self) noexcept -> ice::container::Iterator<Self>;
+        template<typename Self>
+        constexpr auto end(this Self&& self) noexcept -> ice::container::Iterator<Self>;
+
+        // API Requriements Of: Memory and Data
+        constexpr auto memory_view() noexcept -> ice::Memory;
+        constexpr auto entries_memory_view() noexcept -> ice::Memory;
+
+        // Data Helpers
+        constexpr auto values_data_view() const noexcept -> ice::Data;
+        constexpr auto entries_data_view() const noexcept -> ice::Data;
     };
 
     template<typename Type, ice::ContainerLogic Logic>
@@ -101,7 +129,8 @@ namespace ice
     template<typename Type, ice::ContainerLogic Logic>
     inline HashMap<Type, Logic>::~HashMap() noexcept
     {
-        ice::detail::hashmap::clear_and_dealloc(*this);
+        clear();
+        set_capacity(0);
     }
 
     template<typename Type, ice::ContainerLogic Logic>
@@ -126,7 +155,7 @@ namespace ice
     {
         if (other._count > 0)
         {
-            ice::detail::hashmap::rehash(*this, other._capacity);
+            set_capacity(other.capacity());
 
             // NOTE: We keep the original entry + data indices, they don't need to change.
             // Copy all the entries, this is always a POD type.
@@ -137,14 +166,11 @@ namespace ice
             );
 
             // If the value is a complex type, properly move construct it in the new location + destroy in the old one.
+            ice::Memory const self_values_memory{ _data, this->size(), ice::align_of<ValueType> };
             if constexpr (Logic == ContainerLogic::Complex)
             {
                 ice::mem_copy_construct_n_at(
-                    Memory{
-                        .location = _data,
-                        .size = ice::size_of<ValueType> * other._count,
-                        .alignment = ice::align_of<ValueType>
-                    },
+                    self_values_memory,
                     other._data,
                     other._count
                 );
@@ -152,22 +178,21 @@ namespace ice
             else
             {
                 ice::memcpy(
-                    Memory{ .location = _data, .size = ice::size_of<ValueType> * other._count, .alignment = ice::align_of<Type> },
-                    Data{ .location = other._data, .size = ice::size_of<ValueType> *other._count, .alignment = ice::align_of<Type> }
+                    self_values_memory,
+                    other.values_data_view()
                 );
             }
 
             ice::u32 idx = 0;
-            ICE_ASSERT_CORE(false);
-            //for (EntryType const& entry : ice::hashmap::entries(other._entries))
-            //{
-            //    // First remember the previous set index...
-            //    _entries[idx].next = _hashes[entry.key % _capacity];
+            for (EntryType const& entry : ice::detail::hashmap::entries(*this))
+            {
+                // First remember the previous set index...
+                _entries[idx].next = _hashes[entry.key % _capacity];
 
-            //    // ... then save the current index in the hashed array.
-            //    _hashes[entry.key % _capacity] = idx;
-            //    idx += 1;
-            //}
+                // ... then save the current index in the hashed array.
+                _hashes[entry.key % _capacity] = idx;
+                idx += 1;
+            }
 
             _count = other._count;
         }
@@ -178,7 +203,8 @@ namespace ice
     {
         if (this != &other)
         {
-            ice::detail::hashmap::clear_and_dealloc(*this); // Clears the current data
+            clear();
+            set_capacity(other.capacity());
 
             _allocator = other._allocator;
             _capacity = std::exchange(other._capacity, 0);
@@ -196,32 +222,25 @@ namespace ice
     {
         if (this != &other)
         {
-            ICE_ASSERT_CORE(false);
-            //ice::hashmap::clear(*this);
+            this->clear();
 
-            // Grow if needed to the specific size
-            if (ice::detail::hashmap::can_store_expected_size(*this, other._count) == false)
-            {
-                ice::detail::hashmap::rehash(*this, ice::detail::hashmap::calc_required_capacity(other._count));
-            }
+            // Grows the internal data structure to the required size.
+            this->reserve(other.size());
 
             // NOTE: We keep the original entry + data indices, they don't need to change.
             // Copy all the entries, this is always a POD type.
             static_assert(std::is_pod_v<EntryType>, "HashMap::Entry should not be changed!");
             ice::memcpy(
-                Memory{ .location = _entries, .size = ice::size_of<EntryType> * other._count, .alignment = ice::align_of<EntryType> },
-                Data{ .location = other._entries, .size = ice::size_of<EntryType> * other._count, .alignment = ice::align_of<EntryType> }
+                this->entries_memory_view(),
+                other.entries_data_view()
             );
 
             // If the value is a complex type, properly move construct it in the new location + destroy in the old one.
+            ice::Memory const self_values_memory{ _data, this->size(), ice::align_of<ValueType> };
             if constexpr (Logic == ContainerLogic::Complex)
             {
                 ice::mem_copy_construct_n_at(
-                    Memory{
-                        .location = _data,
-                        .size = ice::size_of<Type> * other._count,
-                        .alignment = ice::align_of<Type>
-                    },
+                    self_values_memory,
                     other._data,
                     other._count
                 );
@@ -229,26 +248,180 @@ namespace ice
             else
             {
                 ice::memcpy(
-                    Memory{ .location = _data, .size = ice::size_of<Type> * other._count, .alignment = ice::align_of<Type> },
-                    Data{ .location = other._data, .size = ice::size_of<Type> * other._count, .alignment = ice::align_of<Type> }
+                    self_values_memory,
+                    other.values_data_view()
                 );
             }
 
             ice::u32 idx = 0;
-            ICE_ASSERT_CORE(false);
-            //for (EntryType const& entry : ice::hashmap::entries(other._entries))
-            //{
-            //    // First remember the previous set index...
-            //    _entries[idx].next = _hashes[entry.key % _capacity];
+            for (EntryType const& entry : ice::detail::hashmap::entries(*this))
+            {
+                // First remember the previous set index...
+                _entries[idx].next = _hashes[entry.key % _capacity];
 
-            //    // ... then save the current index in the hashed array.
-            //    _hashes[entry.key % _capacity] = idx;
-            //    idx += 1;
-            //}
+                // ... then save the current index in the hashed array.
+                _hashes[entry.key % _capacity] = idx;
+                idx += 1;
+            }
 
             _count = other._count;
         }
         return this;
+    }
+
+    template<typename Type, ice::ContainerLogic Logic>
+    template<typename Self>
+    inline constexpr auto ice::HashMap<Type, Logic>::find(
+        this Self&& self,
+        KeyType key
+    ) noexcept -> ice::container::ValuePtr<Self>
+    {
+        ice::u32 const entry_index = ice::detail::hashmap::find_or_fail(self, key);
+        return entry_index != ice::detail::hashmap::Constant_EndOfList
+            ? ice::addressof(self._data[entry_index])
+            : nullptr;
+    }
+
+    template<typename Type, ice::ContainerLogic Logic>
+    template<typename Self>
+    inline constexpr auto ice::HashMap<Type, Logic>::values(this Self&& self) noexcept -> ice::container::SpanType<Self>
+    {
+        return { self._data, self._count };
+    }
+
+    template<typename Type, ice::ContainerLogic Logic>
+    inline constexpr void ice::HashMap<Type, Logic>::set_capacity(ice::ncount new_capacity) noexcept
+    {
+        ice::u32* new_hashes_ptr = nullptr;
+        EntryType* new_entries_ptr = nullptr;
+        ValueType* new_value_ptr = nullptr;
+
+        if (new_capacity > 0)
+        {
+            ICE_ASSERT_CORE(new_capacity >= this->size()); // We don't support support reduction below current item count!
+            ice::ncount const new_internal_capacity = ice::detail::hashmap::capacity_with_overhead(new_capacity);
+
+            ice::ChunkedAllocRequest alloc_reqest;
+            alloc_reqest.include(new_hashes_ptr, new_internal_capacity);
+            alloc_reqest.include(new_entries_ptr, new_capacity);
+            alloc_reqest.include(new_value_ptr, new_capacity);
+            _allocator->allocate(alloc_reqest);
+
+            // Prepare hashes memory
+            std::memset(new_hashes_ptr, 0xffffffff, new_internal_capacity * sizeof(u32));
+
+            if (_count > 0)
+            {
+                // NOTE: We keep the original entry + data indices, they don't need to change.
+
+                // Copy all the entries, this is always a POD type.
+                static_assert(std::is_pod_v<EntryType>, "HashMap::EntryType should not be changed!");
+                std::memcpy(new_entries_ptr, this->_entries, sizeof(EntryType) * _count);
+
+                // If the value is a complex type, properly move construct it in the new location + destroy in the old one.
+                ice::Memory const new_values_memory{ new_value_ptr, this->size(), ice::align_of<ValueType> };
+                if constexpr (OperationLogic == ContainerLogic::Complex)
+                {
+                    ice::mem_move_construct_n_at(new_values_memory, _data, _count);
+                }
+                else
+                {
+                    ice::memcpy(new_values_memory, this->values_data_view());
+                }
+
+                ice::u32 idx = 0;
+                ice::u32 const new_capacity_u32 = new_capacity.u32();
+                for (EntryType const& entry : ice::detail::hashmap::entries(*this))
+                {
+                    // First remember the previous set index...
+                    new_entries_ptr[idx].next = new_hashes_ptr[entry.key % new_capacity_u32];
+
+                    // ... then save the current index in the hashed array.
+                    new_hashes_ptr[entry.key % new_capacity_u32] = idx;
+                    idx += 1;
+                }
+            }
+        }
+
+        _allocator->deallocate(this->memory_view());
+        _capacity = new_capacity.u32();
+        _hashes = new_hashes_ptr;
+        _entries = new_entries_ptr;
+        _data = new_value_ptr;
+    }
+
+    template<typename Type, ice::ContainerLogic Logic>
+    inline constexpr void ice::HashMap<Type, Logic>::clear() noexcept
+    {
+        if (_count == 0)
+        {
+            return;
+        }
+
+        if constexpr (Logic == ContainerLogic::Complex)
+        {
+            ice::mem_destruct_n_at(_data, _count);
+        }
+
+        ice::ncount const internal_capacity = ice::detail::hashmap::capacity_with_overhead(_capacity);
+        std::memset(_hashes, ice::detail::hashmap::Constant_EndOfList, sizeof(u32) * internal_capacity);
+
+        _count = 0;
+    }
+
+    template<typename Type, ice::ContainerLogic Logic>
+    template<typename Self>
+    inline constexpr auto HashMap<Type, Logic>::begin(this Self&& self) noexcept -> ice::container::Iterator<Self>
+    {
+        return { self._entries, self._data };
+    }
+
+    template<typename Type, ice::ContainerLogic Logic>
+    template<typename Self>
+    inline constexpr auto HashMap<Type, Logic>::end(this Self&& self) noexcept -> ice::container::Iterator<Self>
+    {
+        return { self._entries + self._count, self._data + self._count };
+    }
+
+    template<typename Type, ice::ContainerLogic Logic>
+    inline constexpr auto ice::HashMap<Type, Logic>::memory_view() noexcept -> ice::Memory
+    {
+        ice::meminfo const info = ice::detail::hashmap::calc_meminfo<EntryType, ValueType>(_capacity);
+        return ice::Memory{
+            .location = _hashes,
+            .size = info.size,
+            .alignment = ice::align_of<ValueType>
+        };
+    }
+
+    template<typename Type, ice::ContainerLogic Logic>
+    inline constexpr auto ice::HashMap<Type, Logic>::entries_memory_view() noexcept -> ice::Memory
+    {
+        return ice::Memory{
+            .location = _entries,
+            .size = ice::size_of<EntryType> * _count,
+            .alignment = ice::align_of<EntryType>
+        };
+    }
+
+    template<typename Type, ice::ContainerLogic Logic>
+    inline constexpr auto ice::HashMap<Type, Logic>::values_data_view() const noexcept -> ice::Data
+    {
+        return Data{
+            .location = _data,
+            .size = this->size(),
+            .alignment = ice::align_of<ValueType>
+        };
+    }
+
+    template<typename Type, ice::ContainerLogic Logic>
+    inline constexpr auto ice::HashMap<Type, Logic>::entries_data_view() const noexcept -> ice::Data
+    {
+        return Data{
+            .location = _entries,
+            .size = ice::size_of<EntryType> * _count,
+            .alignment = ice::align_of<EntryType>
+        };
     }
 
 } // namespace ice

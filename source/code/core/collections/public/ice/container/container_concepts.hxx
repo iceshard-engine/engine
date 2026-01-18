@@ -2,6 +2,8 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#include <ice/hash.hxx>
+#include <ice/stringid.hxx>
 #include <ice/types/ncount.hxx>
 #include <ice/types/nindex.hxx>
 #include <ice/container_logic.hxx>
@@ -18,6 +20,7 @@ namespace ice::concepts
 
     template<typename T>
     concept AssociativeContainerType = ContainerType<T> && requires(T t) {
+        typename std::remove_reference_t<T>::KeyType;
         typename std::remove_reference_t<T>::EntryType;
     };
 
@@ -27,16 +30,16 @@ namespace ice::concepts
     };
 
     template<typename T>
-    concept AssociativeContainer = Container<T> && AssociativeContainerType<T> && requires(T t) {
+    concept AssociativeContainer = Container<T> && AssociativeContainerType<T>
+        && requires(T t, typename std::remove_reference_t<T>::KeyType key) {
         { t.size() } -> std::convertible_to<ice::ncount>;
+        { t.find(key) } -> std::convertible_to<typename std::remove_reference_t<T>::ValueType const*>;
     };
 
     template<typename T>
     concept ResizableContainer = Container<T> && requires(T t, ice::ncount size) {
-        // { t.data() } -> std::convertible_to<typename std::remove_reference_t<T>::ValueType*>;
         { t.capacity() } -> std::convertible_to<ice::ncount>;
         { t.set_capacity(size) } -> std::convertible_to<void>;
-        { t.resize(size) } -> std::convertible_to<void>;
         { t.clear() } -> std::convertible_to<void>;
     };
 
@@ -65,6 +68,11 @@ namespace ice::concepts
     template<typename T>
     concept RegularContainerLogic = ContainerType<T>
         && not TrivialContainerLogicAllowed<typename std::remove_reference_t<T>::ValueType>;
+
+    template<typename T>
+    concept HashableKeyType = not std::is_arithmetic_v<std::remove_reference_t<T>> && requires(T t) {
+        { ice::hash(t) } -> std::convertible_to<ice::u64>;
+    };
 
 } // namespace ice::concepts
 
@@ -99,6 +107,17 @@ namespace ice::container
         typename std::remove_reference_t<ContainerT>::ConstReverseIterator,
         typename std::remove_reference_t<ContainerT>::ReverseIterator
     >;
+
+    template<ice::concepts::ContainerType ContainerT>
+    using KeyType = typename std::remove_reference_t<ContainerT>::KeyType;
+
+    template<ice::concepts::ContainerType ContainerT>
+    using KeyTypeArg = std::conditional_t<
+        sizeof(ice::container::KeyType<ContainerT>) <= 16 && std::is_trivially_copyable_v<ice::container::KeyType<ContainerT>>,
+        ice::container::KeyType<ContainerT>,
+        ice::container::KeyType<ContainerT> const&
+    >;
+
 
     template<ice::concepts::ContainerType ContainerT>
     using ValueType = ConstCorrectContainerValueType<ContainerT>;

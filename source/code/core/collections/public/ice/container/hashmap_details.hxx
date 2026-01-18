@@ -43,6 +43,11 @@ namespace ice
             ice::u32 entry_i;
         };
 
+        constexpr auto calc_value_capacity(ice::ncount raw_capacity) noexcept -> ice::ncount
+        {
+            return static_cast<ice::ncount::base_type>(raw_capacity.native() * Constant_HashMapMaxFill);
+        }
+
         constexpr auto calc_required_capacity(ice::ncount max_count) noexcept -> ice::ncount
         {
             return static_cast<ice::ncount::base_type>(
@@ -50,12 +55,31 @@ namespace ice
             );
         }
 
-        constexpr bool can_store_expected_size(ice::ncount capacity, ice::ncount expected_size) noexcept
+        constexpr auto capacity_with_overhead(ice::ncount max_count) noexcept -> ice::ncount
         {
-            ice::ncount const max_size_for_capacity = static_cast<ice::ncount::base_type>(
-                capacity * Constant_HashMapMaxFill
-            );
-            return max_size_for_capacity >= expected_size;
+            return calc_required_capacity(max_count);
+        }
+
+        constexpr bool can_store_expected_size(ice::ncount raw_capacity, ice::ncount expected_size) noexcept
+        {
+            return calc_value_capacity(raw_capacity) >= expected_size;
+        }
+
+        template<typename EntryType, typename ValueType>
+        constexpr auto calc_meminfo(ice::ncount capacity) noexcept -> ice::meminfo
+        {
+            ice::ncount const new_internal_capacity = ice::detail::hashmap::capacity_with_overhead(capacity);
+
+            ice::meminfo alloc_info = ice::meminfo_of<ice::u32> * new_internal_capacity;
+            alloc_info += ice::meminfo_of<EntryType> * capacity;
+            alloc_info += ice::meminfo_of<ValueType> * capacity;
+            return alloc_info;
+        }
+
+        template<ice::detail::hashmap::HashMapContainer ContainerT>
+        inline auto entries(ContainerT const& map) noexcept -> ice::Span<typename ContainerT::EntryType const>
+        {
+            return ice::Span{ map._entries, map._count };
         }
 
         template<ice::detail::hashmap::HashMapContainer ContainerT>
@@ -190,7 +214,7 @@ namespace ice
         }
 
         template<ice::detail::hashmap::HashMapContainer ContainerT>
-        inline auto find_or_fail(ContainerT const& map, ice::u64 key) noexcept -> ice::u32
+        inline auto find_or_fail(ContainerT const& map, ice::container::KeyType<ContainerT> key) noexcept -> ice::u32
         {
             return ice::detail::hashmap::find(map, key).entry_i;
         }
@@ -241,88 +265,6 @@ namespace ice
         }
 
         template<ice::detail::hashmap::HashMapContainer ContainerT>
-        inline void rehash(ContainerT& map, ice::u32 new_capacity) noexcept
-        {
-            using Entry = typename ContainerT::EntryType;
-            using Type = typename ContainerT::ValueType;
-
-            ICE_ASSERT_CORE(new_capacity * Constant_HashMapMaxFill >= map._count);
-
-            ice::u32* new_hashes_ptr = nullptr;
-            Entry* new_entries_ptr = nullptr;
-            Type* new_value_ptr = nullptr;
-
-            if (new_capacity > 0)
-            {
-                ice::u32 const new_capacity_values = ice::u32(new_capacity * Constant_HashMapMaxFill);
-
-                ice::meminfo alloc_info = ice::meminfo_of<ice::u32> *new_capacity;
-                ice::usize const offset_entries = alloc_info += ice::meminfo_of<Entry> *new_capacity_values;
-                ice::usize const offset_values = alloc_info += ice::meminfo_of<Type> *new_capacity_values;
-
-                ice::AllocResult const new_data = map._allocator->allocate(alloc_info);
-                new_hashes_ptr = reinterpret_cast<ice::u32*>(new_data.memory);
-                new_entries_ptr = reinterpret_cast<Entry*>(ice::ptr_add(new_data.memory, offset_entries));
-                new_value_ptr = reinterpret_cast<Type*>(ice::ptr_add(new_data.memory, offset_values));
-
-                // Prepare hashes memory
-                // TODO: memset?
-                for (ice::u32& hashed_idx : ice::Span<ice::u32>{ new_hashes_ptr, new_capacity })
-                {
-                    hashed_idx = Constant_EndOfList;
-                }
-
-                if (map._count > 0)
-                {
-                    // NOTE: We keep the original entry + data indices, they don't need to change.
-
-                    // Copy all the entries, this is always a POD type.
-                    static_assert(std::is_pod_v<Entry>, "HashMap::Entry should not be changed!");
-                    ice::memcpy(
-                        Memory{ .location = new_entries_ptr, .size = ice::size_of<Entry> *map._count, .alignment = ice::align_of<Entry> },
-                        Data{ .location = map._entries, .size = ice::size_of<Entry> *map._count, .alignment = ice::align_of<Entry> }
-                    );
-
-                    // If the value is a complex type, properly move construct it in the new location + destroy in the old one.
-                    if constexpr (ContainerT::OperationLogic == ContainerLogic::Complex)
-                    {
-                        ice::mem_move_construct_n_at(
-                            Memory{ .location = new_value_ptr, .size = ice::size_of<Type> *map._count, .alignment = ice::align_of<Type> },
-                            map._data,
-                            map._count
-                        );
-                    }
-                    else
-                    {
-                        ice::memcpy(
-                            Memory{ .location = new_value_ptr, .size = ice::size_of<Type> *map._count, .alignment = ice::align_of<Type> },
-                            Data{ .location = map._data, .size = ice::size_of<Type> *map._count, .alignment = ice::align_of<Type> }
-                        );
-                    }
-
-                    ICE_ASSERT_CORE(false);
-                    //ice::u32 idx = 0;
-                    //for (Entry const& entry : ice::hashmap::entries(map))
-                    //{
-                    //    // First remember the previous set index...
-                    //    new_entries_ptr[idx].next = new_hashes_ptr[entry.key % new_capacity];
-
-                    //    // ... then save the current index in the hashed array.
-                    //    new_hashes_ptr[entry.key % new_capacity] = idx;
-                    //    idx += 1;
-                    //}
-                }
-            }
-
-            ICE_ASSERT_CORE(false);
-            //map._allocator->deallocate(ice::hashmap::memory(map));
-            map._capacity = new_capacity;
-            map._hashes = new_hashes_ptr;
-            map._entries = new_entries_ptr;
-            map._data = new_value_ptr;
-        }
-
-        template<ice::detail::hashmap::HashMapContainer ContainerT>
         inline auto find(ContainerT& map, typename ContainerT::ConstIterator it) noexcept -> FindResult
         {
             FindResult fr{
@@ -350,20 +292,6 @@ namespace ice
                 fr.entry_i = map._entries[fr.entry_i].next;
             }
             return fr;
-        }
-
-        template<ice::detail::hashmap::HashMapContainer ContainerT>
-        inline void grow(ContainerT& map) noexcept
-        {
-            ice::detail::hashmap::rehash(map, map._capacity * 2 + 8);
-        }
-
-        template<ice::detail::hashmap::HashMapContainer ContainerT>
-        inline void clear_and_dealloc(ContainerT& map) noexcept
-        {
-            ICE_ASSERT_CORE(false);
-            //ice::hashmap::clear(map);
-            ice::detail::hashmap::rehash(map, 0);
         }
 
     } // namespace hashmap::detail

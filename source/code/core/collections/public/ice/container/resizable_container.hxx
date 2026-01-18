@@ -10,6 +10,18 @@ namespace ice::container
     struct ResizableContainer
     {
         template<ice::concepts::ResizableContainer Self>
+        constexpr bool is_full(this Self const& self) noexcept
+        {
+            return self.size() == self.capacity();
+        }
+
+        template<ice::concepts::ResizableContainer Self>
+        constexpr bool not_full(this Self const& self) noexcept
+        {
+            return self.size() < self.capacity();
+        }
+
+        template<ice::concepts::ResizableContainer Self>
         constexpr void reserve(this Self& self, ice::ncount min_capacity) noexcept
         {
             if (self.capacity() < min_capacity)
