@@ -110,7 +110,7 @@ namespace ice
             , type{ type }
             , events{ alloc }
         {
-            ice::hashmap::reserve(events, 2);
+            events.reserve(2);
         }
 
         ice::HeapString<> name;
@@ -207,8 +207,8 @@ namespace ice
             , _actions{ _allocator }
             , _name{ _allocator, name }
         {
-            ice::hashmap::reserve(_sources, 16);
-            ice::hashmap::reserve(_actions, 10);
+            _sources.reserve(16);
+            _actions.reserve(10);
             _constants.push_back({ InputActionConstant::Nil, 0.0f });
         }
 
@@ -351,7 +351,7 @@ namespace ice
             };
 
             // Run finalization on all internal action objects.
-            for (Internal<InputActionBuilder::Action>& action : ice::hashmap::values(_actions))
+            for (Internal<InputActionBuilder::Action>& action : _actions.values())
             {
                 action.finalize();
             }

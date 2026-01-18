@@ -97,7 +97,7 @@ namespace ice
 
     bool IceshardTraitContext::register_checkpoint(ice::StringID id, ice::TaskCheckpoint& checkpoint) noexcept
     {
-        if (ice::hashmap::has(_world_context._checkpoints, ice::hash(id)))
+        if (_world_context._checkpoints.has(id))
         {
             return false;
         }

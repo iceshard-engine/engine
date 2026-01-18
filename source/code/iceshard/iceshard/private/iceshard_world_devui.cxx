@@ -86,7 +86,7 @@ namespace ice
                     ImGui::TextT("{} handlers (count: {})", handler_type, hashmap.size());
                     if (hashmap.not_empty())
                     {
-                        detail::devui_handlers_table(ice::hashmap::values(hashmap), _world._traits);
+                        detail::devui_handlers_table(hashmap.values(), _world._traits);
                     }
                     else
                     {

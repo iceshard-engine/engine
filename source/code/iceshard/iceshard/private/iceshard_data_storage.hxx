@@ -33,13 +33,13 @@ namespace ice
 
         bool has(ice::StringID_Arg name) const noexcept override
         {
-            return ice::hashmap::has(_values, ice::hash(name));
+            return _values.has(name);
         }
 
         bool set(ice::StringID_Arg name, void* value) noexcept override
         {
             ice::u64 const hash = ice::hash(name);
-            bool const missing = ice::hashmap::has(_values, hash) == false;
+            bool const missing = _values.missing(hash);
             ICE_ASSERT_CORE(missing);
             //if (missing)
             {

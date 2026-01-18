@@ -70,7 +70,7 @@ namespace ice
     ) noexcept
     {
         ice::u64 const type_hash = category.identifier;
-        bool const type_not_defined = ice::hashmap::has(_definitions, type_hash) == false;
+        bool const type_not_defined = _definitions.missing(type_hash);
 
         ICE_ASSERT(
             type_not_defined == true,

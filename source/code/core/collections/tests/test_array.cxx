@@ -201,6 +201,14 @@ SCENARIO("collections 'ice/container/array.hxx' (POD)", "[collection][array][pod
                 objects.push_back(test_value_2 + i);
             }
 
+            THEN("the returned 'size' properly stores the number and byte size of elements.")
+            {
+                CHECK(objects.size() == 100);
+                CHECK(objects.size() == ice::size_of<ice::i32> * 100);
+                CHECK(objects.capacity() >= 100);
+                CHECK(objects.capacity() >= ice::size_of<ice::i32> * 100);
+            }
+
             CHECK(objects.size() == 100);
             CHECK(objects.capacity() >= 100);
             CHECK(objects.not_empty() == true);

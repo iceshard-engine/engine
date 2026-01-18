@@ -100,7 +100,7 @@ namespace ice
     {
 
         ICE_ASSERT(
-            ice::hashmap::has(_worlds, ice::hash(world_template.name)) == false,
+            _worlds.missing(world_template.name),
             "A world with this name {} was already created!",
             world_template.name
         );
@@ -205,7 +205,7 @@ namespace ice
         ice::ShardContainer& out_shards
     ) noexcept
     {
-        for (Entry& world_entry : ice::hashmap::values(_worlds))
+        for (Entry& world_entry : _worlds.values())
         {
             world_entry.context->close_checkpoints();
             world_entry.world->pre_update(out_shards);
@@ -218,7 +218,7 @@ namespace ice
         ice::Span<ice::Shard const> event_shards
     ) noexcept
     {
-        for (Entry& world_entry : ice::hashmap::values(_worlds))
+        for (Entry& world_entry : _worlds.values())
         {
             if (world_entry.is_active)
             {

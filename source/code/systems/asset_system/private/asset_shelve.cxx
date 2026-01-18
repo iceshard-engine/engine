@@ -27,7 +27,7 @@ namespace ice
         , _allocator{ alloc }
         , _asset_resources{ alloc }
     {
-        ice::hashmap::reserve(_asset_resources, 25);
+        _asset_resources.reserve(25);
     }
 
     AssetShelve::~AssetShelve() noexcept

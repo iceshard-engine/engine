@@ -178,7 +178,7 @@ namespace ice
             // First we check if a source with a name like this already exists, if so we take the index to it's location
             //   else we push back a new value to the list of runtime values and store it's index under the hashed name.
             ice::u32 values_index = 0;
-            if (ice::hashmap::has(_sources, source_name_hash))
+            if (_sources.has(source_name_hash))
             {
                 if (prev_name_hash != source_name_hash)
                 {
@@ -227,7 +227,7 @@ namespace ice
             ice::String const action_name = layer->action_name(action);
             ice::u64 const action_name_hash = ice::hash(action_name);
 
-            if (ice::hashmap::has(_actions, action_name_hash) == false)
+            if (_actions.missing(action_name_hash))
             {
                 // Create the final name with the prefix and store it so the pointer reimains valid.
                 // #TODO: Consider using refs instead?

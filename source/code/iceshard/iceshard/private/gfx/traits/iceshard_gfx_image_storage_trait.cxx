@@ -47,7 +47,7 @@ namespace ice::gfx
     void Trait_GfxImageStorage::build_content() noexcept
     {
         static ice::i32 selected = -1;
-        ice::Span<GfxImageEntry const> images = ice::hashmap::values(_loaded_images);
+        ice::Span<GfxImageEntry const> images = _loaded_images.values();
 
         ice::String const preview = selected < 0 ? "<asset-uri>" : ice::stringid_hint(images[selected].asset.name());
 
@@ -263,13 +263,13 @@ namespace ice::gfx
         ice::render::RenderDevice& device
     ) noexcept -> ice::Task<>
     {
-        for (ice::gfx::GfxImageEntry& entry : ice::hashmap::values(_loaded_images))
+        for (ice::gfx::GfxImageEntry& entry : _loaded_images.values())
         {
             device.destroy_image(entry.image);
             entry.asset.release();
         }
 
-        ice::hashmap::clear(_loaded_images);
+        _loaded_images.clear();
         co_return;
     }
 

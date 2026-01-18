@@ -56,7 +56,7 @@ namespace ice
             ImGui::TableNextColumn();
 
             ice::u32 idx = 0;
-            ice::Span const entries = ice::hashmap::values(_manager._worlds);
+            ice::Span const entries = _manager._worlds.values();
             for (IceshardWorldManager::Entry const& entry : entries)
             {
                 ice::IceshardWorld const& world = *entry.world;

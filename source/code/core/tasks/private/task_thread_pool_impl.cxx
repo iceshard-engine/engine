@@ -49,8 +49,8 @@ namespace ice
     {
         _thread_pool.reserve(info.thread_count);
         _managed_threads.reserve(info.thread_count);
-        ice::hashmap::reserve(_created_threads, info.thread_count.u32());
-        ice::hashmap::reserve(_user_threads, info.thread_count.u32());
+        _created_threads.reserve(info.thread_count);
+        _user_threads.reserve(info.thread_count);
 
         ice::TaskThreadInfo thread_info{
             .exclusive_queue = false,
@@ -97,8 +97,8 @@ namespace ice
 
     TaskThreadPoolImplementation::~TaskThreadPoolImplementation() noexcept
     {
-        ice::hashmap::clear(_user_threads);
-        ice::hashmap::clear(_created_threads);
+        _user_threads.clear();
+        _created_threads.clear();
         _managed_threads.clear();
         _thread_pool.clear();
     }
@@ -121,7 +121,7 @@ namespace ice
     auto TaskThreadPoolImplementation::create_thread(ice::StringID name) noexcept -> ice::TaskThread&
     {
         ICE_ASSERT(
-            ice::hashmap::has(_created_threads, ice::hash(name)) == false,
+            _created_threads.missing(name),
             "A pool thread with name '{}' already exists",
             name
         );
@@ -159,7 +159,7 @@ namespace ice
     bool TaskThreadPoolImplementation::destroy_thread(ice::StringID name) noexcept
     {
         ice::u64 const name_hash = ice::hash(name);
-        bool const exists = ice::hashmap::has(_created_threads, name_hash);
+        bool const exists = _created_threads.has(name_hash);
         if (exists)
         {
             ice::hashmap::remove(_created_threads, name_hash);
@@ -175,7 +175,7 @@ namespace ice
     {
         ice::u64 const name_hash = ice::hash(name);
         ICE_ASSERT(
-            ice::hashmap::has(_user_threads, name_hash) == false,
+            _user_threads.missing(name_hash),
             "A user thread with name '{}' already exists",
             name
         );
@@ -195,7 +195,7 @@ namespace ice
     {
         ice::u64 const name_hash = ice::hash(name);
         ice::UniquePtr<ice::TaskThread> result;
-        if (ice::hashmap::has(_user_threads, name_hash))
+        if (_user_threads.has(name_hash))
         {
             // Move the thread out of the map
             result = ice::move(*ice::hashmap::try_get(_user_threads, name_hash));

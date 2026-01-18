@@ -43,7 +43,7 @@ namespace ice::gfx
         ImGui::TextT("Loaded shaders: {}", _loaded_shaders.size());
         if (ImGui::BeginCombo("##shader-list", "Shader to preview", ImGuiComboFlags_WidthFitPreview))
         {
-            for (GfxShaderEntry& entry : ice::hashmap::values(_loaded_shaders))
+            for (GfxShaderEntry& entry : _loaded_shaders.values())
             {
                 ice::URI const uri = entry.asset.uri();
                 ImGui::Selectable(uri.path()._data, &entry.devui_loaded);
@@ -51,7 +51,7 @@ namespace ice::gfx
             ImGui::EndCombo();
         }
 
-        for (GfxShaderEntry& entry : ice::hashmap::values(_loaded_shaders))
+        for (GfxShaderEntry& entry : _loaded_shaders.values())
         {
             if (entry.devui_loaded)
             {
@@ -134,13 +134,13 @@ namespace ice::gfx
 
     auto Trait_GfxShaderStorage::gfx_shutdown(ice::render::RenderDevice& device) noexcept -> ice::Task<>
     {
-        for (ice::gfx::GfxShaderEntry& entry : ice::hashmap::values(_loaded_shaders))
+        for (ice::gfx::GfxShaderEntry& entry : _loaded_shaders.values())
         {
             device.destroy_shader(entry.shader);
             entry.asset.release();
         }
 
-        ice::hashmap::clear(_loaded_shaders);
+        _loaded_shaders.clear();
         co_return;
     }
 

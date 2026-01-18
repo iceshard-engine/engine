@@ -34,7 +34,7 @@ namespace ice
                 "Register function for trait {} returned unsuccessful.", descriptor.name
             );
             // TODO: Allow registering with priority instead of first in
-            if (can_register && ice::hashmap::has(_traits, ice::hash(descriptor.name)) == false)
+            if (can_register && _traits.missing(descriptor.name))
             {
                 if (descriptor.fn_arch_register != nullptr)
                 {

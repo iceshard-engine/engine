@@ -66,7 +66,7 @@ namespace ice::input
     ) noexcept
     {
         // #todo handle duplicate type case
-        if (ice::hashmap::has(_factories, ice::hash(type)) == false)
+        if (_factories.missing(ice::hash(type)))
         {
             ice::hashmap::set(_factories, ice::hash(type), device_factory);
         }
@@ -124,7 +124,7 @@ namespace ice::input
                 ice::hashmap::remove(_devices, device_hash);
                 // #todo log device disconnected (shard?)
             }
-            else if (ice::hashmap::has(_devices, device_hash))
+            else if (_devices.has(device_hash))
             {
                 InputDevice* const device = ice::hashmap::get(_devices, device_hash, nullptr);
                 device->on_event(event);

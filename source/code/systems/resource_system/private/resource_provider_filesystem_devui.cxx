@@ -82,7 +82,7 @@ namespace ice
     void FileSystemResourceProvider::DevUI::build_resources_table(ice::u32 idx_start, ice::u32 idx_end) noexcept
     {
         ice::u32 idx = 1; // We start with '1' since the first entry are the headers.
-        for (ice::FileSystemResource* const res : ice::hashmap::values(_resources))
+        for (ice::FileSystemResource* const res : _resources.values())
         {
             if (strstr(res->name().begin(), _filter) == nullptr)
             {

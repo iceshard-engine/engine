@@ -88,7 +88,7 @@ namespace ice::gfx
 
     bool IceshardGfxGraph::add_pass(GfxGraphPass const& pass) noexcept
     {
-        if (ice::hashmap::has(_objects, ice::hash(pass.name)) == false)
+        if (_objects.missing(pass.name))
         {
             ice::u32 res_count = 0;
             for (ice::gfx::GfxGraphStage const& stage : pass.stages)
@@ -325,7 +325,7 @@ namespace ice::gfx
             ice::u32 pass_idx = 0;
             ice::u32 pass_idx_stages = _stages._counts[0];
 
-            auto it = ice::begin(_stages._stages);
+            auto it = _stages._stages.begin();
             for (ice::StringID stagename : _stages._stage_names)
             {
                 if (it.key() == ice::hash(stagename))

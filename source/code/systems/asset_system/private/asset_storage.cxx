@@ -240,7 +240,7 @@ namespace ice
         , _devui_widget{ }
     {
         ice::Span<ice::AssetCategory const> categories = _asset_archive->categories();
-        ice::hashmap::reserve(_asset_shelves, categories.size().u32());
+        _asset_shelves.reserve(categories.size().u32());
 
         ice::Array<ice::UniquePtr<ice::AssetShelve::DevUI>> shelves{ _allocator };
         for (ice::AssetCategory_Arg category : categories)

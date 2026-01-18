@@ -41,7 +41,7 @@ namespace ice
             ImGui::TableSetupColumn("Resource", ImGuiTableColumnFlags_DefaultHide);
             ImGui::TableHeadersRow();
 
-            for (ice::AssetEntry const* entry : ice::hashmap::values(_shelve._asset_resources))
+            for (ice::AssetEntry const* entry : _shelve._asset_resources.values())
             {
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn();

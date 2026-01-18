@@ -56,7 +56,7 @@ namespace ice
             it = ice::multi_hashmap::find_next(keystrings, it);
         }
 
-        return it == nullptr ? ice::hashmap::count(keystrings) : it.value().index;
+        return it == nullptr ? keystrings.size().u32() : it.value().index;
     }
 
     auto cb_calculate_key_size(
@@ -74,7 +74,7 @@ namespace ice
 
             // If it's not there, store a new entry and give it a new index.
             //   This allows us to reuse duplicate key names
-            if (keystr_idx == ice::hashmap::count(keystrings))
+            if (keystr_idx == keystrings.size())
             {
                 ice::multi_hashmap::insert(keystrings, ice::hash(keystr), { keystr, keystr_idx });
                 result += { entry->size }; // Increase the size required
@@ -184,7 +184,7 @@ namespace ice
             {
                 ice::String const it_keystr = cb_getkey(config._keystrings, *it_entry);
                 ice::u32 const it_keystr_idx = ice::cb_find_keystr_idx(keystrings, it_keystr);
-                ICE_ASSERT_CORE(it_keystr_idx < ice::hashmap::count(keystrings));
+                ICE_ASSERT_CORE(it_keystr_idx < keystrings.size());
                 ice::u32 const new_keystr_offset = keystringoffsets[it_keystr_idx];
                 out_keylist[keyoffset].offset = new_keystr_offset;
             }
@@ -397,10 +397,10 @@ namespace ice
         char const* final_keystrings = reinterpret_cast<char const*>(final_keystrings_mem.location);
 
         // Reserve space to hold all keystring entries and build the string buffer.
-        keyoffsets.resize(ice::hashmap::count(keystrings));
+        keyoffsets.resize(keystrings.size());
 
         ice::ncount keystr_offset = 0;
-        for (CBKeyString const& keystr : ice::hashmap::values(keystrings))
+        for (CBKeyString const& keystr : keystrings.values())
         {
             // Copy and advance the pointer
             ice::memcpy(final_keystrings_mem, keystr.value.data_view());

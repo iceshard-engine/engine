@@ -140,7 +140,7 @@ namespace ice
         // For mixed-regular chunks we need double the number of entries because
         //   both data and metadata pointers are allocated separately, which doubles the required hashmap size.
         ice::u32 const estimated_pointer_count = _chunk.count_entries * (_chunk.type == 3 ? 2 : 1);
-        ice::hashmap::reserve(_offset_map, estimated_pointer_count);
+        _offset_map.reserve(estimated_pointer_count);
         _pointers.resize(estimated_pointer_count);
     }
 

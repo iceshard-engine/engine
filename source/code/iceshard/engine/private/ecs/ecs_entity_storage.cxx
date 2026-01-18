@@ -571,7 +571,7 @@ namespace ice::ecs
         using ice::ecs::detail::DataBlockPool;
         using ice::ecs::detail::ArchetypeInstance;
 
-        for (ice::ecs::QueryAccessTracker* tracker : ice::hashmap::values(_access_trackers))
+        for (ice::ecs::QueryAccessTracker* tracker : _access_trackers.values())
         {
             _allocator.destroy(tracker);
         }
@@ -630,7 +630,7 @@ namespace ice::ecs
 
         _head_blocks.resize(archetype_count);
         _data_blocks.resize(archetype_count);
-        ice::hashmap::reserve(_destructors, archetype_count);
+        _destructors.reserve(archetype_count);
 
         // Setup the empty head blocks for new archetypes.
         //  This approach gives two benefits:
@@ -679,7 +679,7 @@ namespace ice::ecs
         _archetype_index.fetch_archetype_instance_info_with_pool(archetype, info, pool);
         ICE_ASSERT_CORE(info != nullptr);
 
-        if (ice::hashmap::has(_destructors, ice::hash(info->archetype_instance)))
+        if (_destructors.has(info->archetype_instance))
         {
             auto it = ice::multi_hashmap::find_first(_destructors, ice::hash(info->archetype_instance));
             while (it != nullptr && it.value().identifier != destructor.identifier)
@@ -717,7 +717,7 @@ namespace ice::ecs
         }
 
         // Ensure all queries are finished
-        for (ice::ecs::QueryAccessTracker* tracker : ice::hashmap::values(_access_trackers))
+        for (ice::ecs::QueryAccessTracker* tracker : _access_trackers.values())
         {
             ice::u32 const final_counter_exec = tracker->access_stage_executed.exchange(0, std::memory_order_relaxed);
             ice::u32 const final_counter_next = tracker->access_stage_next.exchange(0, std::memory_order_relaxed);

@@ -17,7 +17,7 @@ namespace ice::gfx
         : _allocator{ alloc }
         , _gfx_queues{ _allocator }
     {
-        ice::hashmap::reserve(_gfx_queues, queue_count * 2);
+        _gfx_queues.reserve(queue_count * 2);
     }
 
     IceGfxQueueGroup::~IceGfxQueueGroup() noexcept
@@ -36,9 +36,8 @@ namespace ice::gfx
         ice::u32 pool_index
     ) noexcept -> ice::gfx::IceGfxQueue*
     {
-        ice::u64 const name_hash = ice::hash(name);
         ICE_ASSERT(
-            ice::hashmap::has(_gfx_queues, name_hash) == false,
+            _gfx_queues.missing(name),
             "Duplicate graphics queue encountered! [{}]",
             ice::stringid_hint(name)
         );
@@ -54,7 +53,7 @@ namespace ice::gfx
 
         ice::hashmap::set(
             _gfx_queues,
-            name_hash,
+            ice::hash(name),
             queue
         );
 

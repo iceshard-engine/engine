@@ -86,7 +86,7 @@ namespace ice
     DefaultModuleRegister::~DefaultModuleRegister() noexcept
     {
         ice::FnModuleUnload* fn_unload_prev = nullptr;
-        for (DefaultModuleEntry const& entry : ice::hashmap::values(_modules))
+        for (DefaultModuleEntry const& entry : _modules.values())
         {
             if (fn_unload_prev != entry.unload_proc)
             {

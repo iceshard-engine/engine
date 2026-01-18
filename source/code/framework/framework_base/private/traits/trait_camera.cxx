@@ -89,7 +89,7 @@ namespace ice
             ice::CameraPerspective const*
         >().synchronized_on(params.thread.tasks);
 
-        ice::hashmap::reserve(_render_data, query_cameras.entity_count());
+        _render_data.reserve(query_cameras.entity_count());
 
         for (auto[entity, camera, ortho, persp] : query_cameras.for_each_entity())
         {
@@ -160,7 +160,7 @@ namespace ice
     {
         using namespace ice::render;
 
-        for (ice::TraitCameraData& camera : ice::hashmap::values(_render_data))
+        for (ice::TraitCameraData& camera : _render_data.values())
         {
             if (camera.render_data == Buffer::Invalid)
             {
@@ -183,7 +183,7 @@ namespace ice
         ice::render::RenderDevice& device
     ) noexcept -> ice::Task<>
     {
-        for (ice::TraitCameraData& data : ice::hashmap::values(_render_data))
+        for (ice::TraitCameraData& data : _render_data.values())
         {
             device.destroy_buffer(data.render_data);
         }

@@ -31,7 +31,7 @@ namespace ice
             _frame_data._fwd_allocator.deallocate(group.barrier);
         }
         _task_groups.clear();
-        ice::hashmap::clear(_data._values);
+        _data._values.clear();
 
         _frame_data._fwd_allocator.reset();
     }

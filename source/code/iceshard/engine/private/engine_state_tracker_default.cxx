@@ -28,7 +28,7 @@ namespace ice
         ice::Span<ice::EngineStateTrigger const> triggers
     ) noexcept
     {
-        if (ice::hashmap::has(_initial_states, ice::hash(params.initial.graph.value)))
+        if (_initial_states.has(ice::hash(params.initial.graph.value)))
         {
             return false;
         }

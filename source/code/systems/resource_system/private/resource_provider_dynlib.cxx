@@ -60,7 +60,7 @@ namespace ice
             );
 
             ice::u64 const resource_hash = ice::hash(resource->uri().path());
-            if (ice::hashmap::has(_resources, resource_hash))
+            if (_resources.has(resource_hash))
             {
                 ICE_LOG(
                     LogSeverity::Warning, LogTag::Core,

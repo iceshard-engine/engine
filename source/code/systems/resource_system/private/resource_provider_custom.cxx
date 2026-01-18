@@ -59,7 +59,7 @@ namespace ice
         {
             ice::u64 const hash = ice::hash(resource->origin());
             ICE_ASSERT(
-                ice::hashmap::has(_resources, hash) == false,
+                _resources.missing(hash),
                 "A resource cannot be a explicit resource AND part of another resource."
             );
 

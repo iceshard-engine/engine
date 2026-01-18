@@ -57,14 +57,14 @@ namespace ice
             "Invalid value ({}) provided for 'predicted_resource_count'. Value needs to be a positive integer."
         );
 
-        ice::hashmap::reserve(_resources, _info.predicted_resource_count);
-        ice::hashmap::reserve(_resource_providers, 12);
-        ice::hashmap::reserve(_resource_writers, 4);
+        _resources.reserve(_info.predicted_resource_count);
+        _resource_providers.reserve(12);
+        _resource_writers.reserve(4);
     }
 
     ResourceTrackerImplementation::~ResourceTrackerImplementation() noexcept
     {
-        ice::hashmap::clear(_resources);
+        _resources.clear();
     }
 
     auto ResourceTrackerImplementation::attach_provider(
@@ -353,7 +353,7 @@ namespace ice
             _info.predicted_resource_count
         );
 
-        ice::hashmap::reserve(_resources, new_count.u32());
+        _resources.reserve(new_count.u32());
 
         // Store all resource handles
         IPT_ZONE_SCOPED_NAMED("create_hash_entries");

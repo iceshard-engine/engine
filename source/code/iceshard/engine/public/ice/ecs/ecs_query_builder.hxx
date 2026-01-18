@@ -58,7 +58,7 @@ namespace ice::ecs
 
         auto query_object() const noexcept -> ice::ecs::QueryObject<Parts...> const&
         {
-            if (ice::hashmap::has(_queries, Entry::hash_value()) == false)
+            if (this->_queries.missing(Entry::hash_value()))
             {
                 ice::UniquePtr entry = ice::make_unique<Entry>(_allocator, _allocator);
                 entry->initialize(_query_provider);

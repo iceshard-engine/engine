@@ -176,7 +176,7 @@ namespace ice::ecs
         ice::ecs::detail::DataBlockPool* data_block_pool
     ) noexcept -> ice::ecs::Archetype
     {
-        if (ice::hashmap::has(_archetype_index, ice::hash(archetype_info.identifier)))
+        if (_archetype_index.has(archetype_info.identifier))
         {
             ICE_LOG(
                 ice::LogSeverity::Warning, ice::LogTag::Engine,

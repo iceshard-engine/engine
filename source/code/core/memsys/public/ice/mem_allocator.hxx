@@ -28,6 +28,13 @@ namespace ice
             return do_allocate(request);
         }
 
+        auto allocate(ice::ChunkedAllocRequest const& request) noexcept -> ice::AllocResult
+        {
+            ice::AllocResult const result = do_allocate(request._request_meminfo);
+            request.finalize(result);
+            return result;
+        }
+
         template<typename T> requires std::is_trivial_v<T>
         auto allocate(ice::u64 count = 1) noexcept -> T*
         {
@@ -176,6 +183,8 @@ namespace ice
         AllocatorBase(std::source_location const& src_loc, AllocatorBase& parent, std::string_view name) noexcept;
 
         auto allocate(ice::AllocRequest request) noexcept -> ice::AllocResult;
+        auto allocate(ice::ChunkedAllocRequest const& request) noexcept -> ice::AllocResult;
+
         template<typename T> requires std::is_trivial_v<T>
         auto allocate(ice::u64 count = 1) noexcept -> T*
         {

@@ -57,11 +57,20 @@ SCENARIO("collections 'ice/container/hashmap.hxx'", "[collection][hash][complex]
 
     GIVEN("an hashmap with a multiple elements")
     {
-        static constexpr ice::u32 values[]{ 42, 11, 23 };
+        static constexpr ice::u32 values[]{ 42, 11, 23, 54, 21 };
 
         for (ice::u32 value : values)
         {
             ice::hashmap::set(test_hash, value, Test_TrackingObject{ value });
+        }
+
+        THEN("the returned 'size' properly stores the number and byte size of elements.")
+        {
+            ice::u32 const val_count = ice::count(values);
+            CHECK(test_hash.size() == val_count);
+            CHECK(test_hash.size() == ice::size_of<Test_TrackingObject> * val_count);
+            CHECK(test_hash.capacity() >= val_count);
+            CHECK(test_hash.capacity() >= ice::size_of<Test_TrackingObject> * val_count);
         }
 
         Test_ObjectEvents test_events{};
@@ -70,15 +79,15 @@ SCENARIO("collections 'ice/container/hashmap.hxx'", "[collection][hash][complex]
             obj.gather_ctors(test_events);
         }
 
-        CHECK(test_hash.size() == 3_count);
+        CHECK(test_hash.size() == 5_count);
         CHECK(test_events.test_ctor == 0);
-        CHECK(test_events.test_ctor_move == 3);
+        CHECK(test_events.test_ctor_move == 5);
         CHECK(test_events.test_ctor_copy == 0);
 
         AND_THEN("replacing the objects will call destructors")
         {
             ice::u32 dtor_count = 0;
-            for (Test_TrackingObject& obj : ice::hashmap::values(test_hash))
+            for (Test_TrackingObject& obj : test_hash.values())
             {
                 obj.data.test_dtor = &dtor_count;
             }
@@ -94,12 +103,12 @@ SCENARIO("collections 'ice/container/hashmap.hxx'", "[collection][hash][complex]
                 obj.gather_ctors(test_events);
             }
 
-            CHECK(test_hash.size() == 3_count);
+            CHECK(test_hash.size() == 5_count);
             CHECK(test_events.test_ctor == 0);
-            CHECK(test_events.test_ctor_move == 3);
+            CHECK(test_events.test_ctor_move == 5);
             CHECK(test_events.test_ctor_copy == 0);
 
-            CHECK(dtor_count == 3);
+            CHECK(dtor_count == 5);
         }
     }
 }
@@ -112,14 +121,14 @@ SCENARIO("collections 'ice/container/hashmap.hxx' (POD)", "[collection][hash][po
     ice::HostAllocator alloc{ };
     ice::HashMap<ice::i32> test_hash{ alloc };
 
-    ice::hashmap::detail::rehash(test_hash, 2);
+    test_hash.set_capacity(2);
 
     GIVEN("an empty hash container")
     {
         WHEN("setting a single value")
         {
             hash::set(test_hash, 0, 0xd00b);
-            CHECK(hash::has(test_hash, 0) == true);
+            CHECK(test_hash.has(0) == true);
             CHECK(hash::get(test_hash, 0, 0xffff) == 0xd00b);
             CHECK(hash::get(test_hash, 1, 0xffff) == 0xffff);
         }
@@ -131,50 +140,49 @@ SCENARIO("collections 'ice/container/hashmap.hxx' (POD)", "[collection][hash][po
             hash::set(test_hash, 4, 0xd00b + 2);
             hash::set(test_hash, 6, 0xd00b + 3);
 
-            CHECK(hash::has(test_hash, 0) == true);
-            CHECK(hash::has(test_hash, 2) == true);
-            CHECK(hash::has(test_hash, 4) == true);
-            CHECK(hash::has(test_hash, 6) == true);
+            CHECK(test_hash.has(0) == true);
+            CHECK(test_hash.has(2) == true);
+            CHECK(test_hash.has(4) == true);
+            CHECK(test_hash.has(6) == true);
 
             hash::remove(test_hash, 0);
             hash::remove(test_hash, 4);
 
-            CHECK(hash::has(test_hash, 0) == false);
-            CHECK(hash::has(test_hash, 2) == true);
-            CHECK(hash::has(test_hash, 4) == false);
-            CHECK(hash::has(test_hash, 6) == true);
+            CHECK(test_hash.has(0) == false);
+            CHECK(test_hash.has(2) == true);
+            CHECK(test_hash.has(4) == false);
+            CHECK(test_hash.has(6) == true);
 
             hash::set(test_hash, 0, 0xd00b + 4);
             hash::set(test_hash, 0, 0xd00b + 5); // Replaces the old value
 
-            CHECK(hash::has(test_hash, 0) == true);
-            CHECK(hash::has(test_hash, 2) == true);
-            CHECK(hash::has(test_hash, 4) == false);
-            CHECK(hash::has(test_hash, 6) == true);
+            CHECK(test_hash.has(0) == true);
+            CHECK(test_hash.has(2) == true);
+            CHECK(test_hash.has(4) == false);
+            CHECK(test_hash.has(6) == true);
 
             CHECK(hash::get(test_hash, 0, 0xffff) == 0xd00b + 5);
             hash::set(test_hash, 0, 0xd00b + 0);
 
             THEN("We got values to iterate over")
             {
-                ICE_ASSERT_CORE(false);
                 ice::i32 count = 0;
-                //for (auto& entry : hash::entries(test_hash))
-                //{
-                //    count += (entry, 1);
-                //}
+                for (auto& entry : test_hash)
+                {
+                    count += (entry, 1);
+                }
 
                 CHECK(count == 3);
             }
 
             THEN("We clear the hash")
             {
-                hash::clear(test_hash);
+                test_hash.clear();
 
-                CHECK(hash::has(test_hash, 0) == false);
-                CHECK(hash::has(test_hash, 2) == false);
-                CHECK(hash::has(test_hash, 4) == false);
-                CHECK(hash::has(test_hash, 6) == false);
+                CHECK(test_hash.missing(0) == true);
+                CHECK(test_hash.missing(2) == true);
+                CHECK(test_hash.missing(4) == true);
+                CHECK(test_hash.missing(6) == true);
             }
         }
     }
@@ -224,8 +232,8 @@ SCENARIO("collections 'ice/container/hashmap.hxx' (POD)", "[collection][hash][po
 
             THEN("We got values to iterate over")
             {
-                auto it = ice::begin(test_hash);
-                auto const end = ice::end(test_hash);
+                auto it = test_hash.begin();
+                auto const end = test_hash.end();
 
                 int count = 0;
                 for (auto& entry : test_hash)
@@ -238,7 +246,7 @@ SCENARIO("collections 'ice/container/hashmap.hxx' (POD)", "[collection][hash][po
 
             THEN("We clear the hash")
             {
-                hash::clear(test_hash);
+                test_hash.clear();
 
                 CHECK(multi_hash::count(test_hash, 0) == 0);
                 CHECK(multi_hash::count(test_hash, 2) == 0);
