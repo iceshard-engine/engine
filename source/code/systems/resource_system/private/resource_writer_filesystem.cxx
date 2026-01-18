@@ -166,8 +166,7 @@ namespace ice
         ice::path::join(predicted_path, uri.path());
         ice::path::normalize(predicted_path);
 
-        ice::u64 const resource_hash = ice::hash(ice::String{ predicted_path });
-        return ice::hashmap::get(_resources, resource_hash, nullptr);
+        return _resources.get(predicted_path, nullptr);
     }
 
     auto FileSystemResourceWriter::access_loose_resource(
@@ -213,17 +212,7 @@ namespace ice
         ice::path::join(predicted_path, relative_uri.path());
         ice::path::normalize(predicted_path);
 
-        ice::u64 const resource_hash = ice::hash(ice::String{ predicted_path });
-
-        ice::WritableFileSystemResource const* found_resource = ice::hashmap::get(_resources, resource_hash, nullptr);
-        if (found_resource != nullptr)
-        {
-            return found_resource;
-        }
-        else
-        {
-            return nullptr;
-        }
+        return _resources.get(predicted_path, nullptr);
     }
 
     auto FileSystemResourceWriter::create_resource(
@@ -336,18 +325,11 @@ namespace ice
         resource->data_index = _resources_data.size().u32();
         _resources_data.push_back(ice::Memory{});
 
-        ice::u64 const hash = ice::hash(resource->origin());
         ICE_ASSERT(
-            _resources.missing(hash),
+            _resources.missing(resource->origin()),
             "A resource cannot be a explicit resource AND part of another resource."
         );
-
-        ice::hashmap::set(
-            _resources,
-            hash,
-            resource
-        );
-
+        _resources.set(resource->origin(), resource);
         return S_Ok;
     }
 

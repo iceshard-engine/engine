@@ -2,8 +2,8 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/string_types.hxx>
 #include <ice/string.hxx>
+#include <ice/heap_string.hxx>
 
 namespace ice::path
 {

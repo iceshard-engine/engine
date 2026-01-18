@@ -6,7 +6,7 @@
 #include <ice/ecs/ecs_component.hxx>
 #include <ice/ecs/ecs_query_type.hxx>
 #include <ice/ecs/ecs_archetype.hxx>
-#include <ice/container_types.hxx>
+#include <ice/static_array.hxx>
 
 namespace ice::ecs::detail
 {

@@ -4,7 +4,7 @@
 #include "input_action_internal_types.hxx"
 #include <ice/input_action_layer_builder.hxx>
 #include <ice/input_action_layer.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 #include <ice/heap_string.hxx>
 #include <ice/sort.hxx>
 
@@ -238,8 +238,8 @@ namespace ice
             ice::InputActionSourceType type
         ) noexcept -> ice::InputActionBuilder::Source override
         {
-            ice::hashmap::set(_sources, ice::hash(name), {_allocator, name, type});
-            return { ice::hashmap::try_get(_sources, ice::hash(name)) };
+            _sources.set(name, {_allocator, name, type});
+            return { _sources.try_get(ice::hash(name)) };
         }
 
         auto define_action(
@@ -247,8 +247,8 @@ namespace ice
             ice::InputActionDataType type
         ) noexcept -> ice::InputActionBuilder::Action override
         {
-            ice::hashmap::set(_actions, ice::hash(name), {_allocator, name, type});
-            return { ice::hashmap::try_get(_actions, ice::hash(name)) };
+            _actions.set(name, {_allocator, name, type});
+            return { _actions.try_get(name) };
         }
 
         auto finalize(ice::Allocator& alloc) noexcept -> ice::UniquePtr<ice::InputActionLayer> override
@@ -512,7 +512,7 @@ namespace ice
         using enum ice::InputActionSourceType;
 
         ICE_ASSERT_CORE(internal().type == Key || internal().type == Button);
-        ice::hashmap::set(internal().events, ice::hash(key), input_identifier(DeviceType::Keyboard, key));
+        internal().events.set(key, input_identifier(DeviceType::Keyboard, key));
         return *this;
     }
 
@@ -524,7 +524,7 @@ namespace ice
         ice::input::InputID const iid = input_identifier(DeviceType::Keyboard, keymod, ice::input::mod_identifier_base_value);
 
         ICE_ASSERT_CORE(internal().type == Key || internal().type == Button);
-        ice::hashmap::set(internal().events, ice::hash(iid), iid);
+        internal().events.set(iid, iid);
         return *this;
     }
 
@@ -534,7 +534,7 @@ namespace ice
         using enum ice::InputActionSourceType;
 
         ICE_ASSERT_CORE(internal().type == Key || internal().type == Button);
-        ice::hashmap::set(internal().events, ice::hash(button), input_identifier(DeviceType::Mouse, button));
+        internal().events.set(button, input_identifier(DeviceType::Mouse, button));
         return *this;
     }
 
@@ -544,7 +544,7 @@ namespace ice
         using enum ice::InputActionSourceType;
 
         ICE_ASSERT_CORE(internal().type == Key || internal().type == Button);
-        ice::hashmap::set(internal().events, ice::hash(button), input_identifier(DeviceType::Controller, button));
+        internal().events.set(button, input_identifier(DeviceType::Controller, button));
         return *this;
     }
 
@@ -558,8 +558,8 @@ namespace ice
         ICE_ASSERT_CORE(axis == MouseInput::PositionX);
         if (axis == MouseInput::PositionX)
         {
-            ice::hashmap::set(internal().events, ice::hash(MouseInput::PositionX), input_identifier(DeviceType::Mouse, MouseInput::PositionX));
-            ice::hashmap::set(internal().events, ice::hash(MouseInput::PositionY), input_identifier(DeviceType::Mouse, MouseInput::PositionY));
+            internal().events.set(MouseInput::PositionX, input_identifier(DeviceType::Mouse, MouseInput::PositionX));
+            internal().events.set(MouseInput::PositionY, input_identifier(DeviceType::Mouse, MouseInput::PositionY));
         }
         return *this;
     }
@@ -574,13 +574,13 @@ namespace ice
         ICE_ASSERT_CORE(axis == ControllerInput::LeftAxisX || axis == ControllerInput::RightAxisX);
         if (axis == ControllerInput::LeftAxisX)
         {
-            ice::hashmap::set(internal().events, ice::hash(axis), input_identifier(DeviceType::Controller, ControllerInput::LeftAxisX));
-            ice::hashmap::set(internal().events, ice::hash(axis), input_identifier(DeviceType::Controller, ControllerInput::LeftAxisY));
+            internal().events.set(axis, input_identifier(DeviceType::Controller, ControllerInput::LeftAxisX));
+            internal().events.set(axis, input_identifier(DeviceType::Controller, ControllerInput::LeftAxisY));
         }
         else if (axis == ControllerInput::RightAxisX)
         {
-            ice::hashmap::set(internal().events, ice::hash(axis), input_identifier(DeviceType::Controller, ControllerInput::RightAxisX));
-            ice::hashmap::set(internal().events, ice::hash(axis), input_identifier(DeviceType::Controller, ControllerInput::RightAxisY));
+            internal().events.set(axis, input_identifier(DeviceType::Controller, ControllerInput::RightAxisX));
+            internal().events.set(axis, input_identifier(DeviceType::Controller, ControllerInput::RightAxisY));
         }
         return *this;
     }

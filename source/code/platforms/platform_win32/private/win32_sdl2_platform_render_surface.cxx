@@ -2,6 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #include "win32_sdl2_platform_render_surface.hxx"
+#include <ice/static_string.hxx>
 #include <ice/render/render_surface.hxx>
 #include <ice/profiler.hxx>
 #include <ice/assert.hxx>

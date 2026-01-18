@@ -9,7 +9,7 @@
 #include <ice/task_utils.hxx>
 #include <ice/resource.hxx>
 #include <ice/resource_provider.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 #include <ice/string_utils.hxx>
 #include <ice/path_utils.hxx>
 #include <ice/mem_allocator_stack.hxx>

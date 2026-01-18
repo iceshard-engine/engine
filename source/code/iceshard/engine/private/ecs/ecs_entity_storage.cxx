@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #include <ice/assert.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 #include <ice/ecs/ecs_archetype_index.hxx>
 #include <ice/ecs/ecs_entity_operations.hxx>
 #include <ice/ecs/ecs_entity_storage.hxx>
@@ -316,7 +316,7 @@ namespace ice::ecs
 
         void batch_remove_entities(
             ice::ecs::ArchetypeIndex const& archetypes,
-            ice::HashMap<ice::ecs::detail::EntityDestructor> const& destructors,
+            ice::MultiHashMap<ice::ecs::detail::EntityDestructor> const& destructors,
             ice::Span<ice::ecs::EntityDataSlot> data_slots,
             ice::Span<ice::ecs::Entity const> entities_to_remove,
             ice::Span<ice::ecs::detail::DataBlock*> data_blocks
@@ -350,7 +350,7 @@ namespace ice::ecs
 
                     // Query all attached destructors
                     dtor_count = 0;
-                    auto dtor_it = ice::multi_hashmap::find_first(destructors, ice::hash(archetype));
+                    auto dtor_it = destructors.find_values(archetype);
                     while (dtor_it != nullptr)
                     {
                         dtors[dtor_count] = ice::addressof(dtor_it.value());
@@ -361,7 +361,7 @@ namespace ice::ecs
                             dtor_components_offsets + dtor_count * 2
                         );
                         dtor_count += 1;
-                        dtor_it = ice::multi_hashmap::find_next(destructors, dtor_it);
+                        dtor_it.next();
                     }
                 }
 
@@ -659,11 +659,11 @@ namespace ice::ecs
 
             for (ice::StringID component_id : info->component_identifiers)
             {
-                ice::ecs::QueryAccessTracker* tracker = ice::hashmap::get(_access_trackers, ice::hash(component_id), nullptr);
+                ice::ecs::QueryAccessTracker* tracker = _access_trackers.get(component_id, nullptr);
                 if (tracker == nullptr)
                 {
                     tracker = _allocator.create<ice::ecs::QueryAccessTracker>();
-                    ice::hashmap::set(_access_trackers, ice::hash(component_id), tracker);
+                    _access_trackers.set(component_id, tracker);
                 }
             }
         }
@@ -681,15 +681,15 @@ namespace ice::ecs
 
         if (_destructors.has(info->archetype_instance))
         {
-            auto it = ice::multi_hashmap::find_first(_destructors, ice::hash(info->archetype_instance));
+            auto it = _destructors.find_values(info->archetype_instance);
             while (it != nullptr && it.value().identifier != destructor.identifier)
             {
-                it = ice::multi_hashmap::find_next(_destructors, it);
+                it.next();
             }
             ICE_ASSERT(it == nullptr, "A destructor with id {} was already attached to this archetype!");
         }
 
-        ice::multi_hashmap::insert(_destructors, ice::hash(info->archetype_instance), destructor);
+        _destructors.insert(info->archetype_instance, destructor);
         return true;
     }
 
@@ -1173,7 +1173,7 @@ namespace ice::ecs
         ice::nindex idx = prev_archetype_count;
         for (ice::ecs::detail::QueryTypeInfo const& type_info : query_info)
         {
-            ice::ecs::QueryAccessTracker* tracker = ice::hashmap::get(_access_trackers, ice::hash(type_info.identifier), nullptr);
+            ice::ecs::QueryAccessTracker* tracker = _access_trackers.get(type_info.identifier, nullptr);
             ICE_ASSERT_CORE(tracker != nullptr);
 
             out_access_trackers[idx] = tracker;

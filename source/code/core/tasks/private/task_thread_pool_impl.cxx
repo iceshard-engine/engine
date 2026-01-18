@@ -134,9 +134,8 @@ namespace ice
             .debug_name = ice::String{ name_hint.data(), static_cast<ice::u32>(name_hint.size()) }
         };
 
-        ice::hashmap::set(
-            _created_threads,
-            ice::hash(name),
+        _created_threads.set(
+            name,
             ice::make_unique<ice::NativeTaskThread>(
                 _allocator,
                 _queue,
@@ -144,12 +143,12 @@ namespace ice
             )
         );
 
-        return **ice::hashmap::try_get(_created_threads, ice::hash(name));
+        return **_created_threads.try_get(ice::hash(name));
     }
 
     auto TaskThreadPoolImplementation::find_thread(ice::StringID name) noexcept -> ice::TaskThread*
     {
-        if (auto const& unique_ptr = ice::hashmap::try_get(_created_threads, ice::hash(name)))
+        if (auto const& unique_ptr = _created_threads.try_get(ice::hash(name)))
         {
             return unique_ptr->get();
         }
@@ -158,13 +157,7 @@ namespace ice
 
     bool TaskThreadPoolImplementation::destroy_thread(ice::StringID name) noexcept
     {
-        ice::u64 const name_hash = ice::hash(name);
-        bool const exists = _created_threads.has(name_hash);
-        if (exists)
-        {
-            ice::hashmap::remove(_created_threads, name_hash);
-        }
-        return exists;
+        return _created_threads.remove(name);
     }
 
     auto TaskThreadPoolImplementation::attach_thread(
@@ -173,20 +166,13 @@ namespace ice
         ice::UniquePtr<ice::TaskThread> thread
     ) noexcept -> ice::TaskThread&
     {
-        ice::u64 const name_hash = ice::hash(name);
         ICE_ASSERT(
-            _user_threads.missing(name_hash),
+            _user_threads.missing(name),
             "A user thread with name '{}' already exists",
             name
         );
 
-        ice::hashmap::set(
-            _user_threads,
-            name_hash,
-            ice::move(thread)
-        );
-
-        return **ice::hashmap::try_get(_user_threads, name_hash);
+        return *_user_threads.set(name, ice::move(thread));
     }
 
     auto TaskThreadPoolImplementation::detach_thread(
@@ -198,9 +184,9 @@ namespace ice
         if (_user_threads.has(name_hash))
         {
             // Move the thread out of the map
-            result = ice::move(*ice::hashmap::try_get(_user_threads, name_hash));
+            result = ice::move(*_user_threads.try_get(name_hash));
             // Remove the element from the map
-            ice::hashmap::remove(_user_threads, name_hash);
+            _user_threads.remove(name_hash);
         }
         return result;
     }

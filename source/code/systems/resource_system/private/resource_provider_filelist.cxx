@@ -114,17 +114,12 @@ namespace ice
             resource->data_index = _resources_data.size().u32();
             _resources_data.push_back(ice::Memory{});
 
-            ice::u64 const hash = ice::hash(resource->uri().path());
             ICE_ASSERT(
-                _resources.missing(hash),
+                _resources.missing(resource->uri().path()),
                 "A resource cannot be a explicit resource AND part of another resource."
             );
 
-            ice::hashmap::set(
-                _resources,
-                hash,
-                resource
-            );
+            _resources.set(resource->uri().path(), resource);
         }
     }
 
@@ -185,9 +180,7 @@ namespace ice
             ice::native_file::path_to_string(file_entry.path, predicted_path);
             ice::path::normalize(predicted_path);
 
-            ice::u64 const resource_hash = ice::hash(uri.path());
-            found_resource = ice::hashmap::get(_resources, resource_hash, nullptr);
-            if (found_resource != nullptr)
+            if (found_resource = _resources.get(uri.path(), nullptr); found_resource != nullptr)
             {
                 break;
             }
@@ -238,9 +231,7 @@ namespace ice
         ice::path::join(predicted_path, relative_uri.path());
         ice::path::normalize(predicted_path);
 
-        ice::u64 const resource_hash = ice::hash(ice::String{ predicted_path });
-
-        ice::FileSystemResource const* found_resource = ice::hashmap::get(_resources, resource_hash, nullptr);
+        ice::FileSystemResource const* found_resource = _resources.get(predicted_path, nullptr);
         if (found_resource != nullptr)
         {
             return found_resource;

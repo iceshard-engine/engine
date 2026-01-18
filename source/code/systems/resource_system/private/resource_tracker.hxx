@@ -10,7 +10,7 @@
 #include <ice/profiler.hxx>
 
 #include <ice/string.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 #include <ice/log_tag.hxx>
 #include <ice/log_formatters.hxx>
 #include <ice/task_utils.hxx>
@@ -226,9 +226,9 @@ namespace ice
         ice::ProxyAllocator _allocator_data;
         ice::ResourceTrackerCreateInfo _info;
 
-        ice::HashMap<ice::Resource*> _resources;
-        ice::HashMap<ice::UniquePtr<ice::ResourceProvider>, ContainerLogic::Complex> _resource_providers;
-        ice::HashMap<ice::ResourceWriter*> _resource_writers;
+        ice::MultiHashMap<ice::Resource*> _resources;
+        ice::MultiHashMap<ice::UniquePtr<ice::ResourceProvider>, ContainerLogic::Complex> _resource_providers;
+        ice::MultiHashMap<ice::ResourceWriter*> _resource_writers;
 
         ice::UniquePtr<ice::DevUIWidget> _devui_widget;
     };

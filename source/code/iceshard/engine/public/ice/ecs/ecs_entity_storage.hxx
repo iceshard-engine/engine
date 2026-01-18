@@ -2,6 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#include <ice/multi_hashmap.hxx>
 #include <ice/shard_container.hxx>
 #include <ice/ecs/ecs_types.hxx>
 #include <ice/ecs/ecs_entity.hxx>
@@ -79,7 +80,7 @@ namespace ice::ecs
         ice::Array<ice::ecs::detail::DataBlock*> _data_blocks;
         ice::Array<ice::ecs::EntityDataSlot> _data_slots;
 
-        ice::HashMap<ice::ecs::detail::EntityDestructor> _destructors;
+        ice::MultiHashMap<ice::ecs::detail::EntityDestructor> _destructors;
     };
 
 } // namespace ice::ecs

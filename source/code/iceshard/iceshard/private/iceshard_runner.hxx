@@ -10,7 +10,7 @@
 #include <ice/mem_allocator_proxy.hxx>
 #include <ice/task.hxx>
 #include <ice/task_utils.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 
 #include "iceshard_data_storage.hxx"
 

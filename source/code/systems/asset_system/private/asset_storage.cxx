@@ -9,6 +9,7 @@
 #include "asset_transaction.hxx"
 
 #include <ice/mem_allocator_utils.hxx>
+#include <ice/static_string.hxx>
 #include <ice/config.hxx>
 
 namespace ice
@@ -251,7 +252,7 @@ namespace ice
                 _asset_archive->find_definition(category),
                 _asset_archive->find_compiler(category)
             );
-            ice::hashmap::set(_asset_shelves, category.identifier, shelve);
+            _asset_shelves.set(category.identifier, shelve);
 
             if constexpr (ice::build::is_debug || ice::build::is_develop)
             {
@@ -603,7 +604,7 @@ namespace ice
     ) noexcept -> ice::AssetRequest*
     {
         ice::AssetRequest* result = nullptr;
-        ice::AssetShelve* shelve = ice::hashmap::get(_asset_shelves, category.identifier, nullptr);
+        ice::AssetShelve* shelve = _asset_shelves.get(category.identifier, nullptr);
         if (shelve != nullptr)
         {
             result = shelve->aquire_request(requested_state);
@@ -628,7 +629,7 @@ namespace ice
     {
         ice::StringID const nameid = ice::stringid(name);
 
-        shelve = ice::hashmap::get(_asset_shelves, category.identifier, nullptr);
+        shelve = _asset_shelves.get(category.identifier, nullptr);
         if (shelve != nullptr)
         {
             entry = shelve->select(nameid);

@@ -4,7 +4,7 @@
 #include "asset_shelve_devui.hxx"
 
 #include <ice/resource.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 #include <ice/devui_imgui.hxx>
 
 namespace ice

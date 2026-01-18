@@ -6,7 +6,7 @@
 
 #include <ice/config.hxx>
 #include <ice/config/config_builder.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 #include <ice/mem_allocator_stack.hxx>
 #include <ice/path_utils.hxx>
 #include <ice/task_utils.hxx>

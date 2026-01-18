@@ -3,7 +3,7 @@
 
 #include <ice/world/world_trait_archive.hxx>
 #include <ice/world/world_trait.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 #include <ice/assert.hxx>
 
 namespace ice
@@ -41,13 +41,13 @@ namespace ice
                     descriptor.fn_arch_register(_archetypes);
                 }
 
-                ice::hashmap::set(_traits, ice::hash(descriptor.name), ice::move(descriptor));
+                _traits.set(descriptor.name, ice::move(descriptor));
             }
         }
 
         auto trait(ice::StringID_Arg name) const noexcept -> ice::TraitDescriptor const* override
         {
-            return ice::hashmap::try_get(_traits, ice::hash(name));
+            return _traits.try_get(ice::hash(name));
         }
 
     private:

@@ -12,7 +12,7 @@
 #include <ice/input_action_definitions.hxx>
 #include <ice/input_action_executor.hxx>
 #include <ice/array.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 #include <ice/profiler.hxx>
 #include <ice/clock.hxx>
 #include <ice/sort.hxx>
@@ -260,7 +260,7 @@ namespace ice
             {
                 ice::String const action_name = _strings.substr(action.name);
 
-                ice::InputActionRuntime* const runtime = ice::hashmap::try_get(actions, ice::hash(action_name));
+                ice::InputActionRuntime* const runtime = actions.try_get(ice::hash(action_name));
                 // TODO: Check if we need this
                 //if (action.behavior != InputActionBehavior::Accumulated)
                 {
@@ -279,7 +279,7 @@ namespace ice
                         {
                             ice::InputActionInfo const checked_action_info = _actions[cond.source.source_index];
                             ice::String const checked_action_name = _strings.substr(checked_action_info.name);
-                            checked_action = ice::hashmap::try_get(actions, ice::hash(checked_action_name));
+                            checked_action = actions.try_get(ice::hash(checked_action_name));
                         }
                         ICE_ASSERT_CORE(checked_action != nullptr);
                         cond_result = executor.execute_condition(
@@ -379,7 +379,7 @@ namespace ice
             for (ice::InputActionInfo const& action : _actions)
             {
                 ice::String const action_name = _strings.substr(action.name);
-                ice::InputActionRuntime* const runtime = ice::hashmap::try_get(actions, ice::hash(action_name));
+                ice::InputActionRuntime* const runtime = actions.try_get(ice::hash(action_name));
 
                 // Handles 'Toggle'. We only activate of the first press, which is `state == 1`.
                 if (action.behavior == InputActionBehavior::Toggled)

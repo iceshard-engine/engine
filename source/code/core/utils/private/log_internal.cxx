@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #include "log_internal.hxx"
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 #include <ice/heap_string.hxx>
 
 namespace ice::detail
@@ -23,8 +23,7 @@ namespace ice::detail
 
     void LogState::register_tag(ice::LogTagDefinition tag_def) noexcept
     {
-        ice::hashmap::set(
-            _tags,
+        _tags.set(
             tag_hash(tag_def.tag),
             { ice::HeapString<char>{ _allocator, tag_def.name }, true }
         );
@@ -52,7 +51,7 @@ namespace ice::detail
 
     void LogState::enable_tag(ice::LogTag tag, bool enabled) noexcept
     {
-        if (LogTagInfo* tagv = ice::hashmap::try_get(_tags, tag_hash(tag)))
+        if (LogTagInfo* tagv = _tags.try_get(tag_hash(tag)))
         {
             tagv->enabled = enabled;
         }
@@ -60,8 +59,7 @@ namespace ice::detail
 
     auto LogState::tag_name(ice::LogTag tag) const noexcept -> ice::String
     {
-        return ice::hashmap::get(
-            _tags,
+        return _tags.get(
             tag_hash(tag),
             _empty_tag
         ).name;
@@ -69,8 +67,7 @@ namespace ice::detail
 
     bool LogState::tag_enabled(ice::LogTag tag) const noexcept
     {
-        return ice::hashmap::get(
-            _tags,
+        return _tags.get(
             tag_hash(tag),
             _empty_tag
         ).enabled;

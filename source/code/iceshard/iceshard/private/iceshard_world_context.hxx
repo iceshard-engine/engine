@@ -2,10 +2,10 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/container/hashmap.hxx>
 #include <ice/task_checkpoint.hxx>
 #include <ice/world/world_assembly.hxx>
 #include <ice/world/world_trait_types.hxx>
+#include <ice/multi_hashmap.hxx>
 
 #include "iceshard_trait_context.hxx"
 
@@ -48,7 +48,7 @@ namespace ice
         ice::TaskCheckpoint _always_reached_checkpoint;
         ice::HashMap<ice::TaskCheckpoint*> _checkpoints;
 
-        ice::HashMap<ice::IceshardEventHandler> _frame_handlers[3];
+        ice::MultiHashMap<ice::IceshardEventHandler> _frame_handlers[3];
         ice::HashMap<ice::IceshardEventHandler> _runner_handlers;
     };
 

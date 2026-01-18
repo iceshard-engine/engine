@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/action/action_trigger.hxx>
@@ -6,7 +6,7 @@
 
 #include <ice/input/input_event.hxx>
 #include <ice/input/input_controller.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 
 namespace ice::action
 {
@@ -108,12 +108,12 @@ namespace ice::action
 
     void SimpleTriggerDatabase::add_trigger(ice::StringID_Arg name, ice::action::ActionTriggerDefinition trigger_info) noexcept
     {
-        ice::hashmap::set(_triggers, ice::hash(name), trigger_info);
+        _triggers.set(name, trigger_info);
     }
 
     auto SimpleTriggerDatabase::get_trigger(ice::StringID_Arg name) const noexcept -> ice::action::ActionTriggerDefinition
     {
-        return ice::hashmap::get(_triggers, ice::hash(name), ActionTriggerDefinition{ ice::Shard_Invalid.id });
+        return _triggers.get(name, ActionTriggerDefinition{ ice::Shard_Invalid.id });
     }
 
     auto create_trigger_database(

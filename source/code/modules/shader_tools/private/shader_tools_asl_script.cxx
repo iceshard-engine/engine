@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "shader_tools_asl_script.hxx"
@@ -48,18 +48,18 @@ namespace ice
 
         ice::u64 const hash_identifier = detail::arc_hash(identifier);
 
-        arctic::SyntaxNode<> result = ice::hashmap::get(_usertypes, hash_identifier, arctic::SyntaxNode<arctic::syntax::Struct>{});
+        arctic::SyntaxNode<> result = _usertypes.get(hash_identifier, arctic::SyntaxNode<arctic::syntax::Struct>{});
         if (result == false)
         {
-            result = ice::hashmap::get(_functions, hash_identifier, arctic::SyntaxNode<arctic::syntax::Function>{});
+            result = _functions.get(hash_identifier, arctic::SyntaxNode<arctic::syntax::Function>{});
         }
         if (result == false)
         {
-            result = ice::hashmap::get(_native_functions, hash_identifier, arctic::SyntaxNode<arctic::syntax::Function>{});
+            result = _native_functions.get(hash_identifier, arctic::SyntaxNode<arctic::syntax::Function>{});
         }
         if (result == false)
         {
-            result = ice::hashmap::get(_variables, hash_identifier, arctic::SyntaxNode<arctic::syntax::ContextVariable>{});
+            result = _variables.get(hash_identifier, arctic::SyntaxNode<arctic::syntax::ContextVariable>{});
         }
         return result;
     }
@@ -86,7 +86,7 @@ namespace ice
         }
 
         // Store the user type node
-        ice::multi_hashmap::insert(_usertypes, detail::arc_hash(node.data().name.value), ice::move(usertype));
+        _usertypes.insert(detail::arc_hash(node.data().name.value), ice::move(usertype));
     }
 
     void ASLScriptFile::visit(arctic::SyntaxNode<arctic::syntax::Struct> node) noexcept
@@ -105,7 +105,7 @@ namespace ice
         node.replace_annotation(ice::move(native_type));
 
         // Store the user type node
-        ice::multi_hashmap::insert(_usertypes, detail::arc_hash(name), node);
+        _usertypes.insert(detail::arc_hash(name), node);
     }
 
     void ASLScriptFile::visit(arctic::SyntaxNode<arctic::syntax::Function> node) noexcept
@@ -115,11 +115,11 @@ namespace ice
         // We ignore all non-native functions
         if (node.data().is_natvie == false)
         {
-            ice::multi_hashmap::insert(_native_functions, detail::arc_hash(node.data().name.value), node);
+            _native_functions.insert(detail::arc_hash(node.data().name.value), node);
         }
         else
         {
-            ice::multi_hashmap::insert(_functions, detail::arc_hash(node.data().name.value), node);
+            _functions.insert(detail::arc_hash(node.data().name.value), node);
         }
     }
 

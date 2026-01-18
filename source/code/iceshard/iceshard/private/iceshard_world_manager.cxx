@@ -94,10 +94,13 @@ namespace ice
         );
     }
 
+
+
     auto IceshardWorldManager::create_world(
         ice::WorldTemplate const& world_template
     ) noexcept -> World*
     {
+        static constexpr bool is_ass = ice::concepts::AssociativeContainer<ice::HashMap<IceshardWorldManager::Entry>>;
 
         ICE_ASSERT(
             _worlds.missing(world_template.name),
@@ -149,9 +152,8 @@ namespace ice
             ice::ShardID_WorldCreated | ice::stringid_hash(world_template.name)
         );
 
-        return ice::hashmap::get_or_set(
-            _worlds,
-            ice::hash(world_template.name),
+        return _worlds.get_or_set(
+            world_template.name,
             ice::move(world_entry)
         ).world;
     }
@@ -161,7 +163,7 @@ namespace ice
     ) noexcept -> World*
     {
         static Entry invalid_entry{ };
-        return ice::hashmap::get(_worlds, ice::hash(name), invalid_entry).world;
+        return _worlds.get(name, invalid_entry).world;
     }
 
     void IceshardWorldManager::destroy_world(
@@ -170,7 +172,7 @@ namespace ice
     {
         static Entry invalid_entry{ };
         ICE_ASSERT(
-            ice::hashmap::get(_worlds, ice::hash(name), invalid_entry).is_active == false,
+            _worlds.get(name, invalid_entry).is_active == false,
             "Trying to destroy active world: {}!",
             name
         );
@@ -181,7 +183,7 @@ namespace ice
             ice::ShardID_WorldDestroyed | ice::stringid_hash(name)
         );
 
-        ice::hashmap::remove(_worlds, ice::hash(name));
+        _worlds.remove(name);
     }
 
     void IceshardWorldManager::query_worlds(ice::Array<ice::StringID>& out_worlds) const noexcept
@@ -234,7 +236,7 @@ namespace ice
         ice::Span<ice::Shard const> event_shards
     ) noexcept
     {
-        Entry const* const entry = ice::hashmap::try_get(_worlds, ice::hash(world_name));
+        Entry const* const entry = _worlds.try_get(ice::hash(world_name));
         if (entry != nullptr && entry->is_active)
         {
             entry->world->task_launcher().gather(out_tasks, params, event_shards);
@@ -250,7 +252,7 @@ namespace ice
         ice::StringID_Hash world_name;
         if (ice::shard_inspect(trigger_shard, world_name))
         {
-            Entry* const entry = ice::hashmap::try_get(_worlds, ice::hash(world_name));
+            Entry * const entry = _worlds.try_get(ice::hash(world_name));
             ICE_ASSERT_CORE(entry != nullptr);
 
             // Activated

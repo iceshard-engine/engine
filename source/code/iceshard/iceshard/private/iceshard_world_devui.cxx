@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_world_devui.hxx"
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 #include <ice/world/world_trait.hxx>
 #include <ice/devui_imgui.hxx>
 

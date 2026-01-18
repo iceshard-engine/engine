@@ -67,7 +67,7 @@ namespace ice::gfx
 
     auto Trait_GfxShaderStorage::on_asset_released(ice::Asset const& asset) noexcept -> ice::Task<>
     {
-        GfxShaderEntry* entry = ice::hashmap::try_get(_loaded_shaders, ice::hash(asset.name()));
+        GfxShaderEntry* entry = _loaded_shaders.try_get(ice::hash(asset.name()));
         ICE_ASSERT_CORE(entry != nullptr);
         entry->released = true; // Mark as released
         co_return;
@@ -92,7 +92,7 @@ namespace ice::gfx
             ICE_ASSERT_CORE(state == AssetState::Loaded); // The shader needs to be loaded.
 
             ice::u64 const shader_hash = ice::hash(request->asset_name());
-            GfxShaderEntry* entry = ice::hashmap::try_get(_loaded_shaders, shader_hash);
+            GfxShaderEntry* entry = _loaded_shaders.try_get(shader_hash);
             ICE_ASSERT_CORE(entry == nullptr || entry->released);
 
             using namespace ice::render;
@@ -123,7 +123,7 @@ namespace ice::gfx
             send("iceshard:shaders-internal:loaded"_shardid, asset);
 
             // Save the shader handle
-            ice::hashmap::set(_loaded_shaders, shader_hash, { .asset = ice::move(asset), .shader = shader, });
+            _loaded_shaders.set(shader_hash, { .asset = ice::move(asset), .shader = shader, });
 
             // Get the next queued request
             request = assets.aquire_request(ice::render::AssetCategory_Shader, AssetState::Runtime);

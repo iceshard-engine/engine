@@ -4,7 +4,7 @@
 #pragma once
 #include <ice/task_types.hxx>
 #include <ice/mem_unique_ptr.hxx>
-#include <ice/string_types.hxx>
+#include <ice/string.hxx>
 
 namespace ice
 {

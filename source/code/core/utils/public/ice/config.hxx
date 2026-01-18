@@ -1,8 +1,8 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/container_types.hxx>
+#include <ice/array.hxx>
 #include <ice/config/config_impl.hxx>
 
 namespace ice::config

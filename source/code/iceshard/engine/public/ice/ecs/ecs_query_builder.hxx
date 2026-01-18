@@ -4,7 +4,7 @@
 #pragma once
 #include <ice/ecs/ecs_query.hxx>
 #include <ice/ecs/ecs_query_storage_entry.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 
 namespace ice::ecs
 {
@@ -62,11 +62,11 @@ namespace ice::ecs
             {
                 ice::UniquePtr entry = ice::make_unique<Entry>(_allocator, _allocator);
                 entry->initialize(_query_provider);
-                ice::hashmap::set(_queries, Entry::hash_value(), ice::move(entry));
+                _queries.set(Entry::hash_value(), ice::move(entry));
             }
 
             return static_cast<Entry const*>(
-                ice::hashmap::try_get(_queries, Entry::hash_value())->get()
+                _queries.try_get(Entry::hash_value())->get()
             )->object_query();
         }
 

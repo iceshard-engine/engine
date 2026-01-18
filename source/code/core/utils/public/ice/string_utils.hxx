@@ -3,6 +3,7 @@
 
 #pragma once
 #include <ice/string.hxx>
+#include <ice/static_string.hxx>
 #include <ice/heap_string.hxx>
 #include <ice/log_formatters.hxx>
 #include <ice/expected.hxx>

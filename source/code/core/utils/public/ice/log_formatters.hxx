@@ -5,7 +5,7 @@
 #include <fmt/format.h>
 #include <ice/stringid.hxx>
 #include <ice/mem_types.hxx>
-#include <ice/string_types.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/clock_types.hxx>
 #include <ice/expected.hxx>
 

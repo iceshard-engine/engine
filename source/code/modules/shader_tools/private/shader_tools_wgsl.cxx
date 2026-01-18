@@ -77,7 +77,7 @@ namespace ice
             if (op && op.data().token.type == TokenType::CT_Dot)
             {
                 arctic::String var_base = atom.data().value.value;
-                var_base = ice::hashmap::get(subs, detail::arc_hash(var_base), var_base);
+                var_base = subs.get(detail::arc_hash(var_base), var_base);
 
                 ice::string::push_format(out_code, "{}.", var_base);
                 generate_expression(out_code, subs, func, arg, op.sibling());
@@ -337,7 +337,7 @@ namespace ice
                 shader._outputs.data().name.value
             );
             ice::string::push_format(result, "    var out: {};\n", shader._outputs.data().name.value);
-            ice::hashmap::set(subs, detail::arc_hash(shader._mainfunc.data().name.value), arctic::String{ "out" });
+            subs.set(detail::arc_hash(shader._mainfunc.data().name.value), arctic::String{ "out" });
             generate_function(result, subs, shader._mainfunc.data(), arg.data(), ret.data(), body.child());
             result.push_back("    return out;\n");
             result.push_back("}\n");

@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/string_types.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/task_generator.hxx>
 #include <arctic/arctic_syntax_node.hxx>
 #include <arctic/arctic_syntax.hxx>

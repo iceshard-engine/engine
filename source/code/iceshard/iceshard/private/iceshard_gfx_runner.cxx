@@ -1,11 +1,11 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_gfx_runner.hxx"
 #include "iceshard_runner.hxx"
 #include "gfx/iceshard_gfx_device.hxx"
 
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 #include <ice/engine_frame.hxx>
 #include <ice/engine_params.hxx>
 #include <ice/engine_shards.hxx>

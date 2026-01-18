@@ -2,8 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #include <ice/module_register.hxx>
-#include <ice/array.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/multi_hashmap.hxx>
 #include <ice/heap_string.hxx>
 #include <ice/os/windows.hxx>
 #include <ice/os/unix.hxx>
@@ -11,6 +10,7 @@
 
 #include "module_globals.hxx"
 #include "module_native.hxx"
+#include <ice/hashmap.hxx>
 
 namespace ice
 {
@@ -73,7 +73,7 @@ namespace ice
 
     private:
         ice::Allocator& _allocator;
-        ice::HashMap<DefaultModuleEntry> _modules;
+        ice::MultiHashMap<DefaultModuleEntry> _modules;
         ice::Array<ice::native_module::ModuleHandle> _module_handles;
     };
 
@@ -170,7 +170,7 @@ namespace ice
     ) const noexcept -> ice::u32
     {
         ice::u32 result = 0;
-        auto it = ice::multi_hashmap::find_first(_modules, ice::hash(api_name));
+        auto it = _modules.find_values(api_name);
         while (it != nullptr)
         {
             ice::ModuleAPI api_ptr;
@@ -178,7 +178,7 @@ namespace ice
             {
                 result += 1;
             }
-            it = ice::multi_hashmap::find_next(_modules, it);
+            it.next();
         }
         return result;
     }
@@ -202,7 +202,7 @@ namespace ice
         }
 
         ice::u32 idx = 0;
-        auto it = ice::multi_hashmap::find_first(_modules, ice::hash(api_name));
+        auto it = _modules.find_values(api_name);
 
         ice::u32 const array_size = *inout_array_size;
         while (it != nullptr && idx < array_size)
@@ -213,7 +213,7 @@ namespace ice
                 out_array[idx] = api_ptr;
                 idx += 1;
             }
-            it = ice::multi_hashmap::find_next(_modules, it);
+            it.next();
         }
         return idx > 0;
     }
@@ -223,7 +223,7 @@ namespace ice
     ) noexcept
     {
         ice::u64 const name_hash = ice::hash(entry.name);
-        ice::multi_hashmap::insert(_modules, name_hash, entry);
+        _modules.insert(name_hash, entry);
         return true;
     }
 

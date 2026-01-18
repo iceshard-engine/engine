@@ -3,7 +3,7 @@
 
 #include <ice/asset.hxx>
 #include <ice/asset_category_archive.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 #include <ice/config.hxx>
 #include <ice/mem_allocator_stack.hxx>
 #include <ice/assert.hxx>
@@ -104,8 +104,7 @@ namespace ice
             }
 
             _types.push_back(category);
-            ice::hashmap::set(
-                _definitions,
+            _definitions.set(
                 type_hash,
                 InternalAssetCategory{
                     .category = category,
@@ -124,7 +123,7 @@ namespace ice
     {
         static ice::InternalAssetCategory empty_type{};
 
-        ice::InternalAssetCategory const& internal_type = ice::hashmap::get(_definitions, category.identifier, empty_type);
+        ice::InternalAssetCategory const& internal_type = _definitions.get(category.identifier, empty_type);
         return internal_type.definition;
     }
 
@@ -134,7 +133,7 @@ namespace ice
     {
         static ice::InternalAssetCategory empty_type{};
 
-        ice::InternalAssetCategory const& internal_type = ice::hashmap::get(_definitions, category.identifier, empty_type);
+        ice::InternalAssetCategory const& internal_type = _definitions.get(category.identifier, empty_type);
         return internal_type.has_compiler ? &internal_type.compiler : nullptr;
     }
 

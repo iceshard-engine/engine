@@ -8,7 +8,6 @@
 #include <ice/resource_format.hxx>
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/heap_string.hxx>
-#include <ice/container_types.hxx>
 #include <ice/uri.hxx>
 
 #include "resource_filesystem.hxx"

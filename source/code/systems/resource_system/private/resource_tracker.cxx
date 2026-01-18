@@ -71,13 +71,7 @@ namespace ice
         ice::UniquePtr<ice::ResourceProvider> provider
     ) noexcept -> ice::ResourceProvider*
     {
-        ice::ResourceProvider* const result = provider.get();
-        ice::multi_hashmap::insert(
-            _resource_providers,
-            ice::hash(provider->schemeid()),
-            ice::move(provider)
-        );
-        return result;
+        return _resource_providers.insert(provider->schemeid(), ice::move(provider)).get();
     }
 
     auto ResourceTrackerImplementation::attach_writer(
@@ -88,12 +82,7 @@ namespace ice
         ice::ResourceProvider* const provider = attach_provider(ice::move(writer));
         ICE_ASSERT_CORE(provider != nullptr);
 
-        ice::multi_hashmap::insert(
-            _resource_writers,
-            ice::hash(result->schemeid()),
-            result
-        );
-        return result;
+        return _resource_writers.insert(result->schemeid(), result);
     }
 
     void ResourceTrackerImplementation::sync_resources() noexcept
@@ -276,7 +265,7 @@ namespace ice
         ice::u64 const hash_scheme = ice::hash(resource_uri.scheme());
         ice::ResourceWriter* writer = nullptr;
 
-        auto it = ice::multi_hashmap::find_first(_resource_writers, hash_scheme);
+        auto it = _resource_writers.find_values(hash_scheme);
         while (it != nullptr)
         {
             [[maybe_unused]]
@@ -287,7 +276,7 @@ namespace ice
             {
                 writer = candidate_writer;
             }
-            it = ice::multi_hashmap::find_next(_resource_writers, it);
+            it.next();
         }
 
         if (writer == nullptr)
@@ -303,7 +292,7 @@ namespace ice
             );
 
             // TODO: Only save the new resource if it's not yet there.
-            ice::multi_hashmap::insert(_resources, ice::hash(resource->name()), resource);
+            _resources.insert(resource->name(), resource);
         }
 
         co_return ice::ResourceHandle{ resource };
@@ -359,11 +348,7 @@ namespace ice
         IPT_ZONE_SCOPED_NAMED("create_hash_entries");
         for (ice::Resource* resource : out_resources)
         {
-            ice::multi_hashmap::insert(
-                _resources,
-                ice::hash(resource->name()),
-                resource
-            );
+            _resources.insert(resource->name(), resource);
         }
     }
 
@@ -382,8 +367,8 @@ namespace ice
         ice::u64 const hash_resouce = ice::hash(resource_urn.path());
 
         // Just grab the first for now
-        auto it = ice::multi_hashmap::find_first(_resources, hash_resouce);
-        if (it != nullptr)
+        auto it = _resources.find_values(hash_resouce);
+        if (it.has_next())
         {
             result = ice::ResourceHandle{ it.value() };
         }
@@ -406,7 +391,7 @@ namespace ice
 
         // TODO: Remove this abomination, we only need to remove the const'ness in the 'find' functions for the resource object.
         ice::u64 const hash_resouce = ice::hash(resource->name());
-        auto it = ice::multi_hashmap::find_first(_resources, hash_resouce);
+        auto it = _resources.find_values(hash_resouce);
         while (it != nullptr && handle == nullptr)
         {
             if ((*it) == resource)
@@ -415,7 +400,7 @@ namespace ice
             }
             else
             {
-                it = ice::multi_hashmap::find_next(_resources, it);
+                it.next();
             }
         }
 
@@ -430,7 +415,7 @@ namespace ice
     {
         ice::u64 const hash_scheme = ice::hash(resource_uri.scheme());
 
-        auto it = ice::multi_hashmap::find_first(_resource_providers, hash_scheme);
+        auto it = _resource_providers.find_values(hash_scheme);
         while (it != nullptr && provider == nullptr)
         {
             if (resource = (*it)->find_resource(resource_uri); resource != nullptr)
@@ -439,7 +424,7 @@ namespace ice
             }
             else
             {
-                it = ice::multi_hashmap::find_next(_resource_providers, it);
+                it.next();
             }
         }
 

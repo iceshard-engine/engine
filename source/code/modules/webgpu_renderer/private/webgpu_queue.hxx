@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -7,7 +7,7 @@
 #include "webgpu_command_buffer.hxx"
 
 #include <ice/render/render_queue.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 
 namespace ice::render::webgpu
 {

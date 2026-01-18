@@ -4,7 +4,7 @@
 #pragma once
 #include <ice/engine_types.hxx>
 #include <ice/engine_data_storage.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 
 namespace ice
 {
@@ -43,20 +43,20 @@ namespace ice
             ICE_ASSERT_CORE(missing);
             //if (missing)
             {
-                ice::hashmap::set(_values, ice::hash(name), value);
+                _values.set(ice::hash(name), value);
             }
             return missing;
         }
 
         bool get(ice::StringID_Arg name, void*& value) noexcept override
         {
-            value = ice::hashmap::get(_values, ice::hash(name), nullptr);
+            value = _values.get(name, nullptr);
             return value != nullptr;
         }
 
         bool get(ice::StringID_Arg name, void const*& value) const noexcept override
         {
-            value = ice::hashmap::get(_values, ice::hash(name), nullptr);
+            value = _values.get(name, nullptr);
             return value != nullptr;
         }
 

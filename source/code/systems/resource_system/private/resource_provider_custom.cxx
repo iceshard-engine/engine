@@ -57,15 +57,13 @@ namespace ice
 
         if (resource != nullptr)
         {
-            ice::u64 const hash = ice::hash(resource->origin());
             ICE_ASSERT(
-                _resources.missing(hash),
+                _resources.missing(resource->origin()),
                 "A resource cannot be a explicit resource AND part of another resource."
             );
 
-            ice::hashmap::set(
-                _resources,
-                hash,
+            _resources.set(
+                resource->origin(),
                 resource
             );
         }
@@ -149,7 +147,7 @@ namespace ice
 
         ice::u64 const resource_hash = ice::hash(ice::String{ predicted_path });
 
-        ice::FileSystemResource const* found_resource = ice::hashmap::get(_resources, resource_hash, nullptr);
+        ice::FileSystemResource const* found_resource = _resources.get(resource_hash, nullptr);
         if (found_resource != nullptr)
         {
             return found_resource;

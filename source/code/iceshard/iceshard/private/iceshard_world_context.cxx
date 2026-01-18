@@ -13,9 +13,9 @@ namespace ice
         , _always_reached_checkpoint{ true }
         , _checkpoints{ alloc }
         , _frame_handlers{
-            ice::HashMap<ice::IceshardEventHandler>{ alloc },
-            ice::HashMap<ice::IceshardEventHandler>{ alloc },
-            ice::HashMap<ice::IceshardEventHandler>{ alloc }
+            ice::MultiHashMap<ice::IceshardEventHandler>{ alloc },
+            ice::MultiHashMap<ice::IceshardEventHandler>{ alloc },
+            ice::MultiHashMap<ice::IceshardEventHandler>{ alloc }
         }
         , _runner_handlers{ alloc }
     {

@@ -121,7 +121,7 @@ namespace ice
             arctic::String const potential_alias_key = identifier.substr(0, pos);
             ice::u64 const hash_alias_key = detail::arc_hash(potential_alias_key);
 
-            ASLScriptFile* const file = ice::hashmap::get(_aliases, hash_alias_key, nullptr);
+            ASLScriptFile* const file = _aliases.get(hash_alias_key, nullptr);
             ICE_ASSERT_CORE(file == nullptr || file->alias == potential_alias_key);
             if (file != nullptr)
             {
@@ -145,8 +145,8 @@ namespace ice
         ice::u64 const hash_import_path = detail::arc_hash(import_path);
         ice::u64 const hash_import_alias = detail::arc_hash(import_alias);
 
-        Entry* const entry = ice::hashmap::try_get(_imports, hash_import_path);
-        ASLEntityTracker* const aliased = ice::hashmap::get(_aliases, hash_import_alias, nullptr);
+        Entry* const entry = _imports.try_get(hash_import_path);
+        ASLEntityTracker* const aliased = _aliases.get(hash_import_alias, nullptr);
 
         // The alias is either the same as the entry, or there is no alias
         ICE_ASSERT_CORE(entry == nullptr || entry->file.get() == aliased || aliased == nullptr);
@@ -155,7 +155,7 @@ namespace ice
             // Safe the new alias if one was provided
             if (aliased == nullptr && import_alias.empty() == false)
             {
-                ice::hashmap::set(_aliases, hash_import_alias, entry->file.get());
+                _aliases.set(hash_import_alias, entry->file.get());
             }
             return;
         }
@@ -185,7 +185,7 @@ namespace ice
         _global.push_back(import_entry.file.get());
 
         // Store the whole entry.
-        ice::multi_hashmap::insert(_imports, detail::arc_hash(node.data().path), ice::move(import_entry));
+        _imports.insert(detail::arc_hash(node.data().path), ice::move(import_entry));
     }
 
     auto parse_import_file(

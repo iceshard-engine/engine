@@ -3,10 +3,10 @@
 
 #pragma once
 #include <ice/stringid.hxx>
-#include <ice/string_types.hxx>
+#include <ice/string.hxx>
 #include <ice/mem_memory.hxx>
 #include <ice/mem_unique_ptr.hxx>
-#include <ice/container_types.hxx>
+#include <ice/array.hxx>
 #include <ice/resource_types.hxx>
 #include <ice/native_aio.hxx>
 #include <ice/task_types.hxx>

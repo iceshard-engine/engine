@@ -46,9 +46,8 @@ namespace ice
             initial_state.value = params.initial.value;
             initial_state.subname = ice::StringID_Invalid;
 
-            ice::multi_hashmap::insert(
-                _current_state_index,
-                ice::hash(params.initial.graph.value),
+            _current_state_index.insert(
+                params.initial.graph.value,
                 _current_state.size().u32()
             );
             _current_state.push_back(initial_state);
@@ -68,27 +67,20 @@ namespace ice
                 initial_state.value = params.initial.value;
                 initial_state.subname = subname;
 
-                ice::multi_hashmap::insert(
-                    _current_state_index,
-                    ice::hash(params.initial.graph.value),
+                _current_state_index.insert(
+                    params.initial.graph.value,
                     _current_state.size().u32()
                 );
                 _current_state.push_back(initial_state);
             }
 
-            ice::hashmap::set(
-                _initial_states,
-                ice::hash(params.initial.graph.value),
+            _initial_states.set(
+                params.initial.graph.value,
                 params.initial
             );
         }
 
-        ice::hashmap::get_or_set(
-            _state_committers,
-            ice::hash(params.initial.graph.value),
-            params.committer
-        );
-
+        _state_committers.set_if_missing(params.initial.graph.value, params.committer);
         _available_triggers.push_back(triggers);
 
         return true;
@@ -109,9 +101,8 @@ namespace ice
             engine_state.value = initial_state.value;
             engine_state.subname = subname;
 
-            ice::multi_hashmap::insert(
-                _current_state_index,
-                ice::hash(engine_state.graph.value),
+            _current_state_index.insert(
+                engine_state.graph.value,
                 _current_state.size().u32()
             );
             _current_state.push_back(engine_state);
@@ -124,8 +115,8 @@ namespace ice
         ice::StringID_Arg subname
     ) const noexcept -> ice::EngineStateCurrent
     {
-        auto it = ice::multi_hashmap::find_first(_current_state_index, ice::hash(state_graph.value));
-        while (it != nullptr)
+        auto it = _current_state_index.find_values(state_graph.value);
+        while (it.has_next())
         {
             ice::EngineStateCurrent const& current = _current_state[it.value()];
 
@@ -133,7 +124,7 @@ namespace ice
             {
                 break;
             }
-            it = ice::multi_hashmap::find_next(_current_state_index, it);
+            it.next();
         }
 
         if (it == nullptr)
@@ -232,7 +223,7 @@ namespace ice
         ice::StringID trigger_subname;
         bool const has_trigger_subname = ice::shard_inspect(trigger_shard, trigger_subname.value);
 
-        auto it = ice::multi_hashmap::find_first(_current_state_index, ice::hash(trigger.from.graph.value));
+        auto it = _current_state_index.find_values(trigger.from.graph.value);
         while (it != nullptr)
         {
             ice::EngineStateCurrent& from_state = _current_state[it.value()];
@@ -243,7 +234,7 @@ namespace ice
             {
                 if (has_trigger_subname)
                 {
-                    it = ice::multi_hashmap::find_next(_current_state_index, it);
+                    it.next();
                     continue;
                 }
                 return;
@@ -254,7 +245,7 @@ namespace ice
             {
                 if (trigger_subname != from_state.subname)
                 {
-                    it = ice::multi_hashmap::find_next(_current_state_index, it);
+                    it.next();
                     continue;
                 }
             }
@@ -286,12 +277,12 @@ namespace ice
                     .trigger_shard = trigger_shard,
                     .trigger = trigger,
                     // TODO: Provide a default committer
-                    .committer = *ice::hashmap::get(_state_committers, ice::hash(trigger.to.graph.value), nullptr),
+                    .committer = *_state_committers.get(trigger.to.graph.value, nullptr),
                     .current = from_state
                 }
             );
 
-            it = ice::multi_hashmap::find_next(_current_state_index, it);
+            it.next();
         }
     }
 
@@ -321,7 +312,7 @@ namespace ice
             }
 
             // Find the states for the possibly affected graphs
-            auto it = ice::multi_hashmap::find_first(_current_state_index, ice::hash(trigger.from.graph.value));
+            auto it = _current_state_index.find_values(trigger.from.graph.value);
             while (it != nullptr)
             {
                 ice::EngineStateCurrent& from_state = _current_state[it.value()];
@@ -345,7 +336,7 @@ namespace ice
                     }
                 );
 
-                it = ice::multi_hashmap::find_next(_current_state_index, it);
+                it.next();
 
                 // If we have a trigger shard, then we can almost submit this trigger as pending
                 if (trigger_shard == ice::Shard_Invalid)
@@ -373,7 +364,7 @@ namespace ice
                         .trigger_shard = trigger_shard,
                         .trigger = trigger,
                         // TODO: Provide a default committer
-                        .committer = *ice::hashmap::get(_state_committers, ice::hash(trigger.to.graph.value), nullptr),
+                        .committer = *_state_committers.get(trigger.to.graph.value, nullptr),
                         .current = from_state
                     }
                 );

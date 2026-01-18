@@ -3,9 +3,9 @@
 
 #pragma once
 #include <ice/expected.hxx>
+#include <ice/hashmap.hxx>
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/input_action_types.hxx>
-#include <ice/container/hashmap.hxx>
 
 namespace ice
 {

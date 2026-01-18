@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -8,7 +8,7 @@
 #include <ice/gfx/gfx_stage_registry.hxx>
 #include <ice/gfx/gfx_context.hxx>
 #include <ice/render/render_swapchain.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 #include <ice/task_scheduler.hxx>
 #include <ice/mem_allocator_proxy.hxx>
 #include "ice_gfx_graph_snapshot.hxx"

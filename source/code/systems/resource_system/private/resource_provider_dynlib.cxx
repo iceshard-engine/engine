@@ -3,7 +3,7 @@
 
 #include <ice/resource_provider.hxx>
 #include <ice/mem_allocator_stack.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 #include <ice/heap_string.hxx>
 #include <ice/native_file.hxx>
 #include <ice/uri.hxx>
@@ -45,8 +45,7 @@ namespace ice
             ice::URI const& uri
         ) const noexcept -> ice::Resource* override
         {
-            ice::u64 const resource_hash = ice::hash(uri.path());
-            return ice::hashmap::get(_resources, resource_hash, nullptr);
+            return _resources.get(uri.path(), nullptr);
         }
 
         void on_library_file(
@@ -72,7 +71,7 @@ namespace ice
             }
             else
             {
-                ice::hashmap::set(_resources, resource_hash, resource);
+                _resources.set(resource_hash, resource);
             }
         }
 

@@ -6,7 +6,7 @@
 #include <ice/input_action_info.hxx>
 #include <ice/input_action_executor.hxx>
 #include <ice/heap_string.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 #include <ice/array.hxx>
 #include <ice/profiler.hxx>
 #include <ice/clock.hxx>
@@ -182,7 +182,7 @@ namespace ice
             {
                 if (prev_name_hash != source_name_hash)
                 {
-                    values_index = ice::hashmap::try_get(_sources, source_name_hash)->index;
+                    values_index = _sources.try_get(source_name_hash)->index;
 
                     // Stores the index for the source
                     _layers_sources_indices.push_back(values_index);
@@ -206,7 +206,7 @@ namespace ice
                 }
 
                 // Save the index where we store the runtime value(s)
-                ice::hashmap::set(_sources, source_name_hash, { values_index });
+                _sources.set(source_name_hash, { values_index });
 
                 // Stores the index for the source
                 _layers_sources_indices.push_back(values_index);
@@ -233,13 +233,13 @@ namespace ice
                 // #TODO: Consider using refs instead?
                 ice::HeapString<> final_name = _idprefix;
                 final_name.push_back(action_name);
-                ice::hashmap::set(_action_names, action_name_hash, ice::move(final_name));
+                _action_names.set(action_name_hash, ice::move(final_name));
 
-                ice::HeapString<> const* final_name_ptr = ice::hashmap::try_get(_action_names, action_name_hash);
+                ice::HeapString<> const* final_name_ptr = _action_names.try_get(action_name_hash);
                 ICE_ASSERT_CORE(final_name_ptr != nullptr);
 
                 // Save the pointer where the values are stored
-                ice::hashmap::set(_actions, action_name_hash, { .type = action.type, .name = *final_name_ptr });
+                _actions.set(action_name_hash, { .type = action.type, .name = *final_name_ptr });
             }
         }
 
@@ -301,12 +301,11 @@ namespace ice
 
     auto SimpleInputActionStack::action(ice::String action_name) const noexcept -> ice::Expected<ice::InputAction const*>
     {
-        ice::InputActionRuntime const* action = ice::hashmap::try_get(_actions, ice::hash(action_name));
+        ice::InputActionRuntime const* action = _actions.try_get(ice::hash(action_name));
         if (action == nullptr && action_name.starts_with(_idprefix))
         {
             // Try again after removing the prefix
-            action = ice::hashmap::try_get(
-                _actions,
+            action = _actions.try_get(
                 ice::hash(
                     action_name.substr(_idprefix.size())
                 )
@@ -486,7 +485,7 @@ namespace ice
     {
         static ice::InputActionRuntime invalid{.name="<invalid-action-info>"};
         ice::String const action_name = layer.action_name(action_info);
-        return ice::hashmap::get(_actions, ice::hash(action_name), invalid);
+        return _actions.get(action_name, invalid);
     }
 
     auto SimpleInputActionStack::source_runtime(
@@ -497,9 +496,8 @@ namespace ice
         static ice::InputActionSource invalid{};
         ice::String const source_name = layer.source_name(source_info);
 
-        ice::u32 const values_idx = ice::hashmap::get(
-            _sources,
-            ice::hash(source_name),
+        ice::u32 const values_idx = _sources.get(
+            source_name,
             {.index=ice::u32_max}
         ).index;
 

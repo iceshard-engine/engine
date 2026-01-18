@@ -21,7 +21,7 @@
 
 #include <ice/math/lookat.hxx>
 #include <ice/math/projection.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 #include <ice/assert.hxx>
 
 namespace ice
@@ -116,7 +116,7 @@ namespace ice
                 }
             };
 
-            ice::TraitCameraData& data = ice::hashmap::get_or_set(_render_data, ice::hash(camera->name), { camera->name });
+            ice::TraitCameraData& data = _render_data.get_or_set(camera->name, { camera->name });
             ice::CameraData& camera_data = data.camera_data;
             if (ortho != nullptr)
             {

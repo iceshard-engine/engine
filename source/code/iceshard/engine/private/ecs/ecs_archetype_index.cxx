@@ -3,7 +3,7 @@
 
 #include <ice/ecs/ecs_archetype_index.hxx>
 #include <ice/array.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 #include <ice/assert.hxx>
 #include <ice/log.hxx>
 
@@ -300,12 +300,12 @@ namespace ice::ecs
         data_header->archetype_info.archetype_instance = ice::ecs::detail::ArchetypeInstance{ archetype_index };
 
         _archetype_data.push_back(data_header);
-        ice::hashmap::set(_archetype_index, ice::hash(archetype_info.identifier), archetype_index);
+        _archetype_index.set(archetype_info.identifier, archetype_index);
 
         // Save the 'index' for the given name
         if (data_header->archetype_name.not_empty())
         {
-            ice::hashmap::set(_archetype_names_index, ice::hash(data_header->archetype_name), archetype_index);
+            _archetype_names_index.set(data_header->archetype_name, archetype_index);
         }
 
         return archetype_info.identifier;
@@ -316,7 +316,7 @@ namespace ice::ecs
     ) const noexcept -> ice::ecs::Archetype
     {
         ice::u32 const instance_count = _archetype_data.size().u32();
-        ice::u32 const instance_idx = ice::hashmap::get(_archetype_names_index, ice::hash(name), ice::u32_max);
+        ice::u32 const instance_idx = _archetype_names_index.get(name, ice::u32_max);
         if (instance_idx >= instance_count)
         {
             return Archetype::Invalid;
@@ -398,7 +398,7 @@ namespace ice::ecs
         ice::u32 archetype_idx = 0;
         for (Archetype archetype : archetypes)
         {
-            ice::u32 const instance_idx = ice::hashmap::get(_archetype_index, ice::hash(archetype), ice::u32_max);
+            ice::u32 const instance_idx = _archetype_index.get(archetype, ice::u32_max);
             ICE_ASSERT(
                 instance_idx < instance_count,
                 "Unknown archetype handle {} provided while fetching instance infos. Did you forget to register this archetype?",
@@ -465,7 +465,7 @@ namespace ice::ecs
     ) const noexcept
     {
         ice::u32 const instance_count = _archetype_data.size().u32();
-        ice::u32 const instance_idx = ice::hashmap::get(_archetype_index, ice::hash(archetype), ice::u32_max);
+        ice::u32 const instance_idx = _archetype_index.get(archetype, ice::u32_max);
 
         if (instance_idx < instance_count)
         {

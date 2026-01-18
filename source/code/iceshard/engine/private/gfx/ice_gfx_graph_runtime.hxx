@@ -1,10 +1,10 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/gfx/gfx_graph_runtime.hxx>
 #include <ice/mem_allocator_proxy.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 
 #include "ice_gfx_graph_snapshot.hxx"
 
@@ -58,7 +58,7 @@ namespace ice::gfx
         template<typename Method, typename... Args>
         void apply_stages(ice::StringID_Arg key, Method fn, Args&&... args) noexcept
         {
-            Entry* const entry = ice::hashmap::get(_stages, ice::hash(key), nullptr);
+            Entry* const entry = _stages.get(key, nullptr);
             if (entry != nullptr)
             {
                 ((entry->stage)->*fn)(ice::forward<Args>(args)...);

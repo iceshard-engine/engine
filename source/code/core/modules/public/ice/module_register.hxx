@@ -4,9 +4,8 @@
 #pragma once
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/mem_allocator_stack.hxx>
-#include <ice/string_types.hxx>
+#include <ice/string.hxx>
 #include <ice/stringid.hxx>
-#include <ice/container_types.hxx>
 #include <ice/array.hxx>
 #include <ice/module_negotiator.hxx>
 #include <ice/module_query.hxx>

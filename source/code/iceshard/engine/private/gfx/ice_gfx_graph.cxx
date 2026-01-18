@@ -106,7 +106,7 @@ namespace ice::gfx
             }
 
             _passes.push_back(GfxGraphPass{ .name = pass.name, .stages = gfxpass.stages });
-            ice::hashmap::set(_objects, ice::hash(pass.name), ice::move(gfxpass));
+            _objects.set(pass.name, ice::move(gfxpass));
         }
         return true;
     }
@@ -270,7 +270,7 @@ namespace ice::gfx
                 // TODO: Add possible optionality
 
                 // Check for the entry to be compared with
-                Entry* entry = ice::hashmap::get(_stages._stages, stage_hash, nullptr);
+                Entry* entry = _stages._stages.get(stage_hash, nullptr);
                 if (entry != nullptr && entry->stage != stage_ptr)
                 {
                     removed_stages += 1;
@@ -286,7 +286,7 @@ namespace ice::gfx
                     if (stage_ptr == nullptr)
                     {
                         // Remove the entry from the map.
-                        ice::hashmap::remove(_stages._stages, stage_hash);
+                        _stages._stages.remove(stage_hash);
                     }
 
                     // Delete the entry object
@@ -300,7 +300,7 @@ namespace ice::gfx
                     if (entry == nullptr)
                     {
                         new_stages += 1;
-                        ice::hashmap::set(_stages._stages, stage_hash, _allocator.create<Entry>(stage_ptr, new_revision, false));
+                        _stages._stages.set(stage_hash, _allocator.create<Entry>(stage_ptr, new_revision, false));
                     }
                     else if (entry->stage != stage_ptr)
                     {

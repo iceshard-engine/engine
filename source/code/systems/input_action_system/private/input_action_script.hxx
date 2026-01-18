@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -9,7 +9,7 @@
 #include <arctic/arctic_syntax_node_types.hxx>
 #include "input_action_script_syntax_data.hxx"
 
-#include <ice/string_types.hxx>
+#include <ice/string.hxx>
 
 namespace ice::asl
 {

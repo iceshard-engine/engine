@@ -5,7 +5,7 @@
 #include "iceshard_trait_context.hxx"
 
 #include <ice/world/world_trait.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 #include <ice/engine_runner.hxx>
 #include <ice/sort.hxx>
 
@@ -87,7 +87,7 @@ namespace ice
 
     auto IceshardTraitContext::checkpoint(ice::StringID id) noexcept -> ice::TaskCheckpointGate
     {
-        ice::TaskCheckpoint* const checkpoint = ice::hashmap::get(_world_context._checkpoints, ice::hash(id), nullptr);
+        ice::TaskCheckpoint* const checkpoint = _world_context._checkpoints.get(id, nullptr);
         if (checkpoint != nullptr)
         {
             return checkpoint->checkpoint_gate();
@@ -102,16 +102,16 @@ namespace ice
             return false;
         }
 
-        ice::hashmap::set(_world_context._checkpoints, ice::hash(id), ice::addressof(checkpoint));
+        _world_context._checkpoints.set(id, ice::addressof(checkpoint));
         return true;
     }
 
     void IceshardTraitContext::unregister_checkpoint(ice::StringID id, ice::TaskCheckpoint& checkpoint) noexcept
     {
-        ice::TaskCheckpoint* const checkpoint_ptr = ice::hashmap::get(_world_context._checkpoints, ice::hash(id), nullptr);
+        ice::TaskCheckpoint* const checkpoint_ptr = _world_context._checkpoints.get(id, nullptr);
         if (checkpoint_ptr == ice::addressof(checkpoint))
         {
-            ice::hashmap::remove(_world_context._checkpoints, ice::hash(id));
+            _world_context._checkpoints.remove(id);
         }
     }
 
@@ -124,8 +124,7 @@ namespace ice
         ICE_ASSERT_CORE(binding.task_type > TraitTaskType::Invalid);
         ICE_ASSERT_CORE(binding.task_type <= TraitTaskType::Render);
 
-        ice::multi_hashmap::insert(
-            _world_context._frame_handlers[ice::u32(binding.task_type) - 1],
+        _world_context._frame_handlers[ice::u32(binding.task_type) - 1].insert(
             ice::hash(trigger_event),
             ice::IceshardEventHandler{
                 .trait_idx = _trait_index,

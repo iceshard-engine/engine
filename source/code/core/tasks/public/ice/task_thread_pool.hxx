@@ -5,7 +5,7 @@
 #include <ice/task_types.hxx>
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/native_aio.hxx>
-#include <ice/string_types.hxx>
+#include <ice/string.hxx>
 #include <ice/span.hxx>
 
 namespace ice

@@ -4,7 +4,7 @@
 #pragma once
 #include <ice/task.hxx>
 #include <ice/sync_manual_events.hxx>
-#include <ice/container_types.hxx>
+#include <ice/array.hxx>
 
 namespace ice
 {

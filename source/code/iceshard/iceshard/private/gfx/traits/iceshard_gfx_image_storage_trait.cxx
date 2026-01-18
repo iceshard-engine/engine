@@ -83,7 +83,7 @@ namespace ice::gfx
 
     auto Trait_GfxImageStorage::on_asset_released(ice::Asset const& asset) noexcept -> ice::Task<>
     {
-        GfxImageEntry* entry = ice::hashmap::try_get(_loaded_images, ice::hash(asset.name()));
+        GfxImageEntry* entry = _loaded_images.try_get(ice::hash(asset.name()));
         ICE_ASSERT_CORE(entry != nullptr);
         entry->released = true; // Mark as released
         co_return;
@@ -112,7 +112,7 @@ namespace ice::gfx
             ICE_ASSERT_CORE(state == AssetState::Loaded); // The image needs to be loaded.
 
             ice::StringID const nameid = request->asset_name();
-            GfxImageEntry* entry = ice::hashmap::try_get(_loaded_images, ice::hash(nameid));
+            GfxImageEntry* entry = _loaded_images.try_get(ice::hash(nameid));
             if (entry && entry->image != Image::Invalid)
             {
                 // Allocates a handle for it... (TODO: Rework?)
@@ -249,8 +249,7 @@ namespace ice::gfx
                 ice::Asset asset = uploaded_request->resolve(resolve_success);
 
                 // Save the image handle
-                ice::hashmap::set(
-                    _loaded_images,
+                _loaded_images.set(
                     asset_hash,
                     { .asset = ice::move(asset), .image = created_images[idx] }
                 );

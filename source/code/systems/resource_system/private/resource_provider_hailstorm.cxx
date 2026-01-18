@@ -3,6 +3,7 @@
 
 #include "resource_aio_request.hxx"
 #include "resource_provider_hailstorm.hxx"
+#include <ice/hashmap.hxx>
 
 namespace ice
 {
@@ -162,8 +163,8 @@ namespace ice
         ice::u32 size
     ) noexcept
     {
-        ice::u32 const ptr_idx = ice::hashmap::get_or_set(
-            _offset_map, offset, _offset_map.size().u32()
+        ice::u32 const ptr_idx = _offset_map.get_or_set(
+            offset, _offset_map.size().u32()
         );
         // Why would we free something that was never allocated?
         ICE_ASSERT_CORE(_pointers[ptr_idx] != nullptr);
@@ -176,8 +177,8 @@ namespace ice
         ice::native_aio::AIOPort aioport
     ) noexcept -> ice::Task<ice::Data>
     {
-        ice::u32 const ptr_idx = ice::hashmap::get_or_set(
-            _offset_map, offset, _offset_map.size().u32()
+        ice::u32 const ptr_idx = _offset_map.get_or_set(
+            offset, _offset_map.size().u32()
         );
         if (_pointers[ptr_idx] == nullptr)
         {
@@ -361,7 +362,7 @@ namespace ice
                     );
                 }
 
-                ice::multi_hashmap::insert(_entrymap, ice::hash(res_uri.path()), idx);
+                _entrymap.insert(res_uri.path(), idx);
                 out_changes.push_back(_entries[idx]);
             }
 
@@ -375,14 +376,14 @@ namespace ice
     ) const noexcept -> ice::Resource*
     {
         u32 idx = ice::u32_max;
-        auto it = ice::multi_hashmap::find_first(_entrymap, ice::hash(uri.path()));
-        while (it != nullptr && idx == ice::u32_max)
+        auto it = _entrymap.find_values(uri.path());
+        while (it.has_next() && idx == ice::u32_max)
         {
             if (_entries[it.value()]->name() == uri.path())
             {
                 idx = it.value();
             }
-            it = ice::multi_hashmap::find_next(_entrymap, it);
+            it.next();
         }
 
         if (idx != ice::u32_max)

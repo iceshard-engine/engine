@@ -4,7 +4,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <ice/config.hxx>
 #include <ice/config/config_builder.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 #include <ice/mem_allocator_host.hxx>
 
 namespace Catch

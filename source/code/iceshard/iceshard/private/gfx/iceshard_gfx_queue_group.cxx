@@ -3,7 +3,7 @@
 
 #include "iceshard_gfx_queue_group.hxx"
 #include "iceshard_gfx_queue.hxx"
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 #include <ice/profiler.hxx>
 #include <ice/assert.hxx>
 
@@ -51,13 +51,7 @@ namespace ice::gfx
             pool_index
         );
 
-        ice::hashmap::set(
-            _gfx_queues,
-            ice::hash(name),
-            queue
-        );
-
-        return queue;
+        return _gfx_queues.set(name, queue);
     }
 
     bool IceGfxQueueGroup::get_queue(ice::render::QueueFlags flags, ice::gfx::GfxQueue*& out_queue) noexcept
@@ -92,11 +86,7 @@ namespace ice::gfx
 
     auto IceGfxQueueGroup::get_queue(ice::StringID_Arg name) noexcept -> ice::gfx::IceGfxQueue*
     {
-        return ice::hashmap::get(
-            _gfx_queues,
-            ice::hash(name),
-            nullptr
-        );
+        return _gfx_queues.get(name, nullptr);
     }
 
     void IceGfxQueueGroup::reset_all() noexcept

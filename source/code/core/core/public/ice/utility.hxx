@@ -104,4 +104,13 @@ namespace ice
         );
     }
 
+    namespace concepts
+    {
+
+        template<typename T>
+        concept EnumOrIntegral = std::is_enum_v<T>
+            or (std::is_arithmetic_v<T> && not std::is_floating_point_v<T>);
+
+    } // namespace concepts
+
 } // namespace ice

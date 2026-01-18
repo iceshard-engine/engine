@@ -7,7 +7,7 @@
 #include <ice/asset_category_archive.hxx>
 #include <ice/resource_tracker.hxx>
 #include <ice/resource.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 #include <ice/devui_widget.hxx>
 #include <ice/task_expected.hxx>
 #include <ice/task_utils.hxx>

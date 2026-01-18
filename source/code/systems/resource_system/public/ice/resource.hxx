@@ -5,7 +5,7 @@
 #include <ice/mem_data.hxx>
 #include <ice/expected.hxx>
 #include <ice/resource_types.hxx>
-#include <ice/string_types.hxx>
+#include <ice/string.hxx>
 #include <ice/task.hxx>
 
 namespace ice

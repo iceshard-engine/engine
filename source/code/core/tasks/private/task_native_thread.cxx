@@ -50,7 +50,7 @@ namespace ice
         while (_runtime._state != ThreadState::Destroyed)
         {
             _runtime._queue.push_back(&final_awaitable);
-            thread_native::sleep(1);
+            thread_native::sleep(3); // sleep for a few milliseconds to ensure the thread was destroyed
         }
 
         thread_native::destroy_thread(_native);

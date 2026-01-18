@@ -8,7 +8,7 @@
 #include <ice/task_expected.hxx>
 #include <ice/resource_tracker.hxx>
 #include <ice/array.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/string_utils.hxx>
 #include <ice/path_utils.hxx>
@@ -84,7 +84,7 @@ namespace ice
             if (op && op.data().token.type == TokenType::CT_Dot)
             {
                 arctic::String var_base = atom.data().value.value;
-                var_base = ice::hashmap::get(subs, detail::arc_hash(var_base), var_base);
+                var_base = subs.get(detail::arc_hash(var_base), var_base);
 
                 ice::string::push_format(out_code, "{}.", var_base);
                 generate_expression(out_code, subs, func, arg, op.sibling());
@@ -377,8 +377,8 @@ namespace ice
 
 
             ice::string::push_format(result, "\nvoid asl_proxy_{}(", shader._mainfunc.data().name.value);
-            ice::hashmap::set(subs, detail::arc_hash(arg.data().name.value), arctic::String{ "_a_inputs" });
-            ice::hashmap::set(subs, detail::arc_hash(shader._mainfunc.data().name.value), arctic::String{ "_a_outputs" });
+            subs.set(detail::arc_hash(arg.data().name.value), arctic::String{ "_a_inputs" });
+            subs.set(detail::arc_hash(shader._mainfunc.data().name.value), arctic::String{ "_a_outputs" });
             ice::string::push_format(result, "in {} _a_inputs, ", shader._inputs.data().name.value, arg.data().name.value);
             ice::string::push_format(result, "out {} _a_outputs) {{\n", shader._outputs.data().name.value, shader._mainfunc.data().name.value);
             generate_function(result, subs, shader._mainfunc.data(), arg.data(), ret.data(), body.child<>());

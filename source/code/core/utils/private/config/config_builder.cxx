@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #include <ice/config/config_builder.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/multi_hashmap.hxx>
 #include <ice/heap_string.hxx>
 #include <ice/heap_varstring.hxx>
 
@@ -47,20 +47,20 @@ namespace ice
         ice::u32 offset_strings;
     };
 
-    auto cb_find_keystr_idx(ice::HashMap<CBKeyString> const& keystrings, ice::String keystr) noexcept -> ice::u32
+    auto cb_find_keystr_idx(ice::MultiHashMap<CBKeyString> const& keystrings, ice::String keystr) noexcept -> ice::u32
     {
         ice::u64 const keystr_hash = ice::hash(keystr);
-        auto it = ice::multi_hashmap::find_first(keystrings, keystr_hash);
+        auto it = keystrings.find_values(keystr_hash);
         while(it != nullptr && it.value().value != keystr)
         {
-            it = ice::multi_hashmap::find_next(keystrings, it);
+            it.next();
         }
 
         return it == nullptr ? keystrings.size().u32() : it.value().index;
     }
 
     auto cb_calculate_key_size(
-        ice::HashMap<CBKeyString>& keystrings,
+        ice::MultiHashMap<CBKeyString>& keystrings,
         ice::config::detail::ConfigBuilderContainer const& config,
         ice::config::detail::ConfigBuilderEntry const* entry
     ) noexcept -> ice::usize
@@ -76,7 +76,7 @@ namespace ice
             //   This allows us to reuse duplicate key names
             if (keystr_idx == keystrings.size())
             {
-                ice::multi_hashmap::insert(keystrings, ice::hash(keystr), { keystr, keystr_idx });
+                keystrings.insert(keystr, { keystr, keystr_idx });
                 result += { entry->size }; // Increase the size required
             }
         }
@@ -84,7 +84,7 @@ namespace ice
     }
 
     auto cb_calculate_final_size(
-        ice::HashMap<CBKeyString>& keystrings,
+        ice::MultiHashMap<CBKeyString>& keystrings,
         ice::config::detail::ConfigBuilderContainer const& config,
         ice::usize& out_data_size,
         ice::u32& out_count
@@ -138,7 +138,7 @@ namespace ice
     }
 
     auto cb_calculate_final_size(
-        ice::HashMap<CBKeyString>& keystrings,
+        ice::MultiHashMap<CBKeyString>& keystrings,
         ice::config::detail::ConfigBuilderContainer const& config,
         ice::u32& out_count
     ) noexcept -> ice::usize
@@ -157,7 +157,7 @@ namespace ice
     }
 
     auto cb_finalize_store_keysvalues(
-        ice::HashMap<CBKeyString>& keystrings,
+        ice::MultiHashMap<CBKeyString>& keystrings,
         ice::Span<ice::u32 const> keystringoffsets,
         ice::config::detail::ConfigBuilderContainer const& config,
         ice::config::detail::ConfigKey* out_keylist,
@@ -377,7 +377,7 @@ namespace ice
         }
 
         ice::Array<ice::u32> keyoffsets{ alloc };
-        ice::HashMap<ice::CBKeyString> keystrings{ alloc };
+        ice::MultiHashMap<ice::CBKeyString> keystrings{ alloc };
 
         ice::u32 final_count = 0;
         ice::usize const final_size = cb_calculate_final_size(keystrings, container, final_count);

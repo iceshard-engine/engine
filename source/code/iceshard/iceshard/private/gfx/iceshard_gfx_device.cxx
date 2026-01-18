@@ -6,7 +6,7 @@
 #include <ice/render/render_swapchain.hxx>
 #include <ice/render/render_buffer.hxx>
 #include <ice/mem_allocator_stack.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 #include <ice/gfx/gfx_runner.hxx>
 #include <ice/profiler.hxx>
 #include <ice/assert.hxx>
@@ -203,8 +203,7 @@ namespace ice::gfx
                 );
             }
 
-            ice::hashmap::set(
-                queue_index_tracker,
+            queue_index_tracker.set(
                 ice::hash(reinterpret_cast<ice::uptr>(&pass_info)),
                 queues[queue_info_idx].count - 1
             );
@@ -245,8 +244,7 @@ namespace ice::gfx
             for (ice::gfx::GfxQueueDefinition const& pass_info : render_queues)
             {
                 QueueID const pass_queue_id = detail::find_queue_id(queue_families, pass_info.flags);
-                ice::u32 const pass_queue_index = ice::hashmap::get(
-                    queue_index_tracker,
+                ice::u32 const pass_queue_index = queue_index_tracker.get(
                     ice::hash(reinterpret_cast<ice::uptr>(&pass_info)),
                     ~0u
                 );
