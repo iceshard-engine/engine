@@ -4,7 +4,7 @@
 #pragma once
 #include <ice/mem_data.hxx>
 #include <ice/mem_memory.hxx>
-#include <ice/container_logic.hxx>
+#include <ice/container/container_logic.hxx>
 #include <ice/container/contiguous_container.hxx>
 #include <array>
 

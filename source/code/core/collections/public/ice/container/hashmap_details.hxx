@@ -3,20 +3,11 @@
 
 #pragma
 #include <ice/array.hxx>
-#include <ice/container_logic.hxx>
+#include <ice/container/container_logic.hxx>
 #include <ice/container/container_concepts.hxx>
 
 namespace ice
 {
-
-    namespace container
-    {
-    }
-
-    namespace concepts::hashmap
-    {
-
-    } // namespace concepts
 
     namespace detail::hashmap
     {
@@ -46,11 +37,6 @@ namespace ice
             ice::u32 entry_i;
         };
 
-        constexpr auto calc_value_capacity(ice::ncount raw_capacity) noexcept -> ice::ncount
-        {
-            return static_cast<ice::ncount::base_type>(raw_capacity.native() * Constant_HashMapMaxFill);
-        }
-
         constexpr auto calc_required_capacity(ice::ncount max_count) noexcept -> ice::ncount
         {
             return static_cast<ice::ncount::base_type>(
@@ -61,11 +47,6 @@ namespace ice
         constexpr auto capacity_with_overhead(ice::ncount max_count) noexcept -> ice::ncount
         {
             return calc_required_capacity(max_count);
-        }
-
-        constexpr bool can_store_expected_size(ice::ncount raw_capacity, ice::ncount expected_size) noexcept
-        {
-            return calc_value_capacity(raw_capacity) >= expected_size;
         }
 
         template<typename EntryType, typename ValueType>

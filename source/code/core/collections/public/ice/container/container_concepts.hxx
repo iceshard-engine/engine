@@ -6,7 +6,17 @@
 #include <ice/stringid.hxx>
 #include <ice/types/ncount.hxx>
 #include <ice/types/nindex.hxx>
-#include <ice/container_logic.hxx>
+#include <ice/container/container_logic.hxx>
+
+namespace ice
+{
+
+    template<typename Node>
+    concept LinkedListNode = requires(Node node) {
+        { node.next } -> std::convertible_to<Node*>;
+    };
+
+} // namespace ice
 
 namespace ice::concepts
 {
