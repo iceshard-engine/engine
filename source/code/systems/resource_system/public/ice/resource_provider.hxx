@@ -11,6 +11,7 @@
 #include <ice/native_aio.hxx>
 #include <ice/task_types.hxx>
 #include <ice/task_expected.hxx>
+#include <ice/path_utils.hxx>
 #include <ice/uri.hxx>
 
 namespace ice
@@ -85,8 +86,8 @@ namespace ice
 
     struct ResourceFileEntry
     {
-        ice::String path;
-        ice::String basepath = {};
+        ice::Path path;
+        ice::Path basepath = {};
     };
 
     auto create_resource_provider(

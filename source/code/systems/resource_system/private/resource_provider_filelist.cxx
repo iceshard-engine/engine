@@ -26,7 +26,7 @@ namespace ice
         for (ice::ResourceFileEntry const& entry : entries)
         {
             using enum native_file::PathFlags;
-            if (ice::path::is_absolute(entry.path) == false)
+            if (entry.path.is_relative())
             {
                 file_path = ice::native_file::path_from_strings<Normalized>(
                     _named_allocator, entry.basepath, entry.path
@@ -44,7 +44,7 @@ namespace ice
                 );
 
                 ice::native_file::FilePath const file_path_str = file_path;
-                ICE_ASSERT_CORE(file_path_str.starts_with((ice::native_file::FilePath)base_path));
+                ICE_ASSERT_CORE(file_path_str.starts_with(base_path));
             }
 
             ice::ncount const basepath_size = entry.basepath.is_empty()

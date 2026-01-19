@@ -47,6 +47,21 @@ namespace ice::concepts
 
 } // namespace ice::concepts
 
+namespace ice::string
+{
+
+    template<ice::concepts::StringType StringT>
+    using ConstCorrectCharType = std::conditional_t<
+        std::is_const_v<typename std::remove_reference_t<StringT>>,
+        typename std::remove_reference_t<StringT>::CharType const,
+        typename std::remove_reference_t<StringT>::CharType
+    >;
+
+    template<ice::concepts::StringType StringT>
+    using CharType = ConstCorrectCharType<StringT>;
+
+} // namespace ice::string
+
 namespace ice::string::detail
 {
 

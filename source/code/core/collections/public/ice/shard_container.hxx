@@ -32,6 +32,12 @@ namespace ice
             Args&&... args
         ) const noexcept -> ice::ncount;
 
+        template<typename T>
+        inline constexpr bool inspect_first(ice::ShardID shardid, T& payload) const noexcept;
+
+        template<typename T>
+        inline constexpr bool inspect_last(ice::ShardID shard, T& payload) const noexcept;
+
         template<typename T, ice::ContainerLogic Logic>
         inline constexpr auto inspect_all(
             ice::ShardID shardid,
@@ -43,12 +49,6 @@ namespace ice
             ice::ShardID shardid,
             Fn&& callback
         ) noexcept -> ice::ncount;
-
-        template<typename T>
-        inline constexpr bool inspect_first(ice::ShardID shardid, T& payload) const noexcept;
-
-        template<typename T>
-        inline constexpr bool inspect_last(ice::ShardID shard, T& payload) const noexcept;
 
         inline constexpr void remove_all_of(this ShardContainer& self, ice::ShardID shardid) noexcept;
     };
@@ -137,6 +137,20 @@ namespace ice
         return { count, sizeof(ice::ShardID) };
     }
 
+    template<typename T>
+    inline constexpr bool ShardContainer::inspect_first(ice::ShardID shardid, T& payload) const noexcept
+    {
+        ice::Shard const shard = this->find_first_of(shardid);
+        return ice::shard_inspect(shard, payload);
+    }
+
+    template<typename T>
+    inline constexpr bool ShardContainer::inspect_last(ice::ShardID shardid, T& payload) const noexcept
+    {
+        ice::Shard const shard = this->find_last_of(shardid);
+        return ice::shard_inspect(shard, payload);
+    }
+
     template<typename T, typename Fn>
     inline constexpr auto ShardContainer::inspect_each(ice::ShardID shardid, Fn&& callback) noexcept -> ice::ncount
     {
@@ -150,20 +164,6 @@ namespace ice
             }
         }
         return { count, sizeof(ice::Shard) };
-    }
-
-    template<typename T>
-    inline constexpr bool ShardContainer::inspect_first(ice::ShardID shardid, T& payload) const noexcept
-    {
-        ice::Shard const shard = this->find_first_of(shardid);
-        return ice::shard_inspect(shard, payload);
-    }
-
-    template<typename T>
-    inline constexpr bool ShardContainer::inspect_last(ice::ShardID shardid, T& payload) const noexcept
-    {
-        ice::Shard const shard = this->find_last_of(shardid);
-        return ice::shard_inspect(shard, payload);
     }
 
     inline constexpr void ShardContainer::remove_all_of(

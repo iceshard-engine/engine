@@ -18,8 +18,14 @@ namespace ice::native_file
 
 #if ISP_WINDOWS
     using File = ice::win32::FileHandle;
-    using FilePath = ice::WString;
-    using HeapFilePath = ice::HeapString<ice::wchar>;
+    using FilePath = ice::BasicPath<ice::wchar>;
+    struct HeapFilePath : public ice::HeapString<ice::wchar>, public ice::PathString
+    {
+        using HeapString<ice::wchar>::HeapString;
+        using HeapString<ice::wchar>::operator ice::BasicString<ice::wchar>;
+
+        constexpr operator FilePath() const noexcept { return { _data, _size }; }
+    };
 #   define ISP_PATH_LITERAL(val) L##val
 #elif ISP_UNIX
     using File = ice::unix_::FileHandle;
