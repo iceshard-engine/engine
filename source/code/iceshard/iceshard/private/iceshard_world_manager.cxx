@@ -45,7 +45,7 @@ namespace ice
         ) noexcept -> ice::Task<>
         {
             co_await task;
-            ice::shards::push_back(out_shards, shard);
+            out_shards.push_back(shard);
         }
 
     } // namespace detail
@@ -147,8 +147,7 @@ namespace ice
         Entry world_entry{ .context = ice::move(world_context), .world = world };
 
         // Add a new pending event
-        ice::shards::push_back(
-            _pending_events,
+        _pending_events.push_back(
             ice::ShardID_WorldCreated | ice::stringid_hash(world_template.name)
         );
 
@@ -178,8 +177,7 @@ namespace ice
         );
 
         // Add a new pending event
-        ice::shards::push_back(
-            _pending_events,
+        _pending_events.push_back(
             ice::ShardID_WorldDestroyed | ice::stringid_hash(name)
         );
 
@@ -199,8 +197,8 @@ namespace ice
 
     void IceshardWorldManager::query_pending_events(ice::ShardContainer& out_events) noexcept
     {
-        ice::shards::push_back(out_events, _pending_events._data);
-        ice::shards::clear(_pending_events);
+        out_events.push_back(_pending_events);
+        _pending_events.clear();
     }
 
     void IceshardWorldManager::pre_update(
@@ -260,7 +258,7 @@ namespace ice
 
             if (trigger.results != ice::Shard_Invalid)
             {
-                ice::shards::push_back(out_shards, trigger.results | world_name);
+                out_shards.push_back(trigger.results | world_name);
             }
         }
 

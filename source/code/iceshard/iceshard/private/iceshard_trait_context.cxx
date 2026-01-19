@@ -76,7 +76,7 @@ namespace ice
         // Push shards into the out container. (ice::detail::TraitEvent decays into ice::Shard)
         for (ice::Shard shard : _events_expired)
         {
-            ice::shards::push_back(out_shards, shard);
+            out_shards.push_back(shard);
         }
     }
 

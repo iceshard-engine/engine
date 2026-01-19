@@ -155,7 +155,7 @@ namespace ice
     {
         ice::StackAllocator<512_B> temp_alloc;
         ice::ShardContainer temp_shards{ temp_alloc };
-        temp_shards._data.reserve(
+        temp_shards.reserve(
             ice::mem_max_capacity(
                 ice::size_of<ice::Shard>,
                 decltype(temp_alloc)::Constant_InternalCapacity
@@ -170,8 +170,8 @@ namespace ice
             if (collect_pending_states(*input_shards))
             {
                 // Push back temporary shards into output shards
-                ice::shards::push_back(out_shards, temp_shards._data);
-                ice::shards::clear(temp_shards);
+                out_shards.push_back(temp_shards);
+                temp_shards.clear();
 
                 // Commit the new states and gather the new shards
                 _pending_states.for_each([&temp_shards](EngineStatePending const& pending) noexcept
@@ -200,17 +200,17 @@ namespace ice
             else
             {
                 // Output temporary shards since they might trigger other events.
-                ice::shards::push_back(out_shards, temp_shards._data);
+                out_shards.push_back(temp_shards);
 
                 // Clear temporary shards so we can escape the loop normally.
-                ice::shards::clear(temp_shards);
+                temp_shards.clear();
             }
 
             // Set input shards to temp_shards
             input_shards = &temp_shards;
 
             // If we have any shards added, check if we can collect another set of states.
-        } while (ice::shards::empty(temp_shards) == false);
+        } while (temp_shards.not_empty());
 
         return true;
     }
@@ -292,8 +292,7 @@ namespace ice
     {
         for (ice::EngineStateTrigger const& trigger : _available_triggers)
         {
-            ice::shards::for_each(
-                shards,
+            shards.for_each(
                 trigger.when,
                 [&](ice::Shard shard) noexcept
                 {

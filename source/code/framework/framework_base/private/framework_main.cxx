@@ -560,7 +560,7 @@ void ice_process_input_events(ice::Span<ice::input::InputEvent const> events, ic
 {
     for (ice::input::InputEvent const input_event : events)
     {
-        ice::shards::push_back(out_shards, ice::ShardID_InputEvent | input_event);
+        out_shards.push_back(ice::ShardID_InputEvent | input_event);
     }
 }
 
@@ -585,7 +585,7 @@ auto ice_game_frame(
     ICE_ASSERT(new_frame != nullptr, "Failed to aquire next frame!");
 
     // Push system events
-    ice::shards::push_back(new_frame->shards(), system_events._data);
+    new_frame->shards().push_back(system_events);
 
     // Push previous frame events
     //   Also runs other logic that should be done without interfeerence from
@@ -667,7 +667,7 @@ auto ice_update(
     ice::ShardContainer const& system_events = state.platform.core->system_events();
 
     // Query platform events into the frame and input device handler.
-    if (runtime.is_exiting || ice::shards::contains(system_events, ice::platform::Shard_AppQuit))
+    if (runtime.is_exiting || system_events.contains(ice::platform::Shard_AppQuit))
     {
         runtime.is_exiting = true;
 
@@ -690,11 +690,11 @@ auto ice_update(
         return ice::app::S_ApplicationExit;
     }
 
-    bool const was_resized = ice::shards::contains(system_events, ice::platform::ShardID_WindowResized);
-    bool const was_minimized = ice::shards::contains(system_events, ice::platform::ShardID_WindowMinimized);
-    bool const was_maximized = ice::shards::contains(system_events, ice::platform::ShardID_WindowMaximized);
+    bool const was_resized = system_events.contains(ice::platform::ShardID_WindowResized);
+    bool const was_minimized = system_events.contains(ice::platform::ShardID_WindowMinimized);
+    bool const was_maximized = system_events.contains(ice::platform::ShardID_WindowMaximized);
     ice::vec2i window_size; // unused?
-    bool const was_restored = ice::shards::inspect_last(system_events, ice::platform::ShardID_WindowRestored, window_size);
+    bool const was_restored = system_events.inspect_last(ice::platform::ShardID_WindowRestored, window_size);
 
     // We should never run into a situation where minimizing and restoring happen ad the same time.
     // TODO: Might want to turn this into a state machine.
@@ -747,16 +747,13 @@ auto ice_suspend(
 
     if (runtime.is_exiting)
     {
-        ice::shards::remove_all_of(
-            runtime.frame->shards(),
-            ice::ShardID_WorldActivate
-        );
+        runtime.frame->shards().remove_all_of(ice::ShardID_WorldActivate);
 
         ice::Array<ice::StringID> worlds{ state.alloc };
         state.engine->worlds().query_worlds(worlds);
         for (ice::StringID_Arg world : worlds)
         {
-            ice::shards::push_back(runtime.frame->shards(), ice::ShardID_WorldDeactivate | ice::stringid_hash(world));
+            runtime.frame->shards().push_back(ice::ShardID_WorldDeactivate | ice::stringid_hash(world));
         }
 
         // Apply state events so we can already get the events for the next frame

@@ -461,16 +461,16 @@ namespace ice
                 {
                     using enum InputActionDataType;
                 case Bool:
-                    ice::shards::push_back(out_shards, sid | bool(action.value.x > 0.0f));
+                    out_shards.push_back(sid | bool(action.value.x > 0.0f));
                     break;
                 case Float1:
-                    ice::shards::push_back(out_shards, sid | action.value.x);
+                    out_shards.push_back(sid | action.value.x);
                     break;
                 case Float2:
-                    ice::shards::push_back(out_shards, sid | action.value);
+                    out_shards.push_back(sid | action.value);
                     break;
                 case ActionObject:
-                    ice::shards::push_back(out_shards, sid | static_cast<ice::InputAction const*>(ice::addressof(action)));
+                    out_shards.push_back(sid | static_cast<ice::InputAction const*>(ice::addressof(action)));
                     break;
                 default: ICE_ASSERT_CORE(false); break;
                 }

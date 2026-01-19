@@ -5,7 +5,7 @@
 #include <ice/engine_state_tracker.hxx>
 #include <ice/array.hxx>
 #include <ice/queue.hxx>
-#include <ice/hashmap.hxx>
+#include <ice/multi_hashmap.hxx>
 #include <ice/mem_allocator_stack.hxx>
 #include <ice/log.hxx>
 

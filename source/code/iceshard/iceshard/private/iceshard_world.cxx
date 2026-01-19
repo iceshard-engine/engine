@@ -41,7 +41,7 @@ namespace ice
 
         if (_devui != nullptr && _devui->world_operation != ice::Shard_Invalid)
         {
-            ice::shards::push_back(out_shards, ice::exchange(_devui->world_operation, ice::Shard_Invalid));
+            out_shards.push_back(ice::exchange(_devui->world_operation, ice::Shard_Invalid));
         }
     }
 

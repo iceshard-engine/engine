@@ -3,7 +3,6 @@
 
 #pragma once
 #include <ice/task_promise.hxx>
-#include <ice/container_concepts.hxx>
 
 namespace ice
 {

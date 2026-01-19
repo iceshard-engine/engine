@@ -172,7 +172,7 @@ namespace ice::action
     ) noexcept
     {
         ice::ShardContainer new_shards{ _step_shards_alloc };
-        ice::shards::reserve(new_shards, 64);
+        new_shards.reserve(64);
 
         for (ActionInstance* const action : _actions)
         {
@@ -208,12 +208,12 @@ namespace ice::action
             if (action->state == ActionState::Active)
             {
                 ice::StringID_Hash action_name = ice::stringid_hash(action->name);
-                ice::shards::push_back(new_shards, ice::action::Shard_ActionEventReset | action_name);
+                new_shards.push_back(ice::action::Shard_ActionEventReset | action_name);
 
                 current_stage = stages + action->current_stage_idx;
                 if (current_stage->stage_shardid != ice::Shard_Invalid)
                 {
-                    ice::shards::push_back(new_shards, ice::shard(current_stage->stage_shardid) | action_name);
+                    new_shards.push_back(ice::shard(current_stage->stage_shardid) | action_name);
                 }
             }
         }
@@ -276,7 +276,7 @@ namespace ice::action
 
                                 if (current_stage->stage_shardid != ice::Shard_Invalid)
                                 {
-                                    ice::shards::push_back(new_shards, ice::shard(current_stage->stage_shardid) | ice::stringid_hash(action->name));
+                                    new_shards.push_back(ice::shard(current_stage->stage_shardid) | ice::stringid_hash(action->name));
                                 }
                             }
                         }
@@ -293,15 +293,15 @@ namespace ice::action
         {
             if (action->state == ActionState::FinishedSuccess)
             {
-                ice::shards::push_back(new_shards, ice::action::Shard_ActionEventSuccess | ice::stringid_hash(action->name));
+                new_shards.push_back(ice::action::Shard_ActionEventSuccess | ice::stringid_hash(action->name));
             }
             else if (action->state == ActionState::FinishedFailure)
             {
-                ice::shards::push_back(new_shards, ice::action::Shard_ActionEventFailed | ice::stringid_hash(action->name));
+                new_shards.push_back(ice::action::Shard_ActionEventFailed | ice::stringid_hash(action->name));
             }
         }
 
-        ice::shards::push_back(shards, new_shards._data);
+        shards.push_back(new_shards);
     }
 
     auto create_action_system(

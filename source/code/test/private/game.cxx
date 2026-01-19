@@ -99,11 +99,11 @@ struct WorldActivationTrait : ice::Trait, ice::DevUIWidget
         {
             if (do_active)
             {
-                shards::push_back(update.frame.shards(), ShardID_WorldActivate | "world2"_sid_hash);
+                update.frame.shards().push_back(ShardID_WorldActivate | "world2"_sid_hash);
             }
             else
             {
-                shards::push_back(update.frame.shards(), ShardID_WorldDeactivate | "world2"_sid_hash);
+                update.frame.shards().push_back(ShardID_WorldDeactivate | "world2"_sid_hash);
             }
             is_active = do_active;
         }
@@ -318,9 +318,7 @@ void TestGame::on_resume(ice::Engine& engine) noexcept
 
 void TestGame::on_update(ice::Engine& engine, ice::EngineFrame& frame) noexcept
 {
-    using namespace ice;
-
-    shards::push_back(frame.shards(), ShardID_WorldActivate | "world"_sid_hash);
+    frame.shards().push_back(ShardID_WorldActivate | "world"_sid_hash);
 }
 
 void TestGame::on_suspend(ice::Engine& engine) noexcept

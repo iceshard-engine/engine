@@ -124,7 +124,7 @@ namespace ice
 
     auto IceshardEngineFrame::extract_tasks() noexcept -> ice::Array<ice::Task<>>
     {
-        return  ice::Array<ice::Task<>>{ *_shards._data._allocator };
+        return  ice::Array<ice::Task<>>{ *_shards._allocator };
     }
 
     auto create_iceshard_frame(

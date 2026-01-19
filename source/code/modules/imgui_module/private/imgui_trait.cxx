@@ -290,7 +290,7 @@ namespace ice::devui
         auto& io = ImGui::GetIO();
 
         char const* input_text;
-        if (ice::shards::inspect_last(update.frame.shards(), ice::platform::ShardID_InputText, input_text))
+        if (update.frame.shards().inspect_last(ice::platform::ShardID_InputText, input_text))
         {
             io.AddInputCharactersUTF8(input_text);
         }
@@ -298,8 +298,7 @@ namespace ice::devui
         ice::vec2f temp_pos{};
         io.AddMouseSourceEvent(ImGuiMouseSource_Mouse);
 
-        ice::shards::inspect_each<ice::input::InputEvent>(
-            update.frame.shards(),
+        update.frame.shards().inspect_each<ice::input::InputEvent>(
             ice::ShardID_InputEvent,
             [&](ice::input::InputEvent input) noexcept
             {
