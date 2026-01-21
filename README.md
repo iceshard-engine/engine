@@ -34,13 +34,8 @@ Thid party tools and features:
 #### Linux _(Tested)_
 ![Code validation result for Linux targets.](https://github.com/iceshard-engine/engine/actions/workflows/build-validate-linux.yaml/badge.svg)
 
-#### Android _(Untested)_
+#### Android _(Tested)_
 ![Code validation result for Android targets.](https://github.com/iceshard-engine/engine/actions/workflows/build-validate-android.yaml/badge.svg)
-
-##### Known issues
-* The x64 binaries do not load properly in emulators
-* The binaries use outdated API Levels and NKD version
-* The binaries are still build with 4 KiB page support instead of required 16 KiB
 
 #### Emscripten _(Tested)_
 ![Code validation result for WebAssembly targets.](https://github.com/iceshard-engine/engine/actions/workflows/build-validate-emscripten.yaml/badge.svg)
@@ -60,9 +55,9 @@ To build this engine you will need the following tools and SDKs installed:
 * **Linux:**
     * Toolchain: Clang-20
     * Vulkan SDK _(1.4.313.0 or later)_
-* **Android:** _(Outdated)_
-    * Toolchain: NDK-27
-    * AndroidAPI: 29
+* **Android:**
+    * Toolchain: NDK-28
+    * AndroidAPI: 35
 * **Web:**
     * Toolchain: Emscripten-v4.0.9
 * **MacOS:** _(No plans)_
