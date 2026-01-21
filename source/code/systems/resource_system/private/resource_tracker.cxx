@@ -15,12 +15,12 @@ namespace ice
         return handle->uri();
     }
 
-    auto resource_origin(ice::ResourceHandle const& handle) noexcept -> ice::String
+    auto resource_origin(ice::ResourceHandle const& handle) noexcept -> ice::Path
     {
         return handle->origin();
     }
 
-    auto resource_path(ice::ResourceHandle const& handle) noexcept -> ice::String
+    auto resource_path(ice::ResourceHandle const& handle) noexcept -> ice::Path
     {
         return handle->name();
     }
@@ -453,8 +453,8 @@ namespace ice
         }
 
         // ... next with a URN with the expected library file name.
-        ice::HeapString<> result{ alloc, name };
-        if (ice::path::extension(name) == "") // Check that we have already a full file name.
+        ice::HeapPath result{ alloc, name };
+        if (result.extension() == "") // Check that we have already a full file name.
         {
             if constexpr (ice::build::is_windows)
             {

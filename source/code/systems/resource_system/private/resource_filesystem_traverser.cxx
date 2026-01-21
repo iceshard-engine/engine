@@ -33,21 +33,21 @@ namespace ice
     ) noexcept
     {
         // Early out for metadata files.
-        if (ice::path::extension(file_path) == ISP_PATH_LITERAL(".isrm"))
+        if (file_path.extension() == ISP_PATH_LITERAL(".isrm"))
         {
             return;
         }
 
         // Handle full .isr files
         ice::FileSystemResource* resource = nullptr;
-        if (ice::path::extension(file_path) == ISP_PATH_LITERAL(".isr"))
+        if (file_path.extension() == ISP_PATH_LITERAL(".isr"))
         {
             resource = _callbacks.create_baked_resource(file_path);
         }
         else
         {
             ice::StackAllocator_1024 temp_alloc;
-            ice::native_file::FilePath const uribase = ice::path::directory(base_path);
+            ice::native_file::FilePath const uribase = base_path.directory();
             ice::native_file::FilePath const datafile = file_path;
             ice::native_file::HeapFilePath metafile{ temp_alloc };
             metafile.reserve(512);
@@ -85,7 +85,7 @@ namespace ice
     ) noexcept -> ice::Task<>
     {
         // Early out for metadata files.
-        if (ice::path::extension(file_path) == ISP_PATH_LITERAL(".isrm"))
+        if (file_path.extension() == ISP_PATH_LITERAL(".isrm"))
         {
             request.remaining -= 1;
             co_return;
@@ -93,14 +93,14 @@ namespace ice
 
         // Handle full .isr files
         ice::FileSystemResource* resource = nullptr;
-        if (ice::path::extension(file_path) == ISP_PATH_LITERAL(".isr"))
+        if (file_path.extension() == ISP_PATH_LITERAL(".isr"))
         {
             resource = _callbacks.create_baked_resource(file_path);
         }
         else
         {
             ice::StackAllocator_1024 temp_alloc;
-            ice::native_file::FilePath const uribase = ice::path::directory(base_path);
+            ice::native_file::FilePath const uribase = base_path.directory();
             ice::native_file::FilePath const datafile = file_path;
             ice::native_file::HeapFilePath metafile{ temp_alloc };
             metafile.reserve(512);

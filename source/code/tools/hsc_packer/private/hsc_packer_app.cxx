@@ -8,13 +8,13 @@
 #include <ice/log_module.hxx>
 #include <ice/tool_app.hxx>
 
-auto hscp_process_directory(ice::Allocator& alloc, ice::Path dir) noexcept -> ice::HeapString<>
+auto hscp_process_directory(ice::Allocator& alloc, ice::Path dir) noexcept -> ice::HeapPath
 {
-    ice::HeapString<> searched_utf8_path{ alloc, dir };
+    ice::HeapPath searched_utf8_path{ alloc, dir };
     if (dir.is_relative())
     {
         searched_utf8_path = ice::app::workingdir();
-        ice::path::join(searched_utf8_path, dir);
+        searched_utf8_path.append(dir);
     }
 
     ice::path::normalize(searched_utf8_path);

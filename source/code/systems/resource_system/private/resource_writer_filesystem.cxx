@@ -151,7 +151,7 @@ namespace ice
 
         ice::ncount const origin_size = uri.path().size();
 
-        ice::HeapString<> predicted_path{ (ice::Allocator&) _named_allocator };
+        ice::HeapPath predicted_path{ (ice::Allocator&) _named_allocator };
         predicted_path.resize(0);
         predicted_path.reserve(origin_size + _base_path.size());
         ice::native_file::path_to_string(_base_path, predicted_path);
@@ -161,9 +161,9 @@ namespace ice
         //  While a base path like 'dir/subdir/' will create uris against 'dir/subdir/'
         if (_base_path.back() != '/')
         {
-            ice::path::join(predicted_path, "..");
+            predicted_path.append("..");
         }
-        ice::path::join(predicted_path, uri.path());
+        predicted_path.append(uri.path());
         ice::path::normalize(predicted_path);
 
         return _resources.get(predicted_path, nullptr);
@@ -202,14 +202,14 @@ namespace ice
     {
         ice::ncount const origin_size = root_resource->origin().size();
 
-        ice::HeapString<> predicted_path{ (ice::Allocator&) _named_allocator };
+        ice::HeapPath predicted_path{ (ice::Allocator&) _named_allocator };
         predicted_path.reserve(origin_size + relative_uri.path().size());
 
         predicted_path = root_resource->origin().substr(
-            0, origin_size - ice::path::filename(root_resource->name()).size()
+            0, origin_size - ice::Path{ root_resource->name() }.filename().size()
         );
 
-        ice::path::join(predicted_path, relative_uri.path());
+        predicted_path.append(relative_uri.path());
         ice::path::normalize(predicted_path);
 
         return _resources.get(predicted_path, nullptr);
@@ -255,13 +255,13 @@ namespace ice
 
             // Create the final directory
             // #TODO: Research if checking for existance improves performance.
-            bool const success = ice::native_file::create_directory(ice::path::directory(predicted_metapath));
+            bool const success = ice::native_file::create_directory(predicted_metapath.directory());
             ICE_ASSERT_CORE(success);
         }
 
         ice::FileSystemResource* new_resource = this->create_loose_resource(
             _base_path,
-            ice::path::directory(_base_path),
+            _base_path.directory(),
             predicted_metapath,
             predicted_metapath.substr(0, predicted_path_len)
         );

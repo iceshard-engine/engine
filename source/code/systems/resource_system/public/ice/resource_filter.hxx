@@ -49,7 +49,7 @@ namespace ice
             ice::Resource const* resource
         ) const noexcept override
         {
-            return _extension.is_empty() || ice::path::extension(resource->origin()) == _extension;
+            return _extension.is_empty() || resource->origin().extension() == _extension;
         }
 
     private:

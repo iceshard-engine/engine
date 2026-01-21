@@ -11,7 +11,7 @@
 #include <ice/native_file.hxx>
 #include <ice/params.hxx>
 
-auto hscp_process_directory(ice::Allocator& alloc, ice::Path dir) noexcept -> ice::HeapString<>;
+auto hscp_process_directory(ice::Allocator& alloc, ice::Path dir) noexcept -> ice::HeapPath;
 
 static constexpr ice::LogTagDefinition LogTag_Main = ice::create_log_tag(ice::LogTag::None, "hsc-packer");
 static constexpr ice::LogTagDefinition LogTag_Details = ice::create_log_tag(LogTag_Main, "details");

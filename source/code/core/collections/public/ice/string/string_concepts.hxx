@@ -60,6 +60,9 @@ namespace ice::string
     template<ice::concepts::StringType StringT>
     using CharType = ConstCorrectCharType<StringT>;
 
+    template<ice::concepts::StringType StringT>
+    using String = typename StringT::StringType;
+
 } // namespace ice::string
 
 namespace ice::string::detail

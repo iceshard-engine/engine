@@ -325,6 +325,41 @@ namespace ice
     }
 
     template<>
+    bool params_define_internal<ice::Path>(
+        CLI::App& app,
+        ice::Allocator&,
+        ice::ParamDefinition const& definition,
+        ice::Path& out_value
+    ) noexcept
+    {
+        auto fn_callback = [&out_value](CLI::results_t const& results) noexcept
+            {
+                out_value = ice::String{ results.front() };
+                return true;
+            };
+        params_setup(app.add_option(to_std(definition.name), ice::move(fn_callback)), definition);
+        return true;
+    }
+
+    template<>
+    bool params_define_internal<ice::HeapPath>(
+        CLI::App& app,
+        ice::Allocator&,
+        ice::ParamDefinition const& definition,
+        ice::HeapPath& out_value
+    ) noexcept
+    {
+        auto fn_callback = [&out_value](CLI::results_t const& results) noexcept
+            {
+                std::string const& arg = results.front();
+                out_value.push_back(ice::String{ std::string_view{ arg } });
+                return true;
+            };
+        params_setup(app.add_option(to_std(definition.name), ice::move(fn_callback)), definition);
+        return true;
+    }
+
+    template<>
     bool params_define_internal<ice::Array<ice::String>>(
         CLI::App& app,
         ice::Allocator&,
@@ -439,6 +474,8 @@ namespace ice
     IMPL_PARAMS_DEFINE(u64)
     IMPL_PARAMS_DEFINE(ice::String)
     IMPL_PARAMS_DEFINE(ice::HeapString<>)
+    IMPL_PARAMS_DEFINE(ice::Path)
+    IMPL_PARAMS_DEFINE(ice::HeapPath)
     IMPL_PARAMS_DEFINE(ice::Array<ice::String>)
     IMPL_PARAMS_DEFINE(ice::Array<ice::HeapString<>>)
 

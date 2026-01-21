@@ -4,6 +4,7 @@
 #pragma once
 #include <ice/string.hxx>
 #include <ice/stringid.hxx>
+#include <ice/path_utils.hxx>
 
 namespace ice
 {
@@ -27,7 +28,7 @@ namespace ice
 
         constexpr auto scheme() const noexcept -> ice::StringID;
 
-        constexpr auto path() const noexcept -> ice::String;
+        constexpr auto path() const noexcept -> ice::Path;
         constexpr auto query() const noexcept -> ice::String;
         constexpr auto fragment() const noexcept -> ice::String;
 
@@ -277,9 +278,9 @@ namespace ice
             : ice::stringid(ice::String{_uri, ice::u32(_scheme - 1)});
     }
 
-    constexpr auto URI::path() const noexcept -> ice::String
+    constexpr auto URI::path() const noexcept -> ice::Path
     {
-        return ice::String{ _uri + _scheme + _authority, _path };
+        return ice::Path{ _uri + _scheme + _authority, _path };
     }
 
     constexpr auto URI::query() const noexcept -> ice::String

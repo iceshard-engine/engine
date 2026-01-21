@@ -157,7 +157,7 @@ namespace ice
     public:
         HailStormResourceProvider(
             ice::Allocator& alloc,
-            ice::String path,
+            ice::Path path,
             ice::native_aio::AIOPort aioport
         ) noexcept;
         ~HailStormResourceProvider() noexcept override;

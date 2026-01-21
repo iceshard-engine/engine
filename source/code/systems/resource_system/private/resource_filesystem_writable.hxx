@@ -21,7 +21,7 @@ namespace ice
             ice::Allocator& alloc,
             ice::usize meta_size,
             ice::usize data_size,
-            ice::HeapString<> origin_path,
+            ice::HeapPath origin_path,
             ice::String origin_name,
             ice::String uri_path
         ) noexcept;
@@ -32,7 +32,7 @@ namespace ice
         auto flags() const noexcept -> ice::ResourceFlags override;
 
         auto name() const noexcept -> ice::String override;
-        auto origin() const noexcept -> ice::String override;
+        auto origin() const noexcept -> ice::Path override;
 
     public: // ice::FileSystemResource
         auto size() const noexcept -> ice::usize override;
@@ -66,7 +66,7 @@ namespace ice
 
     private:
         ice::Allocator& _allocator;
-        ice::HeapString<> _origin_path;
+        ice::HeapPath _origin_path;
         ice::String _origin_name;
         ice::String _uri_path;
         ice::URI _uri;

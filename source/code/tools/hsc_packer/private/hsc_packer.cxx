@@ -188,7 +188,7 @@ public:
         // }
 
         // Prepare the output file name.
-        _param_output = hscp_process_directory(_allocator, ice::Path{ _param_output });
+        _param_output = hscp_process_directory(_allocator, _param_output);
 
         // The paths that will be searched for loose file resources.
          ice::UniquePtr<ice::ResourceProvider> fsprov = ice::create_resource_provider(
@@ -234,7 +234,7 @@ public:
     auto run_explicit() noexcept -> ice::i32
     {
         // Prepare the output file name.
-        _param_output = hscp_process_directory(_allocator, ice::Path{ _param_output });
+        _param_output = hscp_process_directory(_allocator, _param_output);
 
         // The paths that will be searched for loose file resources.
         ice::Array<ice::ResourceFileEntry> files{ _allocator };
@@ -394,7 +394,7 @@ private:
     // Params
     ice::Array<ice::String> _param_includes;
     ice::Array<ice::String> _param_configs;
-    ice::HeapString<> _param_output;
+    ice::HeapPath _param_output;
     bool _param_verbose;
 
     ice::Array<ice::String> _inputs;

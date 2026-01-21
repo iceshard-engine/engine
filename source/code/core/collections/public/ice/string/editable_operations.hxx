@@ -118,6 +118,8 @@ namespace ice::string
 
         // Operators
 
+        using ReadOnlyOperations::operator[];
+
         template<MutableStringType Self>
         constexpr auto operator[](this Self& self, ice::nindex index) noexcept -> typename Self::ValueType&
         {

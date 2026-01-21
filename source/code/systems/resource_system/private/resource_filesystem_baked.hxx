@@ -21,7 +21,7 @@ namespace ice
         BakedFileResource(
             ice::Allocator& alloc,
             ice::ResourceFormatHeader const& header,
-            ice::HeapString<> origin,
+            ice::HeapPath origin,
             ice::HeapString<> name
         ) noexcept;
 
@@ -31,7 +31,7 @@ namespace ice
         auto flags() const noexcept -> ice::ResourceFlags override;
 
         auto name() const noexcept -> ice::String override;
-        auto origin() const noexcept -> ice::String override;
+        auto origin() const noexcept -> ice::Path override;
 
         auto size() const noexcept -> ice::usize override;
 
@@ -53,7 +53,7 @@ namespace ice
     private:
         ice::Allocator& _allocator;
         ice::ResourceFormatHeader const _header;
-        ice::HeapString<> _origin;
+        ice::HeapPath _origin;
         ice::HeapString<> _name;
         ice::URI _uri;
     };

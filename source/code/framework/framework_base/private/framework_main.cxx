@@ -329,7 +329,7 @@ auto ice_setup(
     ice::Array<ice::String> resource_paths{ alloc };
     if constexpr (ice::build::is_release == false && (ice::build::is_windows || ice::build::is_linux))
     {
-        dylib_path = ice::path::directory(ice::app::directory());
+        dylib_path = ice::app::directory().directory();
         config.dev_dirs.shaders = ice::app::workingdir();
         config.dev_dirs.assets = ice::app::workingdir();
 

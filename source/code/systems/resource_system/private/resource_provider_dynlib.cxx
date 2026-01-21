@@ -91,14 +91,14 @@ namespace ice
             ResourceProvider_DynLibs* const provider = reinterpret_cast<ResourceProvider_DynLibs*>(userdata);
             if constexpr (ice::build::is_windows)
             {
-                if (ice::path::extension(file_path) == ISP_PATH_LITERAL(".dll"))
+                if (file_path.extension() == ISP_PATH_LITERAL(".dll"))
                 {
                     provider->on_library_file(file_path);
                 }
             }
             if constexpr (ice::build::is_unix)
             {
-                if (ice::path::extension(file_path) == ISP_PATH_LITERAL(".so"))
+                if (file_path.extension() == ISP_PATH_LITERAL(".so"))
                 {
                     provider->on_library_file(file_path);
                 }

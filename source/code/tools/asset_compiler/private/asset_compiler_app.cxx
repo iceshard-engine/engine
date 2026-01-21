@@ -205,7 +205,7 @@ public:
             return 1;
         }
 
-        ice::String const res_ext = ice::path::extension(ice::resource_origin(res));
+        ice::String const res_ext = ice::resource_origin(res).extension();
 
         ice::ResourceCompiler const* resource_compiler = nullptr;
 
@@ -251,7 +251,7 @@ public:
             ICE_LOG_IF(result == ice::E_Fail, ice::LogSeverity::Warning, ice::LogTag::Tool, "{}", result.error());
         }
 
-        ice::HeapString<> final_asset_name{ _allocator, _asset_resource };
+        ice::HeapPath final_asset_name{ _allocator, _asset_resource };
 
         // If asset is in 'raw' format execute the resource compiler.
         // if (state == ice::AssetState::Raw)
@@ -270,7 +270,7 @@ public:
             }
 
             // Get the extension from the provided argument or empty
-            ice::String result_extension = ice::path::extension(final_asset_name);
+            ice::String result_extension = final_asset_name.extension();
 
             // ... but replace it if bake results expects a specific extension.
             if (resource_compiler->fn_bake_result_extension != nullptr)
@@ -290,17 +290,17 @@ public:
                 }
             }
             // If asset name has no extension, attach the result extension
-            else if (ice::path::extension(final_asset_name).is_empty())
+            else if (final_asset_name.extension().is_empty())
             {
                 ice::path::replace_extension(final_asset_name, result_extension);
             }
 
             // Warn if the final extension is different than what the resource compiler expects.
             ICE_LOG_IF(
-                result_extension.not_empty() && ice::path::extension(final_asset_name) != result_extension,
+                result_extension.not_empty() && final_asset_name.extension() != result_extension,
                 ice::LogSeverity::Warning, ice::LogTag::Tool,
                 "Asset compiler result extension '{}' differs from provided asset name extension {}!",
-                result_extension, ice::path::extension(final_asset_name)
+                result_extension, final_asset_name.extension()
             );
 
             ice::ResourceCompilerCtx ctx{ .userdata = nullptr };

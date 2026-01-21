@@ -404,9 +404,9 @@ namespace ice
         ) noexcept -> ice::TaskExpected<ice::String, ice::ErrorCode>
         {
             ice::ResourceResult const result = co_await tracker.load_resource(source);
-            ice::String const path = ice::resource_origin(source);
+            ice::Path const path = ice::resource_origin(source);
 
-            if (ice::path::extension(path) == ".asl")
+            if (path.extension() == ".asl")
             {
                 auto import_loader = ice::create_script_loader(alloc, tracker);
 
@@ -445,8 +445,8 @@ namespace ice
         {
             ShaderCompilerContext& sctx = *shader_context(ctx);
 
-            ice::String const path = ice::resource_origin(source);
-            ice::String const ext = ice::path::extension(path);
+            ice::Path const path = ice::resource_origin(source);
+            ice::String const ext = path.extension();
             bool const is_vertex_shader = path.substr(path.size() - (4 + ext.size()), ext.size()) == "vert";
 
             ice::render::ShaderStageFlags const shader_stage = is_vertex_shader

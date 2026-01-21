@@ -157,7 +157,7 @@ namespace ice
         ice::FileSystemResource* found_resource = nullptr;
         ice::ncount const origin_size = uri.path().size();
 
-        ice::HeapString<> predicted_path{ (ice::Allocator&) _named_allocator };
+        ice::HeapPath predicted_path{ (ice::Allocator&) _named_allocator };
         for (ice::native_file::FilePath base_path : _base_paths)
         {
             predicted_path.resize(0);
@@ -169,9 +169,9 @@ namespace ice
             //  While a base path like 'dir/subdir/' will create uris against 'dir/subdir/'
             if (base_path.back() != '/')
             {
-                ice::path::join(predicted_path, "..");
+                predicted_path.append("..");
             }
-            ice::path::join(predicted_path, uri.path());
+            predicted_path.append(uri.path());
             ice::path::normalize(predicted_path);
 
             found_resource = _resources.get(predicted_path, nullptr);
@@ -216,14 +216,14 @@ namespace ice
     {
         ice::ncount const origin_size = root_resource->origin().size();
 
-        ice::HeapString<> predicted_path{ (ice::Allocator&) _named_allocator };
+        ice::HeapPath predicted_path{ (ice::Allocator&) _named_allocator };
         predicted_path.reserve(origin_size + relative_uri.path().size());
 
         predicted_path = root_resource->origin().substr(
-            0, origin_size - ice::path::filename(root_resource->name()).size()
+            0, origin_size - ice::Path{ root_resource->name() }.filename().size()
         );
 
-        ice::path::join(predicted_path, relative_uri.path());
+        predicted_path.append(relative_uri.path());
         ice::path::normalize(predicted_path);
 
         return _resources.get(predicted_path, nullptr);

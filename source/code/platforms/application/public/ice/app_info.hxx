@@ -19,10 +19,10 @@ namespace ice::app
     auto version() noexcept -> ice::app::Version;
     auto name() noexcept -> ice::String;
 
-    auto location() noexcept -> ice::String;
+    auto location() noexcept -> ice::Path;
 
-    auto directory() noexcept -> ice::String;
+    auto directory() noexcept -> ice::Path;
 
-    auto workingdir() noexcept -> ice::String;
+    auto workingdir() noexcept -> ice::Path;
 
 } // namespace ice::app

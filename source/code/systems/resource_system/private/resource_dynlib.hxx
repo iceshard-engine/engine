@@ -15,7 +15,7 @@ namespace ice
     {
     public:
         Resource_DynLib(
-            ice::HeapString<> origin_path,
+            ice::HeapPath origin_path,
             ice::String origin_name
         ) noexcept;
 
@@ -25,11 +25,11 @@ namespace ice
         auto flags() const noexcept -> ice::ResourceFlags override;
 
         auto name() const noexcept -> ice::String override;
-        auto origin() const noexcept -> ice::String override;
+        auto origin() const noexcept -> ice::Path override;
 
     private:
-        ice::HeapString<> _origin_path;
-        ice::String _origin_name;
+        ice::HeapPath _origin_path;
+        ice::Path _origin_name;
 
         ice::URI _uri;
     };

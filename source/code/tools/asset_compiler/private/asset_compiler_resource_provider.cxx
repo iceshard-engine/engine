@@ -47,11 +47,10 @@ auto AssetCompilerResource::flags() const noexcept -> ice::ResourceFlags
 
 auto AssetCompilerResource::name() const noexcept -> ice::String
 {
-    // return ice::path::filename(_path);
-    return ice::path::basename(_path);
+    return _path.basename();
 }
 
-auto AssetCompilerResource::origin() const noexcept -> ice::String
+auto AssetCompilerResource::origin() const noexcept -> ice::Path
 {
     return _path;
 }

@@ -33,13 +33,13 @@ namespace ice
     ) noexcept
     {
         // Early out for metadata files.
-        if (ice::path::extension(file_path) == ISP_PATH_LITERAL(".isrm"))
+        if (file_path.extension() == ISP_PATH_LITERAL(".isrm"))
         {
             return;
         }
 
         ice::StackAllocator_1024 temp_alloc;
-        ice::native_file::FilePath const uribase = ice::path::directory(base_path);
+        ice::native_file::FilePath const uribase = base_path.directory();
         ice::native_file::FilePath const datafile = file_path;
         ice::native_file::HeapFilePath metafile{ temp_alloc };
         metafile.reserve(512);
@@ -135,14 +135,14 @@ namespace ice
     {
         ice::ncount const origin_size = root_resource->origin().size();
 
-        ice::HeapString<> predicted_path{ _allocator };
+        ice::HeapPath predicted_path{ _allocator };
         predicted_path.reserve(origin_size + relative_uri.path().size());
 
         predicted_path = root_resource->origin().substr(
-            0, origin_size - ice::path::filename(root_resource->name()).size()
+            0, origin_size - ice::Path{ root_resource->name() }.filename().size()
         );
 
-        ice::path::join(predicted_path, relative_uri.path());
+        predicted_path.append(relative_uri.path());
         ice::path::normalize(predicted_path);
 
         ice::u64 const resource_hash = ice::hash(ice::String{ predicted_path });

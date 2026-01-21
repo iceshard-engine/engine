@@ -2,9 +2,9 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/params_types.hxx>
 #include <ice/array.hxx>
-#include <ice/heap_string.hxx>
+#include <ice/params_types.hxx>
+#include <ice/path_utils.hxx>
 
 namespace ice
 {
@@ -93,6 +93,8 @@ namespace ice
     template<> bool params_define(ice::Params& params, ice::ParamDefinition const& definition, ice::i64& out_value) noexcept;
     template<> bool params_define(ice::Params& params, ice::ParamDefinition const& definition, ice::String& out_value) noexcept;
     template<> bool params_define(ice::Params& params, ice::ParamDefinition const& definition, ice::HeapString<>& out_value) noexcept;
+    template<> bool params_define(ice::Params& params, ice::ParamDefinition const& definition, ice::Path& out_value) noexcept;
+    template<> bool params_define(ice::Params& params, ice::ParamDefinition const& definition, ice::HeapPath& out_value) noexcept;
 
     template<> bool params_define(ice::Params& params, ice::ParamDefinition const& definition, ice::Array<ice::String>& out_values) noexcept;
     template<> bool params_define(ice::Params& params, ice::ParamDefinition const& definition, ice::Array<ice::HeapString<>>& out_values) noexcept;

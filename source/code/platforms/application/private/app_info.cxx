@@ -20,7 +20,7 @@ namespace ice::app
     }
 
 #if ISP_WINDOWS
-    auto location() noexcept -> ice::String
+    auto location() noexcept -> ice::Path
     {
         static ice::StaticString<256> app_location = []() noexcept
         {
@@ -35,16 +35,16 @@ namespace ice::app
             return ice::StaticString<256>{ location_utf8 };
         }();
 
-        return app_location;
+        return ice::Path{ app_location };
     }
 
-    auto directory() noexcept -> ice::String
+    auto directory() noexcept -> ice::Path
     {
-        static ice::String app_directory = ice::path::directory(location());
+        static ice::Path app_directory = location().directory();
         return app_directory;
     }
 
-    auto workingdir() noexcept -> ice::String
+    auto workingdir() noexcept -> ice::Path
     {
         static ice::StaticString<256> working_dir = []() noexcept
         {
@@ -59,7 +59,7 @@ namespace ice::app
             return ice::StaticString<256>{ location_utf8 };
         }();
 
-        return working_dir;
+        return ice::Path{ working_dir };
     }
 #elif ISP_LINUX
     auto location() noexcept -> ice::String

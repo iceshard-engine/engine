@@ -9,12 +9,12 @@ namespace ice
 {
 
     Resource_DynLib::Resource_DynLib(
-        ice::HeapString<> origin_path,
+        ice::HeapPath origin_path,
         ice::String origin_name
     ) noexcept
         : _origin_path{ ice::move(origin_path) }
         , _origin_name{ origin_name }
-        , _uri{ ice::Scheme_Dynlib, ice::path::basename(_origin_name) }
+        , _uri{ ice::Scheme_Dynlib, _origin_name.basename() }
     {
     }
 
@@ -33,7 +33,7 @@ namespace ice
         return _origin_name;
     }
 
-    auto Resource_DynLib::origin() const noexcept -> ice::String
+    auto Resource_DynLib::origin() const noexcept -> ice::Path
     {
         return _origin_path;
     }
@@ -48,11 +48,11 @@ namespace ice
 
         if (ice::native_file::exists_file(dll_path))
         {
-            ice::HeapString<> data_file_path{ alloc };
+            ice::HeapPath data_file_path{ alloc };
             ice::native_file::path_to_string(dll_path, data_file_path);
 
             // Need to get the string first before moving the HeapString path.
-            ice::String const utf8_origin_name = ice::path::filename(data_file_path);
+            ice::String const utf8_origin_name = data_file_path.filename();
             result = ice::create_resource_object<ice::Resource_DynLib>(
                 alloc,
                 provider,

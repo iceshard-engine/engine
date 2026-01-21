@@ -124,8 +124,8 @@ namespace ice
     };
 
     auto resource_uri(ice::ResourceHandle const& handle) noexcept -> ice::URI const&;
-    auto resource_origin(ice::ResourceHandle const& handle) noexcept -> ice::String;
-    auto resource_path(ice::ResourceHandle const& handle) noexcept -> ice::String;
+    auto resource_origin(ice::ResourceHandle const& handle) noexcept -> ice::Path;
+    auto resource_path(ice::ResourceHandle const& handle) noexcept -> ice::Path;
     auto resource_meta(ice::ResourceHandle const& handle, ice::Data& out_metadata) noexcept -> ice::Task<ice::Result>;
     auto get_loose_resource(ice::ResourceHandle const& handle) noexcept -> ice::LooseResource const*;
 

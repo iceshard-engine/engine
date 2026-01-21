@@ -135,7 +135,7 @@ namespace ice
         ice::Allocator& alloc,
         ice::usize meta_size,
         ice::usize data_size,
-        ice::HeapString<> origin_path,
+        ice::HeapPath origin_path,
         ice::String origin_name,
         ice::String uri_path
     ) noexcept
@@ -170,7 +170,7 @@ namespace ice
         return _origin_name;
     }
 
-    auto LooseFilesResource::origin() const noexcept -> ice::String
+    auto LooseFilesResource::origin() const noexcept -> ice::Path
     {
         return _origin_path;
     }
@@ -316,15 +316,15 @@ namespace ice
 
         // We create the main resource in a different scope so we dont accidentaly use data from there
         {
-            ice::HeapString<> utf8_file_path{ alloc };
+            ice::HeapPath utf8_file_path{ alloc };
             ice::native_file::path_to_string(data_filepath, utf8_file_path);
             ice::path::normalize(utf8_file_path);
             IPT_ZONE_TEXT_STR(utf8_file_path);
 
             // TODO: Decide how to handle the basepath naming.
-            bool const remove_slash = utf8_file_path[ice::path::length(base_path)] == '/';
-            ice::String const utf8_origin_name = utf8_file_path.substr(ice::path::length(base_path) + remove_slash);
-            ice::String const utf8_uri_path = utf8_file_path.substr(ice::path::length(uri_base_path));
+            bool const remove_slash = utf8_file_path[base_path.size()] == '/';
+            ice::String const utf8_origin_name = utf8_file_path.substr(base_path.size() + remove_slash);
+            ice::String const utf8_uri_path = utf8_file_path.substr(uri_base_path.size());
 
             IPT_ZONE_SCOPED_NAMED("stage: create_resource");
             main_resource = ice::create_resource_object<ice::LooseFilesResource>(

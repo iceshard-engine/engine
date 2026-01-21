@@ -6,68 +6,11 @@
 #include <ice/heap_string.hxx>
 #include <ice/log_formatters.hxx>
 
-namespace ice
-{
-
-    struct PathString
-    {
-        template<ice::concepts::SupportedCharType CharT>
-        static constexpr ice::BasicString<CharT> Separator_Dot;
-        template<ice::concepts::SupportedCharType CharT>
-        static constexpr ice::BasicString<CharT> Separator_Drive;
-        template<ice::concepts::SupportedCharType CharT>
-        static constexpr ice::BasicString<CharT> Separator_Directory;
-
-        template<> constexpr ice::BasicString<char> Separator_Dot<char> = ".";
-        template<> constexpr ice::BasicString<char> Separator_Drive<char> = ":";
-        template<> constexpr ice::BasicString<char> Separator_Directory<char> = "\\/";
-        template<> constexpr ice::BasicString<ice::wchar> Separator_Dot<ice::wchar> = L".";
-        template<> constexpr ice::BasicString<ice::wchar> Separator_Drive<ice::wchar> = L":";
-        template<> constexpr ice::BasicString<ice::wchar> Separator_Directory<ice::wchar> = L"\\/";
-
-        template<typename Self>
-        bool is_absolute(this Self const& self) noexcept
-        {
-            using CharType = ice::string::CharType<Self>;
-
-            if constexpr (ice::build::is_windows)
-            {
-                if (self.size() >= 3_count)
-                {
-                    return self[1] == Separator_Drive<CharType>[0] && Separator_Directory<CharType>.find_first_of(self[2]) != ice::nindex_none;
-                }
-                return false;
-            }
-            else
-            {
-                return self.not_empty() && self.front() == Separator_Directory<CharType>[1];
-            }
-        }
-
-        template<typename Self>
-        bool is_relative(this Self const& self) noexcept
-        {
-            return self.is_absolute() == false;
-        }
-    };
-
-    template<ice::concepts::SupportedCharType CharT>
-    struct BasicPath : public ice::BasicString<CharT>, public ice::PathString
-    {
-        using BasicString<CharT>::BasicString;
-        using BasicString<CharT>::operator std::basic_string_view<CharT>;
-
-        constexpr BasicPath(ice::BasicString<CharT> str) noexcept
-            : BasicString<CharT>{ str }
-        { }
-    };
-
-    using Path = ice::BasicPath<char>;
-
-} // namespace
-
 namespace ice::path
 {
+    //! \note On windows: starts with a drive letter, on linux: checks for starting backslash.
+    //! \return true If the path is absolute.
+    bool is_absolute(ice::String path) noexcept;
 
     //! \return true If the path is just the root part. (ex. 'C:/' or '/')
     bool is_absolute_root(ice::String path) noexcept;
@@ -127,7 +70,116 @@ namespace ice::path
     auto replace_filename(ice::HeapString<ice::wchar>& path, ice::WString filename) noexcept -> ice::WString;
     auto replace_extension(ice::HeapString<ice::wchar>& path, ice::WString extension) noexcept -> ice::WString;
 
+    template<ice::concepts::StringType StringT>
+    using Path = typename StringT::PathType;
+
 } // namespace ice::path
+
+namespace ice
+{
+
+    struct PathString
+    {
+        template<ice::concepts::SupportedCharType CharT>
+        static constexpr ice::BasicString<CharT> Separator_Dot;
+        template<ice::concepts::SupportedCharType CharT>
+        static constexpr ice::BasicString<CharT> Separator_Drive;
+        template<ice::concepts::SupportedCharType CharT>
+        static constexpr ice::BasicString<CharT> Separator_Directory;
+
+        template<> constexpr ice::BasicString<char> Separator_Dot<char> = ".";
+        template<> constexpr ice::BasicString<char> Separator_Drive<char> = ":";
+        template<> constexpr ice::BasicString<char> Separator_Directory<char> = "\\/";
+        template<> constexpr ice::BasicString<ice::wchar> Separator_Dot<ice::wchar> = L".";
+        template<> constexpr ice::BasicString<ice::wchar> Separator_Drive<ice::wchar> = L":";
+        template<> constexpr ice::BasicString<ice::wchar> Separator_Directory<ice::wchar> = L"\\/";
+
+        template<typename Self>
+        bool is_absolute(this Self const& self) noexcept
+        {
+            return ice::path::is_absolute(self);
+        }
+
+        template<typename Self>
+        bool is_relative(this Self const& self) noexcept
+        {
+            return self.is_absolute() == false;
+        }
+
+        template<typename Self>
+        constexpr auto extension(this Self const& self) noexcept -> ice::string::String<Self>
+        {
+            return ice::path::extension(self);
+        }
+
+        template<typename Self>
+        constexpr auto filename(this Self const& self) noexcept -> ice::string::String<Self>
+        {
+            return ice::path::filename(self);
+        }
+
+        template<typename Self>
+        constexpr auto basename(this Self const& self) noexcept -> ice::string::String<Self>
+        {
+            return ice::path::basename(self);
+        }
+
+        template<typename Self>
+        constexpr auto directory(this Self const& self) noexcept -> ice::path::Path<Self>
+        {
+            return ice::path::Path<Self>{ ice::path::directory(self) };
+        }
+    };
+
+    struct HeapPathString : public PathString
+    {
+        template<typename Self>
+        auto append(this Self& self, ice::path::Path<Self> other) noexcept -> ice::path::Path<Self>
+        {
+            return ice::path::Path<Self>{ ice::path::join(self, other) };
+        }
+    };
+
+    template<ice::concepts::SupportedCharType CharT>
+    struct BasicPath : public ice::BasicString<CharT>, public ice::PathString
+    {
+        using BasicString<CharT>::BasicString;
+        using BasicString<CharT>::operator std::basic_string_view<CharT>;
+        using PathType = ice::BasicPath<CharT>;
+
+        constexpr BasicPath(ice::BasicString<CharT> str) noexcept
+            : BasicString<CharT>{ str }
+        {}
+    };
+
+    template<ice::concepts::SupportedCharType CharT>
+    struct BasicHeapPath : public ice::HeapString<CharT>, public ice::HeapPathString
+    {
+        using HeapString<CharT>::HeapString;
+        using HeapString<CharT>::operator ice::BasicString<CharT>;
+        using HeapString<CharT>::operator =;
+        using PathType = ice::BasicPath<CharT>;
+
+        constexpr operator ice::BasicPath<CharT>() const noexcept { return { this->data(), this->size() }; }
+    };
+
+    using Path = ice::BasicPath<char>;
+    using HeapPath = ice::BasicHeapPath<char>;
+
+    template<typename CharT>
+    auto hash(ice::BasicPath<CharT> path) noexcept
+    {
+        return ice::hash(ice::String{ path });
+    }
+
+    template<typename CharT>
+    auto hash(ice::BasicHeapPath<CharT> path) noexcept
+    {
+        return ice::hash(ice::String{ path });
+    }
+
+} // namespace
+
 
 template<typename CharType>
 struct fmt::formatter<ice::BasicPath<CharType>> : public fmt::formatter<std::basic_string_view<CharType>>
@@ -136,5 +188,15 @@ struct fmt::formatter<ice::BasicPath<CharType>> : public fmt::formatter<std::bas
     constexpr auto format(ice::BasicPath<CharType> value, FormatContext& ctx) const noexcept
     {
         return fmt::formatter<std::basic_string_view<CharType>>::format(value, ctx);
+    }
+};
+
+template<typename CharType>
+struct fmt::formatter<ice::BasicHeapPath<CharType>> : public fmt::formatter<ice::BasicPath<CharType>>
+{
+    template<typename FormatContext>
+    constexpr auto format(ice::BasicHeapPath<CharType> value, FormatContext& ctx) const noexcept
+    {
+        return fmt::formatter<ice::BasicPath<CharType>>::format(value, ctx);
     }
 };

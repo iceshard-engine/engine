@@ -195,14 +195,14 @@ namespace ice
 
     HailStormResourceProvider::HailStormResourceProvider(
         ice::Allocator& alloc,
-        ice::String path,
+        ice::Path path,
         ice::native_aio::AIOPort aioport
     ) noexcept
         : _allocator{ alloc, "Hailstorm" }
         , _data_allocator{ alloc, "Data" }
         , _aioport{ aioport }
         , _hspack_path{ _allocator }
-        , _packname{ _allocator, ice::path::filename(path) }
+        , _packname{ _allocator, path.filename() }
         , _header_memory{ }
         , _paths_memory{ }
         , _loaders{ _allocator }

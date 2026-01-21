@@ -87,7 +87,7 @@ namespace ice
     BakedFileResource::BakedFileResource(
         ice::Allocator& alloc,
         ice::ResourceFormatHeader const& header,
-        ice::HeapString<> origin,
+        ice::HeapPath origin,
         ice::HeapString<> name
     ) noexcept
         : _allocator{ alloc }
@@ -117,7 +117,7 @@ namespace ice
         return _uri.path().substr(1);
     }
 
-    auto BakedFileResource::origin() const noexcept -> ice::String
+    auto BakedFileResource::origin() const noexcept -> ice::Path
     {
         return _origin;
     }
@@ -196,7 +196,7 @@ namespace ice
             return main_resource;
         }
 
-        ice::HeapString<> utf8_file_path{ alloc };
+        ice::HeapPath utf8_file_path{ alloc };
         ice::native_file::path_to_string(file_path, utf8_file_path);
         ice::path::normalize(utf8_file_path);
         IPT_ZONE_TEXT_STR(utf8_file_path);

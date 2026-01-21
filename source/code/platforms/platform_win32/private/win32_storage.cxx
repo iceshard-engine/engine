@@ -89,17 +89,17 @@ namespace ice::platform::win32
         return false;
     }
 
-    auto win32::Win32Storage::data_locations() const noexcept -> ice::Span<ice::String const>
+    auto win32::Win32Storage::data_locations() const noexcept -> ice::Span<ice::Path const>
     {
-        static ice::String paths[]{
+        static ice::Path paths[]{
             ice::app::directory()
         };
         return paths;
     }
 
-    auto win32::Win32Storage::dylibs_location() const noexcept -> ice::String
+    auto win32::Win32Storage::dylibs_location() const noexcept -> ice::Path
     {
-        return ice::path::directory(ice::app::location());
+        return ice::app::location().directory();
     }
 
     void win32::Win32Storage::reload_paths(ice::String appname) noexcept

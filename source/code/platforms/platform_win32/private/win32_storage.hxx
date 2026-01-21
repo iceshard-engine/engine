@@ -3,7 +3,7 @@
 
 #pragma once
 #include <ice/platform_storage.hxx>
-#include <ice/heap_string.hxx>
+#include <ice/path_utils.hxx>
 #include <ice/span.hxx>
 
 #if ISP_WINDOWS
@@ -24,14 +24,14 @@ namespace ice::platform::win32
         //! \return 'true' If the operation was supported and successful.
         bool set_appname(ice::String name) noexcept;
 
-        auto data_locations() const noexcept -> ice::Span<ice::String const> override;
-        auto save_location() const noexcept -> ice::String override { return _save_location; }
-        auto cache_location() const noexcept -> ice::String override { return _cache_location; }
+        auto data_locations() const noexcept -> ice::Span<ice::Path const> override;
+        auto save_location() const noexcept -> ice::Path override { return _save_location; }
+        auto cache_location() const noexcept -> ice::Path override { return _cache_location; }
 
-        auto temp_location() const noexcept -> ice::String override { return _temp_location; }
-        auto usercontent_location(UserContentType content_type) const noexcept -> ice::String override { return {}; }
+        auto temp_location() const noexcept -> ice::Path override { return _temp_location; }
+        auto usercontent_location(UserContentType content_type) const noexcept -> ice::Path override { return {}; }
 
-        auto dylibs_location() const noexcept -> ice::String override;
+        auto dylibs_location() const noexcept -> ice::Path override;
 
         [[deprecated]]
         auto internal_data() const noexcept -> ice::String { return {}; }
@@ -44,11 +44,11 @@ namespace ice::platform::win32
         void reload_paths(ice::String appname) noexcept;
 
     private:
-        ice::HeapString<> _save_location;
-        ice::HeapString<> _cache_location;
-        ice::HeapString<> _temp_location;
-        ice::HeapString<> _pictures_location;
-        ice::HeapString<> _other_location;
+        ice::HeapPath _save_location;
+        ice::HeapPath _cache_location;
+        ice::HeapPath _temp_location;
+        ice::HeapPath _pictures_location;
+        ice::HeapPath _other_location;
     };
 
 
