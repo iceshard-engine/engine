@@ -198,7 +198,7 @@ namespace ice
 
         ice::HeapPath utf8_file_path{ alloc };
         ice::native_file::path_to_string(file_path, utf8_file_path);
-        ice::path::normalize(utf8_file_path);
+        utf8_file_path.normalize();
         IPT_ZONE_TEXT_STR(utf8_file_path);
 
         ice::HeapString<> utf8_uri{ alloc };

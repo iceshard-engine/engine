@@ -286,13 +286,13 @@ public:
                 // Replace the extension if a result extension is provided.
                 if (result_extension.not_empty())
                 {
-                    ice::path::replace_extension(final_asset_name, result_extension);
+                    final_asset_name.replace_extension(result_extension);
                 }
             }
             // If asset name has no extension, attach the result extension
             else if (final_asset_name.extension().is_empty())
             {
-                ice::path::replace_extension(final_asset_name, result_extension);
+                final_asset_name.replace_extension(result_extension);
             }
 
             // Warn if the final extension is different than what the resource compiler expects.

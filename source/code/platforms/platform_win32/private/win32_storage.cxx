@@ -22,7 +22,7 @@ namespace ice::platform::win32
     namespace detail
     {
 
-        void get_known_path(ice::HeapString<>& out_path, const GUID& known_path_guid, ice::String appname = {})
+        void get_known_path(ice::HeapPath& out_path, const GUID& known_path_guid, ice::String appname = {})
         {
             PWSTR path;
             if (SHGetKnownFolderPath(known_path_guid, KF_FLAG_CREATE, NULL, &path) == S_OK)
@@ -37,7 +37,7 @@ namespace ice::platform::win32
                     out_path.push_back(appname);
                     out_path.push_back('\\');
                 }
-                ice::path::normalize(out_path);
+                out_path.normalize();
                 CoTaskMemFree(path);
             }
         }
@@ -124,7 +124,7 @@ namespace ice::platform::win32
         // GetTempPathW already returns a path ending with a slash character.
         DWORD const len = GetTempPathW(256, tempbuff);
         ice::wide_to_utf8_append({ tempbuff, ice::u32(len) }, _temp_location);
-        ice::path::normalize(_temp_location);
+        _temp_location.normalize();
     }
 
 } // namespace ice

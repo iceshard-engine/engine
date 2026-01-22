@@ -161,10 +161,10 @@ namespace ice
         //  While a base path like 'dir/subdir/' will create uris against 'dir/subdir/'
         if (_base_path.back() != '/')
         {
-            predicted_path.append("..");
+            predicted_path.join("..");
         }
-        predicted_path.append(uri.path());
-        ice::path::normalize(predicted_path);
+        predicted_path.join(uri.path());
+        predicted_path.normalize();
 
         return _resources.get(predicted_path, nullptr);
     }
@@ -209,8 +209,8 @@ namespace ice
             0, origin_size - ice::Path{ root_resource->name() }.filename().size()
         );
 
-        predicted_path.append(relative_uri.path());
-        ice::path::normalize(predicted_path);
+        predicted_path.join(relative_uri.path());
+        predicted_path.normalize();
 
         return _resources.get(predicted_path, nullptr);
     }
@@ -236,17 +236,17 @@ namespace ice
 
             predicted_metapath.resize(0);
             predicted_metapath.reserve(origin_size + _base_path.size());
-            ice::path::join(predicted_metapath, _base_path);
+            predicted_metapath.join(_base_path);
 
             // Remove one directory if neccessary, because it's may be the common value of the base path and the uri path.
             // Note: This is because if a base path like 'dir/subdir' is provided the uri is created against 'dir/'
             //  While a base path like 'dir/subdir/' will create uris against 'dir/subdir/'
             if (_base_path.back() != '/')
             {
-                ice::path::join(predicted_metapath, ISP_PATH_LITERAL(".."));
+                predicted_metapath.join(ISP_PATH_LITERAL(".."));
             }
             ice::native_file::path_join_string(predicted_metapath, uri.path());
-            ice::path::normalize(predicted_metapath);
+            predicted_metapath.normalize();
 
             // Metapath is the actuall file path + .isrm, so we just save the lenght before the appending
             //  to have access to both paths.

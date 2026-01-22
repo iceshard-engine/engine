@@ -28,10 +28,10 @@ auto ice::tool::path_make_absolute(ice::native_file::FilePath path) noexcept -> 
     if (path.is_relative())
     {
         searched_utf8_path.clear();
-        ice::path::join(searched_utf8_path, ice::tool::path_current_directory());
-        ice::path::join(searched_utf8_path, path);
+        searched_utf8_path.join(ice::tool::path_current_directory());
+        searched_utf8_path.join(path);
     }
 
-    ice::path::normalize(searched_utf8_path);
+    searched_utf8_path.normalize();
     return searched_utf8_path;
 }

@@ -142,8 +142,8 @@ namespace ice
             0, origin_size - ice::Path{ root_resource->name() }.filename().size()
         );
 
-        predicted_path.append(relative_uri.path());
-        ice::path::normalize(predicted_path);
+        predicted_path.join(relative_uri.path());
+        predicted_path.normalize();
 
         ice::u64 const resource_hash = ice::hash(ice::String{ predicted_path });
 

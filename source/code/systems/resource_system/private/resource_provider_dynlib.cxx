@@ -25,7 +25,7 @@ namespace ice
             , _resources{ _allocator }
         {
             ice::native_file::path_from_string(_base_path, path);
-            ice::path::normalize(_base_path);
+            _base_path.normalize();
         }
 
         ~ResourceProvider_DynLibs() noexcept override

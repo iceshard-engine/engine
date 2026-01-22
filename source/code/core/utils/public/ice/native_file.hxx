@@ -166,7 +166,7 @@ namespace ice::native_file
         (ice::native_file::path_join_string(result, ice::forward<Strings>(strings)), ...);
         if constexpr (ice::has_all(Flags, PathFlags::Normalized))
         {
-            ice::path::normalize(result);
+            result.normalize();
         }
         return result;
     }

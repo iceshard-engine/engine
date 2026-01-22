@@ -14,9 +14,9 @@ auto hscp_process_directory(ice::Allocator& alloc, ice::Path dir) noexcept -> ic
     if (dir.is_relative())
     {
         searched_utf8_path = ice::app::workingdir();
-        searched_utf8_path.append(dir);
+        searched_utf8_path.join(dir);
     }
 
-    ice::path::normalize(searched_utf8_path);
+    searched_utf8_path.normalize();
     return searched_utf8_path;
 }

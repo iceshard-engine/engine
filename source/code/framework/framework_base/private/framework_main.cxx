@@ -94,8 +94,8 @@ struct ice::app::Config
             , assets{ alloc }
         { }
 
-        ice::HeapString<> shaders;
-        ice::HeapString<> assets;
+        ice::HeapPath shaders;
+        ice::HeapPath assets;
     } dev_dirs;
 };
 
@@ -334,10 +334,10 @@ auto ice_setup(
         config.dev_dirs.assets = ice::app::workingdir();
 
         // Assumes the apps working-dir is in 'build' and no changes where done to shader compilation step
-        ice::path::join(config.dev_dirs.shaders, "obj/VkShaders/GFX-Vulkan-Unoptimized-vk-glslc-1-3/data");
-        ice::path::join(config.dev_dirs.assets, "../source/data");
-        ice::path::normalize(config.dev_dirs.shaders);
-        ice::path::normalize(config.dev_dirs.assets);
+        config.dev_dirs.shaders.join("obj/VkShaders/GFX-Vulkan-Unoptimized-vk-glslc-1-3/data");
+        config.dev_dirs.assets.join("../source/data");
+        config.dev_dirs.shaders.normalize();
+        config.dev_dirs.assets.normalize();
         config.dev_dirs.shaders.push_back('/');
         config.dev_dirs.assets.push_back('/');
         resource_paths.push_back(config.dev_dirs.assets);

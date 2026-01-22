@@ -134,9 +134,27 @@ namespace ice
     struct HeapPathString : public PathString
     {
         template<typename Self>
-        auto append(this Self& self, ice::path::Path<Self> other) noexcept -> ice::path::Path<Self>
+        auto join(this Self& self, ice::path::Path<Self> other) noexcept -> ice::path::Path<Self>
         {
             return ice::path::Path<Self>{ ice::path::join(self, other) };
+        }
+
+        template<typename Self>
+        auto normalize(this Self& self) noexcept -> ice::path::Path<Self>
+        {
+            return ice::path::Path<Self>{ ice::path::normalize(self) };
+        }
+
+        template<typename Self>
+        auto replace_filename(this Self& self, ice::string::String<Self> filename) noexcept -> ice::path::Path<Self>
+        {
+            return ice::path::Path<Self>{ ice::path::replace_filename(self, filename) };
+        }
+
+        template<typename Self>
+        auto replace_extension(this Self& self, ice::string::String<Self> extension) noexcept -> ice::path::Path<Self>
+        {
+            return ice::path::Path<Self>{ ice::path::replace_extension(self, extension) };
         }
     };
 

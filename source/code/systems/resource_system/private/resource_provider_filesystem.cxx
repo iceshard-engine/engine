@@ -32,7 +32,7 @@ namespace ice
         for (ice::String path : paths)
         {
             ice::native_file::path_from_string(base_path, path);
-            ice::path::normalize(base_path);
+            base_path.normalize();
             _base_paths.push_back(base_path);
         }
     }
@@ -169,10 +169,10 @@ namespace ice
             //  While a base path like 'dir/subdir/' will create uris against 'dir/subdir/'
             if (base_path.back() != '/')
             {
-                predicted_path.append("..");
+                predicted_path.join("..");
             }
-            predicted_path.append(uri.path());
-            ice::path::normalize(predicted_path);
+            predicted_path.join(uri.path());
+            predicted_path.normalize();
 
             found_resource = _resources.get(predicted_path, nullptr);
             if (found_resource != nullptr)
@@ -223,8 +223,8 @@ namespace ice
             0, origin_size - ice::Path{ root_resource->name() }.filename().size()
         );
 
-        predicted_path.append(relative_uri.path());
-        ice::path::normalize(predicted_path);
+        predicted_path.join(relative_uri.path());
+        predicted_path.normalize();
 
         return _resources.get(predicted_path, nullptr);
     }

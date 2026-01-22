@@ -174,11 +174,11 @@ namespace ice
 
         ice::FileSystemResource* found_resource = nullptr;
 
-        ice::HeapString<> predicted_path{ (ice::Allocator&)_named_allocator };
+        ice::HeapPath predicted_path{ (ice::Allocator&)_named_allocator };
         for (ice::FileListEntry const& file_entry : _file_paths)
         {
             ice::native_file::path_to_string(file_entry.path, predicted_path);
-            ice::path::normalize(predicted_path);
+            predicted_path.normalize();
 
             if (found_resource = _resources.get(uri.path(), nullptr); found_resource != nullptr)
             {
@@ -228,8 +228,8 @@ namespace ice
             0, origin_size - ice::Path{ root_resource->name() }.filename().size()
         );
 
-        predicted_path.append(relative_uri.path());
-        ice::path::normalize(predicted_path);
+        predicted_path.join(relative_uri.path());
+        predicted_path.normalize();
 
         ice::FileSystemResource const* found_resource = _resources.get(predicted_path, nullptr);
         if (found_resource != nullptr)
