@@ -1,5 +1,5 @@
 [requires]
-fastbuild-installer/1.12@iceshard/stable
+fastbuild-installer/1.18@iceshard/stable
 ice-build-tools/1.12.0-alpha@iceshard/stable
 
 [generators]
