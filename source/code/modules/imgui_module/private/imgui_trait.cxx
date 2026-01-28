@@ -409,7 +409,7 @@ namespace ice::devui
         IPT_ZONE_SCOPED_NAMED("ImGui - Load texture");
 
         ice::HeapString<> texture_name{ _allocator };
-        ice::string::push_format(texture_name, detail::TextureNameFormat, texture->UniqueID);
+        texture_name.push_format(detail::TextureNameFormat, texture->UniqueID);
         IPT_ZONE_TEXT_STR(texture_name);
 
         detail::ImTextureAssetDataBinding texture_binding{ _allocator, *texture };

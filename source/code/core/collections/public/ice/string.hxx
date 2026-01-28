@@ -5,6 +5,7 @@
 #include <ice/stringid.hxx>
 #include <ice/string/string_concepts.hxx>
 #include <ice/string/readonly_operations.hxx>
+#include <fmt/format.h>
 
 namespace ice
 {
@@ -112,3 +113,13 @@ namespace ice
     }
 
 } // namespace ice
+
+template<typename CharType>
+struct fmt::formatter<ice::BasicString<CharType>> : public fmt::formatter<std::basic_string_view<CharType>>
+{
+    template<typename FormatContext>
+    constexpr auto format(ice::BasicString<CharType> value, FormatContext& ctx) const noexcept
+    {
+        return fmt::formatter<std::basic_string_view<CharType>>::format(value, ctx);
+    }
+};

@@ -17,20 +17,6 @@ namespace ice
     namespace string
     {
 
-        template<typename... Args>
-        constexpr void push_format(
-            ice::string::ResizableStringType auto& str,
-            fmt::format_string<Args...> format,
-            Args&&... args
-        ) noexcept;
-
-        template<ice::u32 Capacity, typename... Args>
-        constexpr void push_format(
-            ice::StaticString<Capacity, char>& str,
-            fmt::format_string<Args...> format,
-            Args&&... args
-        ) noexcept;
-
         template<typename Fn>
         constexpr auto for_each_split(
             ice::String contents,
@@ -183,40 +169,6 @@ namespace ice
 
     namespace string
     {
-
-        template<typename... Args>
-        constexpr void push_format(
-            ice::string::ResizableStringType auto& str,
-            fmt::format_string<Args...> format,
-            Args&&... args
-        ) noexcept
-        {
-            ice::ncount const pushed_size = fmt::formatted_size(format, ice::forward<Args>(args)...);
-            ice::ncount const final_size = str.size() + pushed_size;
-            if (final_size + 1 >= str.capacity())
-            {
-                str.grow(final_size + 1);
-            }
-            fmt::format_to_n(str.end(), pushed_size, format, ice::forward<Args>(args)...);
-            str.resize(final_size);
-        }
-
-        template<ice::u32 Capacity, typename... Args>
-        constexpr void push_format(
-            ice::StaticString<Capacity, char>& str,
-            fmt::format_string<Args...> format,
-            Args&&... args
-        ) noexcept
-        {
-            ice::ncount const pushed_size = fmt::formatted_size(format, ice::forward<Args>(args)...);
-            ice::ncount const final_size = str.size() + pushed_size;
-            if (final_size + 1 >= Capacity)
-            {
-                final_size = Capacity - 1;
-            }
-            fmt::format_to_n(str.end(), final_size, format, ice::forward<Args>(args)...);
-            str.resize(final_size);
-        }
 
         template<typename Fn>
         constexpr auto for_each_split(ice::String contents, ice::String separator, Fn&& fn) noexcept -> ice::u32

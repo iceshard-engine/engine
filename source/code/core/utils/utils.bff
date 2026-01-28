@@ -12,7 +12,6 @@
     .Public =
     [
         .Modules = {
-            'fmt'
             'cli11'
         }
         .Uses = {

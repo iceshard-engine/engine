@@ -253,3 +253,13 @@ namespace ice
     }
 
 } // namespace ice
+
+template<typename CharType>
+struct fmt::formatter<ice::HeapString<CharType>> : public fmt::formatter<ice::BasicString<CharType>>
+{
+    template<typename FormatContext>
+    constexpr auto format(ice::HeapString<CharType> const& value, FormatContext& ctx) const noexcept
+    {
+        return fmt::formatter<ice::BasicString<CharType>>::format({ value._data, value._size }, ctx);
+    }
+};

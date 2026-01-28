@@ -243,7 +243,7 @@ namespace ice
         if constexpr (false)
         {
             ice::HeapString<> uri_base{ _named_allocator };
-            ice::string::push_format(uri_base, "file://{}/", _virtual_hostname);
+            uri_base.push_format("file://{}/", _virtual_hostname);
 
             return create_resource_from_baked_file(_named_allocator, *this, uri_base, filepath);
         }

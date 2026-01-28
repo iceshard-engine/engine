@@ -83,7 +83,7 @@ namespace ice
     ) noexcept -> ice::Params
     {
         ice::HeapString<> description_with_version{ alloc, description };
-        ice::string::push_format(description_with_version, " (v{})", version);
+        description_with_version.push_format(" (v{})", version);
         return ice::make_unique<ice::ParamsInternal>(
             delete_params,
             alloc.create<ParamsInternal>(alloc, name, description_with_version)

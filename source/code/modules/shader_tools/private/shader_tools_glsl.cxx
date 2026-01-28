@@ -51,8 +51,7 @@ namespace ice
         {
             if (type.is_array)
             {
-                ice::string::push_format(
-                    out_code,
+                out_code.push_format(
                     "    {} {}[{}];\n",
                     type.name.value,
                     varname,
@@ -61,8 +60,7 @@ namespace ice
             }
             else
             {
-                ice::string::push_format(
-                    out_code,
+                out_code.push_format(
                     "    {} {};\n",
                     type.name.value,
                     varname
@@ -86,13 +84,13 @@ namespace ice
                 arctic::String var_base = atom.data().value.value;
                 var_base = subs.get(detail::arc_hash(var_base), var_base);
 
-                ice::string::push_format(out_code, "{}.", var_base);
+                out_code.push_format("{}.", var_base);
                 generate_expression(out_code, subs, func, arg, op.sibling());
             }
             else
             {
                 arctic::String const atom_sub = atom.data().value.value;
-                ice::string::push_format(out_code, "{}", atom_sub);
+                out_code.push_format("{}", atom_sub);
             }
         }
 
@@ -139,11 +137,11 @@ namespace ice
                     syntax::Operator const& op = node.to<syntax::Operator>().data();
                     if (op.is_unary)
                     {
-                        ice::string::push_format(result, "{}", op.token.value);
+                        result.push_format("{}", op.token.value);
                     }
                     else
                     {
-                        ice::string::push_format(result, " {} ", op.token.value);
+                        result.push_format(" {} ", op.token.value);
                     }
 
                     if (node.child())
@@ -153,7 +151,7 @@ namespace ice
                     break;
                 }
                 case SyntaxEntity::E_Call:
-                    ice::string::push_format(result, "{}(", node.to<syntax::Call>().data().name.value);
+                    result.push_format("{}(", node.to<syntax::Call>().data().name.value);
                     // Call children groups
                     generate_expression(result, subs, func, arg, node.child());
                     result.push_back(")");
@@ -187,7 +185,7 @@ namespace ice
             ICE_ASSERT_CORE(typenode);
 
             syntax::Type const& type = typenode.data();
-            ice::string::push_format(result, "{} {}", type.name.value, var.name.value);
+            result.push_format("{} {}", type.name.value, var.name.value);
 
             if (SyntaxNode assignnode = typenode.sibling<syntax::Operator>(); assignnode)
             {
@@ -232,7 +230,7 @@ namespace ice
 
             ice::HeapString<> result{ alloc };
             // Initial lines
-            ice::string::push_format(result, "#version 450\n\n");
+            result.push_format("#version 450\n\n");
 
             // Generate struct definitions
             for (SyntaxNode<syntax::Struct> strct : shader._structs)
@@ -253,12 +251,12 @@ namespace ice
                     continue;
                 }
 
-                ice::string::push_format(result, "struct {} {{\n", strct.data().name.value);
+                result.push_format("struct {} {{\n", strct.data().name.value);
                 SyntaxNode<syntax::StructMember> member = strct.child<syntax::StructMember>();
                 while (member)
                 {
                     syntax::Type const& type = member.child<syntax::Type>().data();
-                    ice::string::push_format(result, "    {} {};\n", type.name.value, member.data().name.value);
+                    result.push_format("    {} {};\n", type.name.value, member.data().name.value);
                     member = member.sibling<syntax::StructMember>();
                 }
                 result.push_back("};\n\n");
@@ -283,8 +281,8 @@ namespace ice
                 arctic::String location;
                 if (detail::arc_annotation(member, "location", location))
                 {
-                    ice::string::push_format(
-                        result, "layout (location={}) in {} in_{};\n",
+                    result.push_format(
+                        "layout (location={}) in {} in_{};\n",
                         location, type.name.value, /*func_arg_name, */ member.data().name.value
                     );
                 }
@@ -300,8 +298,8 @@ namespace ice
                 arctic::String location;
                 if (detail::arc_annotation(member, "location", location))
                 {
-                    ice::string::push_format(
-                        result, "layout (location={}) out {} out_{};\n",
+                    result.push_format(
+                        "layout (location={}) out {} out_{};\n",
                         location, type.name.value, /*func_arg_name, */ member.data().name.value
                     );
                 }
@@ -323,7 +321,7 @@ namespace ice
                 SyntaxNode<syntax::Struct> strct = shader.find_struct(variable.child<syntax::Type>());
                 if (member = strct.child<syntax::StructMember>(); member)
                 {
-                    ice::string::push_format(result, "layout (std140, set={}, binding={}) uniform {} {{\n",
+                    result.push_format("layout (std140, set={}, binding={}) uniform {} {{\n",
                         set, binding, variable.child<syntax::Type>().data().name.value
                     );
 
@@ -337,10 +335,10 @@ namespace ice
                         member = member.sibling<syntax::StructMember>();
                     }
 
-                    ice::string::push_format(result, "}} {}", variable.data().name.value);
+                    result.push_format("}} {}", variable.data().name.value);
                     if (vartype.is_array)
                     {
-                        ice::string::push_format(result, "[{}]", vartype.size_array.value);
+                        result.push_format("[{}]", vartype.size_array.value);
                     }
                     result.push_back(";\n\n");
                 }
@@ -348,7 +346,7 @@ namespace ice
                 {
                     arctic::String const type = variable.child<syntax::Type>().data().name.value;
                     arctic::String const name = variable.data().name.value;
-                    ice::string::push_format(result, "layout(set={}, binding={}) uniform {} {};\n", set, binding, type, name);
+                    result.push_format("layout(set={}, binding={}) uniform {} {};\n", set, binding, type, name);
                 }
             }
 
@@ -356,17 +354,17 @@ namespace ice
             {
                 SyntaxNode<syntax::Struct> strct = shader.find_struct(shader._pushcontants.child<syntax::Type>());
 
-                ice::string::push_format(result, "layout(push_constant) uniform {} {{\n",
+                result.push_format("layout(push_constant) uniform {} {{\n",
                     shader._pushcontants.child<syntax::Type>().data().name.value
                 );
                 member = strct.child<syntax::StructMember>();
                 while (member)
                 {
                     syntax::Type const& type = member.child<syntax::Type>().data();
-                    ice::string::push_format(result, "    {} {};\n", type.name.value, member.data().name.value);
+                    result.push_format("    {} {};\n", type.name.value, member.data().name.value);
                     member = member.sibling<syntax::StructMember>();
                 }
-                ice::string::push_format(result, "}} {};\n\n", shader._pushcontants.data().name.value);
+                result.push_format("}} {};\n\n", shader._pushcontants.data().name.value);
             }
 
             // Generate shader main
@@ -376,16 +374,16 @@ namespace ice
             ICE_ASSERT_CORE(ret && body);
 
 
-            ice::string::push_format(result, "\nvoid asl_proxy_{}(", shader._mainfunc.data().name.value);
+            result.push_format("\nvoid asl_proxy_{}(", shader._mainfunc.data().name.value);
             subs.set(detail::arc_hash(arg.data().name.value), arctic::String{ "_a_inputs" });
             subs.set(detail::arc_hash(shader._mainfunc.data().name.value), arctic::String{ "_a_outputs" });
-            ice::string::push_format(result, "in {} _a_inputs, ", shader._inputs.data().name.value, arg.data().name.value);
-            ice::string::push_format(result, "out {} _a_outputs) {{\n", shader._outputs.data().name.value, shader._mainfunc.data().name.value);
+            result.push_format("in {} _a_inputs, ", shader._inputs.data().name.value, arg.data().name.value);
+            result.push_format("out {} _a_outputs) {{\n", shader._outputs.data().name.value, shader._mainfunc.data().name.value);
             generate_function(result, subs, shader._mainfunc.data(), arg.data(), ret.data(), body.child<>());
             result.push_back("}\n");
 
-            ice::string::push_format(result, "\nvoid {}() {{\n", "main"); // GLSL requires 'main' as the function name
-            ice::string::push_format(result, "    {0} inputs = {0}(", shader._inputs.data().name.value);
+            result.push_format("\nvoid {}() {{\n", "main"); // GLSL requires 'main' as the function name
+            result.push_format("    {0} inputs = {0}(", shader._inputs.data().name.value);
             {
                 member = shader._inputs.child<syntax::StructMember>();
                 while (member)
@@ -400,15 +398,15 @@ namespace ice
                     }
                     else
                     {
-                        ice::string::push_format(result, "in_{}, ", member.data().name.value);
+                        result.push_format("in_{}, ", member.data().name.value);
                     }
                     member = member.sibling<syntax::StructMember>();
                 }
                 result.pop_back(2);
             }
             result.push_back(");\n");
-            ice::string::push_format(result, "    {} outputs;\n", shader._outputs.data().name.value);
-            ice::string::push_format(result, "    asl_proxy_{}(inputs, outputs);\n", shader._mainfunc.data().name.value);
+            result.push_format("    {} outputs;\n", shader._outputs.data().name.value);
+            result.push_format("    asl_proxy_{}(inputs, outputs);\n", shader._mainfunc.data().name.value);
             {
                 member = shader._outputs.child<syntax::StructMember>();
                 while (member)
@@ -418,12 +416,12 @@ namespace ice
                     {
                         if (builtin == "position")
                         {
-                            ice::string::push_format(result, "    gl_Position = outputs.{};\n", member.data().name.value);
+                            result.push_format("    gl_Position = outputs.{};\n", member.data().name.value);
                         }
                     }
                     else
                     {
-                        ice::string::push_format(result, "    out_{0} = outputs.{0};\n", member.data().name.value);
+                        result.push_format("    out_{0} = outputs.{0};\n", member.data().name.value);
                     }
                     member = member.sibling<syntax::StructMember>();
                 }

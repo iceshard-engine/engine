@@ -55,7 +55,7 @@ namespace ice::path
     //! \returns The given path as a String value.
     auto replace_extension(ice::HeapString<>& path, ice::String extension) noexcept -> ice::String;
 
-    // Wider character implementations
+    // Wide character implementations
 
     bool is_absolute(ice::WString path) noexcept;
     bool is_absolute_root(ice::WString path) noexcept;

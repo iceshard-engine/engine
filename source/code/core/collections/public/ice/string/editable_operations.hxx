@@ -3,6 +3,7 @@
 
 #pragma once
 #include <ice/string/readonly_operations.hxx>
+#include <fmt/format.h>
 
 namespace ice::string
 {
@@ -78,6 +79,41 @@ namespace ice::string
 
                 self.resize(new_size);
             }
+        }
+
+        template<MutableStringType Self, typename... Args>
+        inline constexpr void push_format(
+            this Self& self,
+            fmt::format_string<Args...> format,
+            Args&&... args
+        ) noexcept
+        {
+            ice::ncount const pushed_size = ::fmt::formatted_size(format, std::forward<Args>(args)...);
+            ice::ncount const final_size = self.size() + pushed_size;
+            ice::ncount const capacity = self.capacity() - 1;
+
+            // Handle resizing if supported
+            if constexpr (ice::concepts::ResizableStringType<Self>)
+            {
+                if (final_size >= capacity)
+                {
+                    self.grow(final_size + 1);
+                }
+
+                ::fmt::format_to_n(self.end(), pushed_size, format, std::forward<Args>(args)...);
+            }
+            else
+            {
+                //ICE_ASSERT_CORE(final_size < capacity);
+                final_size = ice::min(final_size, capacity);
+
+                ice::ncount const allowed_growth = capacity - self.size();
+                if (allowed_growth > 0)
+                {
+                    ::fmt::format_to_n(self.end(), allowed_growth, format, std::forward<Args>(args)...);
+                }
+            }
+            self.resize(final_size);
         }
 
         template<MutableStringType Self>

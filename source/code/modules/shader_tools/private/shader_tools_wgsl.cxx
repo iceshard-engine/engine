@@ -35,8 +35,7 @@ namespace ice
         {
             if (type.is_array)
             {
-                ice::string::push_format(
-                    out_code,
+                out_code.push_format(
                     "{}: array<{}, {}>,\n",
                     varname,
                     type.name.value,
@@ -45,8 +44,7 @@ namespace ice
             }
             else
             {
-                ice::string::push_format(
-                    out_code,
+                out_code.push_format(
                     "{}: {},\n",
                     varname,
                     type.name.value
@@ -79,13 +77,13 @@ namespace ice
                 arctic::String var_base = atom.data().value.value;
                 var_base = subs.get(detail::arc_hash(var_base), var_base);
 
-                ice::string::push_format(out_code, "{}.", var_base);
+                out_code.push_format("{}.", var_base);
                 generate_expression(out_code, subs, func, arg, op.sibling());
             }
             else
             {
                 arctic::String const atom_sub = atom.data().value.value;
-                ice::string::push_format(out_code, "{}", atom_sub);
+                out_code.push_format("{}", atom_sub);
             }
         }
 
@@ -132,11 +130,11 @@ namespace ice
                     syntax::Operator const& op = node.to<syntax::Operator>().data();
                     if (op.is_unary)
                     {
-                        ice::string::push_format(result, "{}", op.token.value);
+                        result.push_format("{}", op.token.value);
                     }
                     else
                     {
-                        ice::string::push_format(result, " {} ", op.token.value);
+                        result.push_format(" {} ", op.token.value);
                     }
 
                     if (node.child())
@@ -146,7 +144,7 @@ namespace ice
                     break;
                 }
                 case SyntaxEntity::E_Call:
-                    ice::string::push_format(result, "{}(", node.to<syntax::Call>().data().name.value);
+                    result.push_format("{}(", node.to<syntax::Call>().data().name.value);
                     // Call children groups
                     generate_expression(result, subs, func, arg, node.child());
                     result.push_back(")");
@@ -180,7 +178,7 @@ namespace ice
             ICE_ASSERT_CORE(typenode);
 
             syntax::Type const& type = typenode.data();
-            ice::string::push_format(result, "var {}: {}", var.name.value, type.name.value);
+            result.push_format("var {}: {}", var.name.value, type.name.value);
 
             if (SyntaxNode assignnode = typenode.sibling<syntax::Operator>(); assignnode)
             {
@@ -226,8 +224,8 @@ namespace ice
             ice::HeapString<> result{ alloc };
 
             // Initial lines
-            ice::string::push_format(result, "\n");
-            //ice::string::push_format(result, "\n/// Generated with IceShard - ShaderTools (target: WGSL)\n\n");
+            result.push_format("\n");
+            //result.push_format("\n/// Generated with IceShard - ShaderTools (target: WGSL)\n\n");
 
             // Generate struct definitions
             for (SyntaxNode<syntax::Struct> strct : shader._structs)
@@ -244,7 +242,7 @@ namespace ice
                     is_uniform |= variable.child<syntax::Type>().data().name.value == strct.data().name.value;
                 }
 
-                ice::string::push_format(result, "struct {} {{\n", strct.data().name.value);
+                result.push_format("struct {} {{\n", strct.data().name.value);
                 SyntaxNode<syntax::StructMember> member = strct.child<syntax::StructMember>();
                 while (member)
                 {
@@ -253,12 +251,12 @@ namespace ice
                     if (arctic::String location; detail::arc_annotation(member, "location", location))
                     {
                         is_inout = true;
-                        ice::string::push_format(result, "    @location({}) ", location);
+                        result.push_format("    @location({}) ", location);
                     }
                     else if (detail::arc_annotation(member, "builtin", location))
                     {
                         is_inout = true;
-                        ice::string::push_format(result, "    @builtin({}) ", location);
+                        result.push_format("    @builtin({}) ", location);
                     }
                     else
                     {
@@ -267,7 +265,7 @@ namespace ice
 
                     wgsl::generate_type(result, member.data().name.value, type);
 
-                    //ice::string::push_format(result, "    {} {};\n", type.name.value, member.data().name.value);
+                    //result.push_format("    {} {};\n", type.name.value, member.data().name.value);
                     member = member.sibling<syntax::StructMember>();
                 }
                 result.push_back("};\n\n");
@@ -306,7 +304,7 @@ namespace ice
                 {
                     arctic::String const type = variable.child<syntax::Type>().data().name.value;
                     arctic::String const name = variable.data().name.value;
-                    ice::string::push_format(result, "@group({}) @binding({}) var<uniform> {}: {};\n",
+                    result.push_format("@group({}) @binding({}) var<uniform> {}: {};\n",
                         set, binding, name, type
                     );
                 }
@@ -314,7 +312,7 @@ namespace ice
                 {
                     arctic::String const type = variable.child<syntax::Type>().data().name.value;
                     arctic::String const name = variable.data().name.value;
-                    ice::string::push_format(result, "@group({}) @binding({}) var {}: {};\n",
+                    result.push_format("@group({}) @binding({}) var {}: {};\n",
                         set, binding, name, type
                     );
                 }
@@ -328,15 +326,14 @@ namespace ice
             SyntaxNode<syntax::FunctionBody> body = ret.sibling<syntax::FunctionBody>();
             ICE_ASSERT_CORE(ret && body);
 
-            ice::string::push_format(result, "@{}\n", shader._shader_stage);
-            ice::string::push_format(result, "fn {}(", shader._mainfunc.data().name.value);
-            ice::string::push_format(
-                result,
+            result.push_format("@{}\n", shader._shader_stage);
+            result.push_format("fn {}(", shader._mainfunc.data().name.value);
+            result.push_format(
                 "in: {}) -> {} {{\n",
                 shader._inputs.data().name.value,
                 shader._outputs.data().name.value
             );
-            ice::string::push_format(result, "    var out: {};\n", shader._outputs.data().name.value);
+            result.push_format("    var out: {};\n", shader._outputs.data().name.value);
             subs.set(detail::arc_hash(shader._mainfunc.data().name.value), arctic::String{ "out" });
             generate_function(result, subs, shader._mainfunc.data(), arg.data(), ret.data(), body.child());
             result.push_back("    return out;\n");

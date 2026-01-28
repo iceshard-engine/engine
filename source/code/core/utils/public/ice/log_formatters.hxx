@@ -9,25 +9,6 @@
 #include <ice/clock_types.hxx>
 #include <ice/expected.hxx>
 
-template<typename CharType>
-struct fmt::formatter<ice::BasicString<CharType>> : public fmt::formatter<std::basic_string_view<CharType>>
-{
-    template<typename FormatContext>
-    constexpr auto format(ice::BasicString<CharType> value, FormatContext& ctx) const noexcept
-    {
-        return fmt::formatter<std::basic_string_view<CharType>>::format(value, ctx);
-    }
-};
-
-template<typename CharType>
-struct fmt::formatter<ice::HeapString<CharType>> : public fmt::formatter<ice::BasicString<CharType>>
-{
-    template<typename FormatContext>
-    constexpr auto format(ice::HeapString<CharType> const& value, FormatContext& ctx) const noexcept
-    {
-        return fmt::formatter<ice::BasicString<CharType>>::format({ value._data, value._size }, ctx);
-    }
-};
 
 template<>
 struct fmt::formatter<ice::StringID_Hash>

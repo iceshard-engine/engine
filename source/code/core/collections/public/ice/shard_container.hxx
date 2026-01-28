@@ -33,10 +33,16 @@ namespace ice
         ) const noexcept -> ice::ncount;
 
         template<typename T>
-        inline constexpr bool inspect_first(ice::ShardID shardid, T& payload) const noexcept;
+        inline constexpr bool inspect_first(
+            ice::ShardID shardid,
+            T& payload
+        ) const noexcept;
 
         template<typename T>
-        inline constexpr bool inspect_last(ice::ShardID shard, T& payload) const noexcept;
+        inline constexpr bool inspect_last(
+            ice::ShardID shard,
+            T& payload
+        ) const noexcept;
 
         template<typename T, ice::ContainerLogic Logic>
         inline constexpr auto inspect_all(
@@ -50,7 +56,10 @@ namespace ice
             Fn&& callback
         ) noexcept -> ice::ncount;
 
-        inline constexpr void remove_all_of(this ShardContainer& self, ice::ShardID shardid) noexcept;
+        inline constexpr void remove_all_of(
+            this ShardContainer& self,
+            ice::ShardID shardid
+        ) noexcept;
     };
 
     inline constexpr bool ShardContainer::contains(ice::ShardID expected_shard) const noexcept
@@ -138,21 +147,30 @@ namespace ice
     }
 
     template<typename T>
-    inline constexpr bool ShardContainer::inspect_first(ice::ShardID shardid, T& payload) const noexcept
+    inline constexpr bool ShardContainer::inspect_first(
+        ice::ShardID shardid,
+        T& payload
+    ) const noexcept
     {
         ice::Shard const shard = this->find_first_of(shardid);
         return ice::shard_inspect(shard, payload);
     }
 
     template<typename T>
-    inline constexpr bool ShardContainer::inspect_last(ice::ShardID shardid, T& payload) const noexcept
+    inline constexpr bool ShardContainer::inspect_last(
+        ice::ShardID shardid,
+        T& payload
+    ) const noexcept
     {
         ice::Shard const shard = this->find_last_of(shardid);
         return ice::shard_inspect(shard, payload);
     }
 
     template<typename T, typename Fn>
-    inline constexpr auto ShardContainer::inspect_each(ice::ShardID shardid, Fn&& callback) noexcept -> ice::ncount
+    inline constexpr auto ShardContainer::inspect_each(
+        ice::ShardID shardid,
+        Fn&& callback
+    ) noexcept -> ice::ncount
     {
         T payload;
         ice::u32 count = 0;

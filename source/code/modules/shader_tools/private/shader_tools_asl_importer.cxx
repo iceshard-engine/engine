@@ -28,16 +28,16 @@ namespace ice
             IPT_ZONE_SCOPED;
 
             // Imports don't specify the extension so we need to add it.
-            ice::HeapString<> import_path_final{ _allocator };
-            ice::string::push_format(import_path_final, "{}.asl", import_path);
+            ice::HeapPath import_path_final{ _allocator };
+            import_path_final.push_format("{}.asl", import_path);
 
             // Find the resource to he loaded.
             ice::ResourceHandle const import_resource = _tracker.find_resource(
-                ice::URI{ ice::Scheme_URN, { ice::String{ import_path_final } } }
+                ice::URI{ ice::Scheme_URN, import_path_final }
             );
             if (import_resource == nullptr)
             {
-                ICE_LOG(LogSeverity::Error, LogTag::Tool, "Failed to import ASL file: {}", ice::String{ import_path_final });
+                ICE_LOG(LogSeverity::Error, LogTag::Tool, "Failed to import ASL file: {}", import_path_final);
                 return {};
             }
 

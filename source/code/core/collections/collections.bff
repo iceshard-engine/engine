@@ -11,6 +11,9 @@
 
     .Public =
     [
+        .Modules = {
+            'fmt'
+        }
         .Uses = {
             'core'
             'memsys'
