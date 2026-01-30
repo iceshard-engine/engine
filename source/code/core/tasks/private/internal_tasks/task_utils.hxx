@@ -188,7 +188,7 @@ namespace ice
             inline auto await_ready() const noexcept
             {
                 // Only suspend if we actually have tasks
-                return queue.empty();
+                return queue.is_empty();
             }
 
             inline auto await_suspend(std::coroutine_handle<> coro) noexcept
@@ -196,7 +196,7 @@ namespace ice
                 ice::TaskQueue& scheduler_queue = scheduler.schedule()._queue;
 
                 // We set the result value for each awaitable in the queue and nothing more.
-                ice::LinkedQueueRange<ice::TaskAwaitableBase> tasks_awaitables = queue.consume();
+                ice::AtomicLinkedQueueRange<ice::TaskAwaitableBase> tasks_awaitables = queue.take_all();
                 for (ice::TaskAwaitableBase* task_awaitable : tasks_awaitables)
                 {
                     ICE_ASSERT_CORE(task_awaitable->result.ptr == nullptr);

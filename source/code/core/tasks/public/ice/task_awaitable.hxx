@@ -36,7 +36,7 @@ namespace ice
     {
         ice::TaskAwaitableParams const _params;
         ice::coroutine_handle<> _coro;
-        ice::TaskAwaitableBase* next;
+        ice::TaskAwaitableBase* _next;
         ice::TaskAwaitableResult result;
     };
 

@@ -231,7 +231,7 @@ namespace ice::gfx
             ice::execute_tasks(tasks);
         }
 
-        if (_queue_transfer.any() || _gfx_tasks.running_tasks() > 0)
+        if (_queue_transfer.not_empty() || _gfx_tasks.running_tasks() > 0)
         {
             IPT_ZONE_SCOPED_NAMED("gfx_await_tasks");
 

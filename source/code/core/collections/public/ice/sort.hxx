@@ -311,52 +311,52 @@ namespace ice
         Node* right_list = left_list;
         if (size == 1)
         {
-            left_list->next = nullptr;
+            left_list->_next = nullptr;
             return left_list;
         }
         else if (size == 2)
         {
-            right_list = right_list->next;
-            right_list->next = nullptr;
-            left_list->next = nullptr;
+            right_list = right_list->_next;
+            right_list->_next = nullptr;
+            left_list->_next = nullptr;
         }
         else
         {
             uint32_t const half_size = size / 2;
             for (uint32_t idx = half_size; idx > 0; --idx)
             {
-                right_list = right_list->next;
+                right_list = right_list->_next;
             }
 
-            Node* next = right_list->next;
-            right_list->next = nullptr;
+            Node* next = right_list->_next;
+            right_list->_next = nullptr;
             right_list = next;
 
             left_list = ice::sort_linked_list(left_list, half_size + 1, pred);
             right_list = ice::sort_linked_list(right_list, size - (half_size + 1), pred);
         }
 
-        Node result{ .next = left_list }; // Keep the head of the list
+        Node result{ ._next = left_list }; // Keep the head of the list
         left_list = &result;
-        while (left_list->next != nullptr && right_list != nullptr)
+        while (left_list->_next != nullptr && right_list != nullptr)
         {
-            Node* temp = left_list->next;
+            Node* temp = left_list->_next;
             if (pred(*temp, *right_list) == false) // TRUE == IS OKAY, FALSE == NEEDS SWAP
             {
                 // We swapped the whole lists...
-                left_list->next = right_list;
+                left_list->_next = right_list;
                 right_list = temp;
             }
 
             // We can advance the left list
-            left_list = left_list->next;
+            left_list = left_list->_next;
         }
 
         // Attach the rest of the right list
-        left_list->next = right_list;
+        left_list->_next = right_list;
 
         // Return the 'next' element of the result.
-        return result.next;
+        return result._next;
     }
 
     template<typename T>

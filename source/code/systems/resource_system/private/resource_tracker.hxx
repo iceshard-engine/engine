@@ -13,7 +13,7 @@
 #include <ice/log_tag.hxx>
 #include <ice/log_formatters.hxx>
 #include <ice/task_utils.hxx>
-#include <ice/container/linked_queue.hxx>
+#include <ice/atomic_linked_queue.hxx>
 #include <ice/path_utils.hxx>
 #include <ice/devui_widget.hxx>
 
@@ -72,7 +72,7 @@ namespace ice
             }
 
             _coro = coro;
-            ice::linked_queue::push(transaction.queue, this);
+            transaction.queue.push_back(this);
             return true;
         }
 
@@ -104,7 +104,7 @@ namespace ice
             ice::u32 requests_processed = 1; // Includes "us"
             while(requests_processed < awaiting)
             {
-                for (ice::TaskAwaitableBase* awaitable : ice::linked_queue::consume(transaction.queue))
+                for (ice::TaskAwaitableBase* awaitable : transaction.queue.take_all())
                 {
                     // Resume to coroutine
                     awaitable->_coro.resume();

@@ -104,7 +104,7 @@ namespace ice
 
             if constexpr (BusyWait)
             {
-                if (_queue.empty())
+                if (_queue.is_empty())
                 {
                     if (busy_loop > 0)
                     {
@@ -159,19 +159,19 @@ namespace ice
     auto ThreadRuntime::exclusive_sorted_routine() noexcept -> ice::u32
     {
         // Get the task nodes and ensure we are can access all of them.
-        ice::LinkedQueueRange<ice::TaskAwaitableBase> tasks = _queue.consume();
+        ice::AtomicLinkedQueueRange<ice::TaskAwaitableBase> tasks = _queue.take_all();
 
         ice::u32 count = 0;
         ice::TaskAwaitableBase volatile* head = tasks._head;
         while (head != tasks._tail)
         {
             // If we are not at 'tail' and encounter a nullptr, this means some thread did not write it's 'next' member yet.
-            while (head->next == nullptr)
+            while (head->_next == nullptr)
             {
                 ice::thread_native::yield();
             }
 
-            head = head->next;
+            head = head->_next;
             count += 1;
         }
 
@@ -198,9 +198,9 @@ namespace ice
 
         // Update the head and tail pointers.
         tasks._tail = tasks._head;
-        while (tasks._tail->next != nullptr)
+        while (tasks._tail->_next != nullptr)
         {
-            tasks._tail = tasks._tail->next;
+            tasks._tail = tasks._tail->_next;
         }
 
         // Execute all tasks

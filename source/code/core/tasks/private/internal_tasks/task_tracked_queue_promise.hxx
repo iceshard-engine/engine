@@ -37,9 +37,9 @@ namespace ice
             // return sdone;
         }
 
-        inline auto pop() noexcept
+        inline auto take_front() noexcept
         {
-            return awaiting_queue.pop();
+            return awaiting_queue.take_front();
         }
 
         struct FinalAwaitable
@@ -60,7 +60,7 @@ namespace ice
                 // Can't access promise after it's destroyed.
                 std::coroutine_handle<> continuation = coro;
 
-                if (ice::TaskAwaitableBase* awaitable = awaiting_queue->pop(); awaitable != nullptr)
+                if (ice::TaskAwaitableBase* awaitable = awaiting_queue->take_front(); awaitable != nullptr)
                 {
                     // We delete the detached coroutine here, since this would be normaly done when 'await_ready == true' after resuming
                     //  from the final suspension point. Since we are suspending, but we never resume again we just delete it here.

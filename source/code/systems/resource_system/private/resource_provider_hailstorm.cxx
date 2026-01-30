@@ -16,7 +16,7 @@ namespace ice
             ice::TaskQueue& queue;
 
             LoadAwaitable(ice::TaskQueue& queue) noexcept
-                : TaskAwaitableBase{ ._params{.task_flags = TaskFlags{}}, .next = nullptr, .result = {} }
+                : TaskAwaitableBase{ ._params{.task_flags = TaskFlags{}}, ._next = nullptr, .result = {} }
                 , queue{ queue }
             {
             }
@@ -110,7 +110,7 @@ namespace ice
             // Resume all awaiting coroutines even if we failed
             while (_awaitcount.load(std::memory_order_relaxed) > 0)
             {
-                for (auto const* awaiting : _awaiting_tasks.consume())
+                for (auto const* awaiting : _awaiting_tasks.take_all())
                 {
                     _awaitcount.fetch_sub(1, std::memory_order_relaxed);
                     awaiting->_coro.resume();

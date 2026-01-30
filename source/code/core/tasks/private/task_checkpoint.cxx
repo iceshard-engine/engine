@@ -51,8 +51,8 @@ namespace ice
         ICE_ASSERT_CORE(awaiting_count >= 0);
         if (awaiting_count > 0)
         {
-            ice::u32 const processed_count = _checkpoint_queue.process_all();
-            ICE_ASSERT_CORE(ice::i32(processed_count) == awaiting_count);
+            ice::ncount const processed_count = _checkpoint_queue.process_all();
+            ICE_ASSERT_CORE(processed_count == awaiting_count);
         }
         return awaiting_count > 0;
     }

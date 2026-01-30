@@ -8,16 +8,6 @@
 #include <ice/types/nindex.hxx>
 #include <ice/container/container_logic.hxx>
 
-namespace ice
-{
-
-    template<typename Node>
-    concept LinkedListNode = requires(Node node) {
-        { node.next } -> std::convertible_to<Node*>;
-    };
-
-} // namespace ice
-
 namespace ice::concepts
 {
 
@@ -92,6 +82,19 @@ namespace ice::concepts
     template<typename T>
     concept HashableKeyType = requires(T t) {
         { ice::hash(t) } -> std::convertible_to<ice::u64>;
+    };
+
+    template<typename Node>
+    concept LinkedListNode = requires(Node node) {
+        { node._next } -> std::convertible_to<void*>;
+        { node._next->_next } -> std::convertible_to<void*>;
+    };
+
+    template<typename T>
+    concept LinkedList = requires(T list) {
+        typename std::remove_reference_t<T>::ValueType;
+        { list._head } -> std::convertible_to<typename std::remove_reference_t<T>::ValueType>;
+        { list._tail } -> std::convertible_to<typename std::remove_reference_t<T>::ValueType>;
     };
 
 } // namespace ice::concepts

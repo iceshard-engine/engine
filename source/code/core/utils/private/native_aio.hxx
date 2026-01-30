@@ -5,7 +5,7 @@
 #include <ice/native_aio.hxx>
 #include <ice/native_file.hxx>
 #include <ice/mem_allocator.hxx>
-#include <ice/container/linked_queue.hxx>
+#include <ice/atomic_linked_queue.hxx>
 #include <ice/os.hxx>
 
 namespace ice::native_aio
