@@ -96,21 +96,21 @@ namespace ice::app
         return working_dir;
     }
 #else
-    auto location() noexcept -> ice::String
+    auto location() noexcept -> ice::Path
     {
-        // TODO: Deprecate or return a valid value
+        ICE_ASSERT_CORE(false);
         return {};
     }
 
-    auto directory() noexcept -> ice::String
+    auto directory() noexcept -> ice::Path
     {
-        // TODO: Deprecate or return a valid value
+        ICE_ASSERT_CORE(false);
         return {};
     }
 
-    auto workingdir() noexcept -> ice::String
+    auto workingdir() noexcept -> ice::Path
     {
-        // TODO: Deprecate or return a valid value
+        ICE_ASSERT_CORE(false);
         return {};
     }
 #endif

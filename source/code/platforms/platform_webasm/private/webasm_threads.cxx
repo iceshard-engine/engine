@@ -26,9 +26,9 @@ namespace ice::platform::webasm
         , _scheduler_tasks{ queue_tasks }
         , _threads{ }
     {
-        ice::ucount const hw_concurrency = browser_hardware_concurrency();
+        ice::i32 const hw_concurrency = browser_hardware_concurrency();
         ICE_LOG(LogSeverity::Info, LogTag::System, "Logical Processors: {}", hw_concurrency);
-        ice::ucount tp_size = ice::max(ice::min(hw_concurrency, 4u), 2u); // min 2 task threads
+        ice::i32 tp_size = ice::max(ice::min(hw_concurrency, 4), 2); // min 2 task threads
 
         for (ice::Shard const option : params)
         {

@@ -377,7 +377,7 @@ namespace ice
     {
         u32 idx = ice::u32_max;
         auto it = _entrymap.find_values(uri.path());
-        while (it.has_next() && idx == ice::u32_max)
+        while (it.valid() && idx == ice::u32_max)
         {
             if (_entries[it.value()]->name() == uri.path())
             {

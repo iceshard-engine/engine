@@ -43,6 +43,7 @@ namespace ice
 
         template<ice::concepts::HashableKeyType HashableKeyT>
         constexpr void remove_all(HashableKeyT const& key) noexcept;
+        constexpr void remove_item(ConstMultiIterator& iterator);
     };
 
     template<typename Type, ice::ContainerLogic Logic>
@@ -68,10 +69,10 @@ namespace ice
             , _values{ values }
         { }
 
-        constexpr bool has_next() const noexcept { return _current != ice::detail::hashmap::Constant_EndOfList; }
+        constexpr bool valid() const noexcept { return _current != ice::detail::hashmap::Constant_EndOfList; }
         constexpr void next() noexcept
         {
-            ICE_ASSERT_CORE(has_next());
+            ICE_ASSERT_CORE(valid());
 
             _current = _entries[_current].next;
             if (_current == ice::detail::hashmap::Constant_EndOfList)
@@ -84,7 +85,7 @@ namespace ice
         constexpr auto key() const noexcept -> ice::u64 const& { return _entries[_current].key; }
         constexpr auto value() const noexcept -> Type const& { return _values[_current]; }
 
-        constexpr auto operator==(ConstMultiIterator const& other) const noexcept
+        constexpr bool operator==(ConstMultiIterator const& other) const noexcept
         {
             return _entries == other._entries && _current == other._current;
         }
@@ -102,7 +103,7 @@ namespace ice
         ice::u64 result = 0;
 
         auto it = find_values(key);
-        while (it.has_next())
+        while (it.valid())
         {
             result += 1;
             it.next();
@@ -166,6 +167,17 @@ namespace ice
         while (this->find(key_hash) != nullptr)
         {
             this->remove(key_hash);
+        }
+    }
+
+    template<typename Type, ice::ContainerLogic Logic>
+    inline constexpr void MultiHashMap<Type, Logic>::remove_item(ConstMultiIterator& iterator)
+    {
+        ice::detail::hashmap::FindResult const fr = ice::detail::hashmap::find(*this, iterator._current);
+        if (fr.entry_i != ice::detail::hashmap::Constant_EndOfList)
+        {
+            iterator._current = iterator._entries[fr.entry_i].next;
+            ice::detail::hashmap::erase(*this, fr);
         }
     }
 

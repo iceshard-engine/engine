@@ -88,7 +88,7 @@ namespace ice::render::webgpu
 
         WGPUBindGroupLayoutDescriptor descriptor = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT;
         descriptor.label = wgpu_string("Resource Set Layout");
-        descriptor.entryCount = ice::count(bindings);
+        descriptor.entryCount = bindings.size();
         descriptor.entries = entries;
         ICE_ASSERT_CORE(descriptor.entryCount <= 16);
 
@@ -140,10 +140,10 @@ namespace ice::render::webgpu
         ice::Span<ice::render::ResourceSet> resource_sets_out
     ) noexcept
     {
-        ice::u32 const count = ice::count(resource_set_layouts);
-        ICE_ASSERT_CORE(count == ice::count(resource_sets_out));
+        ice::ncount const count = resource_set_layouts.size();
+        ICE_ASSERT_CORE(count == resource_sets_out.size());
 
-        for (ice::u32 idx = 0; idx < count; ++idx)
+        for (ice::ncount idx = 0; idx < count; ++idx)
         {
             WebGPUResourceSet* resource_set = _allocator.create<WebGPUResourceSet>();
             resource_set->_wgpu_group_layout = WebGPUResourceSet::native(resource_set_layouts[idx]);
@@ -250,12 +250,12 @@ namespace ice::render::webgpu
         ice::render::PipelineLayoutInfo const& info
     ) noexcept -> ice::render::PipelineLayout
     {
-        if (ice::span::any(info.push_constants))
+        if (info.push_constants.not_empty())
         {
             ICE_LOG_WGPU(LogSeverity::Warning, "WebGPU Pipelines do not support push constants.");
         }
 
-        ice::ucount count = 0;
+        ice::u32 count = 0;
         WGPUBindGroupLayout layouts[8]{};
         for (ResourceSetLayout resource_layout : info.resource_layouts)
         {
@@ -374,11 +374,11 @@ namespace ice::render::webgpu
             {
             case ShaderStageFlags::VertexStage:
                 vertex.module = WebGPUShader::native(program.shader)->_wgpu_shader;
-                vertex.entryPoint = wgpu_string(ice::string::begin(program.entry_point));
+                vertex.entryPoint = wgpu_string(program.entry_point.begin());
                 break;
             case ShaderStageFlags::FragmentStage:
                 fragment.module = WebGPUShader::native(program.shader)->_wgpu_shader;
-                fragment.entryPoint = wgpu_string(ice::string::begin(program.entry_point));
+                fragment.entryPoint = wgpu_string(program.entry_point.begin());
                 break;
             default:
                 ICE_ASSERT_CORE(false);
@@ -499,7 +499,7 @@ namespace ice::render::webgpu
         ice::Array<WebGPUImage const*> native_images{ _allocator };
         for (ice::render::Image image : images)
         {
-            ice::array::push_back(native_images, WebGPUImage::native(image));
+            native_images.push_back(WebGPUImage::native(image));
         }
 
         return WebGPUFrameBuffer::handle(_allocator.create<WebGPUFrameBuffer>(ice::move(native_images)));

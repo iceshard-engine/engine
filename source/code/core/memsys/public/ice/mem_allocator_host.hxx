@@ -7,8 +7,9 @@
 namespace ice
 {
 
-    struct HostAllocator final : ice::Allocator
+    class HostAllocator final : public ice::Allocator
     {
+    public:
         HostAllocator(std::source_location = std::source_location::current()) noexcept;
 
     protected:

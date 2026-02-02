@@ -75,11 +75,11 @@ struct WorldActivationTrait : ice::Trait, ice::DevUIWidget
         {
             if (do_active)
             {
-                shards::push_back(update.frame.shards(), ShardID_WorldActivate | "world2"_sid_hash);
+                update.frame.shards().push_back(ShardID_WorldActivate | "world2"_sid_hash);
             }
             else
             {
-                shards::push_back(update.frame.shards(), ShardID_WorldDeactivate | "world2"_sid_hash);
+                update.frame.shards().push_back(ShardID_WorldDeactivate | "world2"_sid_hash);
             }
             is_active = do_active;
         }
@@ -135,7 +135,7 @@ struct TestTrait : public ice::Trait
         update.engine.entity_index().destroy_many(_my_entity);
 
         query<ice::ecs::Entity>().tags<C1, C2>().for_each_block(
-            [&](ice::ucount count, ice::ecs::Entity const* entities) noexcept
+            [&](ice::ncount count, ice::ecs::Entity const* entities) noexcept
             {
                 _ops->destroy({ entities, count });
             }
@@ -150,13 +150,13 @@ struct TestTrait : public ice::Trait
         ice::ecs::Query q = query<C1&, C2&>();
 
         ice::Array<ice::Task<>> tasks{ update.frame.allocator() };
-        ice::array::reserve(tasks, q.block_count());
+        tasks.reserve(q.block_count());
 
         std::atomic_uint32_t x = 0;
         q.for_each_block(
-            [&](ice::ucount count, C1* c1p, C2* c2p) noexcept
+            [&](ice::ncount count, C1* c1p, C2* c2p) noexcept
             {
-                ice::array::push_back(tasks, [](ice::ucount count, C1* c1p, C2* c2p, std::atomic_uint32_t& x) noexcept -> ice::Task<>
+                tasks.push_back([](ice::ncount count, C1* c1p, C2* c2p, std::atomic_uint32_t& x) noexcept -> ice::Task<>
                 {
                     IPT_ZONE_SCOPED_NAMED("block for-each");
                     for (ice::u32 idx = 0; idx < count; ++idx)
@@ -318,7 +318,7 @@ void TestGame::on_update(ice::Engine& engine, ice::EngineFrame& frame) noexcept
 {
     using namespace ice;
 
-    shards::push_back(frame.shards(), ShardID_WorldActivate | "world"_sid_hash);
+    frame.shards().push_back(ShardID_WorldActivate | "world"_sid_hash);
 }
 
 void TestGame::on_suspend(ice::Engine& engine) noexcept

@@ -89,8 +89,8 @@ namespace ice::string
         ) noexcept
         {
             ice::ncount const pushed_size = ::fmt::formatted_size(format, std::forward<Args>(args)...);
-            ice::ncount const final_size = self.size() + pushed_size;
             ice::ncount const capacity = self.capacity() - 1;
+            ice::ncount final_size = self.size() + pushed_size;
 
             // Handle resizing if supported
             if constexpr (ice::concepts::ResizableStringType<Self>)

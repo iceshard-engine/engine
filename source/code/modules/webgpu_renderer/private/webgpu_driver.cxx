@@ -152,8 +152,7 @@ namespace ice::render::webgpu
         ice::Array<ice::render::QueueFamilyInfo>& queue_info
     ) noexcept
     {
-        ice::array::push_back(
-            queue_info,
+        queue_info.push_back(
             QueueFamilyInfo {
                 .id = QueueID{ 1 },
                 .flags = QueueFlags::Transfer | QueueFlags::Graphics | QueueFlags::Present,

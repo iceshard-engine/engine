@@ -53,7 +53,7 @@ namespace ice::render::webgpu
             webgpu_cmds->command_encoder = wgpuDeviceCreateCommandEncoder(_wgpu_device, &descriptor);
 
             out_buffer = WebGPUCommandBuffer::handle(webgpu_cmds);
-            ice::multi_hashmap::insert(_wgpu_command_buffers, pool_index, webgpu_cmds);
+            _wgpu_command_buffers.set(pool_index, webgpu_cmds);
         }
     }
 
@@ -76,16 +76,18 @@ namespace ice::render::webgpu
             descriptor.label = wgpu_string(type == CommandBufferType::Primary ? "Primary Command Encoded" : "Secondary Command Encoder");
             webgpu_cmds->command_encoder = wgpuDeviceCreateCommandEncoder(_wgpu_device, &descriptor);
 
-            auto it = ice::multi_hashmap::find_first(_wgpu_command_buffers, pool_index);
+            auto it = _wgpu_command_buffers.find_values(pool_index);
             while (it != nullptr)
             {
-                auto next = ice::multi_hashmap::find_next(_wgpu_command_buffers, it);
                 if (it.value() == webgpu_cmds)
                 {
-                    ice::multi_hashmap::remove(_wgpu_command_buffers, it);
+                    _wgpu_command_buffers.remove_item(it);
                     _allocator.destroy(webgpu_cmds);
                 }
-                it = next;
+                else
+                {
+                    it.next();
+                }
             }
         }
     }
@@ -94,7 +96,7 @@ namespace ice::render::webgpu
         ice::u32 pool_index
     ) noexcept
     {
-        auto it = ice::multi_hashmap::find_first(_wgpu_command_buffers, pool_index);
+        auto it = _wgpu_command_buffers.find_values(pool_index);
         while (it != nullptr)
         {
             // if (it.value()->type == CommandBufferType::Secondary)
@@ -128,7 +130,7 @@ namespace ice::render::webgpu
                 }
                 it.value()->command_encoder = wgpuDeviceCreateCommandEncoder(_wgpu_device, &descriptor);
 
-                it = ice::multi_hashmap::find_next(_wgpu_command_buffers, it);
+                it.next();
             }
         }
 
@@ -141,7 +143,7 @@ namespace ice::render::webgpu
     {
         WebGPUCallbackFence* wgpu_fence = static_cast<WebGPUCallbackFence*>(fence);
 
-        ice::ucount wgpu_cb_count = 0;
+        ice::ncount wgpu_cb_count = 0;
         WGPUCommandBuffer wgpu_cb_list[16];
 
         for (ice::render::CommandBuffer cmdbuff : buffers)

@@ -21,8 +21,8 @@ namespace ice
             : strnicmp(left.begin(), right.begin(), count);
 #elif ISP_UNIX
         ice::u32 const comp_result = check_case == CaseSensitive::Yes
-            ? strncmp(ice::string::begin(left), ice::string::begin(right), count)
-            : strncasecmp(ice::string::begin(left), ice::string::begin(right), count);
+            ? strncmp(left.begin(), right.begin(), count)
+            : strncasecmp(left.begin(), right.begin(), count);
 #endif
         return comp_result == 0 ? CompareResult::Equal :
             (comp_result < 0 ? CompareResult::Smaller : CompareResult::Larger);
@@ -41,8 +41,8 @@ namespace ice
             : strnicmp(left.begin(), right.begin(), max_size);
 #elif ISP_UNIX
         ice::u32 const comp_result = check_case == CaseSensitive::Yes
-            ? strncmp(ice::string::begin(left), ice::string::begin(right), max_size)
-            : strncasecmp(ice::string::begin(left), ice::string::begin(right), max_size);
+            ? strncmp(left.begin(), right.begin(), max_size)
+            : strncasecmp(left.begin(), right.begin(), max_size);
 #endif
         return comp_result == 0 ? CompareResult::Equal :
             (comp_result < 0 ? CompareResult::Smaller : CompareResult::Larger);

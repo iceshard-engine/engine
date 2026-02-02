@@ -17,8 +17,8 @@ namespace ice::app
 
     struct Factories
     {
-        template<typename Type, typename... Args>
-        using FactoryFn = auto(*)(ice::Allocator&, Args...) noexcept -> ice::UniquePtr<Type>;
+        template<typename Type>
+        using FactoryFn = auto(*)(ice::Allocator&) noexcept -> ice::UniquePtr<Type>;
 
         FactoryFn<ice::app::Config> factory_config;
         FactoryFn<ice::app::State> factory_state;

@@ -65,8 +65,9 @@ namespace ice::detail
                 using ArgType = ice::clear_type_t<ShardType>;
                 ICE_ASSERT(
                     ice::Constant_ShardPayloadID<ArgType*> == shard.id.payload,
-                    "Shard payload ID incompatible with the argument. {} != {}",
-                    ice::Constant_ShardPayloadID<ArgType*>.value, shard.id.payload.value
+                    "Shard '{}' payload ID incompatible with the argument. {} != {}",
+                    shard.id.name.value, shard.id.payload.value,
+                    ice::Constant_ShardPayloadID<ArgType*>.value
                 );
 
                 ArgType* shard_value = nullptr;
@@ -82,8 +83,9 @@ namespace ice::detail
                 using ArgType = ShardType;
                 ICE_ASSERT(
                     ice::Constant_ShardPayloadID<ArgType> == shard.id.payload,
-                    "Shard payload ID incompatible with the argument. {} != {}",
-                    ice::Constant_ShardPayloadID<ArgType>.value, shard.id.payload.value
+                    "Shard '{}' payload ID incompatible with the argument. {} != {}",
+                    shard.id.name.value, shard.id.payload.value,
+                    ice::Constant_ShardPayloadID<ArgType>.value
                 );
 
                 ArgType shard_value{ };

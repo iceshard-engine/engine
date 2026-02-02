@@ -47,7 +47,7 @@ namespace ice
 
         auto out_it = tasks.begin();
         auto it = handlers.find_values(shard.id);
-        while (it.has_next())
+        while (it.valid())
         {
             ice::IceshardEventHandler const& handler = it.value();
             void* const userdata = handler.procedure_userdata != nullptr
@@ -89,7 +89,7 @@ namespace ice
         ice::MultiHashMap<ice::IceshardEventHandler>& handlers = _world_context._frame_handlers[tasktype_idx];
 
         auto it = handlers.find_values(shard.id);
-        while (it.has_next())
+        while (it.valid())
         {
             ice::IceshardEventHandler const& handler = it.value();
 

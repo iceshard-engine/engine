@@ -10,6 +10,7 @@
 #include <ice/task_queue.hxx>
 #include <ice/task_thread.hxx>
 #include <ice/sync_manual_events.hxx>
+#include <ice/path_utils.hxx>
 #include <ice/app.hxx>
 
 #include <ice/input/device_event_queue.hxx>
@@ -39,10 +40,10 @@ namespace ice::platform::webasm
         auto input_events() noexcept -> ice::Span<ice::input::DeviceEvent const> override { return _input_events._events; }
 
     public:
-        auto data_locations() const noexcept -> ice::Span<ice::String const> override { static ice::String paths[]{ "/" }; return paths; }
-        auto save_location() const noexcept -> ice::String override { return "/saves"; }
-        auto cache_location() const noexcept -> ice::String override { return "/cache"; }
-        auto dylibs_location() const noexcept -> ice::String override { return {}; }
+        auto data_locations() const noexcept -> ice::Span<ice::Path const> override { static ice::Path paths[]{ "/" }; return paths; }
+        auto save_location() const noexcept -> ice::Path override { return "/saves"; }
+        auto cache_location() const noexcept -> ice::Path override { return "/cache"; }
+        auto dylibs_location() const noexcept -> ice::Path override { return {}; }
 
     private:
         static auto native_webapp_thread(void* userdata, ice::TaskQueue& queue) noexcept -> ice::u32;

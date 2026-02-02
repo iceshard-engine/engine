@@ -335,16 +335,16 @@ namespace ice::ecs
             .offsets = ice::make_span(HelperArchetype.component_alignments).tailspan(1)
         };
 
-        ice::u32 const entity_count = mode == 2 ? index_create_count : ice::count(entities);
+        ice::u32 const entity_count = mode == 2 ? index_create_count : entities.size().u32();
         ice::u32 constexpr component_count = sizeof...(Components);
         ice::meminfo additional_data_size = ice::meminfo{ filter_data_size, ice::ualign::b_8 };
         additional_data_size += ice::meminfo_of<ice::ecs::Entity> * entity_count;
 
         // Data for storing component info
         additional_data_size += ice::meminfo_of<ice::ecs::OperationComponentInfo>;
-        additional_data_size.size += ComponentsInfo.names.size();
-        additional_data_size.size += ComponentsInfo.sizes.size();
-        additional_data_size.size += ComponentsInfo.offsets.size();
+        additional_data_size.size += ComponentsInfo.names.size().bytes();
+        additional_data_size.size += ComponentsInfo.sizes.size().bytes();
+        additional_data_size.size += ComponentsInfo.offsets.size().bytes();
 
         // Use folded expression to calculate all the size for the components...
         additional_data_size.size += ((ice::usize{ alignof(Components) } + ice::size_of<Components> * entity_count) + ...);
@@ -477,16 +477,16 @@ namespace ice::ecs
             .offsets = ice::make_span(HelperArchetype.component_alignments).tailspan(1)
         };
 
-        ice::u32 const entity_count = mode == 2 ? index_create_count : ice::count(entities);
+        ice::u32 const entity_count = mode == 2 ? index_create_count : entities.size().u32();
         ice::u32 constexpr component_count = sizeof...(Components);
         ice::meminfo additional_data_size = ice::meminfo{ filter_data_size, ice::ualign::b_8 };
         additional_data_size += ice::meminfo_of<ice::ecs::Entity> * entity_count;
 
         // Data for storing component info
         additional_data_size += ice::meminfo_of<ice::ecs::OperationComponentInfo>;
-        additional_data_size.size += ComponentsInfo.names.size();
-        additional_data_size.size += ComponentsInfo.sizes.size();
-        additional_data_size.size += ComponentsInfo.offsets.size();
+        additional_data_size.size += ComponentsInfo.names.size().bytes();
+        additional_data_size.size += ComponentsInfo.sizes.size().bytes();
+        additional_data_size.size += ComponentsInfo.offsets.size().bytes();
 
         // Use folded expression to calculate all the size for the components...
         additional_data_size.size += ((ice::usize{ alignof(Components) } + ice::size_of<Components> * entity_count) + ...);

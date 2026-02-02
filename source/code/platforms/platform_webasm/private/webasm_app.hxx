@@ -3,7 +3,7 @@
 
 #pragma once
 #include "webasm_core_app.hxx"
-#include <ice/container/queue.hxx>
+#include <ice/queue.hxx>
 
 namespace ice::platform::webasm
 {

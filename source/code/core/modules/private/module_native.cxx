@@ -59,7 +59,7 @@ namespace ice::native_module
 
     auto module_open(ice::String path) noexcept -> ice::native_module::ModuleHandle
     {
-        return ice::native_module::ModuleHandle{ ::dlopen(ice::string::begin(path), RTLD_NOW) };
+        return ice::native_module::ModuleHandle{ ::dlopen(path.begin(), RTLD_NOW) };
     }
 
     void module_close(ice::native_module::ModuleHandle module) noexcept
@@ -69,7 +69,7 @@ namespace ice::native_module
 
     auto module_find_address(ice::native_module::ModuleHandle const& module, ice::String symbol_name) noexcept -> void*
     {
-        return ::dlsym(module.native(), ice::string::begin(symbol_name));
+        return ::dlsym(module.native(), symbol_name.begin());
     }
 
 #endif

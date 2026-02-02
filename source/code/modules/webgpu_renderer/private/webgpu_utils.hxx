@@ -15,7 +15,7 @@ namespace ice::render::webgpu
 
     constexpr auto wgpu_string(ice::String value) noexcept -> WGPUStringView
     {
-        return WGPUStringView{ .data = value._data, .length = value._size };
+        return WGPUStringView{ .data = value.data(), .length = value.size() };
     }
 
 #define ICE_LOG_WGPU(severity, message, ...) \

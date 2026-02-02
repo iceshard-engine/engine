@@ -5,6 +5,7 @@
 #include <ice/string/string_concepts.hxx>
 #include <ice/string/resizable_operations.hxx>
 #include <ice/string.hxx>
+#include <ice/mem_allocator.hxx>
 
 namespace ice
 {

@@ -140,7 +140,7 @@ namespace ice
     template<typename CharT>
     inline HeapVarString<CharT>::operator ice::BasicString<typename HeapVarString<CharT>::CharType>() const noexcept
     {
-        ice::usize bytes = 0;
+        ice::usize bytes = 0_B;
         ice::ncount const size = ice::varstring::read_size(_data, bytes);
         if (size > 0)
         {

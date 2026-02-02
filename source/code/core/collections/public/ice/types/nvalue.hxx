@@ -3,6 +3,7 @@
 
 #pragma once
 #include <ice/mem.hxx>
+#include <ice/base.hxx>
 
 namespace ice
 {
@@ -113,7 +114,12 @@ namespace ice
         constexpr auto u64() const noexcept { return static_cast<ice::u64>(native()); }
 
         // Allow 'nvalue' types collaps to the 'base_type'
+#if ISP_WEBAPP
+        // NOTE: We would like to capture us with a 'Self' value but on WebAsm this results in invalid codegen.
+        constexpr operator base_type() const noexcept { return this->native(); }
+#else
         constexpr operator base_type(this nvalue self) noexcept { return self.native(); }
+#endif
 
         // Equality is has two cases:
         // > when deriving from 'nvalue':

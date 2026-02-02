@@ -250,7 +250,7 @@ namespace ice
         }
 
         template<ice::detail::hashmap::HashMapContainer ContainerT>
-        inline auto find(ContainerT& map, typename ContainerT::ConstIterator it) noexcept -> FindResult
+        inline auto find(ContainerT& map, ice::u32 entry_index) noexcept -> FindResult
         {
             FindResult fr{
                 .hash_i = Constant_EndOfList,
@@ -262,13 +262,15 @@ namespace ice
             {
                 return fr;
             }
+            ICE_ASSERT_CORE(entry_index < map._count);
+            HashMapEntryType<ContainerT>* const entry = map._entries + entry_index;
 
-            fr.hash_i = it._entry->key % map._capacity;
+            fr.hash_i = entry->key % map._capacity;
             fr.entry_i = map._hashes[fr.hash_i];
 
             while (fr.entry_i != Constant_EndOfList)
             {
-                if ((map._entries + fr.entry_i) == it._entry)
+                if ((map._entries + fr.entry_i) == entry)
                 {
                     return fr;
                 }
@@ -276,6 +278,8 @@ namespace ice
                 fr.entry_prev = fr.entry_i;
                 fr.entry_i = map._entries[fr.entry_i].next;
             }
+
+            ICE_ASSERT_CORE(fr.entry_i == entry_index);
             return fr;
         }
 

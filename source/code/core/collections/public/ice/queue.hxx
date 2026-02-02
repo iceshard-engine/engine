@@ -501,7 +501,7 @@ namespace ice
     {
         if constexpr (Logic == ContainerLogic::Complex)
         {
-            ice::queue::detail::destroy_tail_items(queue, ice::min(count, this->size()));
+            ice::queue::detail::destroy_tail_items(*this, ice::min(count, this->size()));
         }
 
         if (_count > count)

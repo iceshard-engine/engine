@@ -368,7 +368,7 @@ namespace ice
 
         // Just grab the first for now
         auto it = _resources.find_values(hash_resouce);
-        if (it.has_next())
+        if (it.valid())
         {
             result = ice::ResourceHandle{ it.value() };
         }

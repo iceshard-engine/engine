@@ -23,8 +23,8 @@ namespace ice::native_file
 #   define ISP_PATH_LITERAL(val) L##val
 #elif ISP_UNIX
     using File = ice::unix_::FileHandle;
-    using FilePath = ice::String;
-    using HeapFilePath = ice::HeapString<>;
+    using FilePath = ice::BasicPath<char>;
+    using HeapFilePath = ice::BasicHeapPath<char>;
 #   define ISP_PATH_LITERAL(val) val
 #endif
 

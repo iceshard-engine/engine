@@ -188,7 +188,7 @@ SCENARIO("collections 'ice/container/hashmap.hxx' (POD)", "[collection][hash][po
             test_hash.insert(0, 0xd00b);
             CHECK(test_hash.count_values(0) == 1);
             CHECK(test_hash.find_values(0).value() == 0xd00b);
-            CHECK(test_hash.find_values(1).has_next() == false);
+            CHECK(test_hash.find_values(1).valid() == false);
         }
 
         WHEN("Setting multiple values")

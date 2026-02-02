@@ -552,7 +552,7 @@ namespace ice::native_file
     bool exists_file(ice::native_file::FilePath path) noexcept
     {
         struct stat file_stats;
-        return stat(ice::string::begin(path), &file_stats) == 0 && file_stats.st_size > 0;
+        return stat(path.begin(), &file_stats) == 0 && file_stats.st_size > 0;
     }
 
     auto open_file(
@@ -564,7 +564,7 @@ namespace ice::native_file
         if constexpr (ice::build::is_unix)
         {
             result = ice::native_file::File{
-                open(ice::string::begin(path), translate_flags(flags), Constant_ModeFile)
+                open(path.begin(), translate_flags(flags), Constant_ModeFile)
             };
         }
         else
@@ -605,7 +605,7 @@ namespace ice::native_file
     auto sizeof_file(ice::native_file::FilePath path) noexcept -> ice::usize
     {
         struct stat file_stats;
-        if (stat(ice::string::begin(path), &file_stats) == 0)
+        if (stat(path.begin(), &file_stats) == 0)
         {
             return { static_cast<ice::usize::base_type>(file_stats.st_size) };
         }
@@ -702,18 +702,18 @@ namespace ice::native_file
     {
         bool traverse_success = false;
 
-        DIR* const directory = opendir(ice::string::begin(dirpath));
+        DIR* const directory = opendir(dirpath.begin());
         if (directory != nullptr)
         {
             // Just opening the dir is already a success for us
             traverse_success = true;
 
             // Store for later information about the current state of dirpath
-            if (ice::string::back(dirpath) != '/')
+            if (dirpath.back() != '/')
             {
-                ice::string::push_back(dirpath, '/');
+                dirpath.push_back('/');
             }
-            ice::ucount const size_dirpath = ice::string::size(dirpath);
+            ice::ncount const size_dirpath = dirpath.size();
 
             while (dirent const* const entry = readdir(directory))
             {
@@ -734,8 +734,8 @@ namespace ice::native_file
                     : EntityType::File;
 
                 // Append the entry name to the path
-                ice::ucount const size_name = ice::ucount(strlen(entry->d_name));
-                ice::string::push_back(dirpath, ice::native_file::FilePath{ entry->d_name, size_name });
+                ice::ncount const size_name = strlen(entry->d_name);
+                dirpath.push_back(ice::native_file::FilePath{ entry->d_name, size_name });
 
                 // Call the callback for the next entry encountered...
                 ice::native_file::TraverseAction const action = callback(basepath, dirpath, type, userdata);
@@ -755,7 +755,7 @@ namespace ice::native_file
                 }
 
                 // Rollback the directory string to the base value
-                ice::string::resize(dirpath, size_dirpath);
+                dirpath.resize(size_dirpath);
             }
 
             closedir(directory);
@@ -772,8 +772,8 @@ namespace ice::native_file
     {
         ice::StackAllocator_1024 temp_alloc;
         ice::native_file::HeapFilePath dirpath{ temp_alloc };
-        ice::string::reserve(dirpath, 256 * 2); // 512 bytes for paths
-        ice::string::push_back(dirpath, starting_dir);
+        dirpath.reserve(256 * 2); // 512 bytes for paths
+        dirpath.push_back(starting_dir);
         return traverse_directories_internal(dirpath, dirpath, callback, userdata);
     }
 
@@ -783,7 +783,7 @@ namespace ice::native_file
     ) noexcept
     {
         // If zero, we failed, check why.
-        if (mkdir(ice::string::begin(dirpath), Constant_ModeDirectory) == -1)
+        if (mkdir(dirpath.begin(), Constant_ModeDirectory) == -1)
         {
             // Try the next path before retrying this path.
             if (errno == EEXIST)
@@ -793,7 +793,7 @@ namespace ice::native_file
             else if (errno == ENOENT)
             {
                 // Remove the top-most the directory explicitly.
-                ice::nindex const dirslash = ice::string::find_last_of(dirpath, ice::String{ "/" });
+                ice::nindex const dirslash = dirpath.find_last_of(ice::String{ "/" });
                 if (dirslash == ice::nindex_none)
                 {
                     return false;
@@ -810,7 +810,7 @@ namespace ice::native_file
                 dirpath[dirslash] = '/';
 
                 // Try again to create the directory
-                return mkdir(ice::string::begin(dirpath), Constant_ModeDirectory) != -1;
+                return mkdir(dirpath.begin(), Constant_ModeDirectory) != -1;
             }
             // else it's either 'ERROR_ALREADY_EXISTS' so we continue.
         }
@@ -831,7 +831,7 @@ namespace ice::native_file
     bool is_directory(ice::native_file::FilePath path) noexcept
     {
         struct stat info;
-        if (stat(ice::string::begin(path), &info) != 0) {
+        if (stat(path.begin(), &info) != 0) {
             return false;
         }
         return S_ISDIR(info.st_mode);
@@ -858,11 +858,11 @@ namespace ice::native_file
         ice::String string
     ) noexcept
     {
-        if (ice::string::any(path))
+        if (path.not_empty())
         {
-            ice::path::join(path, string);
+            path.join(string);
         }
-        else if (ice::string::any(string))
+        else if (string.not_empty())
         {
             path = string;
         }

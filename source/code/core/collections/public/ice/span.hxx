@@ -59,9 +59,9 @@ namespace ice
     template<typename T, ContainerLogic Logic, template<typename, ContainerLogic> typename Container> Span(Container<T, Logic> const&) noexcept -> Span<T>;
     template<typename T, ice::u64 Size> Span(T(&)[Size]) noexcept -> Span<T>;
 
-    template<typename Type, ice::u64 Size>
+    template<typename Type, size_t Size>
     static constexpr auto make_span(std::array<Type, Size>& std_array) noexcept -> Span<Type>;
-    template<typename Type, ice::u64 Size>
+    template<typename Type, size_t Size>
     static constexpr auto make_span(std::array<Type, Size> const& std_array) noexcept -> Span<Type const>;
 
     template<typename Type>
@@ -103,20 +103,20 @@ namespace ice
     inline constexpr auto Span<Type>::memory_view(this Span const& self) noexcept -> ice::Memory
         requires(not std::is_const_v<ValueType>)
     {
-        return ice::Data{
+        return ice::Memory{
             .location = self.data(),
             .size = self.size(),
             .alignment = ice::align_of<Type>
         };
     }
 
-    template<typename Type, ice::u64 Size>
+    template<typename Type, size_t Size>
     inline constexpr auto make_span(std::array<Type, Size>& std_array) noexcept -> Span<Type>
     {
         return Span<Type>{ std_array.data(), std_array.size() };
     }
 
-    template<typename Type, ice::u64 Size>
+    template<typename Type, size_t Size>
     inline constexpr auto make_span(std::array<Type, Size> const& std_array) noexcept -> Span<Type const>
     {
         return Span<Type const>{ std_array.data(), std_array.size() };

@@ -100,8 +100,6 @@ namespace ice
         ice::WorldTemplate const& world_template
     ) noexcept -> World*
     {
-        static constexpr bool is_ass = ice::concepts::AssociativeContainer<ice::HashMap<IceshardWorldManager::Entry>>;
-
         ICE_ASSERT(
             _worlds.missing(world_template.name),
             "A world with this name {} was already created!",

@@ -21,7 +21,7 @@ namespace ice::native_aio
 #elif ISP_ANDROID || ISP_WEBAPP || ISP_LINUX
     struct AIORequestInternal
     {
-        AIORequestInternal* next;
+        AIORequestInternal* _next;
         ice::i32 native_file_handle;
         ice::u32 request_type; // 1 == read, 2 == write
         union
@@ -45,7 +45,7 @@ namespace ice::native_aio
 #else
     struct AIORequestInternal
     {
-        AIORequestInternal* next;
+        AIORequestInternal* _next;
         HANDLE native_file_handle;
         void* data_location;
         ice::u32 data_offset;

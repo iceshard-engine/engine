@@ -35,7 +35,7 @@ namespace ice::gfx
     {
         _context.bind<&Trait_GfxShaderStorage::gfx_update, Render>(ice::gfx::ShardID_RenderFrameUpdate);
         _context.bind<&Trait_GfxShaderStorage::gfx_shutdown, Render>(ice::gfx::ShardID_GfxShutdown);
-        _context.bind<&Trait_GfxShaderStorage::on_asset_loaded>("iceshard:shaders-internal:loaded`ice::Asset"_shardid);
+        _context.bind<&Trait_GfxShaderStorage::on_asset_loaded>("event/iceshard-internal/shader-loaded"_shardid);
     }
 
     void Trait_GfxShaderStorage::build_content() noexcept
@@ -120,7 +120,7 @@ namespace ice::gfx
 
             // Reslove the request (will resume all awaiting tasks)
             ice::Asset asset = request->resolve({ .resolver = this, .result = AssetRequestResult::Success, .memory = result });
-            send("iceshard:shaders-internal:loaded"_shardid, asset);
+            send("event/iceshard-internal/shader-loaded"_shardid, asset);
 
             // Save the shader handle
             _loaded_shaders.set(shader_hash, { .asset = ice::move(asset), .shader = shader, });

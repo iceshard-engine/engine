@@ -116,7 +116,7 @@ namespace ice
     ) const noexcept -> ice::EngineStateCurrent
     {
         auto it = _current_state_index.find_values(state_graph.value);
-        while (it.has_next())
+        while (it.valid())
         {
             ice::EngineStateCurrent const& current = _current_state[it.value()];
 

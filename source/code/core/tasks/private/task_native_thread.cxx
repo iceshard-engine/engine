@@ -324,12 +324,12 @@ namespace ice
             // For web apps we can only set thread names on their respective thread context.
             if constexpr (ice::build::is_release == false)
             {
-                emscripten_set_thread_name(pthread_self(), ice::string::begin(thread_info.debug_name));
+                emscripten_set_thread_name(pthread_self(), thread_info.debug_name.begin());
             }
 #elif ISP_LINUX
             if constexpr (ice::build::is_release == false)
             {
-                pthread_setname_np(pthread_self(), ice::string::begin(thread_info.debug_name));
+                pthread_setname_np(pthread_self(), thread_info.debug_name.begin());
             }
 #endif
 
@@ -403,9 +403,9 @@ namespace ice
 
             if constexpr (ice::build::is_release == false && ice::build::is_webapp == false)
             {
-                if (ice::string::any(info.debug_name))
+                if (info.debug_name.not_empty())
                 {
-                    error = pthread_setname_np(thread_handle, ice::string::begin(info.debug_name));
+                    error = pthread_setname_np(thread_handle, info.debug_name.begin());
                     ICE_ASSERT(error == 0, "Failed to set name for native thread with error: {}!", error);
                 }
             }

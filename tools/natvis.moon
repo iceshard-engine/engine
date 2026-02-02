@@ -16,34 +16,34 @@ class NatvisCommand extends Command
     prepare: (args, project) =>
         os.chdir "source/code"
 
-    iterate_over_headers: (path, shard_names) =>
+    iterate_over_headers: (path, shard_names, locations) =>
         return unless path\match "%.hxx"
 
         if f = io.open path, "rb"
+            idx = 0
             for line in f\lines!
+                idx += 1
                 var, val = line\match 'static constexpr ice::Shard ([%w_:]+) = "([%w/-]+)[%w_:*` ]*"_shard'
                 var, val = line\match 'static constexpr ice::ShardID ([%w_:]+) = "([%w/-]+)[%w_:*` ]*"_shardid' unless var and val
                 if var and val
                     print "Warning: Shard with this name '#{var}' already exists!" if shard_names.shard[var]
                     shard_names.shard[var] = val
+                    locations[val] = "#{path}(#{idx})"
                     continue
 
                 var, val = line\match 'Constant_ShardPayloadID<([%w_:* ]+)> = ice::shard_payloadid%("([%w_:* ]+)"%)'
                 if var or val
                     shard_names.payloadid[var] = val
+                    locations[val] = "#{path}(#{idx})"
 
             f\close!
 
-    iterate_over_directory: (path, shard_names) =>
-        for name, mode in (Dir\list path, 'mode')
-            continue if name == '.' or name == '..'
-
-            @iterate_over_directory "#{path}/#{name}", shard_names if mode == 'directory'
-            @iterate_over_headers "#{path}/#{name}", shard_names
-
     execute: (args) =>
+        locations = { }
         names = { shard: { }, payloadid: {} }
-        @iterate_over_directory ".", names
+
+        for path in Dir\list ".", recursive:true
+            @iterate_over_headers path, names, locations
 
         generate_hashes = (names, py3_hash_script) ->
             all_hashes = ""
@@ -82,7 +82,9 @@ class NatvisCommand extends Command
             f\write '                <DisplayString Condition="id.payload.value == 0">{id.payload.value}, type_not_set</DisplayString>\n'
             f\write '                <DisplayString>{id.payload.value}, unknown_type</DisplayString>\n'
             f\write '            </Synthetic>\n'
-            f\write '            <Item Name="[payload]" Optional="true" Condition="id.payload.value == ' .. hash .. '">*(' .. name .. '*)&amp;payload.value</Item>\n' for { :name, :hash } in *payload_hashes
+            for { :name, :hash } in *payload_hashes
+                f\write '            <!-- defined-at:"'.. locations[name] .. '" -->\n'
+                f\write '            <Item Name="[payload]" Optional="true" Condition="id.payload.value == ' .. hash .. '">*(' .. name .. '*)&amp;payload.value</Item>\n'
             f\write '        </Expand>\n'
             f\write '    </Type>\n'
             f\write '</AutoVisualizer>\n'

@@ -17,7 +17,7 @@ namespace ice
     template<typename OwnerT, typename ValueT>
     struct const_correct<OwnerT const, ValueT>
     {
-        using type = std::add_const_t<ValueT>;
+        using type = ValueT const;
     };
 
     template<typename OwnerT, typename ValueT>

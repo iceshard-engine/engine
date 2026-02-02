@@ -4,6 +4,7 @@
 #pragma once
 #include <ice/container/contiguous_container.hxx>
 #include <ice/container/resizable_container.hxx>
+#include <ice/mem_allocator.hxx>
 #include <ice/mem_initializers.hxx>
 #include <ice/span.hxx>
 

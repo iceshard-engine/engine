@@ -31,22 +31,24 @@
         <DisplayString Condition="id.name.value == 2793650888">Shard {{ event/gfx/suspend }}</DisplayString>
         <DisplayString Condition="id.name.value == 4048089159">Shard {{ event/gfx/swapchain-reset }}</DisplayString>
         <DisplayString Condition="id.name.value == 3612285283">Shard {{ event/input }}</DisplayString>
-        <DisplayString Condition="id.name.value == 51683530">Shard {{ event/input/text }}</DisplayString>
+        <DisplayString Condition="id.name.value == 1294136324">Shard {{ event/render/frame-update }}</DisplayString>
         <DisplayString Condition="id.name.value == 284300429">Shard {{ event/trait/activate }}</DisplayString>
         <DisplayString Condition="id.name.value == 1418161315">Shard {{ event/trait/deactivate }}</DisplayString>
         <DisplayString Condition="id.name.value == 3040364215">Shard {{ event/trait/setup }}</DisplayString>
         <DisplayString Condition="id.name.value == 3772459085">Shard {{ event/trait/shutdown }}</DisplayString>
         <DisplayString Condition="id.name.value == 1047194348">Shard {{ event/trait/update }}</DisplayString>
         <DisplayString Condition="id.name.value == 3026600678">Shard {{ event/window/maximized }}</DisplayString>
-        <DisplayString Condition="id.name.value == 2051435783">Shard {{ event/window/minimized }}</DisplayString>
         <DisplayString Condition="id.name.value == 1456081343">Shard {{ event/window/resized }}</DisplayString>
         <DisplayString Condition="id.name.value == 2336987181">Shard {{ event/world-runtime/activated }}</DisplayString>
         <DisplayString Condition="id.name.value == 2607797338">Shard {{ event/world/activated }}</DisplayString>
         <DisplayString Condition="id.name.value == 3435815160">Shard {{ event/world/created }}</DisplayString>
         <DisplayString Condition="id.name.value == 1454439939">Shard {{ event/world/deactivated }}</DisplayString>
         <DisplayString Condition="id.name.value == 1322473106">Shard {{ event/world/destroyed }}</DisplayString>
+        <DisplayString Condition="id.name.value == 2210082183">Shard {{ platform/core-webapp/input-selector-keyboard }}</DisplayString>
+        <DisplayString Condition="id.name.value == 2620616868">Shard {{ platform/core-webapp/input-selector-mouse }}</DisplayString>
         <DisplayString Condition="id.name.value == 2241781497">Shard {{ platform/storage/app }}</DisplayString>
         <DisplayString Condition="id.name.value == 1196572675">Shard {{ platform/threads/thread-pool-size }}</DisplayString>
+        <DisplayString Condition="id.name.value == 3296214347">Shard {{ shader }}</DisplayString>
         <DisplayString Condition="id.name.value == 2816689335">Shard {{ test/shard }}</DisplayString>
         <DisplayString Condition="id.name.value == 2173328416">Shard {{ test/shard2 }}</DisplayString>
         <DisplayString>Shard {{ {id.name.value,h}, unknown_name }}</DisplayString>
@@ -54,13 +56,19 @@
             <Synthetic Name="[payload type]">
                 <DisplayString Condition="id.payload.value == 2843272952">bool</DisplayString>
                 <DisplayString Condition="id.payload.value == 911661974">char const*</DisplayString>
+                <DisplayString Condition="id.payload.value == 1733542506">ice::Asset</DisplayString>
                 <DisplayString Condition="id.payload.value == 2821725455">ice::DebugDrawCommandList const*</DisplayString>
                 <DisplayString Condition="id.payload.value == 599074004">ice::DrawTextCommand const*</DisplayString>
                 <DisplayString Condition="id.payload.value == 1896411940">ice::EngineDevUI*</DisplayString>
                 <DisplayString Condition="id.payload.value == 1204590043">ice::EngineFrameUpdate const*</DisplayString>
+                <DisplayString Condition="id.payload.value == 2423396438">ice::InputAction const*</DisplayString>
                 <DisplayString Condition="id.payload.value == 2049186712">ice::RenderUIRequest const*</DisplayString>
+                <DisplayString Condition="id.payload.value == 1970603822">ice::ResourceHandle</DisplayString>
+                <DisplayString Condition="id.payload.value == 1329822266">ice::ShaderStage</DisplayString>
+                <DisplayString Condition="id.payload.value == 834752090">ice::ShaderTargetPlatform</DisplayString>
                 <DisplayString Condition="id.payload.value == 1107026406">ice::String const*</DisplayString>
                 <DisplayString Condition="id.payload.value == 2482378481">ice::StringID_Hash</DisplayString>
+                <DisplayString Condition="id.payload.value == 2426354216">ice::Tns</DisplayString>
                 <DisplayString Condition="id.payload.value == 1866927059">ice::UpdateUIResource const*</DisplayString>
                 <DisplayString Condition="id.payload.value == 4102468881">ice::WorldStateParams const*</DisplayString>
                 <DisplayString Condition="id.payload.value == 1007979527">ice::ecs::Entity</DisplayString>
@@ -68,40 +76,82 @@
                 <DisplayString Condition="id.payload.value == 3318286190">ice::f64</DisplayString>
                 <DisplayString Condition="id.payload.value == 2336974670">ice::gfx::GfxFrameUpdate const*</DisplayString>
                 <DisplayString Condition="id.payload.value == 1993323835">ice::gfx::GfxStateChange const*</DisplayString>
+                <DisplayString Condition="id.payload.value == 512072145">ice::gfx::RenderFrameUpdate const*</DisplayString>
                 <DisplayString Condition="id.payload.value == 885125057">ice::i32</DisplayString>
                 <DisplayString Condition="id.payload.value == 3904937373">ice::i64</DisplayString>
                 <DisplayString Condition="id.payload.value == 4176694044">ice::input::InputEvent</DisplayString>
                 <DisplayString Condition="id.payload.value == 2740183039">ice::u32</DisplayString>
                 <DisplayString Condition="id.payload.value == 1788037810">ice::u64</DisplayString>
+                <DisplayString Condition="id.payload.value == 2131064446">ice::vec2f</DisplayString>
                 <DisplayString Condition="id.payload.value == 1568413339">ice::vec2i</DisplayString>
                 <DisplayString Condition="id.payload.value == 1490517694">ice::vec2u</DisplayString>
                 <DisplayString Condition="id.payload.value == 295941599">std::string_view const*</DisplayString>
                 <DisplayString Condition="id.payload.value == 0">{id.payload.value}, type_not_set</DisplayString>
                 <DisplayString>{id.payload.value}, unknown_type</DisplayString>
             </Synthetic>
+            <!-- defined-at:"./core/core/public/ice/shard.hxx(330)" -->
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 2843272952">*(bool*)&amp;payload.value</Item>
+            <!-- defined-at:"./core/core/public/ice/shard.hxx(351)" -->
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 911661974">*(char const**)&amp;payload.value</Item>
+            <!-- defined-at:"./iceshard/engine/public/ice/world/world_trait_types.hxx(69)" -->
+            <Item Name="[payload]" Optional="true" Condition="id.payload.value == 1733542506">*(ice::Asset*)&amp;payload.value</Item>
+            <!-- defined-at:"./framework/framework_base/public/ice/game_render_traits.hxx(98)" -->
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 2821725455">*(ice::DebugDrawCommandList const**)&amp;payload.value</Item>
+            <!-- defined-at:"./framework/framework_base/public/ice/game_render_traits.hxx(101)" -->
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 599074004">*(ice::DrawTextCommand const**)&amp;payload.value</Item>
+            <!-- defined-at:"./iceshard/engine/public/ice/engine_devui.hxx(42)" -->
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 1896411940">*(ice::EngineDevUI**)&amp;payload.value</Item>
+            <!-- defined-at:"./iceshard/engine/public/ice/engine_runner.hxx(68)" -->
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 1204590043">*(ice::EngineFrameUpdate const**)&amp;payload.value</Item>
+            <!-- defined-at:"./systems/input_action_system/public/ice/input_action_types.hxx(46)" -->
+            <Item Name="[payload]" Optional="true" Condition="id.payload.value == 2423396438">*(ice::InputAction const**)&amp;payload.value</Item>
+            <!-- defined-at:"./framework/framework_base/private/traits/ui/render_ui_trait.hxx(131)" -->
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 2049186712">*(ice::RenderUIRequest const**)&amp;payload.value</Item>
+            <!-- defined-at:"./iceshard/engine/public/ice/world/world_trait_types.hxx(72)" -->
+            <Item Name="[payload]" Optional="true" Condition="id.payload.value == 1970603822">*(ice::ResourceHandle*)&amp;payload.value</Item>
+            <!-- defined-at:"./modules/shader_tools/public/ice/shader_tools.hxx(44)" -->
+            <Item Name="[payload]" Optional="true" Condition="id.payload.value == 1329822266">*(ice::ShaderStage*)&amp;payload.value</Item>
+            <!-- defined-at:"./modules/shader_tools/public/ice/shader_tools.hxx(41)" -->
+            <Item Name="[payload]" Optional="true" Condition="id.payload.value == 834752090">*(ice::ShaderTargetPlatform*)&amp;payload.value</Item>
+            <!-- defined-at:"./core/utils/public/ice/shard_payloads.hxx(13)" -->
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 1107026406">*(ice::String const**)&amp;payload.value</Item>
+            <!-- defined-at:"./core/core/public/ice/shard.hxx(357)" -->
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 2482378481">*(ice::StringID_Hash*)&amp;payload.value</Item>
+            <!-- defined-at:"./core/utils/public/ice/shard_payloads.hxx(16)" -->
+            <Item Name="[payload]" Optional="true" Condition="id.payload.value == 2426354216">*(ice::Tns*)&amp;payload.value</Item>
+            <!-- defined-at:"./framework/framework_base/public/ice/game_ui.hxx(48)" -->
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 1866927059">*(ice::UpdateUIResource const**)&amp;payload.value</Item>
+            <!-- defined-at:"./iceshard/engine/public/ice/world/world_updater.hxx(40)" -->
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 4102468881">*(ice::WorldStateParams const**)&amp;payload.value</Item>
+            <!-- defined-at:"./iceshard/engine/public/ice/ecs/ecs_entity.hxx(99)" -->
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 1007979527">*(ice::ecs::Entity*)&amp;payload.value</Item>
+            <!-- defined-at:"./core/core/public/ice/shard.hxx(339)" -->
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 2759705139">*(ice::f32*)&amp;payload.value</Item>
+            <!-- defined-at:"./core/core/public/ice/shard.hxx(348)" -->
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 3318286190">*(ice::f64*)&amp;payload.value</Item>
+            <!-- defined-at:"./iceshard/engine/public/ice/gfx/gfx_shards.hxx(44)" -->
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 2336974670">*(ice::gfx::GfxFrameUpdate const**)&amp;payload.value</Item>
+            <!-- defined-at:"./iceshard/engine/public/ice/gfx/gfx_shards.hxx(49)" -->
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 1993323835">*(ice::gfx::GfxStateChange const**)&amp;payload.value</Item>
+            <!-- defined-at:"./iceshard/engine/public/ice/gfx/gfx_shards.hxx(46)" -->
+            <Item Name="[payload]" Optional="true" Condition="id.payload.value == 512072145">*(ice::gfx::RenderFrameUpdate const**)&amp;payload.value</Item>
+            <!-- defined-at:"./core/core/public/ice/shard.hxx(333)" -->
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 885125057">*(ice::i32*)&amp;payload.value</Item>
+            <!-- defined-at:"./core/core/public/ice/shard.hxx(342)" -->
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 3904937373">*(ice::i64*)&amp;payload.value</Item>
+            <!-- defined-at:"./systems/input_system/public/ice/input/input_event.hxx(149)" -->
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 4176694044">*(ice::input::InputEvent*)&amp;payload.value</Item>
+            <!-- defined-at:"./core/core/public/ice/shard.hxx(336)" -->
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 2740183039">*(ice::u32*)&amp;payload.value</Item>
+            <!-- defined-at:"./core/core/public/ice/shard.hxx(345)" -->
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 1788037810">*(ice::u64*)&amp;payload.value</Item>
+            <!-- defined-at:"./core/math/public/ice/math.hxx(35)" -->
+            <Item Name="[payload]" Optional="true" Condition="id.payload.value == 2131064446">*(ice::vec2f*)&amp;payload.value</Item>
+            <!-- defined-at:"./core/math/public/ice/math.hxx(32)" -->
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 1568413339">*(ice::vec2i*)&amp;payload.value</Item>
+            <!-- defined-at:"./core/math/public/ice/math.hxx(29)" -->
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 1490517694">*(ice::vec2u*)&amp;payload.value</Item>
+            <!-- defined-at:"./core/core/public/ice/shard.hxx(354)" -->
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 295941599">*(std::string_view const**)&amp;payload.value</Item>
         </Expand>
     </Type>
