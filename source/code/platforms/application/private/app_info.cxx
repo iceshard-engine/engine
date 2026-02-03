@@ -62,38 +62,38 @@ namespace ice::app
         return ice::Path{ working_dir };
     }
 #elif ISP_LINUX
-    auto location() noexcept -> ice::String
+    auto location() noexcept -> ice::Path
     {
         static ice::StaticString<PATH_MAX> app_location = []() noexcept
         {
             ice::StaticString<PATH_MAX> result{ "" };
-            int nchar = readlink("/proc/self/exe", ice::string::begin(result), ice::string::capacity(result));
-            ice::string::resize(result, nchar);
+            int nchar = readlink("/proc/self/exe", result.begin(), result.capacity());
+            result.resize(nchar);
             return result;
         }();
 
-        return app_location;
+        return ice::Path{ app_location };
     }
 
-    auto directory() noexcept -> ice::String
+    auto directory() noexcept -> ice::Path
     {
-        static ice::String app_directory = ice::path::directory(location());
+        static ice::Path app_directory = location().directory();
         return app_directory;
     }
 
-    auto workingdir() noexcept -> ice::String
+    auto workingdir() noexcept -> ice::Path
     {
         static ice::StaticString<PATH_MAX> working_dir = []() noexcept
         {
             ice::StaticString<PATH_MAX> result{};
-            char const* success = getcwd(ice::string::begin(result), ice::string::capacity(result));
+            char const* success = getcwd(result.begin(), result.capacity());
             ICE_ASSERT(success != nullptr, "Current working directory is too long, can't contain the value!");
-            ice::string::resize(result, std::strlen(success));
+            result.resize(std::strlen(success));
 
-            return ice::StaticString<256>{ result };
+            return ice::StaticString<PATH_MAX>{ result };
         }();
 
-        return working_dir;
+        return ice::Path{ working_dir };
     }
 #else
     auto location() noexcept -> ice::Path

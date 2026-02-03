@@ -25,7 +25,7 @@ namespace ice::platform::linux
         auto graphics() noexcept -> ice::TaskScheduler& override { return _scheduler_gfx; }
 
         auto threadpool() noexcept -> ice::TaskScheduler& override { return _scheduler_tasks; }
-        auto threadpool_size() const noexcept -> ice::u32 override { return _threads->managed_thread_count(); }
+        auto threadpool_size() const noexcept -> ice::ncount override { return _threads->managed_thread_count(); }
         auto threadpool_object() noexcept -> ice::TaskThreadPool* override { return _threads.get(); }
         auto aio_port() const noexcept -> ice::native_aio::AIOPort override { return _aioport; }
 

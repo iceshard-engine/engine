@@ -26,46 +26,46 @@ namespace ice::platform::linux
         static constexpr ice::String FolderID_SavedGames = "XDG_SAVEDGAMES_DIR";
         static constexpr ice::String FolderID_Videos = "XDG_VIDEOS_DIR";
 
-        void create_known_path(ice::HeapString<>& out_path, ice::String home, ice::String known_path, ice::String appname) noexcept
+        void create_known_path(ice::HeapPath& out_path, ice::String home, ice::String known_path, ice::String appname) noexcept
         {
-            ice::string::push_format(out_path, "{}/{}/{}", home, known_path, appname);
-            ice::path::normalize(out_path);
+            out_path.push_format("{}/{}/{}", home, known_path, appname);
+            out_path.normalize();
         }
 
-        void find_known_path(ice::HeapString<>& out_path, ice::String contents, ice::String home, ice::String known_path_id, ice::String fallback, ice::String appname) noexcept
+        void find_known_path(ice::HeapPath& out_path, ice::String contents, ice::String home, ice::String known_path_id, ice::String fallback, ice::String appname) noexcept
         {
             ice::string::for_each_split(
                 contents,
                 "\n",
                 [&](ice::String line) noexcept
                 {
-                    if (ice::string::empty(line) || line[0] == '#')
+                    if (line.is_empty() || line[0] == '#')
                     {
                         return true;
                     }
 
-                    ice::ucount const idassignment = ice::string::find_first_of(line, '=');
-                    if (idassignment == ice::none_index)
+                    ice::nindex const idassignment = line.find_first_of('=');
+                    if (idassignment == ice::nindex_none)
                     {
                         ICE_LOG(LogSeverity::Warning, LogTag::Core, "Improperly formatted line: {}", line);
                         return true;
                     }
 
-                    ice::String const id = ice::string::substr(line, 0, idassignment);
-                    ice::ucount const value_start = ice::string::find_first_of(line, '"', idassignment);
-                    ice::ucount const value_end = ice::string::find_last_of(line, '"');
+                    ice::String const id = line.substr(0, idassignment);
+                    ice::nindex const value_start = line.find_first_of('"', idassignment);
+                    ice::nindex const value_end = line.find_last_of('"');
                     if (value_end == value_start)
                     {
                         ICE_LOG(LogSeverity::Warning, LogTag::Core, "Improperly formatted line: {}", line);
                         return true;
                     }
 
-                    ice::String const value = ice::string::substr(line, value_start + 1, (value_end - value_start) - 1);
+                    ice::String const value = line.substr(value_start + 1, (value_end - value_start) - 1);
                     ICE_LOG(LogSeverity::Debug, LogTag::Core, "- {} = {}", id, value);
 
                     if (id == known_path_id)
                     {
-                        create_known_path(out_path, home, ice::string::substr(value, 5), appname);
+                        create_known_path(out_path, home, value.substr(5), appname);
                         ICE_LOG(LogSeverity::Info, LogTag::Core, "Known path ID {} found: {}", known_path_id, out_path);
                         return false;
                     }
@@ -73,7 +73,7 @@ namespace ice::platform::linux
                 }
             );
 
-            if (ice::string::empty(out_path))
+            if (out_path.is_empty())
             {
                 create_known_path(out_path, home, fallback, appname);
                 ICE_LOG(LogSeverity::Info, LogTag::Core, "Known path ID {} not found, using fallback: {}", known_path_id, out_path);
@@ -137,24 +137,24 @@ namespace ice::platform::linux
         return false;
     }
 
-    auto LinuxStorage::data_locations() const noexcept -> ice::Span<ice::String const>
+    auto LinuxStorage::data_locations() const noexcept -> ice::Span<ice::Path const>
     {
-        static ice::String paths[]{
+        static ice::Path paths[]{
             ice::app::directory()
         };
         return paths;
     }
 
-    auto LinuxStorage::dylibs_location() const noexcept -> ice::String
+    auto LinuxStorage::dylibs_location() const noexcept -> ice::Path
     {
         return ice::path::directory(ice::app::location());
     }
 
     void LinuxStorage::reload_paths(ice::String appname) noexcept
     {
-        ice::string::clear(_save_location);
-        ice::string::clear(_pictures_location);
-        ice::string::clear(_other_location);
+        _save_location.clear();
+        _pictures_location.clear();
+        _other_location.clear();
 
         ICE_LOG(LogSeverity::Info, LogTag::Core, "Checking for XDG {} file...", _config_file);
         if (ice::native_file::exists_file(_config_file))
@@ -162,7 +162,7 @@ namespace ice::platform::linux
             ICE_LOG(LogSeverity::Info, LogTag::Core, "Found, parsing for known directories...");
             ice::native_file::File const file = ice::native_file::open_file(_config_file);
             ice::Memory const contents_mem = _allocator.allocate(ice::native_file::sizeof_file(file));
-            ice::String contents = ice::String{ reinterpret_cast<char const*>(contents_mem.location), ice::ucount(contents_mem.size.value) };
+            ice::String contents = ice::String{ reinterpret_cast<char const*>(contents_mem.location), contents_mem.size.value };
 
             if (ice::native_file::read_file(file, contents_mem.size, contents_mem) > 0_B)
             {

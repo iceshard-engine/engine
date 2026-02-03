@@ -141,7 +141,7 @@
         '-lm'
         '-ldl'
         '-lpthread'
-        '-lc++'
+        '-stdlib=libc++'
     }
 ]
 

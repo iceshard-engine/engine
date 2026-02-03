@@ -114,7 +114,7 @@ namespace ice
         constexpr auto u64() const noexcept { return static_cast<ice::u64>(native()); }
 
         // Allow 'nvalue' types collaps to the 'base_type'
-#if ISP_WEBAPP
+#if ISP_WEBAPP || ISP_UNIX
         // NOTE: We would like to capture us with a 'Self' value but on WebAsm this results in invalid codegen.
         constexpr operator base_type() const noexcept { return this->native(); }
 #else

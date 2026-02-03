@@ -58,6 +58,16 @@ namespace ice
                 file_path
             );
 
+            ICE_LOG_IF(
+                resource == nullptr, LogSeverity::Warning, LogTag::Module,
+                "Failed to open module file: '{}'",
+                file_path
+            );
+            if (resource == nullptr) 
+            {
+                return;
+            }
+
             ice::u64 const resource_hash = ice::hash(resource->uri().path());
             if (_resources.has(resource_hash))
             {

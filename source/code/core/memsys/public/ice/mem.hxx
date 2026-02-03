@@ -5,6 +5,7 @@
 #include <ice/mem_info.hxx>
 #include <ice/mem_utils.hxx>
 #include <ice/mem_memory.hxx>
+#include <malloc.h>
 #include <new>
 
 namespace ice

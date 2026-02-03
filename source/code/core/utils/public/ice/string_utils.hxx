@@ -67,7 +67,7 @@ namespace ice
         }
         else
         {
-#if ISP_COMPILER_CLANG <= 20 || ISP_WEBAPP || ISP_ANDROID
+#if ISP_COMPILER_CLANG < 20 || ISP_WEBAPP || ISP_ANDROID
             // Because Libc++ did not support from_chars for floats up until clang.20 we need to use the old C style approach...
             // We don't try to handle errors in this version.
             fc_res.ec = std::errc{};
@@ -77,8 +77,8 @@ namespace ice
             fc_res.ptr = ptr_end;
 #else
             fc_res = std::from_chars(
-                ice::string::begin(str),
-                ice::string::end(str),
+                str.begin(),
+                str.end(),
                 out_value,
                 std::chars_format::general
             );
@@ -112,7 +112,7 @@ namespace ice
         }
         else
         {
-#if ISP_COMPILER_CLANG <= 20 || ISP_WEBAPP || ISP_ANDROID
+#if ISP_COMPILER_CLANG < 20 || ISP_WEBAPP || ISP_ANDROID
             // Because Libc++ did not support from_chars for floats up until clang.20 we need to use the old C style approach...
             // We don't try to handle errors in this version.
             fc_res.ec = std::errc{};
