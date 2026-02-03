@@ -28,7 +28,7 @@
     },
     "android": {
         "gradle": {
-            "version": "8.14"
+            "version": "9.3.1"
         },
         "projects": [ "source/code/example/android" ]
     },

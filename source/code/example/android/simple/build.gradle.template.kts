@@ -1,9 +1,10 @@
+import com.android.build.api.dsl.ApplicationExtension
 
 plugins {
     $(ProjectPlugins)
 }
 
-android {
+configure<ApplicationExtension> {
     // Here we use TargetSDK to have possible access to newer APIs
     compileSdk = $(TargetSDK)
 
@@ -61,16 +62,12 @@ android {
 
     sourceSets {
         getByName("main") {
-            res.setSrcDirs(listOf("$(ProjectDir)/src/main/res"))
-            java.setSrcDirs(listOf("$(ProjectDir)/src/main/java"))
+            res.directories.addAll(listOf("$(ProjectDir)/src/main/res"))
+            java.directories.addAll(listOf("$(ProjectDir)/src/main/java"))
             manifest.srcFile("$(ProjectDir)/src/main/AndroidManifest.xml")
         }
 
         $(ProjectJNISources)
-    }
-
-    lint {
-        baseline = file("lint-baseline.xml")
     }
 }
 
