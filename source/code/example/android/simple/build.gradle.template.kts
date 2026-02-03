@@ -48,6 +48,11 @@ android {
          */
         $(ProjectCustomConfigurationTypes)
 
+        getByName("develop") {
+            isDebuggable = true
+            signingConfig = signingConfigs.getByName("debug")
+        }
+
         getByName("profile") {
             // NOTE: Enabled by default for testing.
             signingConfig = signingConfigs.getByName("debug")

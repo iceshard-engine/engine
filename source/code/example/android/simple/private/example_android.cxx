@@ -143,7 +143,7 @@ void TestGame::on_setup(ice::framework::State const& state) noexcept
     ice::ModuleRegister& mod = state.modules;
     ice::ResourceTracker& res = state.resources;
 
-    ice::HeapString<> pipelines_module = ice::resolve_dynlib_path(res, _allocator, "iceshard_pipelines_mobile");
+    ice::HeapString<> pipelines_module = ice::resolve_dynlib_path(res, _allocator, "iceshard_pipelines");
     ice::HeapString<> vulkan_module = ice::resolve_dynlib_path(res, _allocator, "vulkan_renderer");
 
     mod.load_module(_allocator, pipelines_module);
@@ -179,7 +179,7 @@ void TestGame::on_update(ice::Engine& engine, ice::EngineFrame& frame) noexcept
 {
     using namespace ice;
 
-    shards::push_back(frame.shards(), ShardID_WorldActivate | "world"_sid_hash);
+    frame.shards().push_back(ShardID_WorldActivate | "world"_sid_hash);
 }
 
 void TestGame::on_suspend(ice::Engine& engine) noexcept

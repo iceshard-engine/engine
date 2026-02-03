@@ -80,20 +80,6 @@ namespace ice
 
     struct PathString
     {
-        template<ice::concepts::SupportedCharType CharT>
-        static constexpr ice::BasicString<CharT> Separator_Dot;
-        template<ice::concepts::SupportedCharType CharT>
-        static constexpr ice::BasicString<CharT> Separator_Drive;
-        template<ice::concepts::SupportedCharType CharT>
-        static constexpr ice::BasicString<CharT> Separator_Directory;
-
-        template<> constexpr ice::BasicString<char> Separator_Dot<char> = ".";
-        template<> constexpr ice::BasicString<char> Separator_Drive<char> = ":";
-        template<> constexpr ice::BasicString<char> Separator_Directory<char> = "\\/";
-        template<> constexpr ice::BasicString<ice::wchar> Separator_Dot<ice::wchar> = L".";
-        template<> constexpr ice::BasicString<ice::wchar> Separator_Drive<ice::wchar> = L":";
-        template<> constexpr ice::BasicString<ice::wchar> Separator_Directory<ice::wchar> = L"\\/";
-
         template<typename Self>
         bool is_absolute(this Self const& self) noexcept
         {

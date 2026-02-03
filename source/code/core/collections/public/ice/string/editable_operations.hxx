@@ -46,7 +46,7 @@ namespace ice::string
         template<MutableStringType Self>
         inline void push_back(this Self& self, typename Self::CharType const* cstr) noexcept
         {
-            return self.push_back(ice::BasicString<typename Self::CharType>{ cstr });
+            return self.push_back(ice::string::String<Self>{ cstr });
         }
 
         template<MutableStringType Self>

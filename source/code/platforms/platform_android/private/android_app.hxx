@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/string/static_string.hxx>
+#include <ice/static_string.hxx>
 #include <ice/platform_core.hxx>
 #include <ice/platform_storage.hxx>
 #include <ice/input/device_event_queue.hxx>
@@ -44,10 +44,10 @@ namespace ice::platform::android
         auto input_events() noexcept -> ice::Span<ice::input::DeviceEvent const> override { return _input_events._events; }
 
     public: // ice::platform::StoragePaths
-        auto data_locations() const noexcept -> ice::Span<ice::String const> override;
-        auto save_location() const noexcept -> ice::String override { return _app_save_data; }
-        auto cache_location() const noexcept -> ice::String override { return _app_internal_data; }
-        auto dylibs_location() const noexcept -> ice::String override { return _app_modules; }
+        auto data_locations() const noexcept -> ice::Span<ice::Path const> override;
+        auto save_location() const noexcept -> ice::Path override { return ice::Path{ _app_save_data }; }
+        auto cache_location() const noexcept -> ice::Path override { return ice::Path{ _app_internal_data }; }
+        auto dylibs_location() const noexcept -> ice::Path override { return ice::Path{ _app_modules }; }
 
     public: // ice::platform::android::AndroidAppCore
         void on_init() noexcept override;

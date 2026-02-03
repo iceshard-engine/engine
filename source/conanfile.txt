@@ -7,7 +7,7 @@ fastbuild-generator/0.4.2@iceshard/stable
 [requires]
 cli11/2.4.1@iceshard/stable
 fmt/11.2.0@iceshard/stable
-tracy/0.11.1@iceshard/stable
+tracy/0.13.1@iceshard/stable
 imgui/1.92.4.docking@iceshard/stable
 hailstorm/0.4.0@iceshard/stable
 # chipmunk2d/7.0.3+@iceshard/stable
@@ -48,14 +48,14 @@ imguizmo/1.91.5@iceshard/stable
 
 
 [options-Android-Arm64]
-tracy/*:shared=False
 tracy/*:manual_lifetime=False
+tracy/*:timer_fallback=False # Enable for profiling on Emulators
 tracy/*:no_system_tracing=True
 tracy/*:no_sampling=True
 
 [options-Android-x64]
-tracy/*:shared=False
 tracy/*:manual_lifetime=False
+tracy/*:timer_fallback=False # Enable for profiling on Emulators
 tracy/*:no_system_tracing=True
 tracy/*:no_sampling=True
 
