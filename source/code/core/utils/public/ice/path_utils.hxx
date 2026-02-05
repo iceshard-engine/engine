@@ -185,22 +185,22 @@ namespace ice
 } // namespace
 
 
-template<typename CharType>
-struct fmt::formatter<ice::BasicPath<CharType>> : public fmt::formatter<std::basic_string_view<CharType>>
+template<>
+struct fmt::formatter<ice::BasicPath<char>> : public fmt::formatter<std::basic_string_view<char>>
 {
     template<typename FormatContext>
-    constexpr auto format(ice::BasicPath<CharType> value, FormatContext& ctx) const noexcept
+    constexpr auto format(ice::BasicPath<char> value, FormatContext& ctx) const noexcept
     {
-        return fmt::formatter<std::basic_string_view<CharType>>::format(value, ctx);
+        return fmt::formatter<std::basic_string_view<char>>::format(value, ctx);
     }
 };
 
-template<typename CharType>
-struct fmt::formatter<ice::BasicHeapPath<CharType>> : public fmt::formatter<ice::BasicPath<CharType>>
+template<>
+struct fmt::formatter<ice::BasicHeapPath<char>> : public fmt::formatter<ice::BasicPath<char>>
 {
     template<typename FormatContext>
-    constexpr auto format(ice::BasicHeapPath<CharType> value, FormatContext& ctx) const noexcept
+    constexpr auto format(ice::BasicHeapPath<char> value, FormatContext& ctx) const noexcept
     {
-        return fmt::formatter<ice::BasicPath<CharType>>::format(value, ctx);
+        return fmt::formatter<ice::BasicPath<char>>::format(value, ctx);
     }
 };

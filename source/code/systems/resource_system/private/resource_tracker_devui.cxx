@@ -7,6 +7,7 @@
 #include <ice/devui_context.hxx>
 #include <ice/devui_frame.hxx>
 #include <ice/devui_imgui.hxx>
+#include <ice/static_string.hxx>
 
 namespace ice
 {

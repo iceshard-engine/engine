@@ -356,7 +356,7 @@ namespace ice
     template<>
     constexpr inline ice::ShardPayloadID Constant_ShardPayloadID<ice::StringID_Hash> = ice::shard_payloadid("ice::StringID_Hash");
 
-
+    template<>
     constexpr auto hash(ice::ShardID shardid) noexcept -> ice::u64
     {
         return ice::bit_cast<ice::u64>(shardid);

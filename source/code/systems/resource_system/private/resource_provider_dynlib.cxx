@@ -60,10 +60,9 @@ namespace ice
 
             ICE_LOG_IF(
                 resource == nullptr, LogSeverity::Warning, LogTag::Module,
-                "Failed to open module file: '{}'",
-                file_path
+                "Failed to open module file!"
             );
-            if (resource == nullptr) 
+            if (resource == nullptr)
             {
                 return;
             }

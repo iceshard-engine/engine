@@ -2,6 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #include "task_thread_pool_impl.hxx"
+#include <ice/static_string.hxx>
 #include <ice/string.hxx>
 #include <ice/assert.hxx>
 

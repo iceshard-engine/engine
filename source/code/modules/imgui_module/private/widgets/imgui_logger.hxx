@@ -3,9 +3,10 @@
 
 
 #pragma once
+#include <ice/array.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/devui_widget.hxx>
 #include <ice/devui_frame.hxx>
-#include <ice/array.hxx>
 #include <ice/log_sink.hxx>
 
 namespace ice::devui

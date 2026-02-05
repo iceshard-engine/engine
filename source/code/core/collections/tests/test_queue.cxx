@@ -5,6 +5,8 @@
 #include <ice/mem_allocator_host.hxx>
 #include <ice/mem_allocator_proxy.hxx>
 #include <ice/queue.hxx>
+#include <ice/span.hxx>
+
 #include "util_tracking_object.hxx"
 
 SCENARIO("collections 'ice/container/queue.hxx'", "[collection][queue][complex]")

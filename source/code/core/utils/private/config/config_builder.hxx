@@ -4,6 +4,7 @@
 #pragma once
 #include "config_builder_types.hxx"
 #include "config_builder_utils.hxx"
+#include <ice/hashmap.hxx>
 
 namespace ice::config::detail
 {

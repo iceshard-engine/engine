@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/string.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/assert_core.hxx>
 #include <ice/color.hxx>
 
