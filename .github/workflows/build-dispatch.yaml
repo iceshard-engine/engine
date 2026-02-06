@@ -49,6 +49,11 @@ jobs:
           conan-profile-cppstd: '20'
           conan-profile-libcxx: 'libc++'
 
+      - name: Login to IceShard Conan2 Repository
+        shell: pwsh
+        run: |
+          conan remote login -p ${{ secrets.conan_token }} conan2-iceshard ${{ secrets.conan_user }}
+
       - name: Setup IBT
         uses: iceshard-engine/.github/.github/actions/ibt-wks@main
         with:
