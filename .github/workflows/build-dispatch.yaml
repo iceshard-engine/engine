@@ -20,6 +20,11 @@ on:
         description: "Clang tools version to be installed"
         required: false
         type: string
+    secrets:
+      conan_user:
+        required: true
+      conan_token:
+        required: true
 
 jobs:
   build:
