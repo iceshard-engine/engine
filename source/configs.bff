@@ -95,6 +95,7 @@
         '-Werror'
         // We use [[deprecated]] to keep track of some old API usage without the need to fix them asap.
         '-Wno-error=deprecated-declarations'
+        '-Wno-unused-const-variable'
         '-Wno-switch'
         '-std=c++23'
         '-stdlib=libc++'

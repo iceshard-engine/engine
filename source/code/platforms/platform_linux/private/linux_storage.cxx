@@ -6,7 +6,7 @@
 #include <ice/mem_allocator_stack.hxx>
 #include <ice/string_utils.hxx>
 #include <ice/path_utils.hxx>
-#include <ice/os/windows.hxx>
+#include <ice/os/unix.hxx>
 #include <ice/app_info.hxx>
 #include <ice/log.hxx>
 

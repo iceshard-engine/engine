@@ -6,7 +6,7 @@
     .Name = 'math_tests'
     .Kind = .Kind_ConsoleApp
     .Group = 'Tests'
-    .Requires = { 'Windows' }
+    .Requires = { 'DevPlatform' }
     .Tags = { 'UnitTests' }
 
     .BaseDir = '$WorkspaceCodeDir$/core/math'

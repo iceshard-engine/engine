@@ -3,6 +3,9 @@
 
 #pragma once
 #include <ice/base.hxx>
+#if ISP_LINUX // TODO: Remove once Hailstorm fixes it's Linux build.
+#include <malloc.h>
+#endif
 #include <hailstorm/hailstorm.hxx>
 
 auto hailstorm_validate_header(

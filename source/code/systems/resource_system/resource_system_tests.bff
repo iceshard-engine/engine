@@ -6,7 +6,7 @@
     .Name = 'resource_system_tests'
     .Kind = .Kind_ConsoleApp
     .Group = 'Tests'
-    .Requires = { 'Windows' }
+    .Requires = { 'DevPlatform' }
     .Tags = { 'UnitTests' }
 
     .BaseDir = '$WorkspaceCodeDir$/systems/resource_system'
@@ -29,7 +29,7 @@
 
     .UnitTests =
     [
-        .Enabled = false
+        .Enabled = true
     ]
 ]
 .Projects + .Project

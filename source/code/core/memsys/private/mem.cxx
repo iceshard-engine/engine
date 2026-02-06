@@ -5,9 +5,6 @@
 #include <ice/mem_data.hxx>
 #include <ice/mem_memory.hxx>
 #include <ice/profiler.hxx>
-#include <assert.h>
-#include <stdlib.h>
-#include <malloc.h>
 
 namespace ice
 {

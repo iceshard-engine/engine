@@ -2,10 +2,11 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#include <ice/mem_allocator.hxx>
+#include <ice/mem_initializers.hxx>
 #include <ice/container/container_concepts.hxx>
 #include <ice/container/basic_container.hxx>
 #include <ice/container/resizable_container.hxx>
-#include <ice/mem_initializers.hxx>
 
 namespace ice
 {

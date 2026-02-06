@@ -137,8 +137,6 @@ namespace ice::ecs
         }
     };
 
-    static constexpr ice::u32 Constant_TotalMemoryUsedForArchetypeHeaders_KiB = ice::ecs::Constant_MaxArchetypeCount * sizeof(void*) / 1024;
-
     ArchetypeIndex::ArchetypeIndex(ice::Allocator& alloc) noexcept
         : _allocator{ alloc }
         , _default_block_pool{ ice::ecs::detail::create_default_block_pool(_allocator) }

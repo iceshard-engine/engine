@@ -11,6 +11,8 @@
 #include <semaphore.h>
 #include <unistd.h>
 #include <dlfcn.h>
+#include <stdlib.h>
+#include <malloc.h>
 #pragma clang diagnostic ignored "-Wunknown-attributes"
 
 template<>
