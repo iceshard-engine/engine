@@ -86,7 +86,7 @@ namespace ice
             ImGui::SetCurrentContext((ImGuiContext*)params.native_context);
             return true;
         }
-#if ISP_WINDOWS
+#if ISP_WINDOWS && 0
         else if (context_name == "devui-context/imguizmo"_sid)
         {
             ImGuizmo::SetImGuizmoContext((ImGuizmo::ImGuizmoContext*)params.native_context);

@@ -68,7 +68,7 @@ namespace ice::devui
         {
             ICE_LOG(LogSeverity::Warning, LogTag::System, "Failed to initialize 'ImGui' context on module!");
         }
-#if ISP_WINDOWS
+#if ISP_WINDOWS && 0
         setup_params.native_context = ImGuizmo::GetImGuizmoContext();
         if (cb("devui-context/imguizmo"_sid, setup_params, userdata) == false)
         {
@@ -136,7 +136,7 @@ namespace ice::devui
 
             ImGui::SetAllocatorFunctions(imgui_memalloc, imgui_memfree, global_ImGuiAllocator);
             ImGui::CreateContext();
-#if ISP_WINDOWS
+#if ISP_WINDOWS && 0
             ImGuizmo::Initialize();
 #endif
             ice::devui::styles::apply_color_theme(ice::devui::styles::Theme::Dark);
@@ -149,7 +149,7 @@ namespace ice::devui
         {
             ice::devui::styles::pop_stylesheet();
             ice::devui::styles::pop_color_theme();
-#if ISP_WINDOWS
+#if ISP_WINDOWS && 0
             ImGuizmo::Shutdown();
 #endif
             ImGui::DestroyContext();
