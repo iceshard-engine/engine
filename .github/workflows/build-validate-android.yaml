@@ -23,3 +23,6 @@ jobs:
       host-platform: 'windows-latest'
       target-platform: 'android'
       targets: "${{ matrix.project }}-${{ matrix.pipeline }}-${{ matrix.config }}"
+    secrets:
+      conan_user: ${{ secrets.CONAN_USER }}
+      conan_token: ${{ secrets.CONAN_TOKEN }}
