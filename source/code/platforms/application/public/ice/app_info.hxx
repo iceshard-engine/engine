@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/native_file.hxx>
+#include <ice/path_utils.hxx>
 
 namespace ice::app
 {

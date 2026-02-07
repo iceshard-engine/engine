@@ -2,8 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/os/unix.hxx>
-#include <ice/os/windows.hxx>
+#include <ice/os.hxx>
 #include <ice/path_utils.hxx>
 #include <ice/native_aio.hxx>
 #include <ice/expected.hxx>

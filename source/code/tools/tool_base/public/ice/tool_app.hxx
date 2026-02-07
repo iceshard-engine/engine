@@ -4,7 +4,7 @@
 #pragma once
 #include <ice/mem_allocator.hxx>
 #include <ice/module_register.hxx>
-#include <ice/native_file.hxx>
+#include <ice/path_utils.hxx>
 #include <ice/params.hxx>
 #include <ice/tool.hxx>
 

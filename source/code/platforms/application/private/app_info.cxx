@@ -5,6 +5,7 @@
 #include <ice/app_info.hxx>
 #include <ice/mem_allocator_stack.hxx>
 #include <ice/string_utils.hxx>
+#include <ice/native_file.hxx>
 
 namespace ice::app
 {
