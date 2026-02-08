@@ -1,9 +1,9 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/mem_utils.hxx>
-#include <ice/string/string.hxx>
-#include <ice/string/heap_string.hxx>
+#include <ice/string.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/path_utils.hxx>
 
 namespace ice::path
@@ -28,15 +28,15 @@ namespace ice::path
         {
             if constexpr (ice::build::is_windows)
             {
-                if (ice::string::size(path) >= 3)
+                if (path.size() >= 3)
                 {
-                    return path[1] == Separators_Drive<CharType>[0] && ice::string::find_first_of(Separators_Directory<CharType>, path[2]) != ice::String_NPos;
+                    return path[1] == Separators_Drive<CharType>[0] && Separators_Directory<CharType>.find_first_of(path[2]) != ice::nindex_none;
                 }
                 return false;
             }
             else
             {
-                return ice::string::any(path) && ice::string::front(path) == Separators_Directory<CharType>[1];
+                return path.not_empty() && path.front() == Separators_Directory<CharType>[1];
             }
         }
 
@@ -46,45 +46,45 @@ namespace ice::path
             if constexpr (ice::build::is_windows)
             {
                 // Only support single-letter drives
-                return ice::string::size(path) == 3
+                return path.size() == 3
                     && path[1] == Separators_Drive<CharType>[0]
-                    && ice::string::find_first_of(Separators_Directory<CharType>, path[2]) != ice::String_NPos;
+                    && path.find_first_of(Separators_Directory<CharType>, path[2]) != ice::nindex_none;
             }
             else
             {
-                return ice::string::size(path) == 1 && ice::string::front(path) == Separators_Directory<CharType>[1];
+                return path.size() == 1 && path.front() == Separators_Directory<CharType>[1];
             }
         }
 
         template<typename CharType>
         constexpr auto extension(ice::BasicString<CharType> str) noexcept -> ice::BasicString<CharType>
         {
-            auto const separator_pos = ice::string::find_last_of(str, Separators_Dot<CharType>);
-            return ice::string::substr(str, separator_pos == ice::String_NPos ? ice::string::size(str) : separator_pos);
+            ice::nindex const separator_pos = str.find_last_of(Separators_Dot<CharType>);
+            return str.substr(separator_pos.value_or(str.size()));
         }
 
         template<typename CharType>
         constexpr auto filename(ice::BasicString<CharType> str) noexcept -> ice::BasicString<CharType>
         {
-            auto const separator_pos = ice::string::find_last_of(str, Separators_Directory<CharType>);
-            return ice::string::substr(str, separator_pos == ice::String_NPos ? 0 : separator_pos + 1);
+            ice::nindex const separator_pos = str.find_last_of(Separators_Directory<CharType>) + 1;
+            return str.substr(separator_pos.value_or(0));
         }
 
         template<typename CharType>
         constexpr auto basename(ice::BasicString<CharType> str) noexcept -> ice::BasicString<CharType>
         {
             ice::BasicString<CharType> const name = filename(str);
-            auto const extension_pos = ice::string::find_last_of(name, Separators_Dot<CharType>);
-            return ice::string::substr(name, 0, extension_pos);
+            auto const extension_pos = name.find_last_of(Separators_Dot<CharType>);
+            return name.substr(0, extension_pos);
         }
 
         template<typename CharType>
         constexpr auto directory(ice::BasicString<CharType> str) noexcept -> ice::BasicString<CharType>
         {
-            auto const separator_pos = ice::string::find_last_of(str, Separators_Directory<CharType>);
-            if (separator_pos == ice::String_NPos)
+            ice::nindex const separator_pos = str.find_last_of(Separators_Directory<CharType>);
+            if (separator_pos == ice::nindex_none)
             {
-                return ice::string::substr(str, ice::string::size(str), separator_pos);
+                return str.substr(str.size(), separator_pos);
             }
 
             if constexpr (ice::build::is_windows)
@@ -92,11 +92,11 @@ namespace ice::path
                 if (separator_pos > 0 && str[separator_pos - 1] == ':')
                 {
                     // Keep the separator so we end up with C:/
-                    return ice::string::substr(str, 0, separator_pos + 1);
+                    return str.substr(0, separator_pos + 1);
                 }
             }
 
-            return ice::string::substr(str, 0, separator_pos);
+            return str.substr(0, separator_pos);
         }
 
         template<typename CharType>
@@ -109,23 +109,23 @@ namespace ice::path
                 return left;
             }
 
-            if (auto last_char = ice::string::back(left); last_char != Separators_Directory<CharType>[1])
+            if (auto last_char = left.back(); last_char != Separators_Directory<CharType>[1])
             {
                 if (last_char == Separators_Directory<CharType>[0])
                 {
-                    ice::string::pop_back(left);
+                    left.pop_back();
                 }
-                ice::string::push_back(left, Separators_Directory<CharType>[1]);
+                left.push_back(Separators_Directory<CharType>[1]);
             }
 
-            if (ice::string::front(right) == Separators_Directory<CharType>[1] || ice::string::front(right) == Separators_Directory<CharType>[0])
+            if (right.front() == Separators_Directory<CharType>[1] || right.front() == Separators_Directory<CharType>[0])
             {
-                right = ice::string::substr(right, ice::string::find_first_not_of(right, Separators_Directory<CharType>));
+                right = right.substr(right.find_first_not_of(Separators_Directory<CharType>));
             }
 
             if (right != Separators_Dot<CharType>)
             {
-                ice::string::push_back(left, right);
+                left.push_back(right);
             }
 
             return left;
@@ -135,8 +135,8 @@ namespace ice::path
         auto normalize(ice::HeapString<CharType>& path) noexcept -> ice::BasicString<CharType>
         {
             bool const abs = detail::is_absolute<CharType>(path);
-            CharType const* end = ice::string::end(path);
-            CharType* const beg = ice::string::begin(path);
+            CharType const* end = path.end();
+            CharType* const beg = path.begin();
             if (beg == end)
             {
                 return path;
@@ -177,10 +177,10 @@ namespace ice::path
             // Find starting position for next solve
             it = beg;
 
-            ice::ucount const begin = ice::string::find_first_of(path, Separators_Drive<CharType>);
-            if (begin != ice::String_NPos)
+            ice::nindex const begin = path.find_first_of(Separators_Drive<CharType>);
+            if (begin != ice::nindex_none)
             {
-                it += begin + 1;
+                it = it + begin + 1;
             }
 
             copy_to = it;
@@ -214,46 +214,43 @@ namespace ice::path
                 copy_to += 1;
             }
 
-            ice::string::resize(
-                path,
-                ice::ucount(copy_to - beg)
-            );
+            path.resize(copy_to - beg);
             return path;
         }
 
         template<typename CharType>
         auto replace_filename(ice::HeapString<CharType>& str, ice::BasicString<CharType> name) noexcept -> ice::BasicString<CharType>
         {
-            auto const separator_pos = ice::string::find_last_of(str, Separators_Directory<CharType>);
-            if (separator_pos != ice::String_NPos)
+            auto const separator_pos = str.find_last_of(Separators_Directory<CharType>);
+            if (separator_pos != ice::nindex_none)
             {
-                ice::string::resize(str, separator_pos + 1);
+                str.resize(separator_pos + 1);
             }
             else
             {
-                ice::string::clear(str);
+                str.clear();
             }
 
-            ice::string::push_back(str, name);
+            str.push_back(name);
             return str;
         }
 
         template<typename CharType>
         auto replace_extension(ice::HeapString<CharType>& str, ice::BasicString<CharType> extension) noexcept -> ice::BasicString<CharType>
         {
-            auto const separator_pos = ice::string::find_last_of(str, Separators_Dot<CharType>[0]);
-            if (separator_pos != ice::String_NPos)
+            auto const separator_pos = str.find_last_of(Separators_Dot<CharType>[0]);
+            if (separator_pos != ice::nindex_none)
             {
-                ice::string::resize(str, separator_pos);
+                str.resize(separator_pos);
             }
 
-            if (ice::string::empty(extension) == false)
+            if (str.not_empty())
             {
-                if (ice::string::front(extension) != Separators_Dot<CharType>[0])
+                if (extension.front() != Separators_Dot<CharType>[0])
                 {
-                    ice::string::push_back(str, Separators_Dot<CharType>[0]);
+                    str.push_back(Separators_Dot<CharType>[0]);
                 }
-                ice::string::push_back(str, extension);
+                str.push_back(extension);
             }
             return str;
         }
@@ -262,7 +259,7 @@ namespace ice::path
 
     bool is_absolute(ice::String path) noexcept { return detail::is_absolute(path); }
     bool is_absolute_root(ice::String path) noexcept { return detail::is_absolute_root(path); }
-    auto length(ice::String path) noexcept -> ice::ucount { return ice::string::size(path); }
+    auto length(ice::String path) noexcept -> ice::u32 { return path.size().u32(); }
     auto extension(ice::String path) noexcept -> ice::String { return detail::extension(path); }
     auto filename(ice::String path) noexcept -> ice::String { return detail::filename(path); }
     auto basename(ice::String path) noexcept -> ice::String { return detail::basename(path); }
@@ -274,7 +271,7 @@ namespace ice::path
 
     bool is_absolute(ice::WString path) noexcept { return detail::is_absolute(path); }
     bool is_absolute_root(ice::WString path) noexcept { return detail::is_absolute_root(path); }
-    auto length(ice::WString path) noexcept -> ice::ucount { return ice::string::size(path); }
+    auto length(ice::WString path) noexcept -> ice::u32 { return path.size().u32(); }
     auto extension(ice::WString path) noexcept -> ice::WString { return detail::extension(path); }
     auto filename(ice::WString path) noexcept -> ice::WString { return detail::filename(path); }
     auto basename(ice::WString path) noexcept -> ice::WString { return detail::basename(path); }

@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/devui_context.hxx>
@@ -86,7 +86,7 @@ namespace ice
             ImGui::SetCurrentContext((ImGuiContext*)params.native_context);
             return true;
         }
-#if ISP_WINDOWS
+#if ISP_WINDOWS && 0
         else if (context_name == "devui-context/imguizmo"_sid)
         {
             ImGuizmo::SetImGuizmoContext((ImGuizmo::ImGuizmoContext*)params.native_context);

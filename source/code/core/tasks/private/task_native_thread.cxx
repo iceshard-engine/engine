@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "task_native_thread.hxx"
@@ -50,7 +50,7 @@ namespace ice
         while (_runtime._state != ThreadState::Destroyed)
         {
             _runtime._queue.push_back(&final_awaitable);
-            thread_native::sleep(1);
+            thread_native::sleep(3); // sleep for a few milliseconds to ensure the thread was destroyed
         }
 
         thread_native::destroy_thread(_native);
@@ -81,7 +81,7 @@ namespace ice
         return _runtime._state == ThreadState::Active;
     }
 
-    auto NativeTaskThread::estimated_task_count() const noexcept -> ice::ucount
+    auto NativeTaskThread::estimated_task_count() const noexcept -> ice::u32
     {
         return 0;
     }
@@ -104,7 +104,7 @@ namespace ice
 
             if constexpr (BusyWait)
             {
-                if (_queue.empty())
+                if (_queue.is_empty())
                 {
                     if (busy_loop > 0)
                     {
@@ -159,19 +159,19 @@ namespace ice
     auto ThreadRuntime::exclusive_sorted_routine() noexcept -> ice::u32
     {
         // Get the task nodes and ensure we are can access all of them.
-        ice::LinkedQueueRange<ice::TaskAwaitableBase> tasks = _queue.consume();
+        ice::AtomicLinkedQueueRange<ice::TaskAwaitableBase> tasks = _queue.take_all();
 
         ice::u32 count = 0;
         ice::TaskAwaitableBase volatile* head = tasks._head;
         while (head != tasks._tail)
         {
             // If we are not at 'tail' and encounter a nullptr, this means some thread did not write it's 'next' member yet.
-            while (head->next == nullptr)
+            while (head->_next == nullptr)
             {
                 ice::thread_native::yield();
             }
 
-            head = head->next;
+            head = head->_next;
             count += 1;
         }
 
@@ -198,9 +198,9 @@ namespace ice
 
         // Update the head and tail pointers.
         tasks._tail = tasks._head;
-        while (tasks._tail->next != nullptr)
+        while (tasks._tail->_next != nullptr)
         {
-            tasks._tail = tasks._tail->next;
+            tasks._tail = tasks._tail->_next;
         }
 
         // Execute all tasks
@@ -275,10 +275,10 @@ namespace ice
 
             if constexpr (ice::build::is_release == false)
             {
-                if (ice::string::any(info.debug_name))
+                if (info.debug_name.not_empty())
                 {
                     ice::StackAllocator<256_B> stack_alloc;
-                    ice::ucount const wide_count = ice::utf8_to_wide_size(info.debug_name);
+                    ice::u32 const wide_count = ice::utf8_to_wide_size(info.debug_name);
                     ICE_ASSERT(
                         ice::size_of<ice::wchar> *(wide_count + 1) < stack_alloc.Constant_InternalCapacity,
                         "Thread debug name too long!"
@@ -324,12 +324,12 @@ namespace ice
             // For web apps we can only set thread names on their respective thread context.
             if constexpr (ice::build::is_release == false)
             {
-                emscripten_set_thread_name(pthread_self(), ice::string::begin(thread_info.debug_name));
+                emscripten_set_thread_name(pthread_self(), thread_info.debug_name.begin());
             }
 #elif ISP_LINUX
             if constexpr (ice::build::is_release == false)
             {
-                pthread_setname_np(pthread_self(), ice::string::begin(thread_info.debug_name));
+                pthread_setname_np(pthread_self(), thread_info.debug_name.begin());
             }
 #endif
 
@@ -403,9 +403,9 @@ namespace ice
 
             if constexpr (ice::build::is_release == false && ice::build::is_webapp == false)
             {
-                if (ice::string::any(info.debug_name))
+                if (info.debug_name.not_empty())
                 {
-                    error = pthread_setname_np(thread_handle, ice::string::begin(info.debug_name));
+                    error = pthread_setname_np(thread_handle, info.debug_name.begin());
                     ICE_ASSERT(error == 0, "Failed to set name for native thread with error: {}!", error);
                 }
             }

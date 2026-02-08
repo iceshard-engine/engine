@@ -1,9 +1,9 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "log_internal.hxx"
-#include <ice/container/hashmap.hxx>
-#include <ice/string/heap_string.hxx>
+#include <ice/hashmap.hxx>
+#include <ice/heap_string.hxx>
 
 namespace ice::detail
 {
@@ -16,15 +16,14 @@ namespace ice::detail
         , _tags{ _allocator }
         , _sinks{ _allocator }
     {
-        ice::array::resize(_sinks, 5);
+        _sinks.resize(5);
     }
 
     LogState::~LogState() noexcept = default;
 
     void LogState::register_tag(ice::LogTagDefinition tag_def) noexcept
     {
-        ice::hashmap::set(
-            _tags,
+        _tags.set(
             tag_hash(tag_def.tag),
             { ice::HeapString<char>{ _allocator, tag_def.name }, true }
         );
@@ -32,18 +31,18 @@ namespace ice::detail
 
     auto LogState::register_sink(ice::LogSinkFn fn_sink, void* userdata) noexcept -> ice::LogSinkID
     {
-        ice::ucount const sinkidx = ice::count(_sinks);
+        ice::u32 const sinkidx = _sinks.size().u32();
         // Pottentially an error when sinks are added and remove all the time!
         // NOTE: Once added sinks should only be reset when a module was reloaded!
         ICE_ASSERT_CORE(sinkidx < 50);
-        ice::array::push_back(_sinks, Sink{ fn_sink, userdata });
+        _sinks.push_back(Sink{ fn_sink, userdata });
         return static_cast<ice::LogSinkID>(sinkidx);
     }
 
     void LogState::unregister_sink(ice::LogSinkID sinkid) noexcept
     {
-        ice::ucount const sinkidx = static_cast<ice::ucount>(sinkid);
-        if (ice::count(_sinks) > sinkidx)
+        ice::u32 const sinkidx = static_cast<ice::u32>(sinkid);
+        if (_sinks.size() > sinkidx)
         {
             // Just clear the values
             _sinks[sinkidx] = Sink{ nullptr, nullptr };
@@ -52,7 +51,7 @@ namespace ice::detail
 
     void LogState::enable_tag(ice::LogTag tag, bool enabled) noexcept
     {
-        if (LogTagInfo* tagv = ice::hashmap::try_get(_tags, tag_hash(tag)))
+        if (LogTagInfo* tagv = _tags.try_get(tag_hash(tag)))
         {
             tagv->enabled = enabled;
         }
@@ -60,8 +59,7 @@ namespace ice::detail
 
     auto LogState::tag_name(ice::LogTag tag) const noexcept -> ice::String
     {
-        return ice::hashmap::get(
-            _tags,
+        return _tags.get(
             tag_hash(tag),
             _empty_tag
         ).name;
@@ -69,8 +67,7 @@ namespace ice::detail
 
     bool LogState::tag_enabled(ice::LogTag tag) const noexcept
     {
-        return ice::hashmap::get(
-            _tags,
+        return _tags.get(
             tag_hash(tag),
             _empty_tag
         ).enabled;

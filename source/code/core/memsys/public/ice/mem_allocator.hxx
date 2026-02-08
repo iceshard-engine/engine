@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -26,6 +26,13 @@ namespace ice
         auto allocate(ice::AllocRequest request) noexcept -> ice::AllocResult
         {
             return do_allocate(request);
+        }
+
+        auto allocate(ice::ChunkedAllocRequest const& request) noexcept -> ice::AllocResult
+        {
+            ice::AllocResult const result = do_allocate(request._request_meminfo);
+            request.finalize(result);
+            return result;
         }
 
         template<typename T> requires std::is_trivial_v<T>
@@ -176,6 +183,8 @@ namespace ice
         AllocatorBase(std::source_location const& src_loc, AllocatorBase& parent, std::string_view name) noexcept;
 
         auto allocate(ice::AllocRequest request) noexcept -> ice::AllocResult;
+        auto allocate(ice::ChunkedAllocRequest const& request) noexcept -> ice::AllocResult;
+
         template<typename T> requires std::is_trivial_v<T>
         auto allocate(ice::u64 count = 1) noexcept -> T*
         {

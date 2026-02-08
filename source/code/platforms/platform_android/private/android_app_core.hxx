@@ -1,9 +1,9 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/mem_allocator_proxy.hxx>
-#include <ice/container/linked_queue.hxx>
+#include <ice/atomic_linked_queue.hxx>
 #include <ice/os.hxx>
 
 #include <android/native_activity.h>
@@ -29,7 +29,7 @@ namespace ice::platform::android
         AndroidMessageType type;
         ANativeWindow* window;
 
-        AndroidMessage* next;
+        AndroidMessage* _next;
     };
 
     enum class AndroidState : uint8_t

@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "log_android.hxx"
@@ -129,8 +129,8 @@ namespace ice::detail::android
         __android_log_message msg{ .struct_size = sizeof(__android_log_message) };
         msg.buffer_id = bufferid_from_severity(severity);
         msg.priority = logpriority_from_severity(severity);
-        msg.tag = ice::string::begin(get_tag_name(tag));
-        msg.file = ice::string::begin(location.file);
+        msg.tag = get_tag_name(tag).begin();
+        msg.file = location.file.begin();
         msg.line = location.line;
 
         if (__builtin_available(android 30, *))

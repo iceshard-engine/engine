@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -9,17 +9,30 @@ namespace ice
 {
 
     template<typename T, typename... Args>
+    auto mem_construct_at(void* memory_ptr, Args&&... args) noexcept -> T*
+    {
+        // TODO: Assert (align + size)
+        return new (memory_ptr) T{ ice::forward<Args>(args)... };
+    }
+
+    template<typename T, typename... Args>
     auto mem_construct_at(ice::Memory memory, Args&&... args) noexcept -> T*
     {
         // TODO: Assert (align + size)
-        return new (memory.location) T{ ice::forward<Args>(args)... };
+        return mem_construct_at<T>(memory.location, ice::forward<Args>(args)...);
+    }
+
+    template<typename T>
+    auto mem_move_construct_at(void* memory_ptr, T&& other) noexcept -> T*
+    {
+        return new (memory_ptr) T{ ice::move(other) };
     }
 
     template<typename T>
     auto mem_move_construct_at(ice::Memory memory, T&& other) noexcept -> T*
     {
         // TODO: Assert (align + size)
-        return new (memory.location) T{ ice::move(other) };
+        return mem_move_construct_at<T>(memory.location, ice::move(other));
     }
 
     template<typename T>
@@ -30,11 +43,11 @@ namespace ice
     }
 
     template<typename T>
-    auto mem_construct_n_at(ice::Memory memory, ice::ucount count) noexcept -> T*
+    auto mem_default_construct_n_at(ice::Memory memory, ice::u64 count) noexcept -> T*
     {
         // TODO: Assert (align + size)
         T* target_mem = reinterpret_cast<T*>(memory.location);
-        for (ice::ucount idx = 0; idx < count; ++idx)
+        for (ice::u64 idx = 0; idx < count; ++idx)
         {
             new (target_mem + idx) T{ };
         }
@@ -42,11 +55,11 @@ namespace ice
     }
 
     template<typename T>
-    auto mem_move_construct_n_at(ice::Memory memory, T* objects, ice::ucount count) noexcept -> T*
+    auto mem_move_construct_n_at(ice::Memory memory, T* objects, ice::u64 count) noexcept -> T*
     {
         // TODO: Assert (align + size)
         T* target_mem = reinterpret_cast<T*>(memory.location);
-        for (ice::ucount idx = 0; idx < count; ++idx)
+        for (ice::u64 idx = 0; idx < count; ++idx)
         {
             new (target_mem + idx) T{ ice::move(objects[idx]) };
         }
@@ -54,9 +67,9 @@ namespace ice
     }
 
     template<typename T>
-    auto mem_move_n_to(T* target_objects, T* objects, ice::ucount count) noexcept -> T*
+    auto mem_move_n_to(T* target_objects, T* objects, ice::u64 count) noexcept -> T*
     {
-        for (ice::ucount idx = 0; idx < count; ++idx)
+        for (ice::u64 idx = 0; idx < count; ++idx)
         {
             target_objects[idx] = ice::move(objects[idx]);
         }
@@ -64,17 +77,30 @@ namespace ice
     }
 
     template<typename T>
-    auto mem_copy_construct_n_at(ice::Memory memory, T const* objects, ice::ucount count) noexcept -> T*
+    auto mem_copy_construct_n_at(ice::Memory memory, T const* objects, ice::u64 count) noexcept -> T*
     {
         // TODO: Assert (align + size)
         T* target_mem = reinterpret_cast<T*>(memory.location);
-        for (ice::ucount idx = 0; idx < count; ++idx)
+        for (ice::u64 idx = 0; idx < count; ++idx)
         {
             new (target_mem + idx) T{ objects[idx] };
         }
         return target_mem;
     }
 
+    template<typename T, typename ItT>
+    auto mem_copy_construct_it_at(ice::Memory memory, ItT begin, ItT end) noexcept -> T*
+    {
+        T* const target_mem = reinterpret_cast<T*>(memory.location);
+        ice::u64 idx = 0;
+        while (begin != end)
+        {
+            new (target_mem + idx) T{ *begin };
+            begin += 1;
+            idx += 1;
+        }
+        return target_mem;
+    }
 
 
     template<typename T>
@@ -84,9 +110,9 @@ namespace ice
     }
 
     template<typename T>
-    void mem_destruct_n_at(T* location, ice::ucount count) noexcept
+    void mem_destruct_n_at(T* location, ice::u64 count) noexcept
     {
-        for (ice::ucount idx = 0; idx < count; ++idx)
+        for (ice::u64 idx = 0; idx < count; ++idx)
         {
             ice::mem_destruct_at(location + idx);
         }

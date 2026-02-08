@@ -1,13 +1,12 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/mem_allocator_stack.hxx>
-#include <ice/string_types.hxx>
+#include <ice/string.hxx>
 #include <ice/stringid.hxx>
-#include <ice/container_types.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <ice/module_negotiator.hxx>
 #include <ice/module_query.hxx>
 #include <ice/module.hxx>
@@ -62,7 +61,7 @@ namespace ice
     auto load_global_modules(
         ice::Allocator& alloc,
         ice::ModuleRegister& modules_register
-    ) noexcept -> ice::ucount;
+    ) noexcept -> ice::u32;
 
     //! \brief Creates a default module register.
     //! \param[in] alloc The allocator to use for the module register.

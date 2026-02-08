@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "android_app.hxx"
@@ -9,11 +9,10 @@
 #include <ice/log.hxx>
 #include <ice/assert.hxx>
 #include <ice/path_utils.hxx>
-#include <ice/string/heap_string.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/os/android.hxx>
 #include <ice/params.hxx>
 #include <thread>
-
 
 namespace ice::platform::android
 {
@@ -43,8 +42,8 @@ namespace ice::platform::android
         ice::jni::JObject path{ env, env->CallObjectMethod(activity, mid_getCacheDir) };
         path = jni::JObject{ env, env->CallObjectMethod(path.native(), mid_getAbsPath) };
         jsize const len = env->GetStringUTFLength((jstring)path.native());
-        ice::string::resize(res, static_cast<ice::ucount>(len));
-        env->GetStringUTFRegion((jstring)path.native(), 0, len, ice::string::begin(res));
+        res.resize(len);
+        env->GetStringUTFRegion((jstring)path.native(), 0, len, res.begin());
         return res;
     }
 
@@ -70,8 +69,8 @@ namespace ice::platform::android
         obj = jni::JObject{ env, env->CallObjectMethod(obj.native(), mid_getApplicationInfo, pkgName.native(), jint{ 0 }) };
         obj = jni::JObject{ env, env->GetObjectField(obj.native(), fid_nativeLibraryDir) };
         jsize const len = env->GetStringUTFLength((jstring)obj.native());
-        ice::string::resize(res, static_cast<ice::ucount>(len));
-        env->GetStringUTFRegion((jstring)obj.native(), 0, len, ice::string::begin(res));
+        res.resize(len);
+        env->GetStringUTFRegion((jstring)obj.native(), 0, len, res.begin());
         return res;
     }
 
@@ -112,10 +111,10 @@ namespace ice::platform::android
         _app_internal_data = activity->internalDataPath;
         _app_external_data = activity->externalDataPath;
         _app_save_data = activity->externalDataPath;
-        ice::string::push_back(_app_modules, '/');
-        ice::string::push_back(_app_internal_data, '/');
-        ice::string::push_back(_app_external_data, '/');
-        ice::string::push_back(_app_save_data, '/');
+        _app_modules.push_back('/');
+        _app_internal_data.push_back('/');
+        _app_external_data.push_back('/');
+        _app_save_data.push_back('/');
 
         ICE_ASSERT(global_instance == nullptr, "Only one instance of AndroidApp should ever be created!");
         global_instance = this;
@@ -144,7 +143,7 @@ namespace ice::platform::android
     auto AndroidApp::refresh_events() noexcept -> ice::Result
     {
         using namespace ice::input;
-        ice::shards::clear(_system_events);
+        _system_events.clear();
         _input_events.clear();
 
         static bool first_refresh = true;
@@ -217,11 +216,11 @@ namespace ice::platform::android
         return ice::S_Success;
     }
 
-    auto AndroidApp::data_locations() const noexcept -> ice::Span<ice::String const>
+    auto AndroidApp::data_locations() const noexcept -> ice::Span<ice::Path const>
     {
-        static ice::String const paths[]{
-            _app_external_data,
-            _app_internal_data,
+        static ice::Path const paths[]{
+            ice::Path{ _app_external_data },
+            ice::Path{ _app_internal_data },
         };
         return paths;
     }

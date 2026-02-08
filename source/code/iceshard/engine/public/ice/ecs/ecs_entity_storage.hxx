@@ -1,7 +1,8 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#include <ice/multi_hashmap.hxx>
 #include <ice/shard_container.hxx>
 #include <ice/ecs/ecs_types.hxx>
 #include <ice/ecs/ecs_entity.hxx>
@@ -52,7 +53,7 @@ namespace ice::ecs
         auto query_data_slots(
             ice::Span<ice::ecs::Entity const> requested,
             ice::Span<ice::ecs::EntityDataSlot> out_data_slots
-        ) const noexcept -> ice::ucount override;
+        ) const noexcept -> ice::u32 override;
 
         bool query_archetype_block(
             ice::ecs::Archetype archetype,
@@ -79,7 +80,7 @@ namespace ice::ecs
         ice::Array<ice::ecs::detail::DataBlock*> _data_blocks;
         ice::Array<ice::ecs::EntityDataSlot> _data_slots;
 
-        ice::HashMap<ice::ecs::detail::EntityDestructor> _destructors;
+        ice::MultiHashMap<ice::ecs::detail::EntityDestructor> _destructors;
     };
 
 } // namespace ice::ecs

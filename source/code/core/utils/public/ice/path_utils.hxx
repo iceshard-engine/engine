@@ -1,13 +1,13 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/string_types.hxx>
-#include <ice/string/string.hxx>
+#include <ice/string.hxx>
+#include <ice/heap_string.hxx>
+#include <ice/log_formatters.hxx>
 
 namespace ice::path
 {
-
     //! \note On windows: starts with a drive letter, on linux: checks for starting backslash.
     //! \return true If the path is absolute.
     bool is_absolute(ice::String path) noexcept;
@@ -16,7 +16,7 @@ namespace ice::path
     bool is_absolute_root(ice::String path) noexcept;
 
     //! \return The lenght of the path.
-    auto length(ice::String path) noexcept -> ice::ucount;
+    auto length(ice::String path) noexcept -> ice::u32;
 
     //! \return The last extension part (with the dot character) or empty string if no extension was found.
     auto extension(ice::String path) noexcept -> ice::String;
@@ -55,11 +55,11 @@ namespace ice::path
     //! \returns The given path as a String value.
     auto replace_extension(ice::HeapString<>& path, ice::String extension) noexcept -> ice::String;
 
-    // Wider character implementations
+    // Wide character implementations
 
     bool is_absolute(ice::WString path) noexcept;
     bool is_absolute_root(ice::WString path) noexcept;
-    auto length(ice::WString path) noexcept -> ice::ucount;
+    auto length(ice::WString path) noexcept -> ice::u32;
     auto extension(ice::WString path) noexcept -> ice::WString;
     auto filename(ice::WString path) noexcept -> ice::WString;
     auto basename(ice::WString path) noexcept -> ice::WString;
@@ -70,4 +70,137 @@ namespace ice::path
     auto replace_filename(ice::HeapString<ice::wchar>& path, ice::WString filename) noexcept -> ice::WString;
     auto replace_extension(ice::HeapString<ice::wchar>& path, ice::WString extension) noexcept -> ice::WString;
 
+    template<ice::concepts::StringType StringT>
+    using Path = typename StringT::PathType;
+
 } // namespace ice::path
+
+namespace ice
+{
+
+    struct PathString
+    {
+        template<typename Self>
+        bool is_absolute(this Self const& self) noexcept
+        {
+            return ice::path::is_absolute(self);
+        }
+
+        template<typename Self>
+        bool is_relative(this Self const& self) noexcept
+        {
+            return self.is_absolute() == false;
+        }
+
+        template<typename Self>
+        constexpr auto extension(this Self const& self) noexcept -> ice::string::String<Self>
+        {
+            return ice::path::extension(self);
+        }
+
+        template<typename Self>
+        constexpr auto filename(this Self const& self) noexcept -> ice::string::String<Self>
+        {
+            return ice::path::filename(self);
+        }
+
+        template<typename Self>
+        constexpr auto basename(this Self const& self) noexcept -> ice::string::String<Self>
+        {
+            return ice::path::basename(self);
+        }
+
+        template<typename Self>
+        constexpr auto directory(this Self const& self) noexcept -> ice::path::Path<Self>
+        {
+            return ice::path::Path<Self>{ ice::path::directory(self) };
+        }
+    };
+
+    struct HeapPathString : public PathString
+    {
+        template<typename Self>
+        auto join(this Self& self, ice::path::Path<Self> other) noexcept -> ice::path::Path<Self>
+        {
+            return ice::path::Path<Self>{ ice::path::join(self, other) };
+        }
+
+        template<typename Self>
+        auto normalize(this Self& self) noexcept -> ice::path::Path<Self>
+        {
+            return ice::path::Path<Self>{ ice::path::normalize(self) };
+        }
+
+        template<typename Self>
+        auto replace_filename(this Self& self, ice::string::String<Self> filename) noexcept -> ice::path::Path<Self>
+        {
+            return ice::path::Path<Self>{ ice::path::replace_filename(self, filename) };
+        }
+
+        template<typename Self>
+        auto replace_extension(this Self& self, ice::string::String<Self> extension) noexcept -> ice::path::Path<Self>
+        {
+            return ice::path::Path<Self>{ ice::path::replace_extension(self, extension) };
+        }
+    };
+
+    template<ice::concepts::SupportedCharType CharT>
+    struct BasicPath : public ice::BasicString<CharT>, public ice::PathString
+    {
+        using BasicString<CharT>::BasicString;
+        using BasicString<CharT>::operator std::basic_string_view<CharT>;
+        using PathType = ice::BasicPath<CharT>;
+
+        constexpr BasicPath(ice::BasicString<CharT> str) noexcept
+            : BasicString<CharT>{ str }
+        {}
+    };
+
+    template<ice::concepts::SupportedCharType CharT>
+    struct BasicHeapPath : public ice::HeapString<CharT>, public ice::HeapPathString
+    {
+        using HeapString<CharT>::HeapString;
+        using HeapString<CharT>::operator ice::BasicString<CharT>;
+        using HeapString<CharT>::operator =;
+        using PathType = ice::BasicPath<CharT>;
+
+        constexpr operator ice::BasicPath<CharT>() const noexcept { return { this->data(), this->size() }; }
+    };
+
+    using Path = ice::BasicPath<char>;
+    using HeapPath = ice::BasicHeapPath<char>;
+
+    template<typename CharT>
+    auto hash(ice::BasicPath<CharT> path) noexcept
+    {
+        return ice::hash(ice::String{ path });
+    }
+
+    template<typename CharT>
+    auto hash(ice::BasicHeapPath<CharT> path) noexcept
+    {
+        return ice::hash(ice::String{ path });
+    }
+
+} // namespace
+
+
+template<>
+struct fmt::formatter<ice::BasicPath<char>> : public fmt::formatter<std::basic_string_view<char>>
+{
+    template<typename FormatContext>
+    constexpr auto format(ice::BasicPath<char> value, FormatContext& ctx) const noexcept
+    {
+        return fmt::formatter<std::basic_string_view<char>>::format(value, ctx);
+    }
+};
+
+template<>
+struct fmt::formatter<ice::BasicHeapPath<char>> : public fmt::formatter<ice::BasicPath<char>>
+{
+    template<typename FormatContext>
+    constexpr auto format(ice::BasicHeapPath<char> value, FormatContext& ctx) const noexcept
+    {
+        return fmt::formatter<ice::BasicPath<char>>::format(value, ctx);
+    }
+};

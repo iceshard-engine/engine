@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "android_app_core.hxx"
@@ -31,7 +31,7 @@ namespace ice::platform::android
     ) noexcept
     {
         AndroidMessage* message = _allocator.create<AndroidMessage>(msg_type, window, nullptr);
-        ice::linked_queue::push(_pending_messages, message);
+        _pending_messages.push_back(message);
     }
 
     void AndroidAppCore::process_message(
@@ -47,10 +47,10 @@ namespace ice::platform::android
 
     void AndroidAppCore::process_pending_messages() noexcept
     {
-        if (ice::linked_queue::any(_pending_messages))
+        if (_pending_messages.not_empty())
         {
             pthread_mutex_lock(&_message_processing_mutex);
-            for (AndroidMessage* message : ice::linked_queue::consume(_pending_messages))
+            for (AndroidMessage* message : _pending_messages.take_all())
             {
                 process_message(*message);
                 _allocator.destroy(message);

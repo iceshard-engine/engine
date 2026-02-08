@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_runner.hxx"
@@ -215,7 +215,7 @@ namespace ice
         if (trigger.to == State_WorldRuntimeActive)
         {
             ice::wait_for(world->activate(params));
-            ice::shards::push_back(out_shards, trigger.results | world_name.value);
+            out_shards.push_back(trigger.results | world_name.value);
         }
         else if (trigger.to == State_WorldRuntimeInactive)
         {

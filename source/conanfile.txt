@@ -7,11 +7,11 @@ fastbuild-generator/0.4.2@iceshard/stable
 [requires]
 cli11/2.4.1@iceshard/stable
 fmt/11.2.0@iceshard/stable
-tracy/0.11.1@iceshard/stable
+tracy/0.13.1@iceshard/stable
 imgui/1.92.4.docking@iceshard/stable
 hailstorm/0.4.0@iceshard/stable
 # chipmunk2d/7.0.3+@iceshard/stable
-arctic/0.2.2@iceshard/stable
+arctic/0.2.3@iceshard/stable
 
 rapidxml/1.13
 rapidxml_ns/1.13.2@iceshard/stable
@@ -21,23 +21,23 @@ rapidfuzz_cpp/3.0.5@iceshard/stable
 vulkan-memory-allocator/3.0.1
 
 [requires-Windows-MSVC]
-catch2/3.3.2@iceshard/stable
+catch2/3.12.0@iceshard/stable
 
 assimp/5.2.5@iceshard/stable
-sdl2/2.0.22@iceshard/stable
+sdl2/2.32.10@iceshard/stable
 
 freetype/2.12.1@iceshard/stable
 msdfgen/1.9.2@iceshard/stable
 msdf_atlas_gen/1.2.2@iceshard/stable
 
 # Editor only packages
-imguizmo/1.91.3@iceshard/stable
+imguizmo/1.91.5@iceshard/stable
 
 [requires-Linux-Clang]
-catch2/3.3.2@iceshard/stable
+catch2/3.12.0@iceshard/stable
 
 assimp/5.2.5@iceshard/stable
-sdl2/2.0.22@iceshard/stable
+sdl2/2.32.10@iceshard/stable
 
 freetype/2.12.1@iceshard/stable
 msdfgen/1.9.2@iceshard/stable
@@ -48,14 +48,14 @@ imguizmo/1.91.5@iceshard/stable
 
 
 [options-Android-Arm64]
-tracy/*:shared=False
 tracy/*:manual_lifetime=False
+tracy/*:timer_fallback=False # Enable for profiling on Emulators
 tracy/*:no_system_tracing=True
 tracy/*:no_sampling=True
 
 [options-Android-x64]
-tracy/*:shared=False
 tracy/*:manual_lifetime=False
+tracy/*:timer_fallback=False # Enable for profiling on Emulators
 tracy/*:no_system_tracing=True
 tracy/*:no_sampling=True
 

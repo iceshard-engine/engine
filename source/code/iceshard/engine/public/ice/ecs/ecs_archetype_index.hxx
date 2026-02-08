@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -6,7 +6,7 @@
 #include <ice/ecs/ecs_archetype.hxx>
 #include <ice/ecs/ecs_data_block_pool.hxx>
 #include <ice/ecs/ecs_query_details.hxx>
-#include <ice/container_types.hxx>
+#include <ice/hashmap.hxx>
 #include <ice/span.hxx>
 
 namespace ice::ecs

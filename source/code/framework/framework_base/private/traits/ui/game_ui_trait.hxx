@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -7,7 +7,7 @@
 #include <ice/ecs/ecs_entity_tracker.hxx>
 #include <ice/world/world_trait.hxx>
 #include <ice/world/world_trait_archive.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 #include <ice/ui_element_draw.hxx>
 #include <ice/asset.hxx>
 #include "render_ui_trait.hxx"

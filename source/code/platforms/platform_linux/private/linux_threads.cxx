@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "linux_threads.hxx"
@@ -10,9 +10,9 @@
 namespace ice::platform::linux
 {
 
-    auto get_num_cores(ice::Allocator& alloc) noexcept -> ice::ucount
+    auto get_num_cores(ice::Allocator& alloc) noexcept -> ice::u32
     {
-        ice::ucount const hw_concurrency = sysconf(_SC_NPROCESSORS_ONLN);
+        ice::u32 const hw_concurrency = sysconf(_SC_NPROCESSORS_ONLN);
         ICE_LOG(LogSeverity::Info, LogTag::System, "Logical Processors: {}", hw_concurrency);
         return hw_concurrency;
     }
@@ -30,8 +30,8 @@ namespace ice::platform::linux
         , _threads{ }
         , _aioport{ ice::native_aio::aio_open(alloc, { .worker_limit = 2, .debug_name = "ice.aio-port" }) }
     {
-        ice::ucount const hw_concurrency = ice::min(get_num_cores(alloc), 8u); // max 8 tasks threads
-        ice::ucount tp_size = ice::max(hw_concurrency, 2u); // min 2 task threads
+        ice::u32 const hw_concurrency = ice::min(get_num_cores(alloc), 8u); // max 8 tasks threads
+        ice::u32 tp_size = ice::max(hw_concurrency, 2u); // min 2 task threads
 
         for (ice::Shard const option : params)
         {

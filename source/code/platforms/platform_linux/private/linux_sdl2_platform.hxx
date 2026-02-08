@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -25,7 +25,7 @@ namespace ice::platform::linux::sdl2
         auto refresh_events() noexcept -> ice::Result override;
 
         auto system_events() noexcept -> ice::ShardContainer const& override { return _system_events; }
-        auto input_events() noexcept -> ice::Span<ice::input::DeviceEvent const> override { return ice::array::slice(_input_events._events); }
+        auto input_events() noexcept -> ice::Span<ice::input::DeviceEvent const> override { return _input_events._events; }
 
         auto allocator() noexcept -> ice::Allocator& { return _alloc.backing_allocator(); }
 

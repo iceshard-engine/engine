@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -10,6 +10,7 @@
 
 #include <arctic/arctic_types.hxx>
 #include <arctic/arctic_syntax.hxx>
+#include <ice/multi_hashmap.hxx>
 #include <ice/resource_types.hxx>
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/profiler.hxx>
@@ -59,7 +60,7 @@ namespace ice
         ice::ASLScriptLoader& _resolver;
         ice::Array<arctic::SyntaxVisitor*> _script_visitors;
 
-        ice::HashMap<Entry> _imports;
+        ice::MultiHashMap<Entry> _imports;
         ice::HashMap<ASLScriptFile*> _aliases;
         ice::Array<ASLScriptFile*> _global;
     };

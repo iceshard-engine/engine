@@ -1,11 +1,12 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 
 #pragma once
+#include <ice/array.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/devui_widget.hxx>
 #include <ice/devui_frame.hxx>
-#include <ice/container/array.hxx>
 #include <ice/log_sink.hxx>
 
 namespace ice::devui

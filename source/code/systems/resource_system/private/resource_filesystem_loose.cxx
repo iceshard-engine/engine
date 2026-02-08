@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "resource_filesystem_loose.hxx"
@@ -6,7 +6,7 @@
 
 #include <ice/config.hxx>
 #include <ice/config/config_builder.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 #include <ice/mem_allocator_stack.hxx>
 #include <ice/path_utils.hxx>
 #include <ice/task_utils.hxx>
@@ -53,7 +53,7 @@ namespace ice
             ice::native_file::path_from_string(native_filepath, filepath);
             if (readmeta)
             {
-                ice::string::push_back(native_filepath, ISP_PATH_LITERAL(".isrm"));
+                native_filepath.push_back(ISP_PATH_LITERAL(".isrm"));
             }
 
             IPT_MESSAGE_STR(filepath);
@@ -82,7 +82,7 @@ namespace ice
             ice::native_file::path_from_string(native_filepath, filepath);
             if (readmeta)
             {
-                ice::string::push_back(native_filepath, ISP_PATH_LITERAL(".isrm"));
+                native_filepath.push_back(ISP_PATH_LITERAL(".isrm"));
             }
 
             ice::native_file::File handle = ice::native_file::open_file(native_filepath);
@@ -117,7 +117,7 @@ namespace ice
             ice::Memory metafile_data = alloc.allocate(meta_size);
             if (ice::native_file::read_file(meta_handle, meta_size, metafile_data) > 0_B)
             {
-                if (ice::config::from_json(out_metadata, ice::string::from_data(metafile_data)))
+                if (ice::config::from_json(out_metadata, ice::string_from_data<char>(metafile_data)))
                 {
                     // return the memory, we won't release it
                     out_memory = metafile_data;
@@ -135,7 +135,7 @@ namespace ice
         ice::Allocator& alloc,
         ice::usize meta_size,
         ice::usize data_size,
-        ice::HeapString<> origin_path,
+        ice::HeapPath origin_path,
         ice::String origin_name,
         ice::String uri_path
     ) noexcept
@@ -170,7 +170,7 @@ namespace ice
         return _origin_name;
     }
 
-    auto LooseFilesResource::origin() const noexcept -> ice::String
+    auto LooseFilesResource::origin() const noexcept -> ice::Path
     {
         return _origin_path;
     }
@@ -316,15 +316,15 @@ namespace ice
 
         // We create the main resource in a different scope so we dont accidentaly use data from there
         {
-            ice::HeapString<> utf8_file_path{ alloc };
+            ice::HeapPath utf8_file_path{ alloc };
             ice::native_file::path_to_string(data_filepath, utf8_file_path);
-            ice::path::normalize(utf8_file_path);
+            utf8_file_path.normalize();
             IPT_ZONE_TEXT_STR(utf8_file_path);
 
             // TODO: Decide how to handle the basepath naming.
-            bool const remove_slash = utf8_file_path[ice::path::length(base_path)] == '/';
-            ice::String utf8_origin_name = ice::string::substr(utf8_file_path, ice::path::length(base_path) + remove_slash);
-            ice::String utf8_uri_path = ice::string::substr(utf8_file_path, ice::path::length(uri_base_path));
+            bool const remove_slash = utf8_file_path[base_path.size()] == '/';
+            ice::String const utf8_origin_name = utf8_file_path.substr(base_path.size() + remove_slash);
+            ice::String const utf8_uri_path = utf8_file_path.substr(uri_base_path.size());
 
             IPT_ZONE_SCOPED_NAMED("stage: create_resource");
             main_resource = ice::create_resource_object<ice::LooseFilesResource>(

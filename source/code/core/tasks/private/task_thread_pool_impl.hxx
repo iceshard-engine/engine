@@ -1,11 +1,11 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/task_thread_pool.hxx>
 #include <ice/task_flags.hxx>
-#include <ice/container/array.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/array.hxx>
+#include <ice/hashmap.hxx>
 #include "task_native_thread.hxx"
 
 namespace ice
@@ -21,9 +21,9 @@ namespace ice
         ) noexcept;
         ~TaskThreadPoolImplementation() noexcept override;
 
-        auto thread_count() const noexcept -> ice::ucount override;
-        auto managed_thread_count() const noexcept -> ice::ucount override;
-        auto estimated_task_count() const noexcept -> ice::ucount override;
+        auto thread_count() const noexcept -> ice::ncount override;
+        auto managed_thread_count() const noexcept -> ice::ncount override;
+        auto estimated_task_count() const noexcept -> ice::ncount override;
 
         auto create_thread(ice::StringID name) noexcept -> ice::TaskThread& override;
         auto find_thread(ice::StringID name) noexcept -> ice::TaskThread* override;

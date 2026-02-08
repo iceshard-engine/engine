@@ -1,11 +1,11 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/task_types.hxx>
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/native_aio.hxx>
-#include <ice/string_types.hxx>
+#include <ice/string.hxx>
 #include <ice/span.hxx>
 
 namespace ice
@@ -14,7 +14,7 @@ namespace ice
     struct TaskThreadPoolCreateInfo
     {
         //! \brief The thread count of this thread pool.
-        ice::ucount thread_count = 0;
+        ice::ncount thread_count = 0;
 
         //! \brief The AIO port to be used for internal AIO threads.
         ice::native_aio::AIOPort aioport = nullptr;
@@ -27,9 +27,9 @@ namespace ice
     {
     public:
         virtual ~TaskThreadPool() noexcept = default;
-        virtual auto thread_count() const noexcept -> ice::ucount = 0;
-        virtual auto managed_thread_count() const noexcept -> ice::ucount = 0;
-        virtual auto estimated_task_count() const noexcept -> ice::ucount = 0;
+        virtual auto thread_count() const noexcept -> ice::ncount = 0;
+        virtual auto managed_thread_count() const noexcept -> ice::ncount = 0;
+        virtual auto estimated_task_count() const noexcept -> ice::ncount = 0;
 
         //! \brief Creates an additonal thread with the given name (ID).
         //!

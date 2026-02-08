@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "win32_sdl2_platform.hxx"
@@ -19,8 +19,8 @@ namespace ice::platform::win32::sdl2
         , _input_events{ _alloc }
         , _render_surface{ }
     {
-        ice::shards::reserve(_system_events, 32);
-        ice::array::reserve(_input_events._events, 512);
+        _system_events.reserve(32);
+        _input_events._events.reserve(512);
 
         SDL_InitSubSystem(SDL_INIT_EVENTS);
 
@@ -40,7 +40,7 @@ namespace ice::platform::win32::sdl2
         using namespace ice::input;
 
         _input_events.clear();
-        ice::shards::clear(_system_events);
+        _system_events.clear();
 
         static bool first_refresh = true;
         if (first_refresh)
@@ -64,7 +64,7 @@ namespace ice::platform::win32::sdl2
             switch (current_event.type)
             {
             case SDL_QUIT:
-                ice::shards::push_back(_system_events, ice::platform::Shard_AppQuit);
+                _system_events.push_back(ice::platform::Shard_AppQuit);
 
                 _input_events.push(
                     make_device_handle(DeviceType::Keyboard, DeviceIndex(0)),
@@ -83,17 +83,17 @@ namespace ice::platform::win32::sdl2
                 switch (current_event.window.event)
                 {
                 case SDL_WINDOWEVENT_MINIMIZED:
-                    ice::shards::push_back(_system_events, { ice::platform::ShardID_WindowMinimized });
+                    _system_events.push_back({ ice::platform::ShardID_WindowMinimized });
                     break;
                 case SDL_WINDOWEVENT_RESTORED:
-                    ice::shards::push_back(_system_events, ice::platform::ShardID_WindowRestored | window_size);
+                    _system_events.push_back(ice::platform::ShardID_WindowRestored | window_size);
                     break;
                 case SDL_WINDOWEVENT_MAXIMIZED:
-                    ice::shards::push_back(_system_events, ice::platform::ShardID_WindowMaximized | window_size);
+                    _system_events.push_back(ice::platform::ShardID_WindowMaximized | window_size);
                     break;
                 case SDL_WINDOWEVENT_SIZE_CHANGED:
                 case SDL_WINDOWEVENT_RESIZED:
-                    ice::shards::push_back(_system_events, ice::platform::ShardID_WindowResized | window_size);
+                    _system_events.push_back(ice::platform::ShardID_WindowResized | window_size);
                     break;
                 }
             }
@@ -110,10 +110,7 @@ namespace ice::platform::win32::sdl2
                 // [issue #33]
             case SDL_TEXTINPUT:
                 ice::memcpy(text_buffer, current_event.text.text, 32);
-                ice::shards::push_back(
-                    _system_events,
-                    ice::platform::ShardID_InputText | (char const*)text_buffer
-                );
+                _system_events.push_back(ice::platform::ShardID_InputText | (char const*)text_buffer);
             }
         }
 

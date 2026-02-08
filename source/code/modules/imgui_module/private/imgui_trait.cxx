@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "imgui_trait.hxx"
@@ -290,7 +290,7 @@ namespace ice::devui
         auto& io = ImGui::GetIO();
 
         char const* input_text;
-        if (ice::shards::inspect_last(update.frame.shards(), ice::platform::ShardID_InputText, input_text))
+        if (update.frame.shards().inspect_last(ice::platform::ShardID_InputText, input_text))
         {
             io.AddInputCharactersUTF8(input_text);
         }
@@ -298,8 +298,7 @@ namespace ice::devui
         ice::vec2f temp_pos{};
         io.AddMouseSourceEvent(ImGuiMouseSource_Mouse);
 
-        ice::shards::inspect_each<ice::input::InputEvent>(
-            update.frame.shards(),
+        update.frame.shards().inspect_each<ice::input::InputEvent>(
             ice::ShardID_InputEvent,
             [&](ice::input::InputEvent input) noexcept
             {
@@ -410,7 +409,7 @@ namespace ice::devui
         IPT_ZONE_SCOPED_NAMED("ImGui - Load texture");
 
         ice::HeapString<> texture_name{ _allocator };
-        ice::string::push_format(texture_name, detail::TextureNameFormat, texture->UniqueID);
+        texture_name.push_format(detail::TextureNameFormat, texture->UniqueID);
         IPT_ZONE_TEXT_STR(texture_name);
 
         detail::ImTextureAssetDataBinding texture_binding{ _allocator, *texture };
@@ -483,7 +482,7 @@ namespace ice::devui
         IPT_ZONE_SCOPED;
         _stats = {}; // reset stats
 
-        ice::array::clear(_imgui_gfx_stage->draw_commands);
+        _imgui_gfx_stage->draw_commands.clear();
 
         ImDrawData* draw_data = ImGui::GetDrawData();
         if (draw_data == nullptr)
@@ -492,8 +491,7 @@ namespace ice::devui
         }
 
         // Reserve enough space for all possible commands
-        ice::array::reserve(
-            _imgui_gfx_stage->draw_commands,
+        _imgui_gfx_stage->draw_commands.reserve(
             detail::total_command_count(*draw_data)
         );
 
@@ -529,8 +527,8 @@ namespace ice::devui
                     curr_resource_idx += 1;
                 }
 
-                ice::array::push_back(out_draw_cmds, ImGuiGfxStage::DrawCommand{});
-                ImGuiGfxStage::DrawCommand& cmd = ice::array::back(out_draw_cmds);
+                out_draw_cmds.push_back(ImGuiGfxStage::DrawCommand{});
+                ImGuiGfxStage::DrawCommand& cmd = out_draw_cmds.last();
                 cmd.resource_set_idx = curr_resource_idx;
 
                 ImVec4 clip_rect;

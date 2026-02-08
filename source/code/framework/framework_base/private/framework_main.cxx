@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/framework_app.hxx>
@@ -58,7 +58,7 @@
 #include <ice/task_scoped_container.hxx>
 #include <ice/sync_manual_events.hxx>
 #include <ice/path_utils.hxx>
-#include <ice/string/heap_string.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/profiler.hxx>
 #include <ice/uri.hxx>
 
@@ -94,8 +94,8 @@ struct ice::app::Config
             , assets{ alloc }
         { }
 
-        ice::HeapString<> shaders;
-        ice::HeapString<> assets;
+        ice::HeapPath shaders;
+        ice::HeapPath assets;
     } dev_dirs;
 };
 
@@ -329,24 +329,24 @@ auto ice_setup(
     ice::Array<ice::String> resource_paths{ alloc };
     if constexpr (ice::build::is_release == false && (ice::build::is_windows || ice::build::is_linux))
     {
-        dylib_path = ice::path::directory(ice::app::directory());
+        dylib_path = ice::app::directory().directory();
         config.dev_dirs.shaders = ice::app::workingdir();
         config.dev_dirs.assets = ice::app::workingdir();
 
         // Assumes the apps working-dir is in 'build' and no changes where done to shader compilation step
-        ice::path::join(config.dev_dirs.shaders, "obj/VkShaders/GFX-Vulkan-Unoptimized-vk-glslc-1-3/data");
-        ice::path::join(config.dev_dirs.assets, "../source/data");
-        ice::path::normalize(config.dev_dirs.shaders);
-        ice::path::normalize(config.dev_dirs.assets);
-        ice::string::push_back(config.dev_dirs.shaders, '/');
-        ice::string::push_back(config.dev_dirs.assets, '/');
-        ice::array::push_back(resource_paths, config.dev_dirs.assets);
-        ice::array::push_back(resource_paths, config.dev_dirs.shaders);
+        config.dev_dirs.shaders.join("obj/VkShaders/GFX-Vulkan-Unoptimized-vk-glslc-1-3/data");
+        config.dev_dirs.assets.join("../source/data");
+        config.dev_dirs.shaders.normalize();
+        config.dev_dirs.assets.normalize();
+        config.dev_dirs.shaders.push_back('/');
+        config.dev_dirs.assets.push_back('/');
+        resource_paths.push_back(config.dev_dirs.assets);
+        resource_paths.push_back(config.dev_dirs.shaders);
     }
     else
     {
         dylib_path = storage->dylibs_location();
-        ice::array::push_back(resource_paths, storage->data_locations());
+        resource_paths.push_back(storage->data_locations());
     }
 
     ice::framework::Config game_config{
@@ -542,7 +542,7 @@ auto ice_resume(
         runtime.input_tracker->register_device_type(ice::input::DeviceType::Keyboard, ice::input::get_default_device_factory());
 
         //runtime.gfx_rendergraph_runtime = state.game->rendergraph(runtime.gfx_runner->device());
-        runtime.gfx_runner->update_rendergraph(state.game->rendergraph(runtime.gfx_runner->context()));
+        ice::wait_for(runtime.gfx_runner->update_rendergraph(state.game->rendergraph(runtime.gfx_runner->context())));
         runtime.gfx_wait.set();
     }
 
@@ -560,7 +560,7 @@ void ice_process_input_events(ice::Span<ice::input::InputEvent const> events, ic
 {
     for (ice::input::InputEvent const input_event : events)
     {
-        ice::shards::push_back(out_shards, ice::ShardID_InputEvent | input_event);
+        out_shards.push_back(ice::ShardID_InputEvent | input_event);
     }
 }
 
@@ -585,7 +585,7 @@ auto ice_game_frame(
     ICE_ASSERT(new_frame != nullptr, "Failed to aquire next frame!");
 
     // Push system events
-    ice::shards::push_back(new_frame->shards(), system_events._data);
+    new_frame->shards().push_back(system_events);
 
     // Push previous frame events
     //   Also runs other logic that should be done without interfeerence from
@@ -593,7 +593,7 @@ auto ice_game_frame(
     co_await runtime.runner->pre_update(new_frame->shards());
 
     // Push input events
-    ice::array::clear(runtime.input_events);
+    runtime.input_events.clear();
     runtime.input_tracker->process_device_events(state.platform.core->input_events(), runtime.input_events);
     ice_process_input_events(runtime.input_events, new_frame->shards());
 
@@ -660,14 +660,14 @@ auto ice_update(
 
         //runtime.gfx_wait.wait();
         runtime.gfx_runner->context().recreate_swapchain();
-        runtime.gfx_runner->update_rendergraph(state.game->rendergraph(runtime.gfx_runner->context()));
+        ice::wait_for(runtime.gfx_runner->update_rendergraph(state.game->rendergraph(runtime.gfx_runner->context())));
     }
 
     // Since the frame updates the values we are safe to access them any time. They won't change until a new frame is awaited, and awaitng frames is happening on the same thread.
     ice::ShardContainer const& system_events = state.platform.core->system_events();
 
     // Query platform events into the frame and input device handler.
-    if (runtime.is_exiting || ice::shards::contains(system_events, ice::platform::Shard_AppQuit))
+    if (runtime.is_exiting || system_events.contains(ice::platform::Shard_AppQuit))
     {
         runtime.is_exiting = true;
 
@@ -690,11 +690,11 @@ auto ice_update(
         return ice::app::S_ApplicationExit;
     }
 
-    bool const was_resized = ice::shards::contains(system_events, ice::platform::ShardID_WindowResized);
-    bool const was_minimized = ice::shards::contains(system_events, ice::platform::ShardID_WindowMinimized);
-    bool const was_maximized = ice::shards::contains(system_events, ice::platform::ShardID_WindowMaximized);
+    bool const was_resized = system_events.contains(ice::platform::ShardID_WindowResized);
+    bool const was_minimized = system_events.contains(ice::platform::ShardID_WindowMinimized);
+    bool const was_maximized = system_events.contains(ice::platform::ShardID_WindowMaximized);
     ice::vec2i window_size; // unused?
-    bool const was_restored = ice::shards::inspect_last(system_events, ice::platform::ShardID_WindowRestored, window_size);
+    bool const was_restored = system_events.inspect_last(ice::platform::ShardID_WindowRestored, window_size);
 
     // We should never run into a situation where minimizing and restoring happen ad the same time.
     // TODO: Might want to turn this into a state machine.
@@ -747,16 +747,13 @@ auto ice_suspend(
 
     if (runtime.is_exiting)
     {
-        ice::shards::remove_all_of(
-            runtime.frame->shards(),
-            ice::ShardID_WorldActivate
-        );
+        runtime.frame->shards().remove_all_of(ice::ShardID_WorldActivate);
 
         ice::Array<ice::StringID> worlds{ state.alloc };
         state.engine->worlds().query_worlds(worlds);
         for (ice::StringID_Arg world : worlds)
         {
-            ice::shards::push_back(runtime.frame->shards(), ice::ShardID_WorldDeactivate | ice::stringid_hash(world));
+            runtime.frame->shards().push_back(ice::ShardID_WorldDeactivate | ice::stringid_hash(world));
         }
 
         // Apply state events so we can already get the events for the next frame

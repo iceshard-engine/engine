@@ -1,9 +1,8 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/os/unix.hxx>
-#include <ice/os/windows.hxx>
+#include <ice/os.hxx>
 #include <ice/path_utils.hxx>
 #include <ice/native_aio.hxx>
 #include <ice/expected.hxx>
@@ -18,13 +17,13 @@ namespace ice::native_file
 
 #if ISP_WINDOWS
     using File = ice::win32::FileHandle;
-    using FilePath = ice::WString;
-    using HeapFilePath = ice::HeapString<ice::wchar>;
+    using FilePath = ice::BasicPath<ice::wchar>;
+    using HeapFilePath = ice::BasicHeapPath<ice::wchar>;
 #   define ISP_PATH_LITERAL(val) L##val
 #elif ISP_UNIX
     using File = ice::unix_::FileHandle;
-    using FilePath = ice::String;
-    using HeapFilePath = ice::HeapString<>;
+    using FilePath = ice::BasicPath<char>;
+    using HeapFilePath = ice::BasicHeapPath<char>;
 #   define ISP_PATH_LITERAL(val) val
 #endif
 
@@ -166,7 +165,7 @@ namespace ice::native_file
         (ice::native_file::path_join_string(result, ice::forward<Strings>(strings)), ...);
         if constexpr (ice::has_all(Flags, PathFlags::Normalized))
         {
-            ice::path::normalize(result);
+            result.normalize();
         }
         return result;
     }

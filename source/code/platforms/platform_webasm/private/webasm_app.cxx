@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "webasm_app.hxx"
@@ -40,8 +40,8 @@ namespace ice::platform::webasm
 
         _temporary_inputs.push(Constant_Mouse, ice::input::DeviceMessage::DeviceConnected);
         _temporary_inputs.push(Constant_Keyboard, ice::input::DeviceMessage::DeviceConnected);
-        ice::queue::reserve(_text_events, 4);
-        ice::queue::reserve(_temp_text_events, 4);
+        _text_events.reserve(4);
+        _temp_text_events.reserve(4);
     }
 
     WebAsmApp::~WebAsmApp() noexcept
@@ -81,21 +81,19 @@ namespace ice::platform::webasm
     auto WebAsmApp::refresh_events() noexcept -> ice::Result
     {
         pthread_mutex_lock(&_mutex);
-        ice::shards::clear(_system_events);
+        _system_events.clear();
 
         _input_events._events = _temporary_inputs._events;
-        ice::array::clear(_temporary_inputs._events);
+        _temporary_inputs._events.clear();
 
         _text_events = _temp_text_events;
-        ice::queue::clear(_temp_text_events);
+        _temp_text_events.clear();
 
-        ice::queue::for_each(
-            _text_events,
+        _text_events.for_each(
             [this](WebAsmTextEvent const& ev) noexcept
             {
                 ICE_LOG(LogSeverity::Warning, LogTag::Core, "{}", ev.input);
-                ice::shards::push_back(
-                    _system_events,
+                _system_events.push_back(
                     ice::platform::ShardID_InputText | (char const*)ev.input
                 );
             }
@@ -168,7 +166,7 @@ namespace ice::platform::webasm
             {
                 WebAsmTextEvent text_event{.input = {}};
                 ice::memcpy(text_event.input, event.key, sizeof(event.key));
-                ice::queue::push_back(_temp_text_events, text_event);
+                _temp_text_events.push_back(text_event);
             }
             if (mod != KeyboardMod::None)
             {

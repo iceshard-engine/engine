@@ -1,10 +1,10 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/math.hxx>
 #include <ice/shard.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <ice/ui_style.hxx>
 
 #include "ip_ui_oven.hxx"

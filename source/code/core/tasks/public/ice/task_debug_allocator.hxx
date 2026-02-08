@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -23,7 +23,7 @@ namespace ice::detail
     {
         static auto pool() noexcept -> ice::String
         {
-            return ice::string::any(_allocator_pool) ? _allocator_pool : "Tasks";
+            return _allocator_pool.not_empty() ? _allocator_pool : "Tasks";
         }
 
         static auto allocator() noexcept -> ice::Allocator&

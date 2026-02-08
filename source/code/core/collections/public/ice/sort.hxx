@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -10,9 +10,9 @@ namespace ice
 {
 
     template<typename Type, typename Fn>
-    inline auto accumulate_over(ice::Span<Type> objects, Fn&& fn) noexcept -> ice::ucount
+    inline auto accumulate_over(ice::Span<Type> objects, Fn&& fn) noexcept -> ice::u32
     {
-        ice::ucount result = 0;
+        ice::u32 result = 0;
         for (Type const& object : objects)
         {
             result += ice::forward<Fn>(fn)(object);
@@ -21,28 +21,28 @@ namespace ice
     }
 
     template<typename T, typename U = T> requires (std::convertible_to<T, U>)
-    constexpr auto lower_bound(ice::Span<T> values, U const& value) noexcept -> ice::ucount;
+    constexpr auto lower_bound(ice::Span<T> values, U const& value) noexcept -> ice::u32;
 
     template<typename T, typename Comp, typename U = T> requires (std::convertible_to<T, U>)
-    constexpr auto lower_bound(ice::Span<T> values, U const& value, Comp&& comp) noexcept -> ice::ucount;
+    constexpr auto lower_bound(ice::Span<T> values, U const& value, Comp&& comp) noexcept -> ice::u32;
 
     template<typename T, typename U = T> requires (std::convertible_to<T, U>)
-    constexpr auto upper_bound(ice::Span<T> values, U const& value) noexcept -> ice::ucount;
+    constexpr auto upper_bound(ice::Span<T> values, U const& value) noexcept -> ice::u32;
 
     template<typename T, typename Comp, typename U = T> requires (std::convertible_to<T, U>)
-    constexpr auto upper_bound(ice::Span<T> values, U const& value, Comp&& comp) noexcept -> ice::ucount;
+    constexpr auto upper_bound(ice::Span<T> values, U const& value, Comp&& comp) noexcept -> ice::u32;
 
     template<typename T, typename U = T> requires (std::convertible_to<T, U>)
-    constexpr bool binary_search(ice::Span<T> values, U const& value, ice::ucount& out_index) noexcept;
+    constexpr bool binary_search(ice::Span<T> values, U const& value, ice::u32& out_index) noexcept;
 
     template<typename T, typename Comp, typename U = T> requires (std::convertible_to<T, U>)
-    constexpr bool binary_search(ice::Span<T> values, U const& value, Comp&& comp, ice::ucount& out_index) noexcept;
+    constexpr bool binary_search(ice::Span<T> values, U const& value, Comp&& comp, ice::u32& out_index) noexcept;
 
     template<typename T, typename U = T> requires (std::convertible_to<T, U>)
-    constexpr bool search(ice::Span<T> values, U const& value, ice::ucount& out_index) noexcept;
+    constexpr bool search(ice::Span<T> values, U const& value, ice::u32& out_index) noexcept;
 
     template<typename T, typename Comp, typename U = T>
-    constexpr bool search(ice::Span<T> values, U const& value, Comp&& comp, ice::ucount& out_index) noexcept;
+    constexpr bool search(ice::Span<T> values, U const& value, Comp&& comp, ice::u32& out_index) noexcept;
 
     template<typename T>
     inline void sort(ice::Span<T> span) noexcept;
@@ -65,57 +65,57 @@ namespace ice
 
 
     template<typename T, typename U> requires (std::convertible_to<T, U>)
-    constexpr auto lower_bound(ice::Span<T> values, U const& value) noexcept -> ice::ucount
+    constexpr auto lower_bound(ice::Span<T> values, U const& value) noexcept -> ice::u32
     {
-        return static_cast<ice::ucount>(std::lower_bound(ice::span::begin(values), ice::span::end(values), value) - ice::span::begin(values));
+        return static_cast<ice::u32>(std::lower_bound(values.begin(), values.end(), value) - values.begin());
     }
 
     template<typename T, typename Comp, typename U> requires (std::convertible_to<T, U>)
-    constexpr auto lower_bound(ice::Span<T> values, U const& value, Comp&& comp) noexcept -> ice::ucount
+    constexpr auto lower_bound(ice::Span<T> values, U const& value, Comp&& comp) noexcept -> ice::u32
     {
-        return static_cast<ice::ucount>(std::lower_bound(ice::span::begin(values), ice::span::end(values), value, ice::forward<Comp>(comp)) - ice::span::begin(values));
+        return static_cast<ice::u32>(std::lower_bound(values.begin(), values.end(), value, ice::forward<Comp>(comp)) - values.begin());
     }
 
     template<typename T, typename U> requires (std::convertible_to<T, U>)
-    constexpr auto upper_bound(ice::Span<T> values, U const& value) noexcept -> ice::ucount
+    constexpr auto upper_bound(ice::Span<T> values, U const& value) noexcept -> ice::u32
     {
-        return static_cast<ice::ucount>(std::upper_bound(ice::span::begin(values), ice::span::end(values), value) - ice::span::begin(values));
+        return static_cast<ice::u32>(std::upper_bound(values.begin(), values.end(), value) - values.begin());
     }
 
     template<typename T, typename Comp, typename U> requires (std::convertible_to<T, U>)
-    constexpr auto upper_bound(ice::Span<T> values, U const& value, Comp&& comp) noexcept -> ice::ucount
+    constexpr auto upper_bound(ice::Span<T> values, U const& value, Comp&& comp) noexcept -> ice::u32
     {
-        return static_cast<ice::ucount>(std::upper_bound(ice::span::begin(values), ice::span::end(values), value, ice::forward<Comp>(comp)) - ice::span::begin(values));
+        return static_cast<ice::u32>(std::upper_bound(values.begin(), values.end(), value, ice::forward<Comp>(comp)) - values.begin());
     }
 
     template<typename T, typename U> requires (std::convertible_to<T, U>)
-    constexpr bool binary_search(ice::Span<T> values, U const& predicate, ice::ucount& out_index) noexcept
+    constexpr bool binary_search(ice::Span<T> values, U const& predicate, ice::u32& out_index) noexcept
     {
         out_index = ice::lower_bound(values, predicate);
-        return (ice::count(values) != out_index) && (values[out_index] == predicate);
+        return (values.size() != out_index) && (values[out_index] == predicate);
     }
 
     template<typename T, typename Comp, typename U> requires (std::convertible_to<T, U>)
-    constexpr bool binary_search(ice::Span<T> values, U const& predicate, Comp&& comp, ice::ucount& out_index) noexcept
+    constexpr bool binary_search(ice::Span<T> values, U const& predicate, Comp&& comp, ice::u32& out_index) noexcept
     {
         out_index = ice::lower_bound(values, predicate, ice::forward<Comp>(comp));
-        return (ice::count(values) != out_index) && (values[out_index] == predicate);
+        return (values.size() != out_index) && (values[out_index] == predicate);
     }
 
     template<typename T, typename U> requires (std::convertible_to<T, U>)
-    constexpr bool search(ice::Span<T> values, U const& value, ice::ucount& out_index) noexcept
+    constexpr bool search(ice::Span<T> values, U const& value, ice::u32& out_index) noexcept
     {
         return search(values, value, [](auto const& l, auto const& r) noexcept { return l == r; }, out_index);
     }
 
     template<typename T, typename Comp, typename U>
-    constexpr bool search(ice::Span<T> values, U const& value, Comp&& comp, ice::ucount& out_index) noexcept
+    constexpr bool search(ice::Span<T> values, U const& value, Comp&& comp, ice::u32& out_index) noexcept
     {
-        for (ice::u32 idx = 0; idx < ice::span::count(values); ++idx)
+        for (ice::nindex idx = 0; idx < values.size(); ++idx)
         {
             if (ice::forward<Comp>(comp)(values[idx], value))
             {
-                out_index = idx;
+                out_index = idx.u32();
                 return true;
             }
         }
@@ -123,9 +123,9 @@ namespace ice
     }
 
     template<typename T, typename Comp, typename... U>
-    constexpr bool search_with(ice::Span<T> values, Comp&& comp, ice::ucount& out_index, U const&... params) noexcept
+    constexpr bool search_with(ice::Span<T> values, Comp&& comp, ice::u32& out_index, U const&... params) noexcept
     {
-        for (ice::u32 idx = 0; idx < ice::span::count(values); ++idx)
+        for (ice::u32 idx = 0; idx < values.size(); ++idx)
         {
             if (ice::forward<Comp>(comp)(values[idx], idx, params...))
             {
@@ -274,7 +274,7 @@ namespace ice
     template<typename T, typename Pred>
     inline void sort(ice::Span<T> span, Pred&& pred) noexcept
     {
-        std::sort(ice::span::begin(span), ice::span::end(span), ice::forward<Pred>(pred));
+        std::sort(span.begin(), span.end(), ice::forward<Pred>(pred));
     }
 
     template<typename K, typename V, typename Pred>
@@ -300,7 +300,7 @@ namespace ice
     inline void sort_indices(ice::Span<K> keys, ice::Span<ice::u32> indices, Pred&& pred) noexcept
     {
         ice::i32 const first_index = 0;
-        ice::i32 const last_index = ice::count(keys) - 1;
+        ice::i32 const last_index = keys.size().u32() - 1;
 
         ice::detail::qsort_indices(keys, indices, std::forward<Pred>(pred), first_index, last_index);
     }
@@ -311,52 +311,52 @@ namespace ice
         Node* right_list = left_list;
         if (size == 1)
         {
-            left_list->next = nullptr;
+            left_list->_next = nullptr;
             return left_list;
         }
         else if (size == 2)
         {
-            right_list = right_list->next;
-            right_list->next = nullptr;
-            left_list->next = nullptr;
+            right_list = right_list->_next;
+            right_list->_next = nullptr;
+            left_list->_next = nullptr;
         }
         else
         {
             uint32_t const half_size = size / 2;
             for (uint32_t idx = half_size; idx > 0; --idx)
             {
-                right_list = right_list->next;
+                right_list = right_list->_next;
             }
 
-            Node* next = right_list->next;
-            right_list->next = nullptr;
+            Node* next = right_list->_next;
+            right_list->_next = nullptr;
             right_list = next;
 
             left_list = ice::sort_linked_list(left_list, half_size + 1, pred);
             right_list = ice::sort_linked_list(right_list, size - (half_size + 1), pred);
         }
 
-        Node result{ .next = left_list }; // Keep the head of the list
+        Node result{ ._next = left_list }; // Keep the head of the list
         left_list = &result;
-        while (left_list->next != nullptr && right_list != nullptr)
+        while (left_list->_next != nullptr && right_list != nullptr)
         {
-            Node* temp = left_list->next;
+            Node* temp = left_list->_next;
             if (pred(*temp, *right_list) == false) // TRUE == IS OKAY, FALSE == NEEDS SWAP
             {
                 // We swapped the whole lists...
-                left_list->next = right_list;
+                left_list->_next = right_list;
                 right_list = temp;
             }
 
             // We can advance the left list
-            left_list = left_list->next;
+            left_list = left_list->_next;
         }
 
         // Attach the rest of the right list
-        left_list->next = right_list;
+        left_list->_next = right_list;
 
         // Return the 'next' element of the result.
-        return result.next;
+        return result._next;
     }
 
     template<typename T>

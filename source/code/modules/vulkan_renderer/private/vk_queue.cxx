@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "vk_queue.hxx"
@@ -51,7 +51,7 @@ namespace ice::render::vk
         VkCommandBufferAllocateInfo alloc_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
         alloc_info.level = type == CommandBufferType::Primary ? VK_COMMAND_BUFFER_LEVEL_PRIMARY : VK_COMMAND_BUFFER_LEVEL_SECONDARY;
         alloc_info.commandPool = _vk_cmd_pools[pool_index];
-        alloc_info.commandBufferCount = ice::count(buffers);
+        alloc_info.commandBufferCount = buffers.size().u32();
         ICE_ASSERT_CORE(alloc_info.commandBufferCount < 16);
 
         VkResult result = vkAllocateCommandBuffers(
@@ -95,7 +95,7 @@ namespace ice::render::vk
         ice::Span<ice::render::CommandBuffer> buffers
     ) noexcept
     {
-        if (ice::span::empty(buffers))
+        if (buffers.is_empty())
         {
             return;
         }
@@ -137,9 +137,9 @@ namespace ice::render::vk
     ) noexcept
     {
         VkCommandBuffer vk_temp_buffers[16];
-        ICE_ASSERT_CORE(ice::count(buffers) < 16);
+        ICE_ASSERT_CORE(buffers.size() < 16);
 
-        ice::ucount count = 0;
+        ice::u32 count = 0;
         for (ice::render::CommandBuffer handle : buffers)
         {
             vk_temp_buffers[count] = VulkanCommandBuffer::native(handle)->buffer;

@@ -1,9 +1,9 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/asset.hxx>
 #include <ice/asset_category_archive.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 #include <ice/config.hxx>
 #include <ice/mem_allocator_stack.hxx>
 #include <ice/assert.hxx>
@@ -70,7 +70,7 @@ namespace ice
     ) noexcept
     {
         ice::u64 const type_hash = category.identifier;
-        bool const type_not_defined = ice::hashmap::has(_definitions, type_hash) == false;
+        bool const type_not_defined = _definitions.missing(type_hash);
 
         ICE_ASSERT(
             type_not_defined == true,
@@ -103,9 +103,8 @@ namespace ice
                 }
             }
 
-            ice::array::push_back(_types, category);
-            ice::hashmap::set(
-                _definitions,
+            _types.push_back(category);
+            _definitions.set(
                 type_hash,
                 InternalAssetCategory{
                     .category = category,
@@ -124,7 +123,7 @@ namespace ice
     {
         static ice::InternalAssetCategory empty_type{};
 
-        ice::InternalAssetCategory const& internal_type = ice::hashmap::get(_definitions, category.identifier, empty_type);
+        ice::InternalAssetCategory const& internal_type = _definitions.get(category.identifier, empty_type);
         return internal_type.definition;
     }
 
@@ -134,7 +133,7 @@ namespace ice
     {
         static ice::InternalAssetCategory empty_type{};
 
-        ice::InternalAssetCategory const& internal_type = ice::hashmap::get(_definitions, category.identifier, empty_type);
+        ice::InternalAssetCategory const& internal_type = _definitions.get(category.identifier, empty_type);
         return internal_type.has_compiler ? &internal_type.compiler : nullptr;
     }
 

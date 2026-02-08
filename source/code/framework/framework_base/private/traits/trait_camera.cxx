@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "trait_camera.hxx"
@@ -21,7 +21,7 @@
 
 #include <ice/math/lookat.hxx>
 #include <ice/math/projection.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 #include <ice/assert.hxx>
 
 namespace ice
@@ -89,7 +89,7 @@ namespace ice
             ice::CameraPerspective const*
         >().synchronized_on(params.thread.tasks);
 
-        ice::hashmap::reserve(_render_data, query_cameras.entity_count());
+        _render_data.reserve(query_cameras.entity_count());
 
         for (auto[entity, camera, ortho, persp] : query_cameras.for_each_entity())
         {
@@ -116,7 +116,7 @@ namespace ice
                 }
             };
 
-            ice::TraitCameraData& data = ice::hashmap::get_or_set(_render_data, ice::hash(camera->name), { camera->name });
+            ice::TraitCameraData& data = _render_data.get_or_set(camera->name, { camera->name });
             ice::CameraData& camera_data = data.camera_data;
             if (ortho != nullptr)
             {
@@ -160,7 +160,7 @@ namespace ice
     {
         using namespace ice::render;
 
-        for (ice::TraitCameraData& camera : ice::hashmap::values(_render_data))
+        for (ice::TraitCameraData& camera : _render_data.values())
         {
             if (camera.render_data == Buffer::Invalid)
             {
@@ -183,7 +183,7 @@ namespace ice
         ice::render::RenderDevice& device
     ) noexcept -> ice::Task<>
     {
-        for (ice::TraitCameraData& data : ice::hashmap::values(_render_data))
+        for (ice::TraitCameraData& data : _render_data.values())
         {
             device.destroy_buffer(data.render_data);
         }

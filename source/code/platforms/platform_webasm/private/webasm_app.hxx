@@ -1,9 +1,9 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include "webasm_core_app.hxx"
-#include <ice/container/queue.hxx>
+#include <ice/queue.hxx>
 
 namespace ice::platform::webasm
 {

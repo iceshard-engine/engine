@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "engine_state_tracker_default.hxx"
@@ -15,7 +15,7 @@ namespace ice
         , _current_state{ alloc }
         , _pending_states{ alloc }
     {
-        ice::queue::reserve(_pending_states, 16);
+        _pending_states.reserve(16);
     }
 
     // auto EngineStateTracker_Default::current_states() const noexcept -> ice::Span<ice::EngineStateCurrent const>
@@ -28,7 +28,7 @@ namespace ice
         ice::Span<ice::EngineStateTrigger const> triggers
     ) noexcept
     {
-        if (ice::hashmap::has(_initial_states, ice::hash(params.initial.graph.value)))
+        if (_initial_states.has(ice::hash(params.initial.graph.value)))
         {
             return false;
         }
@@ -46,12 +46,11 @@ namespace ice
             initial_state.value = params.initial.value;
             initial_state.subname = ice::StringID_Invalid;
 
-            ice::multi_hashmap::insert(
-                _current_state_index,
-                ice::hash(params.initial.graph.value),
-                ice::count(_current_state)
+            _current_state_index.insert(
+                params.initial.graph.value,
+                _current_state.size().u32()
             );
-            ice::array::push_back(_current_state, initial_state);
+            _current_state.push_back(initial_state);
         }
         else
         {
@@ -68,31 +67,21 @@ namespace ice
                 initial_state.value = params.initial.value;
                 initial_state.subname = subname;
 
-                ice::multi_hashmap::insert(
-                    _current_state_index,
-                    ice::hash(params.initial.graph.value),
-                    ice::count(_current_state)
+                _current_state_index.insert(
+                    params.initial.graph.value,
+                    _current_state.size().u32()
                 );
-                ice::array::push_back(_current_state, initial_state);
+                _current_state.push_back(initial_state);
             }
 
-            ice::hashmap::set(
-                _initial_states,
-                ice::hash(params.initial.graph.value),
+            _initial_states.set(
+                params.initial.graph.value,
                 params.initial
             );
         }
 
-        ice::hashmap::get_or_set(
-            _state_committers,
-            ice::hash(params.initial.graph.value),
-            params.committer
-        );
-
-        ice::array::push_back(
-            _available_triggers,
-            triggers
-        );
+        _state_committers.set_if_missing(params.initial.graph.value, params.committer);
+        _available_triggers.push_back(triggers);
 
         return true;
     }
@@ -112,12 +101,11 @@ namespace ice
             engine_state.value = initial_state.value;
             engine_state.subname = subname;
 
-            ice::multi_hashmap::insert(
-                _current_state_index,
-                ice::hash(engine_state.graph.value),
-                ice::count(_current_state)
+            _current_state_index.insert(
+                engine_state.graph.value,
+                _current_state.size().u32()
             );
-            ice::array::push_back(_current_state, engine_state);
+            _current_state.push_back(engine_state);
         }
         return true;
     }
@@ -127,8 +115,8 @@ namespace ice
         ice::StringID_Arg subname
     ) const noexcept -> ice::EngineStateCurrent
     {
-        auto it = ice::multi_hashmap::find_first(_current_state_index, ice::hash(state_graph.value));
-        while (it != nullptr)
+        auto it = _current_state_index.find_values(state_graph.value);
+        while (it.valid())
         {
             ice::EngineStateCurrent const& current = _current_state[it.value()];
 
@@ -136,7 +124,7 @@ namespace ice
             {
                 break;
             }
-            it = ice::multi_hashmap::find_next(_current_state_index, it);
+            it.next();
         }
 
         if (it == nullptr)
@@ -163,12 +151,11 @@ namespace ice
     auto EngineStateTracker_Default::update_states(
         ice::ShardContainer const& shards,
         ice::ShardContainer& out_shards
-    ) noexcept -> ice::ucount
+    ) noexcept -> ice::u32
     {
         ice::StackAllocator<512_B> temp_alloc;
         ice::ShardContainer temp_shards{ temp_alloc };
-        ice::array::reserve(
-            temp_shards._data,
+        temp_shards.reserve(
             ice::mem_max_capacity(
                 ice::size_of<ice::Shard>,
                 decltype(temp_alloc)::Constant_InternalCapacity
@@ -183,11 +170,11 @@ namespace ice
             if (collect_pending_states(*input_shards))
             {
                 // Push back temporary shards into output shards
-                ice::shards::push_back(out_shards, temp_shards._data);
-                ice::shards::clear(temp_shards);
+                out_shards.push_back(temp_shards);
+                temp_shards.clear();
 
                 // Commit the new states and gather the new shards
-                ice::queue::for_each(_pending_states, [&temp_shards](EngineStatePending const& pending) noexcept
+                _pending_states.for_each([&temp_shards](EngineStatePending const& pending) noexcept
                     {
                         bool const success = pending.committer.commit(pending.trigger, pending.trigger_shard, temp_shards);
                         ICE_LOG_IF(success == false, LogSeverity::Error, LogTag::Engine,
@@ -208,22 +195,22 @@ namespace ice
                     }
                 );
 
-                ice::queue::clear(_pending_states);
+                _pending_states.clear();
             }
             else
             {
                 // Output temporary shards since they might trigger other events.
-                ice::shards::push_back(out_shards, temp_shards._data);
+                out_shards.push_back(temp_shards);
 
                 // Clear temporary shards so we can escape the loop normally.
-                ice::shards::clear(temp_shards);
+                temp_shards.clear();
             }
 
             // Set input shards to temp_shards
             input_shards = &temp_shards;
 
             // If we have any shards added, check if we can collect another set of states.
-        } while (ice::shards::empty(temp_shards) == false);
+        } while (temp_shards.not_empty());
 
         return true;
     }
@@ -236,7 +223,7 @@ namespace ice
         ice::StringID trigger_subname;
         bool const has_trigger_subname = ice::shard_inspect(trigger_shard, trigger_subname.value);
 
-        auto it = ice::multi_hashmap::find_first(_current_state_index, ice::hash(trigger.from.graph.value));
+        auto it = _current_state_index.find_values(trigger.from.graph.value);
         while (it != nullptr)
         {
             ice::EngineStateCurrent& from_state = _current_state[it.value()];
@@ -247,7 +234,7 @@ namespace ice
             {
                 if (has_trigger_subname)
                 {
-                    it = ice::multi_hashmap::find_next(_current_state_index, it);
+                    it.next();
                     continue;
                 }
                 return;
@@ -258,14 +245,14 @@ namespace ice
             {
                 if (trigger_subname != from_state.subname)
                 {
-                    it = ice::multi_hashmap::find_next(_current_state_index, it);
+                    it.next();
                     continue;
                 }
             }
 
             // Check that this pending state was not added already.
             bool already_added = false;
-            ice::queue::for_each(_pending_states, [&](ice::EngineStatePending const& pending) noexcept
+            _pending_states.for_each([&](ice::EngineStatePending const& pending) noexcept
                 {
                     already_added |= pending.trigger.to == trigger.to && pending.current.subname == from_state.subname;
                 }
@@ -284,19 +271,18 @@ namespace ice
                 trigger.to.value
             );
 
-            ice::queue::push_back(
-                _pending_states,
+            _pending_states.push_back(
                 EngineStatePending
                 {
                     .trigger_shard = trigger_shard,
                     .trigger = trigger,
                     // TODO: Provide a default committer
-                    .committer = *ice::hashmap::get(_state_committers, ice::hash(trigger.to.graph.value), nullptr),
+                    .committer = *_state_committers.get(trigger.to.graph.value, nullptr),
                     .current = from_state
                 }
             );
 
-            it = ice::multi_hashmap::find_next(_current_state_index, it);
+            it.next();
         }
     }
 
@@ -306,8 +292,7 @@ namespace ice
     {
         for (ice::EngineStateTrigger const& trigger : _available_triggers)
         {
-            ice::shards::for_each(
-                shards,
+            shards.for_each(
                 trigger.when,
                 [&](ice::Shard shard) noexcept
                 {
@@ -326,14 +311,14 @@ namespace ice
             }
 
             // Find the states for the possibly affected graphs
-            auto it = ice::multi_hashmap::find_first(_current_state_index, ice::hash(trigger.from.graph.value));
+            auto it = _current_state_index.find_values(trigger.from.graph.value);
             while (it != nullptr)
             {
                 ice::EngineStateCurrent& from_state = _current_state[it.value()];
                 ICE_ASSERT_CORE(from_state.graph == trigger.from.graph);
 
                 ice::Shard trigger_shard = ice::Shard_Invalid;
-                ice::queue::for_each(_pending_states, [&](ice::EngineStatePending const& pending) noexcept
+                _pending_states.for_each([&](ice::EngineStatePending const& pending) noexcept
                     {
                         // Not a valid 'before' trigger...
                         if (pending.trigger.to != trigger.before)
@@ -350,7 +335,7 @@ namespace ice
                     }
                 );
 
-                it = ice::multi_hashmap::find_next(_current_state_index, it);
+                it.next();
 
                 // If we have a trigger shard, then we can almost submit this trigger as pending
                 if (trigger_shard == ice::Shard_Invalid)
@@ -372,21 +357,20 @@ namespace ice
                 );
 
                 // Push to the front so it's before all the current pending states
-                ice::queue::push_front(
-                    _pending_states,
+                _pending_states.push_front(
                     EngineStatePending
                     {
                         .trigger_shard = trigger_shard,
                         .trigger = trigger,
                         // TODO: Provide a default committer
-                        .committer = *ice::hashmap::get(_state_committers, ice::hash(trigger.to.graph.value), nullptr),
+                        .committer = *_state_committers.get(trigger.to.graph.value, nullptr),
                         .current = from_state
                     }
                 );
             }
         }
 
-        return ice::queue::any(_pending_states);
+        return _pending_states.not_empty();
     }
 
     auto create_state_tracker(ice::Allocator& alloc) noexcept -> ice::UniquePtr<ice::EngineStateTracker>

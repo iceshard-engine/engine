@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -6,7 +6,7 @@
 #include <ice/game_physics.hxx>
 #include <ice/game_tilemap.hxx>
 
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 
 namespace ice
 {

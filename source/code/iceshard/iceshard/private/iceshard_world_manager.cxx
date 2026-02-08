@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_world_manager.hxx"
@@ -45,7 +45,7 @@ namespace ice
         ) noexcept -> ice::Task<>
         {
             co_await task;
-            ice::shards::push_back(out_shards, shard);
+            out_shards.push_back(shard);
         }
 
     } // namespace detail
@@ -81,10 +81,10 @@ namespace ice
 
     IceshardWorldManager::~IceshardWorldManager() noexcept
     {
-        ice::ucount active_worlds = 0;
+        ice::u32 active_worlds = 0;
         for (Entry const& entry : _worlds)
         {
-            active_worlds += ice::ucount(entry.is_active);
+            active_worlds += ice::u32(entry.is_active);
         }
 
         ICE_ASSERT(
@@ -94,13 +94,14 @@ namespace ice
         );
     }
 
+
+
     auto IceshardWorldManager::create_world(
         ice::WorldTemplate const& world_template
     ) noexcept -> World*
     {
-
         ICE_ASSERT(
-            ice::hashmap::has(_worlds, ice::hash(world_template.name)) == false,
+            _worlds.missing(world_template.name),
             "A world with this name {} was already created!",
             world_template.name
         );
@@ -120,13 +121,13 @@ namespace ice
             if (desc != nullptr)
             {
                 ice::UniquePtr<ice::IceshardTraitContext> trait_context = ice::make_unique<ice::IceshardTraitContext>(
-                    world_context->allocator(), *world_context.get(), ice::array::count(world_traits)
+                    world_context->allocator(), *world_context.get(), world_traits.size().u32()
                 );
                 ice::UniquePtr<ice::Trait> trait = desc->fn_factory(world_context->allocator(), *trait_context.get(), desc->fn_factory_userdata);
                 if (trait != nullptr)
                 {
                     trait_context->trait = ice::move(trait);
-                    ice::array::push_back(world_traits, ice::move(trait_context));
+                    world_traits.push_back(ice::move(trait_context));
                 }
             }
         }
@@ -144,14 +145,12 @@ namespace ice
         Entry world_entry{ .context = ice::move(world_context), .world = world };
 
         // Add a new pending event
-        ice::shards::push_back(
-            _pending_events,
+        _pending_events.push_back(
             ice::ShardID_WorldCreated | ice::stringid_hash(world_template.name)
         );
 
-        return ice::hashmap::get_or_set(
-            _worlds,
-            ice::hash(world_template.name),
+        return _worlds.get_or_set(
+            world_template.name,
             ice::move(world_entry)
         ).world;
     }
@@ -161,7 +160,7 @@ namespace ice
     ) noexcept -> World*
     {
         static Entry invalid_entry{ };
-        return ice::hashmap::get(_worlds, ice::hash(name), invalid_entry).world;
+        return _worlds.get(name, invalid_entry).world;
     }
 
     void IceshardWorldManager::destroy_world(
@@ -170,18 +169,17 @@ namespace ice
     {
         static Entry invalid_entry{ };
         ICE_ASSERT(
-            ice::hashmap::get(_worlds, ice::hash(name), invalid_entry).is_active == false,
+            _worlds.get(name, invalid_entry).is_active == false,
             "Trying to destroy active world: {}!",
             name
         );
 
         // Add a new pending event
-        ice::shards::push_back(
-            _pending_events,
+        _pending_events.push_back(
             ice::ShardID_WorldDestroyed | ice::stringid_hash(name)
         );
 
-        ice::hashmap::remove(_worlds, ice::hash(name));
+        _worlds.remove(name);
     }
 
     void IceshardWorldManager::query_worlds(ice::Array<ice::StringID>& out_worlds) const noexcept
@@ -190,22 +188,22 @@ namespace ice
         {
             if (entry.is_active)
             {
-                ice::array::push_back(out_worlds, entry.world->worldID);
+                out_worlds.push_back(entry.world->worldID);
             }
         }
     }
 
     void IceshardWorldManager::query_pending_events(ice::ShardContainer& out_events) noexcept
     {
-        ice::shards::push_back(out_events, ice::array::slice(_pending_events._data));
-        ice::shards::clear(_pending_events);
+        out_events.push_back(_pending_events);
+        _pending_events.clear();
     }
 
     void IceshardWorldManager::pre_update(
         ice::ShardContainer& out_shards
     ) noexcept
     {
-        for (Entry& world_entry : ice::hashmap::values(_worlds))
+        for (Entry& world_entry : _worlds.values())
         {
             world_entry.context->close_checkpoints();
             world_entry.world->pre_update(out_shards);
@@ -218,7 +216,7 @@ namespace ice
         ice::Span<ice::Shard const> event_shards
     ) noexcept
     {
-        for (Entry& world_entry : ice::hashmap::values(_worlds))
+        for (Entry& world_entry : _worlds.values())
         {
             if (world_entry.is_active)
             {
@@ -234,7 +232,7 @@ namespace ice
         ice::Span<ice::Shard const> event_shards
     ) noexcept
     {
-        Entry const* const entry = ice::hashmap::try_get(_worlds, ice::hash(world_name));
+        Entry const* const entry = _worlds.try_get(ice::hash(world_name));
         if (entry != nullptr && entry->is_active)
         {
             entry->world->task_launcher().gather(out_tasks, params, event_shards);
@@ -250,7 +248,7 @@ namespace ice
         ice::StringID_Hash world_name;
         if (ice::shard_inspect(trigger_shard, world_name))
         {
-            Entry* const entry = ice::hashmap::try_get(_worlds, ice::hash(world_name));
+            Entry * const entry = _worlds.try_get(ice::hash(world_name));
             ICE_ASSERT_CORE(entry != nullptr);
 
             // Activated
@@ -258,7 +256,7 @@ namespace ice
 
             if (trigger.results != ice::Shard_Invalid)
             {
-                ice::shards::push_back(out_shards, trigger.results | world_name);
+                out_shards.push_back(trigger.results | world_name);
             }
         }
 

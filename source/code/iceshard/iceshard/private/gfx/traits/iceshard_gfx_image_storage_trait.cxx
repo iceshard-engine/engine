@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_gfx_image_storage_trait.hxx"
@@ -47,11 +47,11 @@ namespace ice::gfx
     void Trait_GfxImageStorage::build_content() noexcept
     {
         static ice::i32 selected = -1;
-        ice::Span<GfxImageEntry const> images = ice::hashmap::values(_loaded_images);
+        ice::Span<GfxImageEntry const> images = _loaded_images.values();
 
         ice::String const preview = selected < 0 ? "<asset-uri>" : ice::stringid_hint(images[selected].asset.name());
 
-        if (ImGui::BeginCombo("Loaded Image", ice::string::begin(preview)))
+        if (ImGui::BeginCombo("Loaded Image", preview.begin()))
         {
             if (ImGui::Selectable("##empty"))
             {
@@ -83,7 +83,7 @@ namespace ice::gfx
 
     auto Trait_GfxImageStorage::on_asset_released(ice::Asset const& asset) noexcept -> ice::Task<>
     {
-        GfxImageEntry* entry = ice::hashmap::try_get(_loaded_images, ice::hash(asset.name()));
+        GfxImageEntry* entry = _loaded_images.try_get(ice::hash(asset.name()));
         ICE_ASSERT_CORE(entry != nullptr);
         entry->released = true; // Mark as released
         co_return;
@@ -112,7 +112,7 @@ namespace ice::gfx
             ICE_ASSERT_CORE(state == AssetState::Loaded); // The image needs to be loaded.
 
             ice::StringID const nameid = request->asset_name();
-            GfxImageEntry* entry = ice::hashmap::try_get(_loaded_images, ice::hash(nameid));
+            GfxImageEntry* entry = _loaded_images.try_get(ice::hash(nameid));
             if (entry && entry->image != Image::Invalid)
             {
                 // Allocates a handle for it... (TODO: Rework?)
@@ -249,8 +249,7 @@ namespace ice::gfx
                 ice::Asset asset = uploaded_request->resolve(resolve_success);
 
                 // Save the image handle
-                ice::hashmap::set(
-                    _loaded_images,
+                _loaded_images.set(
                     asset_hash,
                     { .asset = ice::move(asset), .image = created_images[idx] }
                 );
@@ -263,13 +262,13 @@ namespace ice::gfx
         ice::render::RenderDevice& device
     ) noexcept -> ice::Task<>
     {
-        for (ice::gfx::GfxImageEntry& entry : ice::hashmap::values(_loaded_images))
+        for (ice::gfx::GfxImageEntry& entry : _loaded_images.values())
         {
             device.destroy_image(entry.image);
             entry.asset.release();
         }
 
-        ice::hashmap::clear(_loaded_images);
+        _loaded_images.clear();
         co_return;
     }
 

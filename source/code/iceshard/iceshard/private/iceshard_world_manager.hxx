@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -55,8 +55,8 @@ namespace ice
             ice::Span<ice::Shard const> event_shards
         ) noexcept override;
 
-        auto begin() noexcept { return ice::hashmap::begin(_worlds); }
-        auto end() noexcept { return ice::hashmap::end(_worlds); }
+        auto begin() noexcept { return _worlds.begin(); }
+        auto end() noexcept { return _worlds.end(); }
 
     public: // Implementation of: ice::EngineStateCommiter
         bool commit(

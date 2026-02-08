@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -7,7 +7,7 @@
 #include "webgpu_command_buffer.hxx"
 
 #include <ice/render/render_queue.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/multi_hashmap.hxx>
 
 namespace ice::render::webgpu
 {
@@ -51,7 +51,7 @@ namespace ice::render::webgpu
         ice::Allocator& _allocator;
         WGPUDevice _wgpu_device;
         WGPUQueue _wgpu_queue;
-        ice::HashMap<WebGPUCommandBuffer*> _wgpu_command_buffers;
+        ice::MultiHashMap<WebGPUCommandBuffer*> _wgpu_command_buffers;
     };
 
 } // namespace ice::render::webgpu

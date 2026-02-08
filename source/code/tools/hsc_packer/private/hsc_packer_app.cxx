@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "hsc_packer_app.hxx"
@@ -8,15 +8,15 @@
 #include <ice/log_module.hxx>
 #include <ice/tool_app.hxx>
 
-auto hscp_process_directory(ice::Allocator& alloc, ice::String dir) noexcept -> ice::HeapString<>
+auto hscp_process_directory(ice::Allocator& alloc, ice::Path dir) noexcept -> ice::HeapPath
 {
-    ice::HeapString<> searched_utf8_path{ alloc, dir };
-    if (ice::path::is_absolute(dir) == false)
+    ice::HeapPath searched_utf8_path{ alloc, dir };
+    if (dir.is_relative())
     {
         searched_utf8_path = ice::app::workingdir();
-        ice::path::join(searched_utf8_path, dir);
+        searched_utf8_path.join(dir);
     }
 
-    ice::path::normalize(searched_utf8_path);
+    searched_utf8_path.normalize();
     return searched_utf8_path;
 }

@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -26,7 +26,7 @@ namespace ice
 
         virtual auto registered_layers(
             ice::Array<ice::InputActionLayer const*>& out_layers
-        ) const noexcept -> ice::ucount = 0;
+        ) const noexcept -> ice::u32 = 0;
 
         virtual auto register_layer(
             ice::InputActionLayer const* layer
@@ -35,7 +35,7 @@ namespace ice
 
         virtual auto active_layers(
             ice::Array<ice::InputActionLayer const*>& out_layers
-        ) const noexcept -> ice::ucount = 0;
+        ) const noexcept -> ice::u32 = 0;
 
         virtual void push_layer(
             ice::InputActionLayer const* layer

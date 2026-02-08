@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -11,7 +11,7 @@ namespace ice
     template<typename T, typename U = T>
     constexpr auto accumulate(ice::Span<T const> range, U val) noexcept
     {
-        return ::std::accumulate(ice::begin(range), ice::end(range), val);
+        return ::std::accumulate(range.begin(), range.end(), val);
     }
 
 } // namespace ice

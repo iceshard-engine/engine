@@ -20,6 +20,11 @@ on:
         description: "Clang tools version to be installed"
         required: false
         type: string
+    secrets:
+      conan_user:
+        required: true
+      conan_token:
+        required: true
 
 jobs:
   build:
@@ -48,6 +53,11 @@ jobs:
           conan-profile-compiler-version: '${{ inputs.clang-version }}'
           conan-profile-cppstd: '20'
           conan-profile-libcxx: 'libc++'
+
+      - name: Login to IceShard Conan2 Repository
+        shell: pwsh
+        run: |
+          conan remote login -p ${{ secrets.conan_token }} conan2-iceshard ${{ secrets.conan_user }}
 
       - name: Setup IBT
         uses: iceshard-engine/.github/.github/actions/ibt-wks@main

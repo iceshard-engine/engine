@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "win32_threads.hxx"
@@ -9,7 +9,7 @@
 namespace ice::platform::win32
 {
 
-    auto get_num_cores(ice::Allocator& alloc) noexcept -> ice::ucount
+    auto get_num_cores(ice::Allocator& alloc) noexcept -> ice::u32
     {
         DWORD byte_size = 0;
         GetLogicalProcessorInformationEx(RelationProcessorCore, nullptr, &byte_size);
@@ -24,7 +24,7 @@ namespace ice::platform::win32
         );
         ICE_ASSERT_CORE(result == TRUE);
 
-        ice::ucount num_procs = 0;
+        ice::u32 num_procs = 0;
         ice::usize byte_size_processed = 0_B;
         for (; byte_size_processed.value < byte_size;)
         {
@@ -68,8 +68,8 @@ namespace ice::platform::win32
         , _threads{ }
         , _aioport{ ice::native_aio::aio_open(alloc, { .worker_limit = 2, .debug_name = "ice.aio-port" }) }
     {
-        ice::ucount const hw_concurrency = ice::min(get_num_cores(alloc), 8u);
-        ice::ucount tp_size = ice::max(hw_concurrency, 2u); // min 2 task threads
+        ice::u32 const hw_concurrency = ice::min(get_num_cores(alloc), 8u);
+        ice::u32 tp_size = ice::max(hw_concurrency, 2u); // min 2 task threads
 
         for (ice::Shard const option : params)
         {

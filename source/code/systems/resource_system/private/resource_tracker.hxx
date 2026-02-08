@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -9,12 +9,11 @@
 #include <ice/uri.hxx>
 #include <ice/profiler.hxx>
 
-#include <ice/string/string.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/multi_hashmap.hxx>
 #include <ice/log_tag.hxx>
 #include <ice/log_formatters.hxx>
 #include <ice/task_utils.hxx>
-#include <ice/container/linked_queue.hxx>
+#include <ice/atomic_linked_queue.hxx>
 #include <ice/path_utils.hxx>
 #include <ice/devui_widget.hxx>
 
@@ -73,7 +72,7 @@ namespace ice
             }
 
             _coro = coro;
-            ice::linked_queue::push(transaction.queue, this);
+            transaction.queue.push_back(this);
             return true;
         }
 
@@ -105,7 +104,7 @@ namespace ice
             ice::u32 requests_processed = 1; // Includes "us"
             while(requests_processed < awaiting)
             {
-                for (ice::TaskAwaitableBase* awaitable : ice::linked_queue::consume(transaction.queue))
+                for (ice::TaskAwaitableBase* awaitable : transaction.queue.take_all())
                 {
                     // Resume to coroutine
                     awaitable->_coro.resume();
@@ -153,12 +152,12 @@ namespace ice
             ice::ResourceProvider& provider,
             ice::ResourceFilter const& filter,
             ice::Array<ice::URI>& out_uris
-        ) const noexcept -> ice::TaskExpected<ice::ucount>;
+        ) const noexcept -> ice::TaskExpected<ice::u32>;
 
         auto filter_resource_uris(
             ice::ResourceFilter const& filter,
             ice::Array<ice::URI>& out_uris
-        ) const noexcept -> ice::TaskExpected<ice::ucount>  override;
+        ) const noexcept -> ice::TaskExpected<ice::u32>  override;
 
 
         auto set_resource(
@@ -226,9 +225,9 @@ namespace ice
         ice::ProxyAllocator _allocator_data;
         ice::ResourceTrackerCreateInfo _info;
 
-        ice::HashMap<ice::Resource*> _resources;
-        ice::HashMap<ice::UniquePtr<ice::ResourceProvider>, ContainerLogic::Complex> _resource_providers;
-        ice::HashMap<ice::ResourceWriter*> _resource_writers;
+        ice::MultiHashMap<ice::Resource*> _resources;
+        ice::MultiHashMap<ice::UniquePtr<ice::ResourceProvider>, ContainerLogic::Complex> _resource_providers;
+        ice::MultiHashMap<ice::ResourceWriter*> _resource_writers;
 
         ice::UniquePtr<ice::DevUIWidget> _devui_widget;
     };

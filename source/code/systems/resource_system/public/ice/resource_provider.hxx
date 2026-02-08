@@ -1,16 +1,17 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/stringid.hxx>
-#include <ice/string_types.hxx>
+#include <ice/string.hxx>
 #include <ice/mem_memory.hxx>
 #include <ice/mem_unique_ptr.hxx>
-#include <ice/container_types.hxx>
+#include <ice/array.hxx>
 #include <ice/resource_types.hxx>
 #include <ice/native_aio.hxx>
 #include <ice/task_types.hxx>
 #include <ice/task_expected.hxx>
+#include <ice/path_utils.hxx>
 #include <ice/uri.hxx>
 
 namespace ice
@@ -35,14 +36,14 @@ namespace ice
         virtual auto filter_resource_uris(
             ice::ResourceFilter const& filter,
             ice::Array<ice::URI>& out_uris
-        ) noexcept -> ice::TaskExpected<ice::ucount>
+        ) noexcept -> ice::TaskExpected<ice::u32>
         {
             co_return 0;
         }
 
         virtual auto collect(
             ice::Array<ice::Resource*>& out_changes
-        ) noexcept -> ice::ucount
+        ) noexcept -> ice::u32
         {
             return 0;
         }
@@ -85,8 +86,8 @@ namespace ice
 
     struct ResourceFileEntry
     {
-        ice::String path;
-        ice::String basepath = {};
+        ice::Path path;
+        ice::Path basepath = {};
     };
 
     auto create_resource_provider(

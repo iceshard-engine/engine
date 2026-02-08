@@ -1,11 +1,11 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/engine_state_tracker.hxx>
-#include <ice/container/array.hxx>
-#include <ice/container/queue.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/array.hxx>
+#include <ice/queue.hxx>
+#include <ice/multi_hashmap.hxx>
 #include <ice/mem_allocator_stack.hxx>
 #include <ice/log.hxx>
 
@@ -58,7 +58,7 @@ namespace ice
         auto update_states(
             ice::ShardContainer const& shards,
             ice::ShardContainer& out_shards
-        ) noexcept -> ice::ucount override;
+        ) noexcept -> ice::u32 override;
 
         void collect_pending_state(
             ice::Shard trigger_shard,
@@ -74,7 +74,7 @@ namespace ice
         ice::Array<ice::EngineStateTrigger> _available_triggers;
         ice::HashMap<ice::EngineState> _initial_states;
         ice::HashMap<ice::EngineStateCommitter*> _state_committers;
-        ice::HashMap<ice::u32> _current_state_index;
+        ice::MultiHashMap<ice::u32> _current_state_index;
         ice::Array<ice::EngineStateCurrent> _current_state;
         ice::Queue<ice::EngineStatePending> _pending_states;
 

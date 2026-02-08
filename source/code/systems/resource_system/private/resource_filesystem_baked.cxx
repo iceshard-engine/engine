@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "resource_filesystem_baked.hxx"
@@ -87,7 +87,7 @@ namespace ice
     BakedFileResource::BakedFileResource(
         ice::Allocator& alloc,
         ice::ResourceFormatHeader const& header,
-        ice::HeapString<> origin,
+        ice::HeapPath origin,
         ice::HeapString<> name
     ) noexcept
         : _allocator{ alloc }
@@ -114,10 +114,10 @@ namespace ice
 
     auto BakedFileResource::name() const noexcept -> ice::String
     {
-        return ice::string::substr(_uri.path(), 1);
+        return _uri.path().substr(1);
     }
 
-    auto BakedFileResource::origin() const noexcept -> ice::String
+    auto BakedFileResource::origin() const noexcept -> ice::Path
     {
         return _origin;
     }
@@ -196,13 +196,13 @@ namespace ice
             return main_resource;
         }
 
-        ice::HeapString<> utf8_file_path{ alloc };
+        ice::HeapPath utf8_file_path{ alloc };
         ice::native_file::path_to_string(file_path, utf8_file_path);
-        ice::path::normalize(utf8_file_path);
+        utf8_file_path.normalize();
         IPT_ZONE_TEXT_STR(utf8_file_path);
 
         ice::HeapString<> utf8_uri{ alloc };
-        ice::string::push_back(utf8_uri, uri_base);
+        utf8_uri.push_back(uri_base);
 
         char temp[128];
         read = ice::native_file::read_file(
@@ -210,7 +210,7 @@ namespace ice
         );
 
         ICE_ASSERT_CORE(read >= 0_B);
-        ice::string::push_back(utf8_uri, { temp, header.name_size });
+        utf8_uri.push_back(ice::String{ temp, header.name_size });
 
         return ice::create_resource_object<BakedFileResource>(
             alloc,

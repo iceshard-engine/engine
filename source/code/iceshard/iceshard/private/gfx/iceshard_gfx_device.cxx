@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_gfx_device.hxx"
@@ -6,7 +6,7 @@
 #include <ice/render/render_swapchain.hxx>
 #include <ice/render/render_buffer.hxx>
 #include <ice/mem_allocator_stack.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 #include <ice/gfx/gfx_runner.hxx>
 #include <ice/profiler.hxx>
 #include <ice/assert.hxx>
@@ -156,7 +156,7 @@ namespace ice::gfx
     ) noexcept -> ice::UniquePtr<ice::gfx::IceGfxDevice>
     {
         ice::Array<ice::render::QueueFamilyInfo> queue_families{ alloc };
-        ice::array::reserve(queue_families, 20);
+        queue_families.reserve(20);
         render_driver.query_queue_infos(queue_families);
 
         using ice::render::QueueFlags;
@@ -164,11 +164,11 @@ namespace ice::gfx
         using ice::render::QueueID;
 
         ice::Array<ice::render::QueueInfo> queues{ alloc };
-        ice::array::reserve(queues, ice::count(render_queues));
+        queues.reserve(render_queues.size().u32());
 
         auto find_queue_index = [](auto const& array_, QueueID id_, ice::u32& idx_out) noexcept -> bool
         {
-            ice::u32 const size = ice::array::count(array_);
+            ice::u32 const size = array_.size().u32();
 
             idx_out = 0;
             while (idx_out < size && array_[idx_out].id != id_)
@@ -176,7 +176,7 @@ namespace ice::gfx
                 idx_out += 1;
             }
 
-            return ice::array::count(array_) > idx_out;
+            return array_.size() > idx_out;
         };
 
         ice::HashMap<ice::u32> queue_index_tracker{ alloc };
@@ -195,8 +195,7 @@ namespace ice::gfx
             }
             else
             {
-                ice::array::push_back(
-                    queues,
+                queues.push_back(
                     QueueInfo{
                         .id = pass_queue_id,
                         .count = 1
@@ -204,8 +203,7 @@ namespace ice::gfx
                 );
             }
 
-            ice::hashmap::set(
-                queue_index_tracker,
+            queue_index_tracker.set(
                 ice::hash(reinterpret_cast<ice::uptr>(&pass_info)),
                 queues[queue_info_idx].count - 1
             );
@@ -231,15 +229,14 @@ namespace ice::gfx
         if (render_device != nullptr)
         {
             ice::Array<ice::gfx::IceGfxQueueGroup*> pass_groups{ alloc };
-            ice::array::reserve(pass_groups, pass_group_count);
+            pass_groups.reserve(pass_group_count);
 
             for (ice::u32 group_pool_index = 0; group_pool_index < pass_group_count; ++group_pool_index)
             {
-                ice::array::push_back(
-                    pass_groups,
+                pass_groups.push_back(
                     alloc.create<IceGfxQueueGroup>(
                         alloc,
-                        ice::count(render_queues)
+                        render_queues.size().u32()
                     )
                 );
             }
@@ -247,8 +244,7 @@ namespace ice::gfx
             for (ice::gfx::GfxQueueDefinition const& pass_info : render_queues)
             {
                 QueueID const pass_queue_id = detail::find_queue_id(queue_families, pass_info.flags);
-                ice::u32 const pass_queue_index = ice::hashmap::get(
-                    queue_index_tracker,
+                ice::u32 const pass_queue_index = queue_index_tracker.get(
                     ice::hash(reinterpret_cast<ice::uptr>(&pass_info)),
                     ~0u
                 );

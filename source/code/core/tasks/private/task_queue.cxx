@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/task_queue.hxx>
@@ -14,14 +14,14 @@ namespace ice
 
     bool TaskQueue::push_back(ice::TaskAwaitableBase* awaitable) noexcept
     {
-        ice::linked_queue::push(_awaitables, awaitable);
+        _awaitables.push_back(awaitable);
         _awaitables._head.notify_one();
         return true;
     }
 
-    bool TaskQueue::push_back(ice::LinkedQueueRange<ice::TaskAwaitableBase> awaitable_range) noexcept
+    bool TaskQueue::push_back(ice::AtomicLinkedQueueRange<ice::TaskAwaitableBase> awaitable_range) noexcept
     {
-        bool const result = ice::linked_queue::push(_awaitables, awaitable_range);
+        bool const result = _awaitables.push_back(awaitable_range);
         _awaitables._head.notify_all();
         return result;
     }
@@ -37,12 +37,12 @@ namespace ice
             while(it != end && it != awaitable)
             {
                 // We wait for next pointer to be updated
-                while(it->next == nullptr)
+                while(it->_next == nullptr)
                 {
                     std::atomic_thread_fence(std::memory_order_acquire);
                 }
 
-                it = it->next;
+                it = it->_next;
             }
 
             // Found our awaitable don't suspend
@@ -54,19 +54,19 @@ namespace ice
         return true;
     }
 
-    auto TaskQueue::consume() noexcept -> ice::LinkedQueueRange<ice::TaskAwaitableBase>
+    auto TaskQueue::take_all() noexcept -> ice::AtomicLinkedQueueRange<ice::TaskAwaitableBase>
     {
-        return ice::linked_queue::consume(_awaitables);
+        return _awaitables.take_all();
     }
 
-    auto TaskQueue::pop() noexcept -> ice::TaskAwaitableBase*
+    auto TaskQueue::take_front() noexcept -> ice::TaskAwaitableBase*
     {
-        return ice::linked_queue::pop(_awaitables);
+        return _awaitables.take_front();
     }
 
     bool TaskQueue::process_one(void* result_value) noexcept
     {
-        ice::TaskAwaitableBase* const awaitable = ice::linked_queue::pop(_awaitables);
+        ice::TaskAwaitableBase* const awaitable = _awaitables.take_front();
         if (awaitable != nullptr)
         {
             if (result_value != nullptr)
@@ -85,10 +85,10 @@ namespace ice
                 if (custom_resumer->fn_resumer(custom_resumer->ud_resumer, *awaitable) == false)
                 {
                     // Reset next pointer before puttng back onto the queue
-                    awaitable->next = nullptr;
+                    awaitable->_next = nullptr;
 
                     // Push back at the end of the queue
-                    ice::linked_queue::push(_awaitables, awaitable);
+                    _awaitables.push_back(awaitable);
                     return false;
                 }
             }
@@ -98,10 +98,10 @@ namespace ice
         return awaitable != nullptr;
     }
 
-    auto TaskQueue::process_all(void* result_value) noexcept -> ice::ucount
+    auto TaskQueue::process_all(void* result_value) noexcept -> ice::ncount
     {
-        ice::ucount processed = 0;
-        for (ice::TaskAwaitableBase* const awaitable : ice::linked_queue::consume(_awaitables))
+        ice::u32 processed = 0;
+        for (ice::TaskAwaitableBase* const awaitable : _awaitables.take_all())
         {
             if (result_value != nullptr)
             {
@@ -119,10 +119,10 @@ namespace ice
                 if (custom_resumer->fn_resumer(custom_resumer->ud_resumer, *awaitable) == false)
                 {
                     // Reset next pointer before puttng back onto the queue
-                    awaitable->next = nullptr;
+                    awaitable->_next = nullptr;
 
                     // Push back at the end of the queue
-                    ice::linked_queue::push(_awaitables, awaitable);
+                    _awaitables.push_back(awaitable);
                     continue;
                 }
             }
@@ -132,11 +132,6 @@ namespace ice
         }
         return processed;
     }
-
-    // auto TaskQueue::prepare_all(void *result_value) noexcept -> ice::ucount
-    // {
-    //     return ice::ucount();
-    // }
 
     void TaskQueue::wait_any() noexcept
     {

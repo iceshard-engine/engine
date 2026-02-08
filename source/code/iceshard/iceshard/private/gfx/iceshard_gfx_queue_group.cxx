@@ -1,9 +1,9 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_gfx_queue_group.hxx"
 #include "iceshard_gfx_queue.hxx"
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 #include <ice/profiler.hxx>
 #include <ice/assert.hxx>
 
@@ -17,7 +17,7 @@ namespace ice::gfx
         : _allocator{ alloc }
         , _gfx_queues{ _allocator }
     {
-        ice::hashmap::reserve(_gfx_queues, queue_count * 2);
+        _gfx_queues.reserve(queue_count * 2);
     }
 
     IceGfxQueueGroup::~IceGfxQueueGroup() noexcept
@@ -36,9 +36,8 @@ namespace ice::gfx
         ice::u32 pool_index
     ) noexcept -> ice::gfx::IceGfxQueue*
     {
-        ice::u64 const name_hash = ice::hash(name);
         ICE_ASSERT(
-            ice::hashmap::has(_gfx_queues, name_hash) == false,
+            _gfx_queues.missing(name),
             "Duplicate graphics queue encountered! [{}]",
             ice::stringid_hint(name)
         );
@@ -52,13 +51,7 @@ namespace ice::gfx
             pool_index
         );
 
-        ice::hashmap::set(
-            _gfx_queues,
-            name_hash,
-            queue
-        );
-
-        return queue;
+        return _gfx_queues.set(name, queue);
     }
 
     bool IceGfxQueueGroup::get_queue(ice::render::QueueFlags flags, ice::gfx::GfxQueue*& out_queue) noexcept
@@ -93,11 +86,7 @@ namespace ice::gfx
 
     auto IceGfxQueueGroup::get_queue(ice::StringID_Arg name) noexcept -> ice::gfx::IceGfxQueue*
     {
-        return ice::hashmap::get(
-            _gfx_queues,
-            ice::hash(name),
-            nullptr
-        );
+        return _gfx_queues.get(name, nullptr);
     }
 
     void IceGfxQueueGroup::reset_all() noexcept
@@ -112,7 +101,7 @@ namespace ice::gfx
     {
         for (IceGfxQueue* queue : _gfx_queues)
         {
-            ice::array::push_back(out_names, ice::stringid_hash(queue->name()));
+            out_names.push_back(ice::stringid_hash(queue->name()));
         }
     }
 
@@ -135,8 +124,7 @@ namespace ice::gfx
             ice::render::RenderQueue* render_queue = queue->render_queue();
             if (has_queue(queues_out, render_queue) == false)
             {
-                ice::array::push_back(
-                    queues_out,
+                queues_out.push_back(
                     render_queue
                 );
             }

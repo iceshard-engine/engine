@@ -1,10 +1,10 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/devui_widget.hxx>
 #include <ice/devui_frame.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <ice/mem_unique_ptr.hxx>
 
 namespace ice::devui
@@ -29,7 +29,7 @@ namespace ice::devui
         ) noexcept;
 
         void remove_widget(ice::DevUIWidget* widget) noexcept;
-        auto widgets() noexcept -> ice::Span<ice::UniquePtr<ImGuiDevUIWidget> const> { return ice::array::slice(_widgets, 1); }
+        auto widgets() noexcept -> ice::Span<ice::UniquePtr<ImGuiDevUIWidget> const> { return _widgets.tailspan(); }
 
         void build_content() noexcept override;
 

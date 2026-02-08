@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_world_manager_devui.hxx"
@@ -43,7 +43,7 @@ namespace ice
 
         // Always ensure same size
 
-        ice::array::resize(_entries, ice::hashmap::count(_manager._worlds));
+        _entries.resize(_manager._worlds.size());
 
         [[maybe_unused]]
         ImVec2 const avail = ImGui::GetContentRegionAvail();
@@ -56,7 +56,7 @@ namespace ice
             ImGui::TableNextColumn();
 
             ice::u32 idx = 0;
-            ice::Span const entries = ice::hashmap::values(_manager._worlds);
+            ice::Span const entries = _manager._worlds.values();
             for (IceshardWorldManager::Entry const& entry : entries)
             {
                 ice::IceshardWorld const& world = *entry.world;

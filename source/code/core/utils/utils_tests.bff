@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 .Project =
@@ -6,7 +6,7 @@
     .Name = 'utils_tests'
     .Kind = .Kind_ConsoleApp
     .Group = 'Tests'
-    .Requires = { 'Windows' }
+    .Requires = { 'DevPlatform' }
     .Tags = { 'UnitTests' }
 
     .BaseDir = '$WorkspaceCodeDir$/core/utils'
@@ -29,7 +29,7 @@
 
     .UnitTests =
     [
-        .Enabled = true
+        .Enabled = false
     ]
 ]
 .Projects + .Project

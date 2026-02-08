@@ -23,7 +23,7 @@ os.api_level=$(AndroidAPILevel)
 arch=armv8
 compiler=clang
 compiler.cppstd=20
-compiler.libcxx=c++_static
+compiler.libcxx=c++_shared
 compiler.version=$(ConanCompilerVersion)
 
 [settings-Android-x64]
@@ -32,7 +32,7 @@ os.api_level=$(AndroidAPILevel)
 arch=x86_64
 compiler=clang
 compiler.cppstd=20
-compiler.libcxx=c++_static
+compiler.libcxx=c++_shared
 compiler.version=$(ConanCompilerVersion)
 
 [conf-Android-x64]

@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_world.hxx"
@@ -38,16 +38,16 @@ namespace ice
         ICE_ASSERT_CORE(params.task_type <= TraitTaskType::Render);
 
         ice::u32 const tasktype_idx = ice::u32(params.task_type) - 1;
-        ice::HashMap<ice::IceshardEventHandler>& handlers = _world_context._frame_handlers[tasktype_idx];
+        ice::MultiHashMap<ice::IceshardEventHandler>& handlers = _world_context._frame_handlers[tasktype_idx];
 
         ice::Span<ice::Task<>> tasks = task_container.create_tasks(
-            ice::multi_hashmap::count(handlers, ice::hash(shard.id)),
+            handlers.count_values(shard.id).u32(),
             shard.id
         );
 
-        auto out_it = ice::begin(tasks);
-        auto it = ice::multi_hashmap::find_first(handlers, ice::hash(shard.id));
-        while (it != nullptr)
+        auto out_it = tasks.begin();
+        auto it = handlers.find_values(shard.id);
+        while (it.valid())
         {
             ice::IceshardEventHandler const& handler = it.value();
             void* const userdata = handler.procedure_userdata != nullptr
@@ -57,7 +57,7 @@ namespace ice
             *out_it = handler.procedure(userdata, params, shard);
 
             out_it += 1;
-            it = ice::multi_hashmap::find_next(handlers, it);
+            it.next();
         }
     }
 
@@ -86,10 +86,10 @@ namespace ice
         ICE_ASSERT_CORE(params.task_type <= TraitTaskType::Render);
 
         ice::u32 const tasktype_idx = ice::u32(params.task_type) - 1;
-        ice::HashMap<ice::IceshardEventHandler>& handlers = _world_context._frame_handlers[tasktype_idx];
+        ice::MultiHashMap<ice::IceshardEventHandler>& handlers = _world_context._frame_handlers[tasktype_idx];
 
-        auto it = ice::multi_hashmap::find_first(handlers, ice::hash(shard.id));
-        while (it != nullptr)
+        auto it = handlers.find_values(shard.id);
+        while (it.valid())
         {
             ice::IceshardEventHandler const& handler = it.value();
 
@@ -98,12 +98,11 @@ namespace ice
                 : _traits[handler.trait_idx]->trait.get();
 
             //ICE_ASSERT(ice::array::count(out_tasks) < ice::array::capacity(out_tasks), "Maximum number of tasks suppored by default launcher reached!");
-            ice::array::push_back(
-                out_tasks,
+            out_tasks.push_back(
                 handler.procedure(userdata, params, shard)
             );
 
-            it = ice::multi_hashmap::find_next(handlers, it);
+            it.next();
         }
 
     }

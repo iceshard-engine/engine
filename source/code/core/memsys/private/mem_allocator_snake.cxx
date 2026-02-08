@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/mem_allocator_snake.hxx>
@@ -23,9 +23,9 @@ namespace ice
                 return reinterpret_cast<Entry*>(ice::ptr_add(entries, bucket_size * idx));
             }
 
-            static auto count_entries(ice::usize block_size, ice::usize bucket_size) noexcept -> ice::ucount
+            static auto count_entries(ice::usize block_size, ice::usize bucket_size) noexcept -> ice::u32
             {
-                return ice::ucount(block_size.value / bucket_size.value);
+                return ice::u32(block_size.value / bucket_size.value);
             }
         };
 
@@ -36,7 +36,7 @@ namespace ice
     {
         using Entry = ChainBlock::Entry;
 
-        Chain(ice::usize base_block_size, ice::ucount capacity, ice::usize base_size) noexcept
+        Chain(ice::usize base_block_size, ice::u32 capacity, ice::usize base_size) noexcept
             : _capacity{ capacity }
             , _count{ capacity }
             , block_size{ base_block_size + ice::size_of<Entry> * Entry::count_entries(base_block_size, base_size) }
@@ -113,13 +113,13 @@ namespace ice
             return false;
         }
 
-        ice::ucount const _capacity;
-        ice::ucount _count = 0;
+        ice::u32 const _capacity;
+        ice::u32 _count = 0;
 
         ice::usize const block_size;
         ice::usize const block_bucket_size;
-        ice::ucount const block_bucket_count;
-        ice::ucount const total_bucket_count;
+        ice::u32 const block_bucket_count;
+        ice::u32 const total_bucket_count;
 
         // NOTE: We run into false sharing here but for now it's not an issue.
         std::atomic_uint32_t allocated = 0;
@@ -227,7 +227,7 @@ namespace ice
         _blocks = _backing_allocator.allocate<ChainBlock>(params.bucket_sizes.size() * params.chain_capacity);
         ice::memset(_blocks, 0, sizeof(ChainBlock) * params.bucket_sizes.size() * params.chain_capacity);
 
-        ice::ucount block_offset = 0;
+        ice::u32 block_offset = 0;
         for (ice::u32 chain_idx = 0; chain_idx < params.bucket_sizes.size(); ++chain_idx)
         {
             // Size is not a power of 2

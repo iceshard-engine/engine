@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -9,7 +9,7 @@
 #include <ice/task_utils.hxx>
 #include <ice/resource.hxx>
 #include <ice/resource_provider.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 #include <ice/string_utils.hxx>
 #include <ice/path_utils.hxx>
 #include <ice/mem_allocator_stack.hxx>
@@ -47,11 +47,11 @@ namespace ice
         auto filter_resource_uris(
             ice::ResourceFilter const& filter,
             ice::Array<ice::URI>& out_uris
-        ) noexcept -> ice::TaskExpected<ice::ucount> override;
+        ) noexcept -> ice::TaskExpected<ice::u32> override;
 
         auto collect(
             ice::Array<ice::Resource*>& out_changes
-        ) noexcept -> ice::ucount override;
+        ) noexcept -> ice::u32 override;
 
         auto refresh(
             ice::Array<ice::Resource*>& out_changes

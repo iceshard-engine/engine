@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -164,6 +164,8 @@ namespace ice::build
 #   define ISP_ARCHFAM_X86 1
 #   define ISP_ARCHFAM_ARM 0
 #   define ISP_ARCHFAM_WEBASM 0
+#   define ISP_HW_DESTRUCTIVE_INTERFERENCE 64
+#   define ISP_TEXT(val) L ## val
 #elif defined(__ANDROID__)
 #   define ISP_UNIX 1
 #   define ISP_LINUX 0
@@ -185,6 +187,8 @@ namespace ice::build
 #       define ISP_ARCHFAM_WEBASM 0
         static constexpr Platform current_platform = platform_android_x64_clang;
 #   endif
+#   define ISP_HW_DESTRUCTIVE_INTERFERENCE 64 // NOT CHECKED
+#   define ISP_TEXT(val) val
 #elif defined(EMSCRIPTEN)
 #   define ISP_UNIX 1
 #   define ISP_LINUX 0
@@ -200,6 +204,8 @@ namespace ice::build
 #   define ISP_ARCHFAM_WEBASM 1
 
     static constexpr Platform current_platform = platform_webapp_webasm32_clang;
+#   define ISP_HW_DESTRUCTIVE_INTERFERENCE 64 // NOT CHECKED
+#   define ISP_TEXT(val) val
 #elif __unix__ && !__clang__
 #   define ISP_UNIX 1
 #   define ISP_LINUX 1
@@ -214,6 +220,8 @@ namespace ice::build
 #   define ISP_ARCHFAM_WEBASM 0
 
     static constexpr Platform current_platform = platform_unix_x64_gcc;
+#   define ISP_HW_DESTRUCTIVE_INTERFERENCE 64 // NOT CHECKED
+#   define ISP_TEXT(val) val
 #elif __unix__ && __clang__
 #   define ISP_UNIX 1
 #   define ISP_LINUX 1
@@ -228,6 +236,8 @@ namespace ice::build
 #   define ISP_ARCHFAM_WEBASM 0
 
     static constexpr Platform current_platform = platform_linux_x64_clang;
+#   define ISP_HW_DESTRUCTIVE_INTERFERENCE 64 // NOT CHECKED
+#   define ISP_TEXT(val) val
 #else
 #   define ISP_UNIX 0
 #   define ISP_WINDOWS 0
@@ -241,6 +251,8 @@ namespace ice::build
 #   define ISP_ARCHFAM_WEBASM 0
 
     static_assert(false, "Unknow platform!");
+#   define ISP_HW_DESTRUCTIVE_INTERFERENCE ISP_UNDEFINED
+#   define ISP_TEXT(val) ISP_UNDEFINED
 #endif
 
     constexpr auto arch_family(Architecture arch) noexcept -> ArchFamily

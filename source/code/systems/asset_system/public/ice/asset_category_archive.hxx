@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -12,7 +12,7 @@ namespace ice
 
     struct AssetCategoryDefinition
     {
-        constexpr auto valid() const noexcept { return ice::span::any(resource_extensions); }
+        constexpr auto valid() const noexcept { return resource_extensions.not_empty(); }
 
         ice::String name;
         ice::Span<ice::Shard const> asset_params;

@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/render/render_module.hxx>
@@ -23,11 +23,11 @@ namespace ice::render::vk
         app_info.engineVersion = 1;
         app_info.apiVersion = VK_API_VERSION_1_3;
 
-        ice::ucount layer_count = 0;
+        ice::u32 layer_count = 0;
         ice::Array<ExtensionName> names{ alloc };
         Extension extensions = extensions_gather_names(names, layer_count, ExtensionTarget::InstanceLayer);
 
-        ice::ucount extension_count = 0;
+        ice::u32 extension_count = 0;
         extensions |= extensions_gather_names(names, extension_count, ExtensionTarget::InstanceExtension);
         ICE_ASSERT_CORE(ice::has_all(extensions, Extension::VkI_Surface));
         ICE_ASSERT_CORE(ice::has_any(extensions, Extension::VkI_AndroidSurface | Extension::VkI_Win32Surface));
@@ -36,16 +36,16 @@ namespace ice::render::vk
         instance_create_info.flags = 0;
         instance_create_info.pApplicationInfo = &app_info;
         instance_create_info.enabledLayerCount = layer_count;
-        instance_create_info.ppEnabledLayerNames = ice::array::begin(names);
+        instance_create_info.ppEnabledLayerNames = names.begin();
         instance_create_info.enabledExtensionCount = extension_count;
-        instance_create_info.ppEnabledExtensionNames = ice::array::begin(names) + layer_count;
+        instance_create_info.ppEnabledExtensionNames = names.begin() + layer_count;
 
         VkInstance vk_instance;
         VkResult const vk_create_result = vkCreateInstance(&instance_create_info, vk_alloc->vulkan_callbacks(), &vk_instance);
         ICE_ASSERT(vk_create_result == VkResult::VK_SUCCESS, "Creation of Vulkan instance failed!");
 
         // Release the array backing data
-        ice::array::set_capacity(names, 0);
+        names.set_capacity(0);
 
         return alloc.create<VulkanRenderDriver>(alloc, ice::move(vk_alloc), vk_instance, extensions);
     }

@@ -1,9 +1,10 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include "config_builder_types.hxx"
 #include "config_builder_utils.hxx"
+#include <ice/hashmap.hxx>
 
 namespace ice::config::detail
 {

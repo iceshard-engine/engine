@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -7,7 +7,7 @@
 #include "shader_tools_asl_database.hxx"
 #include "shader_tools_asl_utils.hxx"
 
-#include <ice/container/hashmap.hxx>
+#include <ice/multi_hashmap.hxx>
 
 namespace ice
 {
@@ -32,10 +32,10 @@ namespace ice
 
     private:
         ice::ASLAllocator& _allocator;
-        ice::HashMap<arctic::SyntaxNode<arctic::syntax::Struct>> _usertypes;
-        ice::HashMap<arctic::SyntaxNode<arctic::syntax::Function>> _functions;
-        ice::HashMap<arctic::SyntaxNode<arctic::syntax::Function>> _native_functions;
-        ice::HashMap<arctic::SyntaxNode<arctic::syntax::ContextVariable>> _variables;
+        ice::MultiHashMap<arctic::SyntaxNode<arctic::syntax::Struct>> _usertypes;
+        ice::MultiHashMap<arctic::SyntaxNode<arctic::syntax::Function>> _functions;
+        ice::MultiHashMap<arctic::SyntaxNode<arctic::syntax::Function>> _native_functions;
+        ice::MultiHashMap<arctic::SyntaxNode<arctic::syntax::ContextVariable>> _variables;
     };
 
 } // namespace ice

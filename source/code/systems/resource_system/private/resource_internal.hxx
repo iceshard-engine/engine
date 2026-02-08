@@ -1,10 +1,10 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/resource.hxx>
 #include <ice/sync_manual_events.hxx>
-#include <ice/container/linked_queue.hxx>
+#include <ice/atomic_linked_queue.hxx>
 #include <ice/task_transaction.hxx>
 
 namespace ice

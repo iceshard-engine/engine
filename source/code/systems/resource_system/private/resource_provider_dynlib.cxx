@@ -1,10 +1,10 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/resource_provider.hxx>
 #include <ice/mem_allocator_stack.hxx>
-#include <ice/container/hashmap.hxx>
-#include <ice/string/heap_string.hxx>
+#include <ice/hashmap.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/native_file.hxx>
 #include <ice/uri.hxx>
 
@@ -25,7 +25,7 @@ namespace ice
             , _resources{ _allocator }
         {
             ice::native_file::path_from_string(_base_path, path);
-            ice::path::normalize(_base_path);
+            _base_path.normalize();
         }
 
         ~ResourceProvider_DynLibs() noexcept override
@@ -45,8 +45,7 @@ namespace ice
             ice::URI const& uri
         ) const noexcept -> ice::Resource* override
         {
-            ice::u64 const resource_hash = ice::hash(uri.path());
-            return ice::hashmap::get(_resources, resource_hash, nullptr);
+            return _resources.get(uri.path(), nullptr);
         }
 
         void on_library_file(
@@ -59,8 +58,17 @@ namespace ice
                 file_path
             );
 
+            ICE_LOG_IF(
+                resource == nullptr, LogSeverity::Warning, LogTag::Module,
+                "Failed to open module file!"
+            );
+            if (resource == nullptr)
+            {
+                return;
+            }
+
             ice::u64 const resource_hash = ice::hash(resource->uri().path());
-            if (ice::hashmap::has(_resources, resource_hash))
+            if (_resources.has(resource_hash))
             {
                 ICE_LOG(
                     LogSeverity::Warning, LogTag::Core,
@@ -72,7 +80,7 @@ namespace ice
             }
             else
             {
-                ice::hashmap::set(_resources, resource_hash, resource);
+                _resources.set(resource_hash, resource);
             }
         }
 
@@ -92,14 +100,14 @@ namespace ice
             ResourceProvider_DynLibs* const provider = reinterpret_cast<ResourceProvider_DynLibs*>(userdata);
             if constexpr (ice::build::is_windows)
             {
-                if (ice::path::extension(file_path) == ISP_PATH_LITERAL(".dll"))
+                if (file_path.extension() == ISP_PATH_LITERAL(".dll"))
                 {
                     provider->on_library_file(file_path);
                 }
             }
             if constexpr (ice::build::is_unix)
             {
-                if (ice::path::extension(file_path) == ISP_PATH_LITERAL(".so"))
+                if (file_path.extension() == ISP_PATH_LITERAL(".so"))
                 {
                     provider->on_library_file(file_path);
                 }
@@ -117,13 +125,13 @@ namespace ice
             ice::Array<ice::Resource*>& out_changes
         ) noexcept -> ice::ResourceProviderResult override
         {
-            if (ice::hashmap::empty(_resources))
+            if (_resources.is_empty())
             {
                 initial_traverse();
 
                 for (auto* resource : _resources)
                 {
-                    ice::array::push_back(out_changes, resource);
+                    out_changes.push_back(resource);
                 }
             }
             return ResourceProviderResult::Success;

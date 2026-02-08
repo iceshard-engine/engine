@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/color.hxx>
@@ -70,6 +70,7 @@ namespace ice::devui::styles
         ice::Color<ice::f32>{ 0.7451f, 0.9020f, 1.0000f, 1.f },
     };
 
+#if 0 // Not used right now, plans to replace it with okLCH based color pallete.
     static constexpr std::tuple<ImGuiCol, Color> ColorMappings[]{
         { ImGuiCol_Text, Color_TextPrimary },
         { ImGuiCol_WindowBg, Color_Surface },
@@ -183,7 +184,7 @@ namespace ice::devui::styles
         { ImGuiCol_NavWindowingDimBg,   ice::Color<ice::u8>{ 10,15,20,200 } },
         { ImGuiCol_ModalWindowDimBg,    ice::Color<ice::u8>{ 10,15,20,220 } },
     };
-
+#endif
 
     static constexpr std::tuple<ImGuiCol, ice::Color<ice::u8>> ColorMappingsU8_Light[]{
         { ImGuiCol_Text,                ice::Color<ice::u8>{ 20,30,40,255 } },

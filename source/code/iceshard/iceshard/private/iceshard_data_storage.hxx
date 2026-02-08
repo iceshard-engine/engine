@@ -1,10 +1,10 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/engine_types.hxx>
 #include <ice/engine_data_storage.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 
 namespace ice
 {
@@ -33,30 +33,30 @@ namespace ice
 
         bool has(ice::StringID_Arg name) const noexcept override
         {
-            return ice::hashmap::has(_values, ice::hash(name));
+            return _values.has(name);
         }
 
         bool set(ice::StringID_Arg name, void* value) noexcept override
         {
             ice::u64 const hash = ice::hash(name);
-            bool const missing = ice::hashmap::has(_values, hash) == false;
+            bool const missing = _values.missing(hash);
             ICE_ASSERT_CORE(missing);
             //if (missing)
             {
-                ice::hashmap::set(_values, ice::hash(name), value);
+                _values.set(ice::hash(name), value);
             }
             return missing;
         }
 
         bool get(ice::StringID_Arg name, void*& value) noexcept override
         {
-            value = ice::hashmap::get(_values, ice::hash(name), nullptr);
+            value = _values.get(name, nullptr);
             return value != nullptr;
         }
 
         bool get(ice::StringID_Arg name, void const*& value) const noexcept override
         {
-            value = ice::hashmap::get(_values, ice::hash(name), nullptr);
+            value = _values.get(name, nullptr);
             return value != nullptr;
         }
 
@@ -74,7 +74,7 @@ namespace ice
         auto do_allocate(ice::AllocRequest request) noexcept -> ice::AllocResult override
         {
             ice::AllocResult const r = _backing.allocate(request);
-            ice::array::push_back(_allocated, r.memory);
+            _allocated.push_back(r.memory);
             return r;
         }
 

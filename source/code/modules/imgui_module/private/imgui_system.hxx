@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -6,7 +6,7 @@
 #include <ice/devui_widget.hxx>
 #include <ice/devui_frame.hxx>
 #include <ice/mem_allocator_proxy.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <ice/engine_frame.hxx>
 
 #include "widgets/imgui_devui_manager.hxx"

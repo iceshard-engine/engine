@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -42,7 +42,7 @@ namespace ice::ecs
 
     inline QueryStorage::~QueryStorage() noexcept
     {
-        ice::hashmap::clear(_queries);
+        _queries.clear();
     }
 
     inline auto QueryStorage::query_provider() const noexcept -> ice::ecs::QueryProvider const&

@@ -1,9 +1,8 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/task_promise.hxx>
-#include <ice/container_concepts.hxx>
 
 namespace ice
 {

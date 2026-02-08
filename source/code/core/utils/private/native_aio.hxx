@@ -1,11 +1,11 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/native_aio.hxx>
 #include <ice/native_file.hxx>
 #include <ice/mem_allocator.hxx>
-#include <ice/container/linked_queue.hxx>
+#include <ice/atomic_linked_queue.hxx>
 #include <ice/os.hxx>
 
 namespace ice::native_aio
@@ -21,7 +21,7 @@ namespace ice::native_aio
 #elif ISP_ANDROID || ISP_WEBAPP || ISP_LINUX
     struct AIORequestInternal
     {
-        AIORequestInternal* next;
+        AIORequestInternal* _next;
         ice::i32 native_file_handle;
         ice::u32 request_type; // 1 == read, 2 == write
         union
@@ -45,7 +45,7 @@ namespace ice::native_aio
 #else
     struct AIORequestInternal
     {
-        AIORequestInternal* next;
+        AIORequestInternal* _next;
         HANDLE native_file_handle;
         void* data_location;
         ice::u32 data_offset;

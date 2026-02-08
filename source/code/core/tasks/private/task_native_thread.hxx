@@ -1,10 +1,10 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/task_thread.hxx>
 #include <ice/task_awaitable.hxx>
-#include <ice/container/linked_queue.hxx>
+#include <ice/atomic_linked_queue.hxx>
 
 namespace ice
 {
@@ -75,7 +75,7 @@ namespace ice
         bool is_busy() const noexcept override;
         bool is_running() const noexcept override;
 
-        auto estimated_task_count() const noexcept -> ice::ucount override;
+        auto estimated_task_count() const noexcept -> ice::u32 override;
         auto queue() noexcept -> ice::TaskQueue & override;
 
     private:

@@ -1,9 +1,9 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/devui_types.hxx>
-#include <ice/string/string.hxx>
+#include <ice/string.hxx>
 
 namespace ice
 {

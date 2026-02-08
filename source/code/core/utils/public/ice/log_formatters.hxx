@@ -1,33 +1,15 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <fmt/format.h>
+#include <ice/mem.hxx>
 #include <ice/stringid.hxx>
 #include <ice/mem_types.hxx>
-#include <ice/string_types.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/clock_types.hxx>
 #include <ice/expected.hxx>
+#include <fmt/format.h>
 
-template<typename CharType>
-struct fmt::formatter<ice::BasicString<CharType>> : public fmt::formatter<std::basic_string_view<CharType>>
-{
-    template<typename FormatContext>
-    constexpr auto format(ice::BasicString<CharType> value, FormatContext& ctx) const noexcept
-    {
-        return fmt::formatter<std::basic_string_view<CharType>>::format({ value._data, value._size }, ctx);
-    }
-};
-
-template<typename CharType>
-struct fmt::formatter<ice::HeapString<CharType>> : public fmt::formatter<ice::BasicString<CharType>>
-{
-    template<typename FormatContext>
-    constexpr auto format(ice::HeapString<CharType> const& value, FormatContext& ctx) const noexcept
-    {
-        return fmt::formatter<ice::BasicString<CharType>>::format({ value._data, value._size }, ctx);
-    }
-};
 
 template<>
 struct fmt::formatter<ice::StringID_Hash>
@@ -79,6 +61,22 @@ struct fmt::formatter<ice::BaseStringID<DebugImpl>>
                 return fmt::format_to(ctx.out(), "[sid:{:16x}]'{}'", ice::stringid_hash(value).value, ice::stringid_hint(value));
             }
         }
+    }
+};
+
+template<>
+struct fmt::formatter<ice::ncount>
+{
+    template<typename ParseContext>
+    constexpr auto parse(ParseContext& ctx)
+    {
+        return ctx.begin();
+    }
+
+    template<typename FormatContext>
+    constexpr auto format(ice::ncount value, FormatContext& ctx) const noexcept
+    {
+        return fmt::format_to(ctx.out(), "{}", value.native());
     }
 };
 

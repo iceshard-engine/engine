@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_world_context.hxx"
@@ -8,13 +8,14 @@ namespace ice
 {
 
     IceshardWorldContext::IceshardWorldContext(ice::Allocator& alloc, ice::StringID_Arg worldid) noexcept
-        : _allocator{ alloc, ice::stringid_hint(worldid) }
+        : _world_name{ alloc, ice::stringid_hint(worldid) }
+        , _allocator{ alloc, ice::String{ _world_name } }
         , _always_reached_checkpoint{ true }
         , _checkpoints{ alloc }
         , _frame_handlers{
-            ice::HashMap<ice::IceshardEventHandler>{ alloc },
-            ice::HashMap<ice::IceshardEventHandler>{ alloc },
-            ice::HashMap<ice::IceshardEventHandler>{ alloc }
+            ice::MultiHashMap<ice::IceshardEventHandler>{ alloc },
+            ice::MultiHashMap<ice::IceshardEventHandler>{ alloc },
+            ice::MultiHashMap<ice::IceshardEventHandler>{ alloc }
         }
         , _runner_handlers{ alloc }
     {

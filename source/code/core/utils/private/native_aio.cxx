@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "native_aio.hxx"
@@ -297,13 +297,13 @@ namespace ice::native_aio
     {
         ICE_ASSERT_CORE(memory.location != nullptr);
         AIORequestInternal& internal = reinterpret_cast<AIORequestInternal&>(request);
-        internal.next = nullptr;
+        internal._next = nullptr;
         internal.native_file_handle = file.native();
         internal.request_type = 1; // 1 = read, 2 = write
         internal.data_destination = memory.location;
         internal.data_offset = static_cast<ice::u32>(requested_read_offset.value);
         internal.data_size = static_cast<ice::u32>(requested_read_size.value);
-        ice::linked_queue::push(request._port->_requests, ice::addressof(internal));
+        request._port->_requests.push_back(ice::addressof(internal));
 
         // Increment the semaphore
         sem_post(&request._port->_semaphore);
@@ -331,13 +331,13 @@ namespace ice::native_aio
         }
 
         AIORequestInternal& internal = reinterpret_cast<AIORequestInternal&>(request);
-        internal.next = nullptr;
+        internal._next = nullptr;
         internal.native_file_handle = file.native();
         internal.request_type = 2; // 1 = read, 2 = write
         internal.data_location = data.location;
         internal.data_size = ice::u32(data.size.value);
         internal.data_offset = ice::u32(requested_write_offset.value);
-        ice::linked_queue::push(request._port->_requests, ice::addressof(internal));
+        request._port->_requests.push_back(ice::addressof(internal));
 
         // Increment the semaphore
         sem_post(&request._port->_semaphore);
@@ -370,7 +370,7 @@ namespace ice::native_aio
             return false;
         }
 
-        AIORequestInternal* internal = ice::linked_queue::pop(port->_requests);
+        AIORequestInternal* internal = port->_requests.take_front();
         if (internal)
         {
             out_request = reinterpret_cast<AIORequest const*>(internal);
@@ -543,11 +543,11 @@ namespace ice::native_aio
     auto aio_process_events(
         ice::native_aio::AIOPort port,
         ice::native_aio::AIOProcessLimits limits
-    ) noexcept -> ice::ucount
+    ) noexcept -> ice::u32
     {
         ice::usize bytes;
 
-        ice::ucount num_completed = 0;
+        ice::u32 num_completed = 0;
         while(limits.events_max > num_completed)
         {
             ice::native_aio::AIORequest const* request = nullptr;

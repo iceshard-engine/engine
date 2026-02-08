@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/task_utils.hxx>
@@ -81,7 +81,7 @@ namespace ice
         {
             ice::execute_detached_task(ice::move(task));
         }
-        return ice::span::any(tasks);
+        return tasks.not_empty();
     }
 
     bool schedule_task(ice::Task<> task, ice::TaskScheduler& scheduler) noexcept
@@ -100,7 +100,7 @@ namespace ice
         {
             ice::schedule_detached_task(ice::move(task), scheduler);
         }
-        return ice::span::any(tasks);
+        return tasks.not_empty();
     }
 
     bool schedule_queue(ice::TaskQueue& queue, ice::TaskScheduler& scheduler) noexcept
@@ -108,13 +108,13 @@ namespace ice
         ice::TaskQueue& scheduler_queue = scheduler.schedule()._queue;
 
         // Move the queue task to the given scheduler.
-        return scheduler_queue.push_back(queue.consume());
+        return scheduler_queue.push_back(queue.take_all());
     }
 
     bool schedule_queue(ice::TaskQueue& queue, void* result, ice::TaskScheduler& scheduler) noexcept
     {
         // We set the result value for each awaitable in the queue and nothing more.
-        ice::LinkedQueueRange<ice::TaskAwaitableBase> tasks_awaitables = queue.consume();
+        ice::AtomicLinkedQueueRange<ice::TaskAwaitableBase> tasks_awaitables = queue.take_all();
         for (ice::TaskAwaitableBase* task_awaitable : tasks_awaitables)
         {
             ICE_ASSERT_CORE(task_awaitable->result.ptr == nullptr);
@@ -206,7 +206,7 @@ namespace ice
 
         // Get all awaiting tasks
         bool result = false;
-        for (ice::TaskAwaitableBase* task_awaitable : queue.consume())
+        for (ice::TaskAwaitableBase* task_awaitable : queue.take_all())
         {
             ICE_ASSERT(task_awaitable->_params.modifier == TaskAwaitableModifier::CustomValue, "Unexpected modifier type!");
 
@@ -222,7 +222,7 @@ namespace ice
                 last_remaining = task_awaitable;
 
                 // Pushing awaitiable onto remaining task does not change the 'next' pointer so we don't invalidate this range.
-                ice::linked_queue::push(remaining_tasks, task_awaitable);
+                remaining_tasks.push_back(task_awaitable);
             }
         }
 
@@ -230,10 +230,10 @@ namespace ice
         // We are safe to do so here because another task loading a "next" asset representation will wait for all awaiting tasks to be pushed.
         if (last_remaining != nullptr)
         {
-            last_remaining->next = nullptr;
+            last_remaining->_next = nullptr;
 
             // We don't need to find any 'next' pointer here fortunately
-            queue.push_back(ice::linked_queue::consume(remaining_tasks));
+            queue.push_back(remaining_tasks.take_all());
         }
 
         co_await awaitable;

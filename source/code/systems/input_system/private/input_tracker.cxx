@@ -1,8 +1,8 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
+#include <ice/hashmap.hxx>
 #include <ice/input/input_tracker.hxx>
-#include <ice/container/hashmap.hxx>
 #include <ice/assert_core.hxx>
 #include "input_devices.hxx"
 
@@ -65,11 +65,8 @@ namespace ice::input
         ice::input::DeviceFactory* device_factory
     ) noexcept
     {
-        // #todo handle duplicate type case
-        if (ice::hashmap::has(_factories, ice::hash(type)) == false)
-        {
-            ice::hashmap::set(_factories, ice::hash(type), device_factory);
-        }
+        ICE_ASSERT_CORE(_factories.missing(type));
+        _factories.set_if_missing(type, device_factory);
     }
 
     void SimpleInputTracker::process_device_events(
@@ -91,49 +88,43 @@ namespace ice::input
 
             if (event.message == DeviceMessage::DeviceConnected)
             {
-                ICE_ASSERT_CORE(ice::hashmap::get(_devices, device_hash, nullptr) == nullptr);
+                ICE_ASSERT_CORE(_devices.get(device_hash, nullptr) == nullptr);
 
                 Device const device = ice::input::make_device(event.device);
-                DeviceFactory* const factory_func = ice::hashmap::get(
-                    _factories,
-                    ice::hash(device.type),
-                    nullptr
-                );
+                DeviceFactory* const factory_func = _factories.get(device.type, nullptr);
 
                 if (factory_func != nullptr)
                 {
                     InputDevice* const device_state = factory_func(_allocator, event.device);
                     ICE_ASSERT_CORE(device_state != nullptr);
 
-                    ice::hashmap::set(_devices, device_hash, device_state);
+                    _devices.set(device_hash, device_state);
                     if (device_state->max_count() > 1)
                     {
-                        ice::hashmap::set(_devices, ice::hash(device.type), device_state);
+                        _devices.set(ice::hash(device.type), device_state);
                     }
                     // #todo log device connected (shard?)
                 }
             }
             else if (event.message == DeviceMessage::DeviceDisconnected)
             {
-                ICE_ASSERT_CORE(ice::hashmap::get(_devices, device_hash, nullptr) != nullptr);
+                ICE_ASSERT_CORE(_devices.get(device_hash, nullptr) != nullptr);
 
-                _allocator.destroy(
-                    ice::hashmap::get(_devices, device_hash, nullptr)
-                );
+                _allocator.destroy(_devices.get(device_hash, nullptr));
 
-                ice::hashmap::remove(_devices, device_hash);
+                _devices.remove(device_hash);
                 // #todo log device disconnected (shard?)
             }
-            else if (ice::hashmap::has(_devices, device_hash))
+            else if (_devices.has(device_hash))
             {
-                InputDevice* const device = ice::hashmap::get(_devices, device_hash, nullptr);
+                InputDevice* const device = _devices.get(device_hash, nullptr);
                 device->on_event(event);
             }
             else
             {
                 // Support multiple device handles in a single InputDevice
                 Device const device_info = ice::input::make_device(event.device);
-                InputDevice* const* const device_ptr = ice::hashmap::try_get(_devices, ice::hash(device_info.type));
+                InputDevice* const* const device_ptr = _devices.try_get(ice::hash(device_info.type));
                 if (device_ptr != nullptr)
                 {
                     InputDevice* const device = *device_ptr;
@@ -155,7 +146,7 @@ namespace ice::input
     {
         for (InputDevice* device : _devices)
         {
-            ice::array::push_back(devices_out, device->handle());
+            devices_out.push_back(device->handle());
         }
     }
 

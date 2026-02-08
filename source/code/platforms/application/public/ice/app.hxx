@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -17,8 +17,8 @@ namespace ice::app
 
     struct Factories
     {
-        template<typename Type, typename... Args>
-        using FactoryFn = auto(*)(ice::Allocator&, Args...) noexcept -> ice::UniquePtr<Type>;
+        template<typename Type>
+        using FactoryFn = auto(*)(ice::Allocator&) noexcept -> ice::UniquePtr<Type>;
 
         FactoryFn<ice::app::Config> factory_config;
         FactoryFn<ice::app::State> factory_state;

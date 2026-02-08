@@ -1,11 +1,11 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_world.hxx"
 #include "iceshard_trait_context.hxx"
 
 #include <ice/world/world_trait.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 #include <ice/engine_runner.hxx>
 #include <ice/sort.hxx>
 
@@ -46,14 +46,14 @@ namespace ice
 
     void IceshardTraitContext::send(ice::detail::TraitEvent event) noexcept
     {
-        ice::ucount idx = 0;
+        ice::u32 idx = 0;
         if (event.mode == TraitSendMode::Replace && ice::search(ice::Span{ _events }, event, detail::is_same_event, idx))
         {
             _events[idx] = event;
         }
         else
         {
-            ice::array::push_back(_events, event);
+            _events.push_back(event);
         }
     }
 
@@ -71,12 +71,12 @@ namespace ice
         // Copy all current events into the _expired events list.
         //   We use copy+clean so we don't allocate one of the arrays every time.
         _events_expired = _events;
-        ice::array::clear(_events);
+        _events.clear();
 
         // Push shards into the out container. (ice::detail::TraitEvent decays into ice::Shard)
         for (ice::Shard shard : _events_expired)
         {
-            ice::shards::push_back(out_shards, shard);
+            out_shards.push_back(shard);
         }
     }
 
@@ -87,7 +87,7 @@ namespace ice
 
     auto IceshardTraitContext::checkpoint(ice::StringID id) noexcept -> ice::TaskCheckpointGate
     {
-        ice::TaskCheckpoint* const checkpoint = ice::hashmap::get(_world_context._checkpoints, ice::hash(id), nullptr);
+        ice::TaskCheckpoint* const checkpoint = _world_context._checkpoints.get(id, nullptr);
         if (checkpoint != nullptr)
         {
             return checkpoint->checkpoint_gate();
@@ -97,21 +97,21 @@ namespace ice
 
     bool IceshardTraitContext::register_checkpoint(ice::StringID id, ice::TaskCheckpoint& checkpoint) noexcept
     {
-        if (ice::hashmap::has(_world_context._checkpoints, ice::hash(id)))
+        if (_world_context._checkpoints.has(id))
         {
             return false;
         }
 
-        ice::hashmap::set(_world_context._checkpoints, ice::hash(id), ice::addressof(checkpoint));
+        _world_context._checkpoints.set(id, ice::addressof(checkpoint));
         return true;
     }
 
     void IceshardTraitContext::unregister_checkpoint(ice::StringID id, ice::TaskCheckpoint& checkpoint) noexcept
     {
-        ice::TaskCheckpoint* const checkpoint_ptr = ice::hashmap::get(_world_context._checkpoints, ice::hash(id), nullptr);
+        ice::TaskCheckpoint* const checkpoint_ptr = _world_context._checkpoints.get(id, nullptr);
         if (checkpoint_ptr == ice::addressof(checkpoint))
         {
-            ice::hashmap::remove(_world_context._checkpoints, ice::hash(id));
+            _world_context._checkpoints.remove(id);
         }
     }
 
@@ -124,8 +124,7 @@ namespace ice
         ICE_ASSERT_CORE(binding.task_type > TraitTaskType::Invalid);
         ICE_ASSERT_CORE(binding.task_type <= TraitTaskType::Render);
 
-        ice::multi_hashmap::insert(
-            _world_context._frame_handlers[ice::u32(binding.task_type) - 1],
+        _world_context._frame_handlers[ice::u32(binding.task_type) - 1].insert(
             ice::hash(trigger_event),
             ice::IceshardEventHandler{
                 .trait_idx = _trait_index,

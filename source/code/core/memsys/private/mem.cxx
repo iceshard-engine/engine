@@ -1,13 +1,10 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/mem.hxx>
 #include <ice/mem_data.hxx>
 #include <ice/mem_memory.hxx>
 #include <ice/profiler.hxx>
-#include <assert.h>
-#include <stdlib.h>
-#include <malloc.h>
 
 namespace ice
 {
@@ -92,6 +89,11 @@ namespace ice
     auto memcpy(void* dest, void const* source, ice::usize size) noexcept -> void*
     {
         return std::memcpy(dest, source, size.value);
+    }
+
+    auto memcpy(void* dest, ice::Data source) noexcept -> void*
+    {
+        return std::memcpy(dest, source.location, source.size.value);
     }
 
     auto memcpy(ice::Memory memory, ice::Data data) noexcept -> ice::Memory

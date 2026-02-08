@@ -1,8 +1,8 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <ice/log_tag.hxx>
 #include <ice/log.hxx>
 
@@ -86,8 +86,8 @@ namespace ice::render::vk
             fn(args..., &obj_count, nullptr);
             if (obj_count > 0)
             {
-                ice::array::resize(objects_out, obj_count);
-                fn(args..., &obj_count, ice::array::begin(objects_out));
+                objects_out.resize(obj_count);
+                fn(args..., &obj_count, objects_out.begin());
             }
             return true;
         }
@@ -97,9 +97,9 @@ namespace ice::render::vk
             VkResult result = fn(args..., &obj_count, nullptr);
             if (result == VkResult::VK_SUCCESS && obj_count > 0)
             {
-                ice::array::resize(objects_out, obj_count);
+                objects_out.resize(obj_count);
 
-                result = fn(args..., &obj_count, ice::array::begin(objects_out));
+                result = fn(args..., &obj_count, objects_out.begin());
             }
             return result == VK_SUCCESS;
         }

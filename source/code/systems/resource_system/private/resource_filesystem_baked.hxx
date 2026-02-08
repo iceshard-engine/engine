@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 
@@ -7,8 +7,7 @@
 #include <ice/resource_flags.hxx>
 #include <ice/resource_format.hxx>
 #include <ice/mem_unique_ptr.hxx>
-#include <ice/string/heap_string.hxx>
-#include <ice/container_types.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/uri.hxx>
 
 #include "resource_filesystem.hxx"
@@ -22,7 +21,7 @@ namespace ice
         BakedFileResource(
             ice::Allocator& alloc,
             ice::ResourceFormatHeader const& header,
-            ice::HeapString<> origin,
+            ice::HeapPath origin,
             ice::HeapString<> name
         ) noexcept;
 
@@ -32,7 +31,7 @@ namespace ice
         auto flags() const noexcept -> ice::ResourceFlags override;
 
         auto name() const noexcept -> ice::String override;
-        auto origin() const noexcept -> ice::String override;
+        auto origin() const noexcept -> ice::Path override;
 
         auto size() const noexcept -> ice::usize override;
 
@@ -54,7 +53,7 @@ namespace ice
     private:
         ice::Allocator& _allocator;
         ice::ResourceFormatHeader const _header;
-        ice::HeapString<> _origin;
+        ice::HeapPath _origin;
         ice::HeapString<> _name;
         ice::URI _uri;
     };

@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 .Configuration_Debug =
@@ -95,6 +95,7 @@
         '-Werror'
         // We use [[deprecated]] to keep track of some old API usage without the need to fix them asap.
         '-Wno-error=deprecated-declarations'
+        '-Wno-unused-const-variable'
         '-Wno-switch'
         '-std=c++23'
         '-stdlib=libc++'
@@ -141,7 +142,7 @@
         '-lm'
         '-ldl'
         '-lpthread'
-        '-lc++'
+        '-stdlib=libc++'
     }
 ]
 
@@ -224,10 +225,9 @@
         '-sPTHREAD_POOL_SIZE=8'
         '-sPTHREADS_PROFILING=0'
         '-sSHARED_MEMORY=1'
-        '-sSTACK_SIZE=65536' // 64KiB
-        // '-sSTACK_SIZE=262144' // 64KiB
+        '-sSTACK_SIZE=4194304' // 4MiB
         '-sINITIAL_MEMORY=268435456' // 256MiB
-        // '-sINITIAL_MEMORY=1073741824' // 1GiB
+        //'-sINITIAL_MEMORY=1073741824' // 1GiB
         '-sMALLOC=mimalloc'
         '-sABORTING_MALLOC=1'
         '-sUSE_GLFW=3'

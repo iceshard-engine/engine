@@ -1,8 +1,8 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_world_devui.hxx"
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 #include <ice/world/world_trait.hxx>
 #include <ice/devui_imgui.hxx>
 
@@ -83,10 +83,10 @@ namespace ice
 
             auto make_handler_list = [this](ice::String handler_type, auto const& hashmap) noexcept
                 {
-                    ImGui::TextT("{} handlers (count: {})", handler_type, ice::hashmap::count(hashmap));
-                    if (ice::hashmap::any(hashmap))
+                    ImGui::TextT("{} handlers (count: {})", handler_type, hashmap.size());
+                    if (hashmap.not_empty())
                     {
-                        detail::devui_handlers_table(ice::hashmap::values(hashmap), _world._traits);
+                        detail::devui_handlers_table(hashmap.values(), _world._traits);
                     }
                     else
                     {

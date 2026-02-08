@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -38,7 +38,7 @@ namespace ice
 } // namespace ice
 
 template<>
-constexpr inline ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::ShaderTargetPlatform> = ice::shard_payloadid("ice::ShaderPlatformTarget");
+constexpr inline ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::ShaderTargetPlatform> = ice::shard_payloadid("ice::ShaderTargetPlatform");
 
 template<>
 constexpr inline ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::ShaderStage> = ice::shard_payloadid("ice::ShaderStage");

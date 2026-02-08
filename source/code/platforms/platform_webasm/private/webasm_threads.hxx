@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -22,7 +22,7 @@ namespace ice::platform::webasm
         auto graphics() noexcept -> ice::TaskScheduler& override { return _scheduler_gfx; }
 
         auto threadpool() noexcept -> ice::TaskScheduler& override { return _scheduler_tasks; }
-        auto threadpool_size() const noexcept -> ice::u32 override { return _threads->managed_thread_count(); }
+        auto threadpool_size() const noexcept -> ice::ncount override { return _threads->managed_thread_count(); }
         auto threadpool_object() noexcept -> ice::TaskThreadPool* override { return _threads.get(); }
 
         ice::TaskQueue queue_main;

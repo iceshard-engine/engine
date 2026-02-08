@@ -1,10 +1,10 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/params.hxx>
-#include <ice/container/array.hxx>
-#include <ice/string/string.hxx>
-#include <ice/string/heap_string.hxx>
+#include <ice/array.hxx>
+#include <ice/string.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/string_utils.hxx>
 #include <ice/mem_allocator_stack.hxx>
 #include <ice/native_file.hxx>
@@ -20,14 +20,14 @@ namespace ice
 
     auto to_std(ice::String str) noexcept
     {
-        return std::string{ ice::string::begin(str), ice::string::end(str) };
+        return std::string{ str.begin(), str.end() };
     }
 
     auto to_std_or(ice::String str, std::string_view fallback) noexcept
     {
-        if (ice::string::any(str))
+        if (str.not_empty())
         {
-            return std::string{ ice::string::begin(str), ice::string::end(str) };
+            return std::string{ str.begin(), str.end() };
         }
         else
         {
@@ -83,7 +83,7 @@ namespace ice
     ) noexcept -> ice::Params
     {
         ice::HeapString<> description_with_version{ alloc, description };
-        ice::string::push_format(description_with_version, " (v{})", version);
+        description_with_version.push_format(" (v{})", version);
         return ice::make_unique<ice::ParamsInternal>(
             delete_params,
             alloc.create<ParamsInternal>(alloc, name, description_with_version)
@@ -179,15 +179,15 @@ namespace ice
         opt->required(ice::has_any(definition.flags, PF::IsRequired));
         opt->allow_extra_args(ice::has_all(definition.flags, PF::AllowExtraArgs)); // Arrays have one additional check
 
-        if (ice::string::any(definition.description))
+        if (definition.description.not_empty())
         {
             opt->description(to_std(definition.description));
         }
-        if (ice::string::any(definition.group))
+        if (definition.group.not_empty())
         {
             opt->group(to_std(definition.group));
         }
-        if (ice::string::any(definition.type_name))
+        if (definition.type_name.not_empty())
         {
             opt->type_name(to_std(definition.type_name));
         }
@@ -221,7 +221,7 @@ namespace ice
                 opt->expected(definition.min, definition.max);
             }
 
-            if (ice::string::empty(definition.type_name))
+            if (definition.type_name.is_empty())
             {
                 opt->type_name("VALUE");
             }
@@ -299,9 +299,7 @@ namespace ice
     {
         auto fn_callback = [&out_value](CLI::results_t const& results) noexcept
         {
-            std::string const& arg = results.front();
-            out_value._data = arg.data();
-            out_value._size = static_cast<ice::ucount>(arg.size());
+            out_value = ice::String{ results.front() };
             return true;
         };
         params_setup(app.add_option(to_std(definition.name), ice::move(fn_callback)), definition);
@@ -319,9 +317,44 @@ namespace ice
         auto fn_callback = [&out_value](CLI::results_t const& results) noexcept
         {
             std::string const& arg = results.front();
-            ice::string::push_back(out_value, ice::String{ std::string_view{ arg } });
+            out_value.push_back(ice::String{ std::string_view{ arg } });
             return true;
         };
+        params_setup(app.add_option(to_std(definition.name), ice::move(fn_callback)), definition);
+        return true;
+    }
+
+    template<>
+    bool params_define_internal<ice::Path>(
+        CLI::App& app,
+        ice::Allocator&,
+        ice::ParamDefinition const& definition,
+        ice::Path& out_value
+    ) noexcept
+    {
+        auto fn_callback = [&out_value](CLI::results_t const& results) noexcept
+            {
+                out_value = ice::String{ results.front() };
+                return true;
+            };
+        params_setup(app.add_option(to_std(definition.name), ice::move(fn_callback)), definition);
+        return true;
+    }
+
+    template<>
+    bool params_define_internal<ice::HeapPath>(
+        CLI::App& app,
+        ice::Allocator&,
+        ice::ParamDefinition const& definition,
+        ice::HeapPath& out_value
+    ) noexcept
+    {
+        auto fn_callback = [&out_value](CLI::results_t const& results) noexcept
+            {
+                std::string const& arg = results.front();
+                out_value.push_back(ice::String{ std::string_view{ arg } });
+                return true;
+            };
         params_setup(app.add_option(to_std(definition.name), ice::move(fn_callback)), definition);
         return true;
     }
@@ -338,7 +371,7 @@ namespace ice
         {
             for (std::string const& result : results)
             {
-                ice::array::push_back(out_values, { result.data(), static_cast<ice::ucount>(result.size()) });
+                out_values.push_back({ result.data(), static_cast<ice::u32>(result.size()) });
             }
             return true;
         };
@@ -358,7 +391,7 @@ namespace ice
         {
             for (std::string const& result : results)
             {
-                ice::array::push_back(out_values, { alloc, ice::String{ std::string_view{ result } } });
+                out_values.push_back({ alloc, ice::String{ std::string_view{ result } } });
             }
             return true;
         };
@@ -380,12 +413,12 @@ namespace ice
             &alloc = params->_allocator
         ](CLI::results_t const& results) noexcept
         {
-            ice::ucount const result_count = (ice::ucount) std::min<ice::usize::base_type>(
+            ice::u32 const result_count = (ice::u32) std::min<ice::usize::base_type>(
                     results.size(), std::max(typesize.y, 0)
             );
             ice::StackAllocator<ice::size_of<ice::String> * 8> stack_alloc;
             ice::Array<ice::String> ice_results{ result_count <= 8 ? stack_alloc : alloc };
-            ice::array::reserve(ice_results, result_count);
+            ice_results.reserve(result_count);
 
             auto it = results.begin();
             auto const end = results.end();
@@ -394,14 +427,14 @@ namespace ice
             while (it != end && valid)
             {
                 std::string_view const result{ *it };
-                if (ice::count(ice_results) == result_count || result.empty())
+                if (ice_results.size() == result_count || result.empty())
                 {
                     valid &= ice_callback(ice_userdata, ice_results);
-                    ice::array::clear(ice_results);
+                    ice_results.clear();
                 }
                 else if (result.empty() == false)
                 {
-                    ice::array::push_back(ice_results, result);
+                    ice_results.push_back(result);
                 }
                 it += 1;
             }
@@ -441,6 +474,8 @@ namespace ice
     IMPL_PARAMS_DEFINE(u64)
     IMPL_PARAMS_DEFINE(ice::String)
     IMPL_PARAMS_DEFINE(ice::HeapString<>)
+    IMPL_PARAMS_DEFINE(ice::Path)
+    IMPL_PARAMS_DEFINE(ice::HeapPath)
     IMPL_PARAMS_DEFINE(ice::Array<ice::String>)
     IMPL_PARAMS_DEFINE(ice::Array<ice::HeapString<>>)
 

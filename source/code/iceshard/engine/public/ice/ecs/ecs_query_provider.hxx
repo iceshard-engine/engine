@@ -1,8 +1,8 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <ice/ecs/ecs_data_block.hxx>
 #include <ice/ecs/ecs_query_definition.hxx>
 #include <ice/ecs/ecs_query_object.hxx>
@@ -37,7 +37,7 @@ namespace ice::ecs
         virtual auto query_data_slots(
             ice::Span<ice::ecs::Entity const> requested,
             ice::Span<ice::ecs::EntityDataSlot> out_data_slots
-        ) const noexcept -> ice::ucount = 0;
+        ) const noexcept -> ice::u32 = 0;
 
         virtual bool query_archetype_block(
             ice::ecs::Archetype archetype,
@@ -79,25 +79,25 @@ namespace ice::ecs
     {
         using Part = ice::ecs::detail::QueryObjectPart<RefIdx, QueryComponents...>;
 
-        ice::u32 const prev_arch_count = ice::count(out_instance_infos);
+        ice::u32 const prev_arch_count = out_instance_infos.size().u32();
 
         this->query_internal(
-            ice::span::from_std_const(Part::Definition::Constant_Requirements),
+            ice::make_span(Part::Definition::Constant_Requirements),
             (RefIdx == 0 ? query_tags : ice::Span<ice::StringID const>{}), // We only want to apply tags on the main part
             out_access_trackers,
             out_instance_infos,
             out_data_blocks
         );
 
-        ice::u32 const new_arch_count = ice::count(out_instance_infos);
+        ice::u32 const new_arch_count = out_instance_infos.size().u32();
         out_archetype_count = new_arch_count - prev_arch_count;
 
-        ice::u32 const prev_arim_count = ice::count(out_argument_idx_map);
-        ice::array::resize(out_argument_idx_map, prev_arim_count + out_archetype_count * Part::ComponentCount);
+        ice::u32 const prev_arim_count = out_argument_idx_map.size().u32();
+        out_argument_idx_map.resize(prev_arim_count + out_archetype_count * Part::ComponentCount);
 
         // Copy values to the array
-        ice::u32* it = ice::array::begin(out_argument_idx_map) + prev_arim_count;
-        for (ice::ecs::detail::ArchetypeInstanceInfo const* instance : ice::array::slice(out_instance_infos, prev_arch_count))
+        ice::u32* it = out_argument_idx_map.begin() + prev_arim_count;
+        for (ice::ecs::detail::ArchetypeInstanceInfo const* instance : out_instance_infos.tailspan(prev_arch_count))
         {
             auto const archetype_argument_idx_map = ice::ecs::detail::make_argument_idx_map<QueryComponents...>(*instance);
             ice::memcpy(it, archetype_argument_idx_map.data(), archetype_argument_idx_map.size() * sizeof(ice::u32));

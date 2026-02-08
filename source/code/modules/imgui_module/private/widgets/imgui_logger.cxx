@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "imgui_logger.hxx"
@@ -9,8 +9,7 @@
 #include <ice/math.hxx>
 #include <ice/mem_allocator_host.hxx>
 #include <ice/sort.hxx>
-#include <ice/string/heap_string.hxx>
-#include <ice/string/static_string.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/string_utils.hxx>
 
 #include <rapidfuzz/distance.hpp>
@@ -66,8 +65,8 @@ namespace ice::devui
         , _entries{ LoggerAlloc }
         , _entries_visible{ LoggerAlloc }
     {
-        ice::array::reserve(_entries, 2000);
-        ice::array::reserve(_entries_visible, 2000);
+        _entries.reserve(2000);
+        _entries_visible.reserve(2000);
     }
 
     ImGuiLogger::~ImGuiLogger() noexcept
@@ -79,8 +78,8 @@ namespace ice::devui
     void ImGuiLogger::add_entry(ice::LogSinkMessage const& message) noexcept
     {
         std::lock_guard lk{ mtx };
-        ice::array::push_back(_entries_visible, ice::array::count(_entries));
-        ice::array::push_back(_entries, { message.severity, message.tag, message.tag_name, {LoggerAlloc,message.message} });
+        _entries_visible.push_back(_entries.size().u32());
+        _entries.push_back({ message.severity, message.tag, message.tag_name, {LoggerAlloc,message.message} });
     }
 
     static inline auto severity_color(ice::LogSeverity sev) noexcept -> ImGuiColorCtx
@@ -211,8 +210,8 @@ namespace ice::devui
 
             ice::f64 const max_match = _entries[_entries_visible[0]].filter_match;
             ice::sort_indices(
-                ice::array::slice(_entries),
-                ice::array::slice(_entries_visible),
+                _entries.tailspan(0),
+                _entries_visible.tailspan(0),
                 [max_match](ImGuiLogEntry const& l, ImGuiLogEntry const& r) noexcept
                 {
                     if (l.filter_match == r.filter_match && r.filter_match >= max_match)

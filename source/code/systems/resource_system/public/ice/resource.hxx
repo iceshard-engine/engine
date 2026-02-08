@@ -1,11 +1,11 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/mem_data.hxx>
 #include <ice/expected.hxx>
 #include <ice/resource_types.hxx>
-#include <ice/string_types.hxx>
+#include <ice/path_utils.hxx>
 #include <ice/task.hxx>
 
 namespace ice
@@ -20,7 +20,7 @@ namespace ice
         virtual auto flags() const noexcept -> ice::ResourceFlags = 0;
 
         virtual auto name() const noexcept -> ice::String = 0;
-        virtual auto origin() const noexcept -> ice::String = 0;
+        virtual auto origin() const noexcept -> ice::Path = 0;
     };
 
     //! \todo Rethink how loose resources and their named parts can be accessed.

@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "resource_writer_filesystem.hxx"
@@ -52,9 +52,9 @@ namespace ice
     auto FileSystemResourceWriter::filter_resource_uris(
         ice::ResourceFilter const& filter,
         ice::Array<ice::URI>& out_uris
-    ) noexcept -> ice::TaskExpected<ice::ucount>
+    ) noexcept -> ice::TaskExpected<ice::u32>
     {
-        ice::ucount collected = 0;
+        ice::u32 collected = 0;
         for (ice::FileSystemResource const* resource : _resources)
         {
             if (filter.allows_resource(resource))
@@ -78,7 +78,7 @@ namespace ice
                     ice::Memory metadata_mem{};
                     if (reinterpret_cast<char const*>(metadata_data.location)[0] == '{')
                     {
-                        metadata = ice::config::from_json(_named_allocator, ice::string::from_data(metadata_data), metadata_mem);
+                        metadata = ice::config::from_json(_named_allocator, ice::string_from_data<char>(metadata_data), metadata_mem);
                     }
                     else
                     {
@@ -94,7 +94,7 @@ namespace ice
                     _named_allocator.deallocate(metadata_mem);
                 }
 
-                ice::array::push_back(out_uris, resource->uri());
+                out_uris.push_back(resource->uri());
                 collected += 1;
             }
         }
@@ -103,16 +103,16 @@ namespace ice
 
     auto FileSystemResourceWriter::collect(
         ice::Array<ice::Resource*>& out_changes
-    ) noexcept -> ice::ucount
+    ) noexcept -> ice::u32
     {
         IPT_ZONE_SCOPED;
 
-        ice::array::reserve(out_changes, ice::array::count(out_changes) +  ice::hashmap::count(_resources));
+        out_changes.reserve(out_changes.size() + _resources.size());
         for (auto* resource : _resources)
         {
-            ice::array::push_back(out_changes, resource);
+            out_changes.push_back(resource);
         }
-        return ice::hashmap::count(_resources);
+        return _resources.size().u32();
     }
 
     auto FileSystemResourceWriter::refresh(
@@ -120,7 +120,7 @@ namespace ice
     ) noexcept -> ice::ResourceProviderResult
     {
         IPT_ZONE_SCOPED;
-        if (ice::hashmap::empty(_resources))
+        if (_resources.is_empty())
         {
             if (_scheduler == nullptr)
             {
@@ -144,30 +144,29 @@ namespace ice
             "Trying to find resource for URI that is not handled by this provider."
         );
 
-        if (ice::string::any(uri.host()) && _virtual_hostname != uri.host())
+        if (uri.host().not_empty() && _virtual_hostname != uri.host())
         {
             return nullptr;
         }
 
-        ice::u32 const origin_size = ice::string::size(uri.path());
+        ice::ncount const origin_size = uri.path().size();
 
-        ice::HeapString<> predicted_path{ (ice::Allocator&) _named_allocator };
-        ice::string::resize(predicted_path, 0);
-        ice::string::reserve(predicted_path, origin_size + ice::string::size(_base_path));
+        ice::HeapPath predicted_path{ (ice::Allocator&) _named_allocator };
+        predicted_path.resize(0);
+        predicted_path.reserve(origin_size + _base_path.size());
         ice::native_file::path_to_string(_base_path, predicted_path);
 
         // Remove one directory if neccessary, because it's may be the common value of the base path and the uri path.
         // Note: This is because if a base path like 'dir/subdir' is provided the uri is created against 'dir/'
         //  While a base path like 'dir/subdir/' will create uris against 'dir/subdir/'
-        if (ice::string::back(_base_path) != '/')
+        if (_base_path.back() != '/')
         {
-            ice::path::join(predicted_path, "..");
+            predicted_path.join("..");
         }
-        ice::path::join(predicted_path, uri.path());
-        ice::path::normalize(predicted_path);
+        predicted_path.join(uri.path());
+        predicted_path.normalize();
 
-        ice::u64 const resource_hash = ice::hash(ice::String{ predicted_path });
-        return ice::hashmap::get(_resources, resource_hash, nullptr);
+        return _resources.get(predicted_path, nullptr);
     }
 
     auto FileSystemResourceWriter::access_loose_resource(
@@ -201,33 +200,19 @@ namespace ice
         ice::Resource const* root_resource
     ) const noexcept -> ice::Resource const*
     {
-        ice::u32 const origin_size = ice::string::size(root_resource->origin());
+        ice::ncount const origin_size = root_resource->origin().size();
 
-        ice::HeapString<> predicted_path{ (ice::Allocator&) _named_allocator };
-        ice::string::reserve(predicted_path, origin_size + ice::string::size(relative_uri.path()));
+        ice::HeapPath predicted_path{ (ice::Allocator&) _named_allocator };
+        predicted_path.reserve(origin_size + relative_uri.path().size());
 
-        predicted_path = ice::string::substr(
-            root_resource->origin(),
-            0,
-            origin_size - ice::string::size(
-                ice::path::filename(root_resource->name())
-            )
+        predicted_path = root_resource->origin().substr(
+            0, origin_size - ice::Path{ root_resource->name() }.filename().size()
         );
 
-        ice::path::join(predicted_path, relative_uri.path());
-        ice::path::normalize(predicted_path);
+        predicted_path.join(relative_uri.path());
+        predicted_path.normalize();
 
-        ice::u64 const resource_hash = ice::hash(ice::String{ predicted_path });
-
-        ice::WritableFileSystemResource const* found_resource = ice::hashmap::get(_resources, resource_hash, nullptr);
-        if (found_resource != nullptr)
-        {
-            return found_resource;
-        }
-        else
-        {
-            return nullptr;
-        }
+        return _resources.get(predicted_path, nullptr);
     }
 
     auto FileSystemResourceWriter::create_resource(
@@ -240,45 +225,45 @@ namespace ice
             co_return existing;
         }
 
-        ice::ucount predicted_path_len = 0;
+        ice::ncount predicted_path_len = 0;
         ice::native_file::HeapFilePath predicted_metapath{ (ice::Allocator&)_named_allocator };
 
         ICE_ASSERT_CORE(flags != ResourceCreationFlags::Append); // TODO
 
         // TODO: move into a utility function
         {
-            ice::u32 const origin_size = ice::string::size(uri.path());
+            ice::ncount const origin_size = uri.path().size();
 
-            ice::string::resize(predicted_metapath, 0);
-            ice::string::reserve(predicted_metapath, origin_size + ice::string::size(_base_path));
-            ice::path::join(predicted_metapath, _base_path);
+            predicted_metapath.resize(0);
+            predicted_metapath.reserve(origin_size + _base_path.size());
+            predicted_metapath.join(_base_path);
 
             // Remove one directory if neccessary, because it's may be the common value of the base path and the uri path.
             // Note: This is because if a base path like 'dir/subdir' is provided the uri is created against 'dir/'
             //  While a base path like 'dir/subdir/' will create uris against 'dir/subdir/'
-            if (ice::string::back(_base_path) != '/')
+            if (_base_path.back() != '/')
             {
-                ice::path::join(predicted_metapath, ISP_PATH_LITERAL(".."));
+                predicted_metapath.join(ISP_PATH_LITERAL(".."));
             }
             ice::native_file::path_join_string(predicted_metapath, uri.path());
-            ice::path::normalize(predicted_metapath);
+            predicted_metapath.normalize();
 
             // Metapath is the actuall file path + .isrm, so we just save the lenght before the appending
             //  to have access to both paths.
-            predicted_path_len = ice::string::size(predicted_metapath);
-            ice::string::push_back(predicted_metapath, ISP_PATH_LITERAL(".isrm"));
+            predicted_path_len = predicted_metapath.size();
+            predicted_metapath.push_back(ISP_PATH_LITERAL(".isrm"));
 
             // Create the final directory
             // #TODO: Research if checking for existance improves performance.
-            bool const success = ice::native_file::create_directory(ice::path::directory(predicted_metapath));
+            bool const success = ice::native_file::create_directory(predicted_metapath.directory());
             ICE_ASSERT_CORE(success);
         }
 
         ice::FileSystemResource* new_resource = this->create_loose_resource(
             _base_path,
-            ice::path::directory(_base_path),
+            _base_path.directory(),
             predicted_metapath,
-            ice::string::substr(predicted_metapath, 0, predicted_path_len)
+            predicted_metapath.substr(0, predicted_path_len)
         );
 
         if (register_resource(new_resource) != S_Ok)
@@ -337,21 +322,14 @@ namespace ice
     {
         ice::WritableFileSystemResource* const resource = static_cast<ice::WritableFileSystemResource*>(fs_resource);
 
-        resource->data_index = ice::array::count(_resources_data);
-        ice::array::push_back(_resources_data, ice::Memory{});
+        resource->data_index = _resources_data.size().u32();
+        _resources_data.push_back(ice::Memory{});
 
-        ice::u64 const hash = ice::hash(resource->origin());
         ICE_ASSERT(
-            ice::hashmap::has(_resources, hash) == false,
+            _resources.missing(resource->origin()),
             "A resource cannot be a explicit resource AND part of another resource."
         );
-
-        ice::hashmap::set(
-            _resources,
-            hash,
-            resource
-        );
-
+        _resources.set(resource->origin(), resource);
         return S_Ok;
     }
 

@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -22,7 +22,7 @@ public:
     auto flags() const noexcept -> ice::ResourceFlags override;
 
     auto name() const noexcept -> ice::String override;
-    auto origin() const noexcept -> ice::String override;
+    auto origin() const noexcept -> ice::Path override;
 
     auto file() const noexcept -> ice::native_file::File const& { return _handle; }
 
@@ -32,7 +32,7 @@ private:
     ice::Allocator& _allocator;
     ice::native_file::File _handle;
     ice::Memory _metadata;
-    ice::String _path;
+    ice::Path _path;
     ice::URI _uri;
 };
 
@@ -46,7 +46,7 @@ public:
 
     auto collect(
         ice::Array<ice::Resource*>& out_changes
-    ) noexcept -> ice::ucount override;
+    ) noexcept -> ice::u32 override;
 
     auto refresh(
         ice::Array<ice::Resource*>& out_changes

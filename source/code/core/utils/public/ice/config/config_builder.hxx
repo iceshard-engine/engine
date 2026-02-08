@@ -1,10 +1,10 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#include <ice/array.hxx>
 #include <ice/config/config_types.hxx>
-#include <ice/container/array.hxx>
-#include <ice/string/heap_var_string.hxx>
+#include <ice/heap_varstring.hxx>
 
 namespace ice
 {
@@ -65,35 +65,5 @@ namespace ice
         auto from_json(ice::ConfigBuilder& builder, ice::String json) noexcept -> ice::ErrorCode;
 
     } // namespace config
-
-    // inline auto configbuilder_root(ConfigBuilder& b, ice::Allocator& alloc) noexcept -> ice::Memory
-    // {
-    //     ConfigBuilderValue val = b["asd"];
-    //     b["asd"][0][1];
-    //     b["a"]["b"] = 31u;
-    //     val = b["a"];
-    //     val["c"][2] = ice::u8{42};
-    //     b["b"] = 32;
-    //     b["c"] = 33;
-    //     val = b["asd"][0];//[0][1]["ad"];
-    //     // b.reset();
-    //     val = b["e"][3];
-    //     b["e"][4];
-    //     ice::HeapVarString<>& str = b["f"] = "Test string";
-    //     str = "Maybe not?";
-    //     b["my"]["holy"]["cow"] = 69.420;
-
-    //     ice::Memory mem = b.finalize(alloc);
-
-    //     ice::Config c = ice::config::from_data(ice::data_view(mem));
-    //     [[maybe_unused]]
-    //     ice::u32 f;
-    //     ice::config::get<ice::u32>(c, "a.b", f);
-    //     ice::String s = ice::config::get<ice::String>(c, "f").value();
-    //     f = 23;
-
-    //     alloc.deallocate(mem);
-    //     return {};
-    // }
 
 } // namespace ice

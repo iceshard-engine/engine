@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_gfx_shader_storage_trait.hxx"
@@ -35,15 +35,15 @@ namespace ice::gfx
     {
         _context.bind<&Trait_GfxShaderStorage::gfx_update, Render>(ice::gfx::ShardID_RenderFrameUpdate);
         _context.bind<&Trait_GfxShaderStorage::gfx_shutdown, Render>(ice::gfx::ShardID_GfxShutdown);
-        _context.bind<&Trait_GfxShaderStorage::on_asset_loaded>("iceshard:shaders-internal:loaded`ice::Asset"_shardid);
+        _context.bind<&Trait_GfxShaderStorage::on_asset_loaded>("event/iceshard-internal/shader-loaded"_shardid);
     }
 
     void Trait_GfxShaderStorage::build_content() noexcept
     {
-        ImGui::TextT("Loaded shaders: {}", ice::hashmap::count(_loaded_shaders));
+        ImGui::TextT("Loaded shaders: {}", _loaded_shaders.size());
         if (ImGui::BeginCombo("##shader-list", "Shader to preview", ImGuiComboFlags_WidthFitPreview))
         {
-            for (GfxShaderEntry& entry : ice::hashmap::values(_loaded_shaders))
+            for (GfxShaderEntry& entry : _loaded_shaders.values())
             {
                 ice::URI const uri = entry.asset.uri();
                 ImGui::Selectable(uri.path()._data, &entry.devui_loaded);
@@ -51,7 +51,7 @@ namespace ice::gfx
             ImGui::EndCombo();
         }
 
-        for (GfxShaderEntry& entry : ice::hashmap::values(_loaded_shaders))
+        for (GfxShaderEntry& entry : _loaded_shaders.values())
         {
             if (entry.devui_loaded)
             {
@@ -67,7 +67,7 @@ namespace ice::gfx
 
     auto Trait_GfxShaderStorage::on_asset_released(ice::Asset const& asset) noexcept -> ice::Task<>
     {
-        GfxShaderEntry* entry = ice::hashmap::try_get(_loaded_shaders, ice::hash(asset.name()));
+        GfxShaderEntry* entry = _loaded_shaders.try_get(ice::hash(asset.name()));
         ICE_ASSERT_CORE(entry != nullptr);
         entry->released = true; // Mark as released
         co_return;
@@ -92,7 +92,7 @@ namespace ice::gfx
             ICE_ASSERT_CORE(state == AssetState::Loaded); // The shader needs to be loaded.
 
             ice::u64 const shader_hash = ice::hash(request->asset_name());
-            GfxShaderEntry* entry = ice::hashmap::try_get(_loaded_shaders, shader_hash);
+            GfxShaderEntry* entry = _loaded_shaders.try_get(shader_hash);
             ICE_ASSERT_CORE(entry == nullptr || entry->released);
 
             using namespace ice::render;
@@ -120,10 +120,10 @@ namespace ice::gfx
 
             // Reslove the request (will resume all awaiting tasks)
             ice::Asset asset = request->resolve({ .resolver = this, .result = AssetRequestResult::Success, .memory = result });
-            send("iceshard:shaders-internal:loaded"_shardid, asset);
+            send("event/iceshard-internal/shader-loaded"_shardid, asset);
 
             // Save the shader handle
-            ice::hashmap::set(_loaded_shaders, shader_hash, { .asset = ice::move(asset), .shader = shader, });
+            _loaded_shaders.set(shader_hash, { .asset = ice::move(asset), .shader = shader, });
 
             // Get the next queued request
             request = assets.aquire_request(ice::render::AssetCategory_Shader, AssetState::Runtime);
@@ -134,13 +134,13 @@ namespace ice::gfx
 
     auto Trait_GfxShaderStorage::gfx_shutdown(ice::render::RenderDevice& device) noexcept -> ice::Task<>
     {
-        for (ice::gfx::GfxShaderEntry& entry : ice::hashmap::values(_loaded_shaders))
+        for (ice::gfx::GfxShaderEntry& entry : _loaded_shaders.values())
         {
             device.destroy_shader(entry.shader);
             entry.asset.release();
         }
 
-        ice::hashmap::clear(_loaded_shaders);
+        _loaded_shaders.clear();
         co_return;
     }
 

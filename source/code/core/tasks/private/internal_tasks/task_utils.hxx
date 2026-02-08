@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -111,13 +111,13 @@ namespace ice
             constexpr auto await_ready() const noexcept
             {
                 // Only suspend if we actually have tasks
-                return ice::span::empty(tasks);
+                return tasks.is_empty();
             }
 
             inline auto await_suspend(std::coroutine_handle<> coro) noexcept
             {
                 // Set the 'running' variable so we can track how many tasks arleady finished.
-                running.store(ice::count(tasks) + 1, std::memory_order_relaxed);
+                running.store(tasks.size().u32() + 1, std::memory_order_relaxed);
 
                 for (ice::Task<void>& task : tasks)
                 {
@@ -132,7 +132,7 @@ namespace ice
             constexpr bool await_resume() const noexcept
             {
                 ICE_ASSERT_CORE(running.load(std::memory_order_relaxed) == 0);
-                return ice::span::any(tasks);
+                return tasks.not_empty();
             }
         };
         return Awaitable{ tasks };
@@ -149,13 +149,13 @@ namespace ice
             constexpr auto await_ready() const noexcept
             {
                 // Only suspend if we actually have tasks
-                return ice::span::empty(tasks);
+                return tasks.is_empty();
             }
 
             inline auto await_suspend(std::coroutine_handle<> coro) noexcept
             {
                 // Set the 'running' variable so we can track how many tasks arleady finished.
-                running.store(ice::count(tasks) + 1, std::memory_order_relaxed);
+                running.store(tasks.size().u32() + 1, std::memory_order_relaxed);
 
                 for (ice::Task<>& task : tasks)
                 {
@@ -170,7 +170,7 @@ namespace ice
             constexpr bool await_resume() const noexcept
             {
                 ICE_ASSERT_CORE(running.load(std::memory_order_relaxed) == 0);
-                return ice::span::any(tasks);
+                return tasks.not_empty();
             }
         };
         return Awaitable{ tasks, scheduler };
@@ -188,7 +188,7 @@ namespace ice
             inline auto await_ready() const noexcept
             {
                 // Only suspend if we actually have tasks
-                return queue.empty();
+                return queue.is_empty();
             }
 
             inline auto await_suspend(std::coroutine_handle<> coro) noexcept
@@ -196,7 +196,7 @@ namespace ice
                 ice::TaskQueue& scheduler_queue = scheduler.schedule()._queue;
 
                 // We set the result value for each awaitable in the queue and nothing more.
-                ice::LinkedQueueRange<ice::TaskAwaitableBase> tasks_awaitables = queue.consume();
+                ice::AtomicLinkedQueueRange<ice::TaskAwaitableBase> tasks_awaitables = queue.take_all();
                 for (ice::TaskAwaitableBase* task_awaitable : tasks_awaitables)
                 {
                     ICE_ASSERT_CORE(task_awaitable->result.ptr == nullptr);

@@ -1,9 +1,9 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/span.hxx>
-#include <ice/string_types.hxx>
+#include <ice/string.hxx>
 #include <ice/ecs/ecs_types.hxx>
 #include <ice/engine_types.hxx>
 #include <ice/resource_types.hxx>

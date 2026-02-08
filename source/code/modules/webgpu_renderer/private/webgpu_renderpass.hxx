@@ -1,9 +1,9 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/render/render_pass.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include "webgpu_utils.hxx"
 #include "webgpu_image.hxx"
 
@@ -24,27 +24,27 @@ namespace ice::render::webgpu
             , references{ alloc }
             , subpasses{ alloc }
         {
-            ice::array::push_back(attachments, info.attachments);
-            ice::array::reserve(subpasses, ice::count(info.subpasses));
+            attachments.push_back(info.attachments);
+            subpasses.reserve(info.subpasses.size());
 
-            ice::ucount num_references = 0;
+            ice::ncount num_references = 0;
             for (ice::render::RenderSubPass const& subpass : info.subpasses)
             {
-                num_references += ice::count(subpass.input_attachments);
-                num_references += ice::count(subpass.color_attachments);
+                num_references += subpass.input_attachments.size();
+                num_references += subpass.color_attachments.size();
             }
-            ice::array::reserve(references, num_references);
+            references.reserve(num_references);
 
             for (ice::render::RenderSubPass const& subpass : info.subpasses)
             {
-                ice::ucount const offset = ice::array::count(references);
-                ice::array::push_back(references, subpass.input_attachments);
-                ice::array::push_back(references, subpass.color_attachments);
+                ice::ncount const offset = references.size();
+                references.push_back(subpass.input_attachments);
+                references.push_back(subpass.color_attachments);
 
-                ice::array::push_back(subpasses,
+                subpasses.push_back(
                     RenderSubPass {
-                        .input_attachments = ice::array::slice(references, offset, ice::count(subpass.input_attachments)),
-                        .color_attachments = ice::array::slice(references, offset + ice::count(subpass.input_attachments), ice::count(subpass.color_attachments)),
+                        .input_attachments = references.subspan(offset, subpass.input_attachments.size()),
+                        .color_attachments = references.subspan(offset + subpass.input_attachments.size(), subpass.color_attachments.size()),
                         .depth_stencil_attachment = subpass.depth_stencil_attachment
                     }
                 );

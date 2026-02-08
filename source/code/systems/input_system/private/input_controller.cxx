@@ -1,11 +1,11 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "input_devices.hxx"
 #include "input_state_helpers.hxx"
 
 #include <ice/input/input_controller.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 
 namespace ice::input
 {
@@ -47,7 +47,7 @@ namespace ice::input
         : _device{ device }
         , _controls{ alloc }
     {
-        ice::array::resize(_controls, controller_button_num + 5);
+        _controls.resize(controller_button_num + 5);
     }
 
     void ControllerDevice::on_tick(ice::Timer const& timer) noexcept
@@ -109,8 +109,8 @@ namespace ice::input
 
         if (input != InputID::Invalid)
         {
-            ice::ucount const control_index = input_identifier_value(input);
-            ICE_ASSERT_CORE(control_index < ice::array::count(_controls));
+            ice::u32 const control_index = input_identifier_value(input);
+            ICE_ASSERT_CORE(control_index < _controls.size());
 
             detail::ControlState control = _controls[control_index];
             control.id = input;
@@ -143,7 +143,7 @@ namespace ice::input
                 event.axis_idx = axis_index;
                 event.value.axis.value_f32 = value;
                 event.value_type = InputValueType::AxisFloat;
-                ice::array::push_back(events_out, event);
+                events_out.push_back(event);
             }
             else if (reset == false)
             {
@@ -152,7 +152,7 @@ namespace ice::input
                 event.axis_idx = axis_index;
                 event.value.axis.value_f32 = 0.0f;
                 event.value_type = InputValueType::AxisFloat;
-                ice::array::push_back(events_out, event);
+                events_out.push_back(event);
             }
         };
 
@@ -167,7 +167,7 @@ namespace ice::input
         {
             if (detail::prepared_input_event(control, event))
             {
-                ice::array::push_back(events_out, event);
+                events_out.push_back(event);
             }
         }
     }

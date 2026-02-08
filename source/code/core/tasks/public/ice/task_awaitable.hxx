@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -36,7 +36,7 @@ namespace ice
     {
         ice::TaskAwaitableParams const _params;
         ice::coroutine_handle<> _coro;
-        ice::TaskAwaitableBase* next;
+        ice::TaskAwaitableBase* _next;
         ice::TaskAwaitableResult result;
     };
 

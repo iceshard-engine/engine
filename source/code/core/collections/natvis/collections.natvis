@@ -90,25 +90,4 @@
     </Expand>
   </Type>
 
-  <Type Name="ice::HashMapView&lt;*,*&gt;">
-    <DisplayString>Hash {{ count={_count}, capacity={_capacity}, load_factor={(float)_count/(float)_capacity,g} }}</DisplayString>
-    <Expand>
-      <Item Name="[size]">_count</Item>
-      <Item Name="[capacity]">_capacity</Item>
-      <Synthetic Name="[items]" ExcludeView="Expanded">
-        <DisplayString>load_factor {{ {(float)_count/(float)_capacity,g} }}</DisplayString>
-        <Expand>
-          <ArrayItems>
-            <Size>_count</Size>
-            <ValuePointer>_data</ValuePointer>
-          </ArrayItems>
-        </Expand>
-      </Synthetic>
-      <IndexListItems IncludeView="Expanded">
-        <Size>_count</Size>
-        <ValueNode>_data[$i]</ValueNode>
-      </IndexListItems>
-    </Expand>
-  </Type>
-
 </AutoVisualizer>

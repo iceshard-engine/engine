@@ -1,16 +1,16 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/module_register.hxx>
-#include <ice/container/array.hxx>
-#include <ice/container/hashmap.hxx>
-#include <ice/string/heap_string.hxx>
+#include <ice/multi_hashmap.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/os/windows.hxx>
 #include <ice/os/unix.hxx>
 #include <ice/profiler.hxx>
 
 #include "module_globals.hxx"
 #include "module_native.hxx"
+#include <ice/hashmap.hxx>
 
 namespace ice
 {
@@ -33,7 +33,7 @@ namespace ice
 
         static bool from_app(ModuleNegotiatorAPIContext*) noexcept;
         static bool get_module_api(ModuleNegotiatorAPIContext*, ice::StringID_Hash, ice::u32, ice::ModuleAPI*) noexcept;
-        static bool get_module_apis(ModuleNegotiatorAPIContext*, ice::StringID_Hash, ice::u32, ice::ModuleAPI*, ice::ucount*) noexcept;
+        static bool get_module_apis(ModuleNegotiatorAPIContext*, ice::StringID_Hash, ice::u32, ice::ModuleAPI*, ice::u32*) noexcept;
         static bool register_module(ModuleNegotiatorAPIContext*, ice::StringID_Hash, FnModuleSelectAPI*) noexcept;
     };
 
@@ -58,13 +58,13 @@ namespace ice
         auto api_count(
             ice::StringID_Arg name,
             ice::u32 version
-        ) const noexcept -> ice::ucount;
+        ) const noexcept -> ice::u32;
 
         bool query_apis(
             ice::StringID_Arg api_name,
             ice::u32 version,
             ice::ModuleAPI* out_array,
-            ice::ucount* inout_array_size
+            ice::u32* inout_array_size
         ) const noexcept override;
 
         bool register_module(
@@ -73,7 +73,7 @@ namespace ice
 
     private:
         ice::Allocator& _allocator;
-        ice::HashMap<DefaultModuleEntry> _modules;
+        ice::MultiHashMap<DefaultModuleEntry> _modules;
         ice::Array<ice::native_module::ModuleHandle> _module_handles;
     };
 
@@ -86,7 +86,7 @@ namespace ice
     DefaultModuleRegister::~DefaultModuleRegister() noexcept
     {
         ice::FnModuleUnload* fn_unload_prev = nullptr;
-        for (DefaultModuleEntry const& entry : ice::hashmap::values(_modules))
+        for (DefaultModuleEntry const& entry : _modules.values())
         {
             if (fn_unload_prev != entry.unload_proc)
             {
@@ -124,7 +124,7 @@ namespace ice
                     /* is_app_context */ false
                 );
 
-                ice::array::push_back(_module_handles, ice::move(module_handle));
+                _module_handles.push_back(ice::move(module_handle));
                 return true;
             }
         }
@@ -167,10 +167,10 @@ namespace ice
     auto DefaultModuleRegister::api_count(
         ice::StringID_Arg api_name,
         ice::u32 version
-    ) const noexcept -> ice::ucount
+    ) const noexcept -> ice::u32
     {
-        ice::ucount result = 0;
-        auto it = ice::multi_hashmap::find_first(_modules, ice::hash(api_name));
+        ice::u32 result = 0;
+        auto it = _modules.find_values(api_name);
         while (it != nullptr)
         {
             ice::ModuleAPI api_ptr;
@@ -178,7 +178,7 @@ namespace ice
             {
                 result += 1;
             }
-            it = ice::multi_hashmap::find_next(_modules, it);
+            it.next();
         }
         return result;
     }
@@ -187,7 +187,7 @@ namespace ice
         ice::StringID_Arg api_name,
         ice::u32 version,
         ice::ModuleAPI* out_array,
-        ice::ucount* inout_array_size
+        ice::u32* inout_array_size
     ) const noexcept
     {
         if (out_array == nullptr)
@@ -202,9 +202,9 @@ namespace ice
         }
 
         ice::u32 idx = 0;
-        auto it = ice::multi_hashmap::find_first(_modules, ice::hash(api_name));
+        auto it = _modules.find_values(api_name);
 
-        ice::ucount const array_size = *inout_array_size;
+        ice::u32 const array_size = *inout_array_size;
         while (it != nullptr && idx < array_size)
         {
             ice::ModuleAPI api_ptr;
@@ -213,7 +213,7 @@ namespace ice
                 out_array[idx] = api_ptr;
                 idx += 1;
             }
-            it = ice::multi_hashmap::find_next(_modules, it);
+            it.next();
         }
         return idx > 0;
     }
@@ -223,7 +223,7 @@ namespace ice
     ) noexcept
     {
         ice::u64 const name_hash = ice::hash(entry.name);
-        ice::multi_hashmap::insert(_modules, name_hash, entry);
+        _modules.insert(name_hash, entry);
         return true;
     }
 
@@ -237,7 +237,7 @@ namespace ice
         ice::StringID_Hash api_name,
         ice::u32 version,
         ice::ModuleAPI* out_api,
-        ice::ucount* inout_array_size
+        ice::u32* inout_array_size
     ) noexcept
     {
         return ctx->module_register->query_apis(ice::StringID{ api_name }, version, out_api, inout_array_size);

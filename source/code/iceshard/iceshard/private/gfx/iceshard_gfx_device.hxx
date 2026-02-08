@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -9,7 +9,7 @@
 #include <ice/render/render_device.hxx>
 #include <ice/render/render_driver.hxx>
 #include <ice/mem_unique_ptr.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include "../iceshard_data_storage.hxx"
 
 namespace ice::gfx

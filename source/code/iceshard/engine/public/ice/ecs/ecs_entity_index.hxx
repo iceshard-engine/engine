@@ -1,10 +1,10 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/span.hxx>
+#include <ice/queue.hxx>
 #include <ice/ecs/ecs_entity.hxx>
-#include <ice/container/queue.hxx>
 #include <atomic>
 
 namespace ice::ecs

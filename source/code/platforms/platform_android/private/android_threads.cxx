@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "android_threads.hxx"
@@ -19,9 +19,9 @@ namespace ice::platform::android
         , _threads{ }
         , _aio_port{ ice::native_aio::aio_open(alloc, ice::native_aio::AIOPortInfo{ .worker_limit = 1, .debug_name = "ice.aio-port" }) }
     {
-        ice::ucount const hw_concurrency = get_nprocs();
+        ice::u32 const hw_concurrency = get_nprocs();
         ICE_LOG(LogSeverity::Info, LogTag::System, "Logical Processors: {}", hw_concurrency);
-        ice::ucount tp_size = ice::max(ice::min(hw_concurrency, 8u), 2u); // min 2 task threads
+        ice::u32 tp_size = ice::max(ice::min(hw_concurrency, 8u), 2u); // min 2 task threads
 
         for (ice::Shard const option : params)
         {

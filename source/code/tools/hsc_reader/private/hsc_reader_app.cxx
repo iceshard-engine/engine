@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "hsc_reader_app.hxx"
@@ -11,16 +11,16 @@ bool ParamRange::param_parse_results(ParamRange& range, ice::Span<ice::String co
 {
     range.set = true;
 
-    ice::String value = ice::span::front(results);
+    ice::String value = results.first();
     ice::from_chars(value, value, range.start);
 
     // Assign the next value if we have multiple defined.
-    if (ice::span::count(results) > 1)
+    if (results.size() > 1)
     {
         value = results[1];
     }
 
-    if (ice::string::any(value))
+    if (value.not_empty())
     {
         ice::from_chars(value, value, range.count);
     }

@@ -1,11 +1,11 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#include <ice/array.hxx>
 #include <ice/stringid.hxx>
 #include <ice/module_info.hxx>
 #include <ice/module_concepts.hxx>
-#include <ice/container/array.hxx>
 
 namespace ice
 {
@@ -36,7 +36,7 @@ namespace ice
             ice::StringID_Arg api_name,
             ice::u32 version,
             ice::ModuleAPI* out_array,
-            ice::ucount* inout_array_size
+            ice::u32* inout_array_size
         ) const noexcept = 0;
 
         //! \brief Queries a single API for the given API struct.
@@ -81,14 +81,14 @@ namespace ice
     template<typename Type> requires (ice::concepts::APIType<Type>)
     bool ModuleQuery::query_apis(ice::Array<Type>& out_apis) const noexcept
     {
-        ice::ucount num_apis = 0;
+        ice::u32 num_apis = 0;
         if (query_apis(Type::Constant_APIName, Type::Constant_APIVersion, nullptr, &num_apis))
         {
             // ICE_LOG_IF(
             //     num_apis > 10,
             //     ice::LogSeverity::Warning, ice::LogTag::Engine,
             //     "More than 10 APIs of type {} where queried ({}).\n"
-            //     "Use 'query_apis(ice::StringID_Arg, ice::u32, ice::ModuleAPI*, ice::ucount*)' instead to avoid truncating results.",
+            //     "Use 'query_apis(ice::StringID_Arg, ice::u32, ice::ModuleAPI*, ice::u32*)' instead to avoid truncating results.",
             //     num_apis, Type::Constant_APIName
             // );
 
@@ -96,10 +96,10 @@ namespace ice
             query_apis(Type::Constant_APIName, Type::Constant_APIVersion, temp_tab, &num_apis);
 
             // Fill the array with the found APIs
-            ice::array::reserve(out_apis, num_apis);
+            out_apis.reserve(num_apis);
             for (ice::u32 idx = 0; idx < num_apis; ++idx)
             {
-                ice::array::push_back(out_apis, *reinterpret_cast<Type*>(temp_tab[idx].api_ptr));
+                out_apis.push_back(*reinterpret_cast<Type*>(temp_tab[idx].api_ptr));
             }
         }
         return num_apis > 0;

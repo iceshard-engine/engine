@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "webgpu_driver.hxx"
@@ -152,8 +152,7 @@ namespace ice::render::webgpu
         ice::Array<ice::render::QueueFamilyInfo>& queue_info
     ) noexcept
     {
-        ice::array::push_back(
-            queue_info,
+        queue_info.push_back(
             QueueFamilyInfo {
                 .id = QueueID{ 1 },
                 .flags = QueueFlags::Transfer | QueueFlags::Graphics | QueueFlags::Present,

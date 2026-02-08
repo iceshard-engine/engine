@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "config_builder_utils.hxx"
@@ -39,7 +39,7 @@ namespace ice::config::detail
         {
             cb_clear_value_type(_allocator, &entry);
         }
-        ice::array::clear(_entries);
+        _entries.clear();
     }
 
     ConfigBuilderContainer::~ConfigBuilderContainer() noexcept

@@ -1,10 +1,10 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/task_types.hxx>
 #include <ice/task_awaitable.hxx>
-#include <ice/container/linked_queue.hxx>
+#include <ice/atomic_linked_queue.hxx>
 
 namespace ice
 {
@@ -14,28 +14,28 @@ namespace ice
     public:
         TaskQueue(ice::TaskFlags flags = {}) noexcept;
 
-        bool any() const noexcept { return ice::linked_queue::any(_awaitables); }
-        bool empty() const noexcept { return ice::linked_queue::empty(_awaitables); }
+        bool is_empty() const noexcept { return _awaitables.is_empty(); }
+        bool not_empty() const noexcept { return _awaitables.not_empty(); }
 
         bool push_back(ice::TaskAwaitableBase* awaitable) noexcept;
-        bool push_back(ice::LinkedQueueRange<ice::TaskAwaitableBase> awaitable_range) noexcept;
+        bool push_back(ice::AtomicLinkedQueueRange<ice::TaskAwaitableBase> awaitable_range) noexcept;
 
         bool contains(ice::TaskAwaitableBase* awaitable) const noexcept;
 
         [[nodiscard]]
-        auto pop() noexcept -> ice::TaskAwaitableBase*;
+        auto take_front() noexcept -> ice::TaskAwaitableBase*;
         [[nodiscard]]
-        auto consume() noexcept -> ice::LinkedQueueRange<ice::TaskAwaitableBase>;
+        auto take_all() noexcept -> ice::AtomicLinkedQueueRange<ice::TaskAwaitableBase>;
 
         bool process_one(void* result_value = nullptr) noexcept;
-        auto process_all(void* result_value = nullptr) noexcept -> ice::ucount;
+        auto process_all(void* result_value = nullptr) noexcept -> ice::ncount;
 
         void wait_any() noexcept;
 
         template<typename Value>
-        inline bool process_one(Value& result_value) noexcept;
+        constexpr bool process_one(Value& result_value) noexcept;
         template<typename Value>
-        inline auto process_all(Value& result_value) noexcept -> ice::ucount;
+        constexpr auto process_all(Value& result_value) noexcept -> ice::ncount;
 
         //! \brief Flags of task allowed to be pushed onto this queue.
         ice::TaskFlags const flags;
@@ -45,13 +45,13 @@ namespace ice
     };
 
     template<typename Value>
-    inline bool TaskQueue::process_one(Value& result_value) noexcept
+    inline constexpr bool TaskQueue::process_one(Value& result_value) noexcept
     {
         return this->process_one(reinterpret_cast<void*>(&result_value));
     }
 
     template<typename Value>
-    inline auto TaskQueue::process_all(Value& result_value) noexcept -> ice::ucount
+    inline constexpr auto TaskQueue::process_all(Value& result_value) noexcept -> ice::ncount
     {
         return this->process_all(reinterpret_cast<void*>(&result_value));
     }

@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -74,7 +74,7 @@ namespace ice::ecs
         inline auto entity_count(
             ice::ecs::QueryObject<MainPart, RefParts...> const& query,
             ice::ecs::detail::DataBlockFilter::QueryFilter filter
-        ) noexcept -> ice::ucount;
+        ) noexcept -> ice::u32;
 
     } // namespace query
 

@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 Settings
@@ -26,6 +26,7 @@ Settings
 
     .PipelineToolchain = 'msvc-x64-v143'
     .PipelineAllowUnityBuilds = true
+    .PipelineTags = { 'DevPlatform' }
 
     // Projects from this pipeline may be exposed as compilers for other pipelines
     .PipelineDefinesCompilers = true
@@ -47,6 +48,8 @@ Settings
     .PipelineName = 'x64'
     .PipelineToolchain = 'clang-20.0.0'
     .PipelineAllowUnityBuilds = true
+    .PipelineTags = { 'DevPlatform' }
+    .PipelineSteps = { 'Build', 'Link', 'Deploy' }
 
     // Projects from this pipeline may be exposed as compilers for other pipelines
     .PipelineDefinesCompilers = true

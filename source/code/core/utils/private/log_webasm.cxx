@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "log_webasm.hxx"
@@ -163,7 +163,7 @@ namespace ice::detail::webasm
             ice::detail::local_time(),
             fmt_string(detail::severity_value[static_cast<ice::u32>(severity)]),
             fmt_string(base_tag_name),
-            fmt_string(ice::string::empty(tag_name) || ice::string::empty(base_tag_name) ? "" : " | "),
+            fmt_string(tag_name.is_empty() || base_tag_name.is_empty() ? "" : " | "),
             fmt_string(tag_name)
         );
 

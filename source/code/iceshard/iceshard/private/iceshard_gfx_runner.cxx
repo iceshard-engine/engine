@@ -1,11 +1,11 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_gfx_runner.hxx"
 #include "iceshard_runner.hxx"
 #include "gfx/iceshard_gfx_device.hxx"
 
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 #include <ice/engine_frame.hxx>
 #include <ice/engine_params.hxx>
 #include <ice/engine_shards.hxx>
@@ -113,8 +113,12 @@ namespace ice::gfx
         _context->device().destroy_fence(_present_fence);
     }
 
-    void IceshardGfxRunner::update_rendergraph(ice::UniquePtr<ice::gfx::GfxGraphRuntime> rendergraph) noexcept
+    auto IceshardGfxRunner::update_rendergraph(
+        ice::UniquePtr<ice::gfx::GfxGraphRuntime> rendergraph
+    ) noexcept -> ice::Task<>
     {
+        co_await _scheduler;
+
         if (_rendergraph != nullptr)
         {
             ice::gfx::GfxFrameStages gpu_stages{
@@ -131,16 +135,8 @@ namespace ice::gfx
                 }
             }
         }
-
-        // If we are ready we can set the rendergraph immediately, if not we schedule it for later to be updated.
-        if (_rendergraph == nullptr || _rendergraph->ready())
-        {
-            _rendergraph = ice::move(rendergraph);
-        }
-        else
-        {
-            _scheduled_rendergraph = ice::move(rendergraph);
-        }
+        
+        _rendergraph = ice::move(rendergraph);
     }
 
     auto IceshardGfxRunner::update_data(
@@ -231,7 +227,7 @@ namespace ice::gfx
             ice::execute_tasks(tasks);
         }
 
-        if (_queue_transfer.any() || _gfx_tasks.running_tasks() > 0)
+        if (_queue_transfer.not_empty() || _gfx_tasks.running_tasks() > 0)
         {
             IPT_ZONE_SCOPED_NAMED("gfx_await_tasks");
 

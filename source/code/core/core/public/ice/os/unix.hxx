@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -11,6 +11,8 @@
 #include <semaphore.h>
 #include <unistd.h>
 #include <dlfcn.h>
+#include <stdlib.h>
+#include <malloc.h>
 #pragma clang diagnostic ignored "-Wunknown-attributes"
 
 template<>

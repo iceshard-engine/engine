@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -15,7 +15,7 @@ namespace ice::render::webgpu
 
     constexpr auto wgpu_string(ice::String value) noexcept -> WGPUStringView
     {
-        return WGPUStringView{ .data = value._data, .length = value._size };
+        return WGPUStringView{ .data = value.data(), .length = value.size() };
     }
 
 #define ICE_LOG_WGPU(severity, message, ...) \

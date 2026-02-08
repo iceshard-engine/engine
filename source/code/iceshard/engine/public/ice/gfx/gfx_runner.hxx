@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -24,7 +24,9 @@ namespace ice::gfx
         virtual ~GfxRunner() noexcept = default;
 
         //! \brief Sets a rendergraph to used for execution each frame.
-        virtual void update_rendergraph(ice::UniquePtr<ice::gfx::GfxGraphRuntime> rendergraph) noexcept = 0;
+        virtual auto update_rendergraph(
+            ice::UniquePtr<ice::gfx::GfxGraphRuntime> rendergraph
+        ) noexcept -> ice::Task<> = 0;
 
         virtual auto update_data(
             ice::EngineFrame& frame,

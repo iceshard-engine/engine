@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/ui_asset.hxx>
@@ -56,10 +56,10 @@ namespace ice
         ice::UIRawInfo const& raw_info
     ) noexcept -> ice::UISizeInfo
     {
-        ice::u32 const count_elements = ice::count(raw_info.elements);
-        ice::u32 const count_shards = ice::count(raw_info.shards);
-        ice::u32 const count_resources = ice::count(raw_info.resources);
-        ice::u32 const count_styles = ice::count(raw_info.styles);
+        ice::u32 const count_elements = raw_info.elements.size().u32();
+        ice::u32 const count_shards = raw_info.shards.size().u32();
+        ice::u32 const count_resources = raw_info.resources.size().u32();
+        ice::u32 const count_styles = raw_info.styles.size().u32();
 
         ice::u32 count_fonts = 0;
         ice::u32 count_actions = 0;
@@ -81,7 +81,7 @@ namespace ice
                 if (button_data->text.data_type == ice::ui::DataSource::ValueConstant)
                 {
                     count_constants += 1;
-                    additional_data_size += ice::string::size(button_data->text.data_source);
+                    additional_data_size += button_data->text.data_source.size().u32();
                 }
             }
             else if (element.type == ElementType::Label)
@@ -90,7 +90,7 @@ namespace ice
                 if (label_data->text.data_type == ice::ui::DataSource::ValueConstant)
                 {
                     count_constants += 1;
-                    additional_data_size += ice::string::size(label_data->text.data_source);
+                    additional_data_size += label_data->text.data_source.size().u32();
                 }
             }
         }
@@ -100,7 +100,7 @@ namespace ice
             if (resource.type == ice::ui::ResourceType::Font)
             {
                 count_fonts += 1;
-                additional_data_size += ice::string::size(resource.font_data.font_name);
+                additional_data_size += resource.font_data.font_name.size().u32();
             }
         }
 
@@ -155,10 +155,10 @@ namespace ice
     auto find_resource_idx(
         ice::Span<ice::RawResource> resources,
         ice::String name
-    ) noexcept -> ice::u16
+    ) noexcept -> ice::nindex
     {
-        ice::u16 idx = 0;
-        ice::u16 const count = ice::u16(ice::count(resources));
+        ice::nindex idx = 0;
+        ice::ncount const count = resources.size();
         for (; idx < count; ++idx)
         {
             if (resources[idx].ui_name == name)
@@ -166,7 +166,7 @@ namespace ice
                 break;
             }
         }
-        return idx == count ? ice::u16{ 0xffff } : idx;
+        return idx == count ? ice::nindex{ 0xffff } : idx;
     }
 
     struct ConstantData
@@ -191,22 +191,22 @@ namespace ice
         {
             out_ref.source_i = constants.idx;
 
-            ice::ucount const text_size = ice::string::size(raw_data_ref.data_source);
+            ice::ncount const text_size = raw_data_ref.data_source.size();
             constants.data[constants.idx].offset = constants.data_storage_offset;
-            constants.data[constants.idx].size = text_size;
+            constants.data[constants.idx].size = text_size.u32();
             ice::memcpy(
                 constants.data_storage,
-                ice::string::begin(raw_data_ref.data_source),
-                text_size
+                raw_data_ref.data_source.begin(),
+                text_size.bytes()
             );
 
-            constants.data_storage = ice::ptr_add(constants.data_storage, { text_size });
-            constants.data_storage_offset += text_size;
+            constants.data_storage = ice::ptr_add(constants.data_storage, text_size);
+            constants.data_storage_offset += text_size.u32();
             constants.idx += 1;
         }
         else if (out_ref.source == DataSource::ValueResource)
         {
-            out_ref.source_i = find_resource_idx(resources, raw_data_ref.data_source);
+            out_ref.source_i = find_resource_idx(resources, raw_data_ref.data_source).u16();
         }
     }
 
@@ -223,8 +223,8 @@ namespace ice
         static auto store_span_info = [base_ptr = result.location](auto& span_value) noexcept
         {
             void* span_address = std::addressof(span_value);
-            ice::u32 const span_size = ice::count(span_value);
-            ice::u32 const span_offset = ice::u32(ice::ptr_distance(base_ptr, ice::span::data(span_value)).value);
+            ice::u32 const span_size = span_value.size().u32();
+            ice::u32 const span_offset = ice::u32(ice::ptr_distance(base_ptr, span_value.data()).value);
 
             ice::u32* values = reinterpret_cast<ice::u32*>(span_address);
             values[0] = span_offset;
@@ -279,8 +279,8 @@ namespace ice
             auto const find_font_idx = [&raw_info](ice::String font_name) noexcept -> ice::u16
             {
                 ice::u16 font_idx = 0;
-                ice::u32 idx = 0;
-                ice::u32 const count = ice::count(raw_info.resources);
+                ice::u64 idx = 0;
+                ice::u64 const count = raw_info.resources.size();
                 for (; idx < count; ++idx)
                 {
                     if (raw_info.resources[idx].type == ResourceType::Font)
@@ -298,7 +298,7 @@ namespace ice
             auto const find_shard_idx = [&raw_info](ice::String resource_name) noexcept -> ice::u16
             {
                 ice::u16 idx = 0;
-                ice::u32 const count = ice::count(raw_info.shards);
+                ice::u64 const count = raw_info.shards.size();
                 for (; idx < count; ++idx)
                 {
                     if (raw_info.shards[idx].ui_name == resource_name)
@@ -424,7 +424,7 @@ namespace ice
             for (ice::RawResource const& resource : raw_info.resources)
             {
                 // TODO: Force it to <debug string id>?
-                resources[idx_res].id = ice::stringid(std::string_view{ resource.ui_name._data, resource.ui_name._size });
+                resources[idx_res].id = ice::stringid(resource.ui_name);
                 resources[idx_res].type = resource.type;
                 resources[idx_res].type_data = resource.type_data;
 
@@ -433,9 +433,9 @@ namespace ice
                     fonts[idx_font].resource_i = idx_res;
                     fonts[idx_font].font_size = resource.font_data.font_size;
                     fonts[idx_font].font_name_offset = additional_data_offset;
-                    fonts[idx_font].font_name_size = ice::string::size(resource.font_data.font_name);
+                    fonts[idx_font].font_name_size = resource.font_data.font_name.size().u32();
 
-                    ice::memcpy(additional_data, ice::string::begin(resource.font_data.font_name), fonts[idx_font].font_name_size);
+                    ice::memcpy(additional_data, resource.font_data.font_name.begin(), fonts[idx_font].font_name_size);
 
                     additional_data = ice::ptr_add(additional_data, { fonts[idx_font].font_name_size });
                     additional_data_offset += fonts[idx_font].font_name_size;
@@ -447,7 +447,7 @@ namespace ice
             }
 
             void* aligned_ptr = ice::align_to(additional_data, ice::ualign::b_4).value;
-            additional_data_offset += ice::ucount(ice::ptr_distance(additional_data, aligned_ptr).value);
+            additional_data_offset += ice::u32(ice::ptr_distance(additional_data, aligned_ptr).value);
             additional_data = aligned_ptr;
 
             ice::u32 idx_style = 0;
@@ -525,18 +525,18 @@ namespace ice
 
         {
             ice::Array<ice::RawShard> uishards{ alloc };
-            ice::array::reserve(uishards, 25);
-            ice::array::push_back(uishards, RawShard{ });
+            uishards.reserve(25);
+            uishards.push_back(RawShard{ });
 
             ice::Array<ice::RawResource> uires{ alloc };
-            ice::array::reserve(uires, 25);
+            uires.reserve(25);
 
             ice::Array<ice::RawStyle> styles{ alloc };
-            ice::array::reserve(styles, 25);
-            ice::array::push_back(styles, RawStyle{ .flags = ice::ui::StyleFlags::None });
+            styles.reserve(25);
+            styles.push_back(RawStyle{ .flags = ice::ui::StyleFlags::None });
 
             ice::Array<ice::RawElement> elements{ alloc };
-            ice::array::reserve(elements, 50);
+            elements.reserve(50);
 
             rapidxml_ns::xml_document<char>* doc = alloc.create<rapidxml_ns::xml_document<char>>();
             doc->parse<rapidxml_ns::parse_default>(reinterpret_cast<char*>(data_copy.location));

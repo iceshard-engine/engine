@@ -1,8 +1,8 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/native_file.hxx>
+#include <ice/path_utils.hxx>
 
 namespace ice::app
 {
@@ -19,10 +19,10 @@ namespace ice::app
     auto version() noexcept -> ice::app::Version;
     auto name() noexcept -> ice::String;
 
-    auto location() noexcept -> ice::String;
+    auto location() noexcept -> ice::Path;
 
-    auto directory() noexcept -> ice::String;
+    auto directory() noexcept -> ice::Path;
 
-    auto workingdir() noexcept -> ice::String;
+    auto workingdir() noexcept -> ice::Path;
 
 } // namespace ice::app

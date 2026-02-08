@@ -1,12 +1,12 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/base.hxx>
-#include <ice/container/linked_queue.hxx>
-#include <ice/container/hashmap.hxx>
-#include <ice/container/array.hxx>
-#include <ice/string/heap_string.hxx>
+#include <ice/atomic_linked_queue.hxx>
+#include <ice/multi_hashmap.hxx>
+#include <ice/array.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/resource_provider.hxx>
 #include <ice/task_awaitable.hxx>
 #include <ice/task_queue.hxx>
@@ -157,7 +157,7 @@ namespace ice
     public:
         HailStormResourceProvider(
             ice::Allocator& alloc,
-            ice::String path,
+            ice::Path path,
             ice::native_aio::AIOPort aioport
         ) noexcept;
         ~HailStormResourceProvider() noexcept override;
@@ -206,7 +206,7 @@ namespace ice
         hailstorm::v1::HailstormData _pack;
         ice::Array<ice::HailstormChunkLoader*> _loaders;
         ice::Array<ice::HailstormResource*> _entries;
-        ice::HashMap<ice::u32> _entrymap;
+        ice::MultiHashMap<ice::u32> _entrymap;
 
         ice::UniquePtr<DevUIWidget> _devui_widget;
     };

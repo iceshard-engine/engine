@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "asset_shelve.hxx"
@@ -6,10 +6,10 @@
 #include "asset_request_awaitable.hxx"
 
 #include <ice/assert.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 #include <ice/mem_allocator_utils.hxx>
 #include <ice/profiler.hxx>
-#include <ice/string/heap_string.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/task_utils.hxx>
 
 namespace ice
@@ -27,7 +27,7 @@ namespace ice
         , _allocator{ alloc }
         , _asset_resources{ alloc }
     {
-        ice::hashmap::reserve(_asset_resources, 25);
+        _asset_resources.reserve(25);
     }
 
     AssetShelve::~AssetShelve() noexcept
@@ -47,17 +47,15 @@ namespace ice
         ice::StringID_Arg name
     ) noexcept -> ice::AssetEntry*
     {
-        return ice::hashmap::get(_asset_resources, ice::hash(name), nullptr);
+        return _asset_resources.get(name, nullptr);
     }
 
     auto AssetShelve::select(
         ice::StringID_Arg name
     ) const noexcept -> ice::AssetEntry const*
     {
-        ice::u64 const name_hash = ice::hash(name);
-
         static ice::AssetEntry invalid_resource{ };
-        return ice::hashmap::get(_asset_resources, name_hash, &invalid_resource);
+        return _asset_resources.get(name, &invalid_resource);
     }
 
     auto AssetShelve::store(
@@ -74,22 +72,20 @@ namespace ice
         {
             ice::HeapString<> asset_name{ _allocator, name };
 
-            ice::hashmap::set(
-                _asset_resources,
+            _asset_resources.set(
                 name_hash,
                 _allocator.create<ice::AssetEntry>(ice::move(asset_name), this, ice::move(resource_data))
             );
         }
         else
         {
-            ice::hashmap::set(
-                _asset_resources,
+            _asset_resources.set(
                 name_hash,
                 _allocator.create<ice::AssetEntry>(ice::stringid(name), this, ice::move(resource_data))
             );
         }
 
-        ice::AssetEntry** entry = ice::hashmap::try_get(_asset_resources, name_hash);
+        ice::AssetEntry* const* entry = _asset_resources.try_get(name_hash);
         ICE_ASSERT_CORE(entry != nullptr);
         ICE_ASSERT_CORE(*entry != nullptr);
         return *entry;
@@ -113,22 +109,20 @@ namespace ice
         {
             ice::HeapString<> asset_name{ _allocator, name };
 
-            ice::hashmap::set(
-                _asset_resources,
+            _asset_resources.set(
                 name_hash,
                 _allocator.create<ice::AssetEntry>(ice::move(asset_name), this, ice::move(resource_data))
             );
         }
         else
         {
-            ice::hashmap::set(
-                _asset_resources,
+            _asset_resources.set(
                 name_hash,
                 _allocator.create<ice::AssetEntry>(ice::stringid(name), this, ice::move(resource_data))
             );
         }
 
-        ice::AssetEntry** entry = ice::hashmap::try_get(_asset_resources, name_hash);
+        ice::AssetEntry* const* entry = _asset_resources.try_get(name_hash);
         ICE_ASSERT_CORE(entry != nullptr);
         ICE_ASSERT_CORE(*entry != nullptr);
         return *entry;

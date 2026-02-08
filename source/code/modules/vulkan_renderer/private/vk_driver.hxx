@@ -1,11 +1,11 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/render/render_driver.hxx>
 #include <ice/mem_allocator_proxy.hxx>
 #include <ice/mem_unique_ptr.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include "vk_allocator.hxx"
 #include "vk_memory_allocator.hxx"
 #include "vk_extensions.hxx"

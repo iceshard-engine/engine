@@ -1,9 +1,9 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/asset_module.hxx>
 #include <ice/mem_allocator_stack.hxx>
-#include <ice/container/array.hxx>
+#include <ice/array.hxx>
 #include <ice/module_register.hxx>
 
 namespace ice

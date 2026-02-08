@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -7,8 +7,9 @@
 namespace ice
 {
 
-    struct HostAllocator final : ice::Allocator
+    class HostAllocator final : public ice::Allocator
     {
+    public:
         HostAllocator(std::source_location = std::source_location::current()) noexcept;
 
     protected:

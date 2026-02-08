@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "shader_tools_asl_importer.hxx"
@@ -28,16 +28,16 @@ namespace ice
             IPT_ZONE_SCOPED;
 
             // Imports don't specify the extension so we need to add it.
-            ice::HeapString<> import_path_final{ _allocator };
-            ice::string::push_format(import_path_final, "{}.asl", import_path);
+            ice::HeapPath import_path_final{ _allocator };
+            import_path_final.push_format("{}.asl", import_path);
 
             // Find the resource to he loaded.
             ice::ResourceHandle const import_resource = _tracker.find_resource(
-                ice::URI{ ice::Scheme_URN, { ice::String{ import_path_final } } }
+                ice::URI{ ice::Scheme_URN, import_path_final }
             );
             if (import_resource == nullptr)
             {
-                ICE_LOG(LogSeverity::Error, LogTag::Tool, "Failed to import ASL file: {}", ice::String{ import_path_final });
+                ICE_LOG(LogSeverity::Error, LogTag::Tool, "Failed to import ASL file: {}", import_path_final);
                 return {};
             }
 
@@ -92,12 +92,12 @@ namespace ice
     void ASLImportTracker::track_script(ASLScriptFile* file) noexcept
     {
         // Store the tracker pointer in a list.
-        ice::array::push_back(_global, file);
+        _global.push_back(file);
     }
 
     void ASLImportTracker::add_visitor(arctic::SyntaxVisitor* visitor) noexcept
     {
-        ice::array::push_back(_script_visitors, visitor);
+        _script_visitors.push_back(visitor);
     }
 
     auto ASLImportTracker::find(arctic::String identifier) noexcept -> arctic::SyntaxNode<>
@@ -121,7 +121,7 @@ namespace ice
             arctic::String const potential_alias_key = identifier.substr(0, pos);
             ice::u64 const hash_alias_key = detail::arc_hash(potential_alias_key);
 
-            ASLScriptFile* const file = ice::hashmap::get(_aliases, hash_alias_key, nullptr);
+            ASLScriptFile* const file = _aliases.get(hash_alias_key, nullptr);
             ICE_ASSERT_CORE(file == nullptr || file->alias == potential_alias_key);
             if (file != nullptr)
             {
@@ -145,8 +145,8 @@ namespace ice
         ice::u64 const hash_import_path = detail::arc_hash(import_path);
         ice::u64 const hash_import_alias = detail::arc_hash(import_alias);
 
-        Entry* const entry = ice::hashmap::try_get(_imports, hash_import_path);
-        ASLEntityTracker* const aliased = ice::hashmap::get(_aliases, hash_import_alias, nullptr);
+        Entry* const entry = _imports.try_get(hash_import_path);
+        ASLEntityTracker* const aliased = _aliases.get(hash_import_alias, nullptr);
 
         // The alias is either the same as the entry, or there is no alias
         ICE_ASSERT_CORE(entry == nullptr || entry->file.get() == aliased || aliased == nullptr);
@@ -155,7 +155,7 @@ namespace ice
             // Safe the new alias if one was provided
             if (aliased == nullptr && import_alias.empty() == false)
             {
-                ice::hashmap::set(_aliases, hash_import_alias, entry->file.get());
+                _aliases.set(hash_import_alias, entry->file.get());
             }
             return;
         }
@@ -182,10 +182,10 @@ namespace ice
         }
 
         // Store the tracker pointer in a list.
-        ice::array::push_back(_global, import_entry.file.get());
+        _global.push_back(import_entry.file.get());
 
         // Store the whole entry.
-        ice::multi_hashmap::insert(_imports, detail::arc_hash(node.data().path), ice::move(import_entry));
+        _imports.insert(detail::arc_hash(node.data().path), ice::move(import_entry));
     }
 
     auto parse_import_file(
@@ -216,8 +216,8 @@ namespace ice
             result = ice::make_unique<ASLScriptFile>(alloc._backing, alloc, asl_alias);
 
             ice::Array<arctic::SyntaxVisitor*> final_visitors{ alloc._backing, visitors };
-            ice::array::push_back(final_visitors, &imports);
-            ice::array::push_back(final_visitors, result.get());
+            final_visitors.push_back(&imports);
+            final_visitors.push_back(result.get());
 
             if (parser->parse(lexer, alloc, final_visitors) == false)
             {

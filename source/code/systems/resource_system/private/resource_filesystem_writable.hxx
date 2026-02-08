@@ -1,4 +1,4 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -6,8 +6,7 @@
 #include <ice/native_file.hxx>
 #include <ice/resource_flags.hxx>
 #include <ice/mem_unique_ptr.hxx>
-#include <ice/container_types.hxx>
-#include <ice/string/heap_string.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/uri.hxx>
 
 #include "resource_filesystem.hxx"
@@ -22,7 +21,7 @@ namespace ice
             ice::Allocator& alloc,
             ice::usize meta_size,
             ice::usize data_size,
-            ice::HeapString<> origin_path,
+            ice::HeapPath origin_path,
             ice::String origin_name,
             ice::String uri_path
         ) noexcept;
@@ -33,7 +32,7 @@ namespace ice
         auto flags() const noexcept -> ice::ResourceFlags override;
 
         auto name() const noexcept -> ice::String override;
-        auto origin() const noexcept -> ice::String override;
+        auto origin() const noexcept -> ice::Path override;
 
     public: // ice::FileSystemResource
         auto size() const noexcept -> ice::usize override;
@@ -67,7 +66,7 @@ namespace ice
 
     private:
         ice::Allocator& _allocator;
-        ice::HeapString<> _origin_path;
+        ice::HeapPath _origin_path;
         ice::String _origin_name;
         ice::String _uri_path;
         ice::URI _uri;

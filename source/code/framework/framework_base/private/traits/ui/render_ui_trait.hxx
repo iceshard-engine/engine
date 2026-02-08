@@ -1,11 +1,11 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/render/render_declarations.hxx>
 #include <ice/world/world_trait_archive.hxx>
 #include <ice/gfx/gfx_stage.hxx>
-#include <ice/container/hashmap.hxx>
+#include <ice/hashmap.hxx>
 #include <ice/ui_element_draw.hxx>
 #include <ice/shard.hxx>
 

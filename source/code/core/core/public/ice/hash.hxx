@@ -1,10 +1,11 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/constants.hxx>
 #include <ice/hash/murmur2.hxx>
 #include <ice/hash/murmur3.hxx>
+#include <ice/utility.hxx>
 
 namespace ice
 {
@@ -52,6 +53,7 @@ namespace ice
     template<typename T>
     constexpr auto hash(T value) noexcept -> ice::u64
     {
+        static_assert(ice::concepts::EnumOrIntegral<T>);
         return static_cast<ice::u64>(value);
     }
 

@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/ecs/ecs_entity_operations.hxx>
@@ -297,20 +297,20 @@ namespace ice::ecs
 
     void EntityOperations::destroy(ice::Span<ice::ecs::Entity const> entities) noexcept
     {
-        if (ice::span::empty(entities))
+        if (entities.is_empty())
         {
             return;
         }
 
         void* handle_loc;
-        EntityOperation* operation = new_storage_operation(ice::meminfo_of<ice::ecs::Entity> * ice::count(entities), handle_loc);
+        EntityOperation* operation = new_storage_operation(ice::meminfo_of<ice::ecs::Entity> * entities.size().u32(), handle_loc);
         operation->archetype = ice::ecs::Archetype::Invalid;
         operation->entities = reinterpret_cast<ice::ecs::Entity*>(handle_loc);
-        operation->entity_count = ice::count(entities);
+        operation->entity_count = entities.size().u32();
         operation->component_data = nullptr;
         operation->component_data_size = 0;
 
-        ice::memcpy(operation->entities, ice::span::data(entities), ice::span::size_bytes(entities));
+        ice::memcpy(operation->entities, entities.data_view());
     }
 
     auto OperationBuilder::with_data(
@@ -318,22 +318,22 @@ namespace ice::ecs
         ice::Span<ice::Data const> component_data
     ) noexcept -> Result
     {
-        if (ice::span::empty(entities) || (mode == 2 && index_create_count == 0) || mode == 0)
+        if (entities.is_empty() || (mode == 2 && index_create_count == 0) || mode == 0)
         {
             return Result{ *this };
         }
 
-        ice::ucount const entity_count = mode == 2 ? index_create_count : ice::count(entities);
-        ice::ucount const component_count = ice::count(component_info.names);
+        ice::u32 const entity_count = mode == 2 ? index_create_count : entities.size().u32();
+        ice::u32 const component_count = component_info.names.size().u32();
 
         ice::meminfo additional_data_size = ice::meminfo{ filter_data_size, ice::ualign::b_8 };
         additional_data_size += ice::meminfo_of<ice::ecs::Entity> * entity_count;
 
         // Data for storing component info
         additional_data_size += ice::meminfo_of<ice::ecs::OperationComponentInfo>;
-        additional_data_size.size += ice::span::size_bytes(component_info.names);
-        additional_data_size.size += ice::span::size_bytes(component_info.sizes);
-        additional_data_size.size += ice::span::size_bytes(component_info.offsets);
+        additional_data_size.size += component_info.names.size().bytes();
+        additional_data_size.size += component_info.sizes.size().bytes();
+        additional_data_size.size += component_info.offsets.size().bytes();
 
         // Component data
         for (ice::Data const& data : component_data)
@@ -354,7 +354,7 @@ namespace ice::ecs
         ice::ecs::Entity* entities_ptr = reinterpret_cast<ice::ecs::Entity*>(operation_data);
         if (mode == 1)
         {
-            ice::memcpy(entities_ptr, ice::span::data(entities), ice::span::size_bytes(entities));
+            ice::memcpy(entities_ptr, entities.data_view());
         }
         else
         {
@@ -364,10 +364,10 @@ namespace ice::ecs
 
         // Set component info object
         ice::StringID* names_ptr = reinterpret_cast<ice::StringID*>(entities_ptr + entity_count);
-        ice::memcpy(names_ptr, ice::span::data(component_info.names), ice::span::size_bytes(component_info.names));
+        ice::memcpy(names_ptr, component_info.names.data_view());
 
         ice::u32* sizes_ptr = reinterpret_cast<ice::u32*>(names_ptr + component_count);
-        ice::memcpy(sizes_ptr, ice::span::data(component_info.sizes), ice::span::size_bytes(component_info.sizes));
+        ice::memcpy(sizes_ptr, component_info.sizes.data_view());
 
         ice::u32* offsets_ptr = reinterpret_cast<ice::u32*>(sizes_ptr + component_count);
 
@@ -398,7 +398,7 @@ namespace ice::ecs
             ice::memcpy(operation_data, data.location, data.size);
 
             // Save the offset
-            offsets_ptr[component_idx] = ice::ucount(ice::ptr_distance(data_beg, operation_data).value);
+            offsets_ptr[component_idx] = ice::u32(ice::ptr_distance(data_beg, operation_data).value);
 
             operation_data = ice::ptr_add(operation_data, data.size);
             component_idx += 1;
@@ -408,7 +408,7 @@ namespace ice::ecs
         operation->entities = entities_ptr;
         operation->entity_count = entity_count;
         operation->component_data = component_info_ptr;
-        operation->component_data_size = ice::ucount(ice::ptr_distance(component_info_ptr, operation_data).value);
+        operation->component_data_size = ice::u32(ice::ptr_distance(component_info_ptr, operation_data).value);
         operation->filter_data = filter_ptr;
 
         if (mode == 2)
@@ -424,7 +424,7 @@ namespace ice::ecs
     {
         if (mode != 0)
         {
-            ice::ucount const entity_count = mode == 2 ? index_create_count : ice::count(entities);
+            ice::u32 const entity_count = mode == 2 ? index_create_count : entities.size().u32();
 
             ice::meminfo required_memory = ice::meminfo{ filter_data_size, ice::ualign::b_8 };
             required_memory += ice::meminfo_of<ice::ecs::Entity> * entity_count;
@@ -439,7 +439,7 @@ namespace ice::ecs
             ice::ecs::Entity* entities_ptr = reinterpret_cast<ice::ecs::Entity*>(operation_data);
             if (mode == 1)
             {
-                ice::memcpy(entities_ptr, ice::span::data(entities), ice::span::size_bytes(entities));
+                ice::memcpy(entities_ptr, entities.data_view());
             }
             else
             {
@@ -455,7 +455,7 @@ namespace ice::ecs
             operation->filter_data = filter_ptr;
 
             ice::memcpy(operation_data, filter_data, filter_data_size);
-            ice::memcpy(operation->entities, ice::span::data(entities), ice::span::size_bytes(entities));
+            ice::memcpy(operation->entities, entities.data_view());
 
             if (mode == 2)
             {

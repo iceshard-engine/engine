@@ -1,9 +1,10 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#include <ice/array.hxx>
 #include <ice/params_types.hxx>
-#include <ice/container_types.hxx>
+#include <ice/path_utils.hxx>
 
 namespace ice
 {
@@ -92,6 +93,8 @@ namespace ice
     template<> bool params_define(ice::Params& params, ice::ParamDefinition const& definition, ice::i64& out_value) noexcept;
     template<> bool params_define(ice::Params& params, ice::ParamDefinition const& definition, ice::String& out_value) noexcept;
     template<> bool params_define(ice::Params& params, ice::ParamDefinition const& definition, ice::HeapString<>& out_value) noexcept;
+    template<> bool params_define(ice::Params& params, ice::ParamDefinition const& definition, ice::Path& out_value) noexcept;
+    template<> bool params_define(ice::Params& params, ice::ParamDefinition const& definition, ice::HeapPath& out_value) noexcept;
 
     template<> bool params_define(ice::Params& params, ice::ParamDefinition const& definition, ice::Array<ice::String>& out_values) noexcept;
     template<> bool params_define(ice::Params& params, ice::ParamDefinition const& definition, ice::Array<ice::HeapString<>>& out_values) noexcept;

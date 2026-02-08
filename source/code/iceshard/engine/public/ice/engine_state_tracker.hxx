@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -40,7 +40,7 @@ namespace ice
         virtual auto update_states(
             ice::ShardContainer const& shards,
             ice::ShardContainer& out_shards
-        ) noexcept -> ice::ucount = 0;
+        ) noexcept -> ice::u32 = 0;
     };
 
     auto create_state_tracker(

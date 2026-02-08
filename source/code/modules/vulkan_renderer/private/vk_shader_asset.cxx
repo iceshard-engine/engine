@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "vk_shader_asset.hxx"
@@ -25,7 +25,7 @@ namespace ice::render::vk
             return AssetState::Baked;
         }
 
-        ice::String const ext = ice::path::extension(uri.path());
+        ice::String const ext = uri.path().extension();
         if (ext == ".glsl" || ext == ".asl")
         {
             return AssetState::Raw;

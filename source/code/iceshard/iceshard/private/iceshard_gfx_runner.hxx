@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -46,7 +46,9 @@ namespace ice::gfx
         ) noexcept;
         ~IceshardGfxRunner() noexcept override;
 
-        void update_rendergraph(ice::UniquePtr<ice::gfx::GfxGraphRuntime> rendergraph) noexcept override;
+        auto update_rendergraph(
+            ice::UniquePtr<ice::gfx::GfxGraphRuntime> rendergraph
+        ) noexcept -> ice::Task<> override;
 
         auto update_data(
             ice::EngineFrame& frame,

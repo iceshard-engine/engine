@@ -1,12 +1,12 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/shard.hxx>
+#include <ice/array.hxx>
 #include <ice/mem_data.hxx>
 #include <ice/mem_unique_ptr.hxx>
-#include <ice/container_types.hxx>
-#include <ice/string/heap_string.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/resource_flags.hxx>
 #include <ice/resource_handle.hxx>
 #include <ice/resource_status.hxx>
@@ -85,7 +85,7 @@ namespace ice
         virtual auto filter_resource_uris(
             ice::ResourceFilter const& filter,
             ice::Array<ice::URI>& out_uris
-        ) const noexcept -> ice::TaskExpected<ice::ucount> = 0;
+        ) const noexcept -> ice::TaskExpected<ice::u32> = 0;
 
 
         virtual auto set_resource(
@@ -124,8 +124,8 @@ namespace ice
     };
 
     auto resource_uri(ice::ResourceHandle const& handle) noexcept -> ice::URI const&;
-    auto resource_origin(ice::ResourceHandle const& handle) noexcept -> ice::String;
-    auto resource_path(ice::ResourceHandle const& handle) noexcept -> ice::String;
+    auto resource_origin(ice::ResourceHandle const& handle) noexcept -> ice::Path;
+    auto resource_path(ice::ResourceHandle const& handle) noexcept -> ice::Path;
     auto resource_meta(ice::ResourceHandle const& handle, ice::Data& out_metadata) noexcept -> ice::Task<ice::Result>;
     auto get_loose_resource(ice::ResourceHandle const& handle) noexcept -> ice::LooseResource const*;
 

@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "webgpu_commands.hxx"
@@ -43,7 +43,7 @@ namespace ice::render::webgpu
         WebGPURenderPass const* webgpu_rp = WebGPURenderPass::native(renderpass);
 
         // Max 4 attachments for now
-        ice::ucount attachment_count = 0;
+        ice::ncount attachment_count = 0;
         WGPURenderPassColorAttachment attachments[4];
 
         RenderSubPass const& subpass = webgpu_rp->subpasses[0];
@@ -119,7 +119,7 @@ namespace ice::render::webgpu
         wgpuRenderPassEncoderEnd(webgpu_cmds->renderpass_encoder);
 
         // Max 4 attachments for now
-        ice::ucount attachment_count = 0;
+        ice::ncount attachment_count = 0;
         WGPURenderPassColorAttachment attachments[4];
 
         RenderSubPass const& subpass = webgpu_rp->subpasses[webgpu_cmds->renderpass_subpass];

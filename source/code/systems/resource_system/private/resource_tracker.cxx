@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "resource_tracker.hxx"
@@ -15,12 +15,12 @@ namespace ice
         return handle->uri();
     }
 
-    auto resource_origin(ice::ResourceHandle const& handle) noexcept -> ice::String
+    auto resource_origin(ice::ResourceHandle const& handle) noexcept -> ice::Path
     {
         return handle->origin();
     }
 
-    auto resource_path(ice::ResourceHandle const& handle) noexcept -> ice::String
+    auto resource_path(ice::ResourceHandle const& handle) noexcept -> ice::Path
     {
         return handle->name();
     }
@@ -57,27 +57,21 @@ namespace ice
             "Invalid value ({}) provided for 'predicted_resource_count'. Value needs to be a positive integer."
         );
 
-        ice::hashmap::reserve(_resources, _info.predicted_resource_count);
-        ice::hashmap::reserve(_resource_providers, 12);
-        ice::hashmap::reserve(_resource_writers, 4);
+        _resources.reserve(_info.predicted_resource_count);
+        _resource_providers.reserve(12);
+        _resource_writers.reserve(4);
     }
 
     ResourceTrackerImplementation::~ResourceTrackerImplementation() noexcept
     {
-        ice::hashmap::clear(_resources);
+        _resources.clear();
     }
 
     auto ResourceTrackerImplementation::attach_provider(
         ice::UniquePtr<ice::ResourceProvider> provider
     ) noexcept -> ice::ResourceProvider*
     {
-        ice::ResourceProvider* const result = provider.get();
-        ice::multi_hashmap::insert(
-            _resource_providers,
-            ice::hash(provider->schemeid()),
-            ice::move(provider)
-        );
-        return result;
+        return _resource_providers.insert(provider->schemeid(), ice::move(provider)).get();
     }
 
     auto ResourceTrackerImplementation::attach_writer(
@@ -88,12 +82,7 @@ namespace ice
         ice::ResourceProvider* const provider = attach_provider(ice::move(writer));
         ICE_ASSERT_CORE(provider != nullptr);
 
-        ice::multi_hashmap::insert(
-            _resource_writers,
-            ice::hash(result->schemeid()),
-            result
-        );
-        return result;
+        return _resource_writers.insert(result->schemeid(), result);
     }
 
     void ResourceTrackerImplementation::sync_resources() noexcept
@@ -104,7 +93,7 @@ namespace ice
         ice::Array<ice::Resource*> temp_resources{ _allocator };
         for (auto const& provider : _resource_providers)
         {
-            ice::array::clear(temp_resources);
+            temp_resources.clear();
 
             this->sync_provider(temp_resources, *provider);
         }
@@ -153,7 +142,7 @@ namespace ice
         ice::ResourceProvider& provider,
         ice::ResourceFilter const& filter,
         ice::Array<ice::URI>& out_uris
-    ) const noexcept -> ice::TaskExpected<ice::ucount>
+    ) const noexcept -> ice::TaskExpected<ice::u32>
     {
         co_return co_await provider.filter_resource_uris(filter, out_uris);
     }
@@ -161,9 +150,9 @@ namespace ice
     auto ResourceTrackerImplementation::filter_resource_uris(
         ice::ResourceFilter const& filter,
         ice::Array<ice::URI>& out_uris
-    ) const noexcept -> ice::TaskExpected<ice::ucount>
+    ) const noexcept -> ice::TaskExpected<ice::u32>
     {
-        ice::ucount collected = 0;
+        ice::u32 collected = 0;
         for (ice::UniquePtr<ice::ResourceProvider> const& provider : _resource_providers)
         {
             static constexpr ice::String const keywords[]{ "blocked", "allowed" };
@@ -276,7 +265,7 @@ namespace ice
         ice::u64 const hash_scheme = ice::hash(resource_uri.scheme());
         ice::ResourceWriter* writer = nullptr;
 
-        auto it = ice::multi_hashmap::find_first(_resource_writers, hash_scheme);
+        auto it = _resource_writers.find_values(hash_scheme);
         while (it != nullptr)
         {
             [[maybe_unused]]
@@ -287,7 +276,7 @@ namespace ice
             {
                 writer = candidate_writer;
             }
-            it = ice::multi_hashmap::find_next(_resource_writers, it);
+            it.next();
         }
 
         if (writer == nullptr)
@@ -303,7 +292,7 @@ namespace ice
             );
 
             // TODO: Only save the new resource if it's not yet there.
-            ice::multi_hashmap::insert(_resources, ice::hash(resource->name()), resource);
+            _resources.insert(resource->name(), resource);
         }
 
         co_return ice::ResourceHandle{ resource };
@@ -346,24 +335,20 @@ namespace ice
             return;
         }
 
-        ice::ucount const new_count = ice::hashmap::count(_resources) + ice::array::count(out_resources);
+        ice::ncount const new_count = _resources.size() + out_resources.size();
         ICE_ASSERT(
             new_count <= _info.predicted_resource_count,
             "Maximum resource capacity of {} entiries reached!",
             _info.predicted_resource_count
         );
 
-        ice::hashmap::reserve(_resources, new_count);
+        _resources.reserve(new_count.u32());
 
         // Store all resource handles
         IPT_ZONE_SCOPED_NAMED("create_hash_entries");
         for (ice::Resource* resource : out_resources)
         {
-            ice::multi_hashmap::insert(
-                _resources,
-                ice::hash(resource->name()),
-                resource
-            );
+            _resources.insert(resource->name(), resource);
         }
     }
 
@@ -382,8 +367,8 @@ namespace ice
         ice::u64 const hash_resouce = ice::hash(resource_urn.path());
 
         // Just grab the first for now
-        auto it = ice::multi_hashmap::find_first(_resources, hash_resouce);
-        if (it != nullptr)
+        auto it = _resources.find_values(hash_resouce);
+        if (it.valid())
         {
             result = ice::ResourceHandle{ it.value() };
         }
@@ -406,7 +391,7 @@ namespace ice
 
         // TODO: Remove this abomination, we only need to remove the const'ness in the 'find' functions for the resource object.
         ice::u64 const hash_resouce = ice::hash(resource->name());
-        auto it = ice::multi_hashmap::find_first(_resources, hash_resouce);
+        auto it = _resources.find_values(hash_resouce);
         while (it != nullptr && handle == nullptr)
         {
             if ((*it) == resource)
@@ -415,7 +400,7 @@ namespace ice
             }
             else
             {
-                it = ice::multi_hashmap::find_next(_resources, it);
+                it.next();
             }
         }
 
@@ -430,7 +415,7 @@ namespace ice
     {
         ice::u64 const hash_scheme = ice::hash(resource_uri.scheme());
 
-        auto it = ice::multi_hashmap::find_first(_resource_providers, hash_scheme);
+        auto it = _resource_providers.find_values(hash_scheme);
         while (it != nullptr && provider == nullptr)
         {
             if (resource = (*it)->find_resource(resource_uri); resource != nullptr)
@@ -439,7 +424,7 @@ namespace ice
             }
             else
             {
-                it = ice::multi_hashmap::find_next(_resource_providers, it);
+                it.next();
             }
         }
 
@@ -468,20 +453,20 @@ namespace ice
         }
 
         // ... next with a URN with the expected library file name.
-        ice::HeapString<> result{ alloc, name };
-        if (ice::path::extension(name) == "") // Check that we have already a full file name.
+        ice::HeapPath result{ alloc, name };
+        if (result.extension() == "") // Check that we have already a full file name.
         {
             if constexpr (ice::build::is_windows)
             {
-                ice::string::push_back(result, ".dll");
+                result.push_back(".dll");
             }
             else
             {
                 // On unix we expect the library to be prepended with 'lib' and appended with '.so'
-                ice::string::clear(result);
-                ice::string::push_back(result, "lib");
-                ice::string::push_back(result, name);
-                ice::string::push_back(result, ".so");
+                result.clear();
+                result.push_back("lib");
+                result.push_back(name);
+                result.push_back(".so");
             }
         }
 

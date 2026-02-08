@@ -1,8 +1,8 @@
-/// Copyright 2025 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "config_builder_utils.hxx"
-#include <ice/string/heap_string.hxx>
+#include <ice/heap_string.hxx>
 
 namespace ice::config::detail
 {
@@ -64,7 +64,7 @@ namespace ice::config::detail
         ice::config::detail::ConfigBuilderContainer& container = *entry.data.val_container;
 
         ice::u32 idx = 0;
-        for (;idx < ice::count(container._entries); ++idx)
+        for (;idx < container._entries.size(); ++idx)
         {
             ice::String const entry_key = detail::cb_getkey(container._keystrings, container._entries[idx]);
             if (key == entry_key)
@@ -74,9 +74,9 @@ namespace ice::config::detail
         }
 
         ice::config::detail::ConfigBuilderEntry* result;
-        if (idx < ice::count(container._entries))
+        if (idx < container._entries.size())
         {
-            result = ice::array::begin(container._entries) + idx;
+            result = container._entries.begin() + idx;
             if (clean)
             {
                 cb_clear_value_type(alloc, result);
@@ -84,15 +84,15 @@ namespace ice::config::detail
         }
         else
         {
-            idx = ice::count(container._entries);
-            ice::u32 const offset = ice::string::size(container._keystrings);
-            ice::string::push_back(container._keystrings, key);
+            idx = container._entries.size().u32();
+            ice::ncount const offset = container._keystrings.size();
+            container._keystrings.push_back(key);
 
             // Add the new entry
-            ice::array::push_back(container._entries, ConfigKey{ 0, CONFIG_KEYTYPE_STRING, CONFIG_VALTYPE_NONE, offset, ice::size(key) });
+            container._entries.push_back(ConfigKey{ 0, CONFIG_KEYTYPE_STRING, CONFIG_VALTYPE_NONE, offset.u32(), key.size().u32()});
 
             // Return the entry
-            result = ice::array::begin(container._entries) + idx;
+            result = container._entries.begin() + idx;
         }
 
         return result;
@@ -109,9 +109,9 @@ namespace ice::config::detail
         ice::config::detail::ConfigBuilderContainer& container = *entry.data.val_container;
 
         ice::config::detail::ConfigBuilderEntry* result;
-        if (idx < ice::count(container._entries))
+        if (idx < container._entries.size())
         {
-            result = ice::array::begin(container._entries) + idx;
+            result = container._entries.begin() + idx;
             if (clean)
             {
                 cb_clear_value_type(alloc, result);
@@ -121,16 +121,16 @@ namespace ice::config::detail
         {
             if (idx == ice::u32_max)
             {
-                idx = ice::count(container._entries);
+                idx = container._entries.size().u32();
             }
 
-            while(ice::count(container._entries) <= idx)
+            while(container._entries.size() <= idx)
             {
-                ice::array::push_back(container._entries, ConfigKey{ 0, CONFIG_KEYTYPE_NONE, CONFIG_VALTYPE_NONE, 0, 0 });
+                container._entries.push_back(ConfigKey{ 0, CONFIG_KEYTYPE_NONE, CONFIG_VALTYPE_NONE, 0, 0 });
             }
 
             // Return the entry
-            result = ice::array::begin(container._entries) + idx;
+            result = container._entries.begin() + idx;
         }
 
         return result;

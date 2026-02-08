@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/mem_allocator.hxx>
@@ -175,6 +175,17 @@ namespace ice
 
         _internal->insert(result);
         dbg_count_add();
+        return result;
+    }
+
+    auto AllocatorBase<true>::allocate(ice::ChunkedAllocRequest const& request) noexcept -> ice::AllocResult
+    {
+        // TODO: Check if requesting sizes of '0' can be actually allowed
+        // ICE_ASSERT_CORE(request.size != 0_B);
+        ice::AllocResult result = do_allocate(request._request_meminfo);
+        _internal->insert(result);
+        dbg_count_add();
+        request.finalize(result);
         return result;
     }
 

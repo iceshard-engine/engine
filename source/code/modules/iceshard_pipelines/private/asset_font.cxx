@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "asset_font.hxx"
@@ -57,10 +57,10 @@ namespace ice
 
         gfx_font->atlases = { gfx_atlas, 1 };
         gfx_font->ranges = { gfx_glyph_range, 1 };
-        gfx_font->glyphs = { font_glyphs, ice::ucount(glyphs.size()) };
+        gfx_font->glyphs = { font_glyphs, ice::u32(glyphs.size()) };
 
         gfx_glyph_range->type = ice::GlyphRangeType::Explicit;
-        gfx_glyph_range->glyph_count = ice::ucount(glyphs.size());
+        gfx_glyph_range->glyph_count = ice::u32(glyphs.size());
         gfx_glyph_range->glyph_index = 0;
         gfx_glyph_range->glyph_atlas = 0;
 

@@ -1,10 +1,10 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/string/string.hxx>
-#include <ice/string/static_string.hxx>
-#include <ice/string/heap_string.hxx>
+#include <ice/string.hxx>
+#include <ice/static_string.hxx>
+#include <ice/heap_string.hxx>
 #include <ice/log_formatters.hxx>
 #include <ice/expected.hxx>
 #include <ice/math.hxx>
@@ -16,20 +16,6 @@ namespace ice
 
     namespace string
     {
-
-        template<typename... Args>
-        constexpr void push_format(
-            ice::HeapString<char>& str,
-            fmt::format_string<Args...> format,
-            Args&&... args
-        ) noexcept;
-
-        template<ice::u32 Capacity, typename... Args>
-        constexpr void push_format(
-            ice::StaticString<Capacity, char>& str,
-            fmt::format_string<Args...> format,
-            Args&&... args
-        ) noexcept;
 
         template<typename Fn>
         constexpr auto for_each_split(
@@ -74,25 +60,25 @@ namespace ice
         if constexpr (std::is_integral_v<T>)
         {
             fc_res = std::from_chars(
-                ice::string::begin(str),
-                ice::string::end(str),
+                str.begin(),
+                str.end(),
                 out_value
             );
         }
         else
         {
-#if ISP_COMPILER_CLANG <= 20 || ISP_WEBAPP || ISP_ANDROID
+#if ISP_COMPILER_CLANG < 20 || ISP_WEBAPP || ISP_ANDROID
             // Because Libc++ did not support from_chars for floats up until clang.20 we need to use the old C style approach...
             // We don't try to handle errors in this version.
             fc_res.ec = std::errc{};
             char* ptr_end = nullptr; // Why the hell is this a char ptr?
-            out_value = strtof(ice::string::begin(str), &ptr_end);
-            ICE_ASSERT_CORE(ice::ptr_distance(ice::string::begin(str), ptr_end).value <= ice::size(str));
+            out_value = strtof(str.begin(), &ptr_end);
+            ICE_ASSERT_CORE(ice::ptr_distance(str.begin(), ptr_end).value <= str.size());
             fc_res.ptr = ptr_end;
 #else
             fc_res = std::from_chars(
-                ice::string::begin(str),
-                ice::string::end(str),
+                str.begin(),
+                str.end(),
                 out_value,
                 std::chars_format::general
             );
@@ -110,7 +96,7 @@ namespace ice
 
         return {
             .ec = res,
-            .remaining = ice::String{ fc_res.ptr, ice::string::end(str) }
+            .remaining = ice::String{ fc_res.ptr, str.end() }
         };
     }
 
@@ -126,7 +112,7 @@ namespace ice
         }
         else
         {
-#if ISP_COMPILER_CLANG <= 20 || ISP_WEBAPP || ISP_ANDROID
+#if ISP_COMPILER_CLANG < 20 || ISP_WEBAPP || ISP_ANDROID
             // Because Libc++ did not support from_chars for floats up until clang.20 we need to use the old C style approach...
             // We don't try to handle errors in this version.
             fc_res.ec = std::errc{};
@@ -184,56 +170,20 @@ namespace ice
     namespace string
     {
 
-        template<typename... Args>
-        constexpr void push_format(
-            ice::HeapString<char>& str,
-            fmt::format_string<Args...> format,
-            Args&&... args
-        ) noexcept
-        {
-            ice::u32 const size = ice::u32(fmt::formatted_size(format, ice::forward<Args>(args)...));
-            ice::u32 const new_size = ice::string::size(str) + size;
-            if (new_size + 1 >= str._capacity)
-            {
-                ice::string::grow(str, new_size + 1);
-            }
-            fmt::format_to_n(ice::string::end(str), size, format, ice::forward<Args>(args)...);
-            str._size += size;
-            str._data[str._size] = '\0';
-        }
-
-        template<ice::u32 Capacity, typename... Args>
-        constexpr void push_format(
-            ice::StaticString<Capacity, char>& str,
-            fmt::format_string<Args...> format,
-            Args&&... args
-        ) noexcept
-        {
-            ice::u32 const size = ice::u32(fmt::formatted_size(format, ice::forward<Args>(args)...));
-            ice::u32 new_size = ice::string::size(str) + size;
-            if (new_size + 1 >= Capacity)
-            {
-                new_size = Capacity - 1;
-            }
-            fmt::format_to_n(ice::string::end(str), new_size, format, ice::forward<Args>(args)...);
-            str._size += new_size;
-            str._data[str._size] = '\0';
-        }
-
         template<typename Fn>
         constexpr auto for_each_split(ice::String contents, ice::String separator, Fn&& fn) noexcept -> ice::u32
         {
             ice::u32 count = 0;
-            while(ice::string::any(contents))
+            while(contents.not_empty())
             {
                 count += 1;
-                ice::ucount const separator_pos = ice::string::find_first_of(contents, separator);
-                ice::String const line = ice::string::substr(contents, 0, separator_pos);
+                ice::nindex const separator_pos = contents.find_first_of(separator);
+                ice::String const line = contents.substr(0, separator_pos);
                 if (ice::forward<Fn>(fn)(line) == false)
                 {
                     break;
                 }
-                contents = ice::string::substr(contents, separator_pos + 1);
+                contents = contents.substr(separator_pos + 1);
             }
             return count;
         }

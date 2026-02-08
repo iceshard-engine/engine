@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "resource_provider_custom.hxx"
@@ -33,18 +33,18 @@ namespace ice
     ) noexcept
     {
         // Early out for metadata files.
-        if (ice::path::extension(file_path) == ISP_PATH_LITERAL(".isrm"))
+        if (file_path.extension() == ISP_PATH_LITERAL(".isrm"))
         {
             return;
         }
 
         ice::StackAllocator_1024 temp_alloc;
-        ice::native_file::FilePath const uribase = ice::path::directory(base_path);
+        ice::native_file::FilePath const uribase = base_path.directory();
         ice::native_file::FilePath const datafile = file_path;
         ice::native_file::HeapFilePath metafile{ temp_alloc };
-        ice::string::reserve(metafile, 512);
-        ice::string::push_back(metafile, file_path);
-        ice::string::push_back(metafile, ISP_PATH_LITERAL(".isrm"));
+        metafile.reserve(512);
+        metafile.push_back(file_path);
+        metafile.push_back(ISP_PATH_LITERAL(".isrm"));
 
         ice::FileSystemResource* const resource = create_resources_from_loose_files(
             _allocator,
@@ -57,15 +57,13 @@ namespace ice
 
         if (resource != nullptr)
         {
-            ice::u64 const hash = ice::hash(resource->origin());
             ICE_ASSERT(
-                ice::hashmap::has(_resources, hash) == false,
+                _resources.missing(resource->origin()),
                 "A resource cannot be a explicit resource AND part of another resource."
             );
 
-            ice::hashmap::set(
-                _resources,
-                hash,
+            _resources.set(
+                resource->origin(),
                 resource
             );
         }
@@ -73,16 +71,16 @@ namespace ice
 
     auto CustomResourceProvider::collect(
         ice::Array<ice::Resource*>& out_changes
-    ) noexcept -> ice::ucount
+    ) noexcept -> ice::u32
     {
         IPT_ZONE_SCOPED;
 
-        ice::array::reserve(out_changes, ice::array::count(out_changes) +  ice::hashmap::count(_resources));
+        out_changes.reserve(out_changes.size() + _resources.size());
         for (auto* resource : _resources)
         {
-            ice::array::push_back(out_changes, resource);
+            out_changes.push_back(resource);
         }
-        return ice::hashmap::count(_resources);
+        return _resources.size().u32();
     }
 
     auto CustomResourceProvider::refresh(
@@ -90,7 +88,7 @@ namespace ice
     ) noexcept -> ice::ResourceProviderResult
     {
         IPT_ZONE_SCOPED;
-        if (ice::hashmap::empty(_resources))
+        if (_resources.is_empty())
         {
             collect(out_changes);
         }
@@ -135,25 +133,21 @@ namespace ice
         ice::Resource const* root_resource
     ) const noexcept -> ice::Resource const*
     {
-        ice::u32 const origin_size = ice::string::size(root_resource->origin());
+        ice::ncount const origin_size = root_resource->origin().size();
 
-        ice::HeapString<> predicted_path{ _allocator };
-        ice::string::reserve(predicted_path, origin_size + ice::string::size(relative_uri.path()));
+        ice::HeapPath predicted_path{ _allocator };
+        predicted_path.reserve(origin_size + relative_uri.path().size());
 
-        predicted_path = ice::string::substr(
-            root_resource->origin(),
-            0,
-            origin_size - ice::string::size(
-                ice::path::filename(root_resource->name())
-            )
+        predicted_path = root_resource->origin().substr(
+            0, origin_size - ice::Path{ root_resource->name() }.filename().size()
         );
 
-        ice::path::join(predicted_path, relative_uri.path());
-        ice::path::normalize(predicted_path);
+        predicted_path.join(relative_uri.path());
+        predicted_path.normalize();
 
         ice::u64 const resource_hash = ice::hash(ice::String{ predicted_path });
 
-        ice::FileSystemResource const* found_resource = ice::hashmap::get(_resources, resource_hash, nullptr);
+        ice::FileSystemResource const* found_resource = _resources.get(resource_hash, nullptr);
         if (found_resource != nullptr)
         {
             return found_resource;
