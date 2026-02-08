@@ -13,7 +13,7 @@ Open-Asset-Importer-Library that loads 40+ 3D-file-formats into one unified and 
 ## catch2
 A modern, C++-native, header-only, test framework for unit-tests, TDD and BDD.
 - **upstream:** https://github.com/catchorg/Catch2
-- **version:** 3.3.2
+- **version:** 3.12.0
 - **license:** BSL-1.0 License
 
 ## cli11
@@ -51,7 +51,7 @@ Dear ImGui: Bloat-free Immediate Mode Graphical User interface for C++ with mini
 ## imguizmo
 Immediate mode 3D gizmo for scene editing and other controls based on Dear Imgui
 - **upstream:** https://github.com/CedricGuillemet/ImGuizmo
-- **version:** 1.91.3
+- **version:** 1.91.5
 - **license:** https://github.com/CedricGuillemet/ImGuizmo?tab=MIT-1-ov-file#readme
 
 ## msdf_atlas_gen
@@ -93,13 +93,13 @@ RapidXML NS library - RapidXML with added XML namespaces support.
 ## sdl2
 Conan recipe for the SDL2 library.
 - **upstream:** https://www.libsdl.org/index.php
-- **version:** 2.0.22
+- **version:** 2.32.10
 - **license:** Zlib
 
 ## tracy
 A real time, nanosecond resolution, remote telemetry, hybrid frame and sampling profiler for games and other applications.
 - **upstream:** https://github.com/wolfpld/tracy
-- **version:** 0.11.1
+- **version:** 0.13.1
 - **license:** BSD-3-Clause
 
 ## vulkan-headers
