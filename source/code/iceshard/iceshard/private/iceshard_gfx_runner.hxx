@@ -50,7 +50,7 @@ namespace ice::gfx
 
         void update_rendergraph(
             ice::UniquePtr<ice::gfx::GfxGraphRuntime> rendergraph
-        ) noexcept;
+        ) noexcept override;
 
         auto update_data(
             ice::EngineFrame& frame,
