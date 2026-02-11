@@ -291,7 +291,7 @@ namespace ice
     inline void sort_many(ice::Span<Key> keys, Pred&& pred, ice::Span<Values>... values) noexcept
     {
         ice::i32 const first_index = 0;
-        ice::i32 const last_index = ice::count(keys) - 1;
+        ice::i32 const last_index = keys.size().u32() - 1;
 
         ice::detail::qsort_many(std::forward<Pred>(pred), first_index, last_index, keys, values...);
     }

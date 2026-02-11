@@ -11,6 +11,7 @@ namespace ice
     struct ShardContainer : public ice::Array<ice::Shard>
     {
         using ice::Array<ice::Shard>::Array;
+        using ice::Array<ice::Shard>::push_back;
 
         constexpr bool contains(ice::ShardID shardid) const noexcept;
         constexpr auto count_of(ice::ShardID shardid) const noexcept -> ice::ncount;
@@ -60,6 +61,9 @@ namespace ice
             this ShardContainer& self,
             ice::ShardID shardid
         ) noexcept;
+
+        template<std::size_t Count>
+        inline constexpr void push_back(ice::Shard const(&shards_array)[Count]) noexcept;
     };
 
     inline constexpr bool ShardContainer::contains(ice::ShardID expected_shard) const noexcept
@@ -201,6 +205,12 @@ namespace ice
             }
         }
         self.resize(count);
+    }
+
+    template<std::size_t Count>
+    inline constexpr void ShardContainer::push_back(ice::Shard const(&shards_array)[Count]) noexcept
+    {
+        this->push_back(ice::Span{ shards_array });
     }
 
 } // namespace ice

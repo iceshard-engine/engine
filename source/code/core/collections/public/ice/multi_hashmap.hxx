@@ -74,12 +74,20 @@ namespace ice
         {
             ICE_ASSERT_CORE(valid());
 
-            _current = _entries[_current].next;
-            if (_current == ice::detail::hashmap::Constant_EndOfList)
+            ice::u64 const expected_key = this->key();
+
+            do
             {
-                _entries = nullptr;
-                _values = nullptr;
-            }
+                _current = _entries[_current].next;
+                if (_current == ice::detail::hashmap::Constant_EndOfList)
+                {
+                    _entries = nullptr;
+                    _values = nullptr;
+                    break;
+                }
+
+                // Test against the new key if we are not at the end.
+            } while (this->key() != expected_key);
         }
 
         constexpr auto key() const noexcept -> ice::u64 const& { return _entries[_current].key; }
