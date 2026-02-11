@@ -46,9 +46,11 @@ namespace ice::gfx
         ) noexcept;
         ~IceshardGfxRunner() noexcept override;
 
-        auto update_rendergraph(
+        bool has_rendergraph() const noexcept override { return _rendergraph != nullptr; }
+
+        void update_rendergraph(
             ice::UniquePtr<ice::gfx::GfxGraphRuntime> rendergraph
-        ) noexcept -> ice::Task<> override;
+        ) noexcept;
 
         auto update_data(
             ice::EngineFrame& frame,

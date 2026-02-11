@@ -23,10 +23,12 @@ namespace ice::gfx
     {
         virtual ~GfxRunner() noexcept = default;
 
+        virtual bool has_rendergraph() const noexcept = 0;
+
         //! \brief Sets a rendergraph to used for execution each frame.
-        virtual auto update_rendergraph(
+        virtual void update_rendergraph(
             ice::UniquePtr<ice::gfx::GfxGraphRuntime> rendergraph
-        ) noexcept -> ice::Task<> = 0;
+        ) noexcept = 0;
 
         virtual auto update_data(
             ice::EngineFrame& frame,

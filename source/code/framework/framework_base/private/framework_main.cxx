@@ -542,7 +542,7 @@ auto ice_resume(
         runtime.input_tracker->register_device_type(ice::input::DeviceType::Keyboard, ice::input::get_default_device_factory());
 
         //runtime.gfx_rendergraph_runtime = state.game->rendergraph(runtime.gfx_runner->device());
-        ice::wait_for(runtime.gfx_runner->update_rendergraph(state.game->rendergraph(runtime.gfx_runner->context())));
+        runtime.gfx_runner->update_rendergraph(state.game->rendergraph(runtime.gfx_runner->context()));
         runtime.gfx_wait.set();
     }
 
@@ -660,7 +660,7 @@ auto ice_update(
 
         //runtime.gfx_wait.wait();
         runtime.gfx_runner->context().recreate_swapchain();
-        ice::wait_for(runtime.gfx_runner->update_rendergraph(state.game->rendergraph(runtime.gfx_runner->context())));
+        runtime.gfx_runner->update_rendergraph(state.game->rendergraph(runtime.gfx_runner->context()));
     }
 
     // Since the frame updates the values we are safe to access them any time. They won't change until a new frame is awaited, and awaitng frames is happening on the same thread.

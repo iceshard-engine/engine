@@ -329,7 +329,7 @@ namespace ice::ecs
             ice::ecs::detail::ArchetypeInstanceInfo const* arch = nullptr;
             ice::ecs::detail::DataBlock const* block = nullptr;
 
-            ice::u32 const arch_count = ice::count(query.archetype_instances);
+            ice::u32 const arch_count = query.archetype_instances.size().u32();
             for (; arch_idx < arch_count; ++arch_idx)
             {
                 arch = query.archetype_instances[arch_idx];
@@ -552,7 +552,7 @@ namespace ice::ecs
 
             void* helper_pointer_array[component_count]{ nullptr };
 
-            ice::u32 const arch_count = ice::count(query.archetype_instances);
+            ice::u32 const arch_count = query.archetype_instances.size().u32();
             for (ice::u32 arch_idx = 0; arch_idx < arch_count; ++arch_idx)
             {
                 ice::ecs::detail::ArchetypeInstanceInfo const* arch = query.archetype_instances[arch_idx];

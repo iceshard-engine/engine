@@ -113,12 +113,10 @@ namespace ice::gfx
         _context->device().destroy_fence(_present_fence);
     }
 
-    auto IceshardGfxRunner::update_rendergraph(
+    void IceshardGfxRunner::update_rendergraph(
         ice::UniquePtr<ice::gfx::GfxGraphRuntime> rendergraph
-    ) noexcept -> ice::Task<>
+    ) noexcept
     {
-        co_await _scheduler;
-
         if (_rendergraph != nullptr)
         {
             ice::gfx::GfxFrameStages gpu_stages{
@@ -135,8 +133,8 @@ namespace ice::gfx
                 }
             }
         }
-        
-        _rendergraph = ice::move(rendergraph);
+
+        _scheduled_rendergraph = ice::move(rendergraph);
     }
 
     auto IceshardGfxRunner::update_data(
@@ -214,7 +212,7 @@ namespace ice::gfx
         }
 
         // Check if we have a scheduled render graph and if we can replace
-        if (_scheduled_rendergraph != nullptr && _rendergraph->ready())
+        if (_scheduled_rendergraph != nullptr && (_rendergraph == nullptr || _rendergraph->ready()))
         {
             _rendergraph = ice::move(_scheduled_rendergraph);
         }
@@ -225,6 +223,11 @@ namespace ice::gfx
             // The tasks here might take more than a frame to finish. We should track them somewhere else.
             ice::Array<ice::Task<>> tasks = _gfx_tasks.extract_tasks();
             ice::execute_tasks(tasks);
+        }
+
+        if (_rendergraph->ready() == false)
+        {
+            co_return;
         }
 
         if (_queue_transfer.not_empty() || _gfx_tasks.running_tasks() > 0)
