@@ -36,9 +36,9 @@ namespace ice
 
     void IceshardWorldManager::DevUI::build_content() noexcept
     {
-        ice::Color<ice::u8> constexpr TextColors[]{
-            0xFF'888888_argb, // grayed-out
-            0xFF'57C747_argb, // green
+        ice::Color constexpr TextColors[]{
+            ice::color::Green.desaturated(0.4f), // grayed-out
+            ice::color::Green.darkened()// green
         };
 
         // Always ensure same size

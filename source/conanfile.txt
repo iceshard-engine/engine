@@ -11,7 +11,7 @@ tracy/0.13.1@iceshard/stable
 imgui/1.92.4.docking@iceshard/stable
 hailstorm/0.4.0@iceshard/stable
 # chipmunk2d/7.0.3+@iceshard/stable
-arctic/0.2.3@iceshard/stable
+arctic/0.2.4@iceshard/stable
 
 rapidxml/1.13
 rapidxml_ns/1.13.2@iceshard/stable

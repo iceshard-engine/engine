@@ -155,7 +155,7 @@ namespace ice
                 ImVec2 const tl{ cursor.x + 10.0f + offset, cursor.y + 3 + running*12.0f };
                 ImVec2 const br{ cursor.x + 10.0f + offset + size, cursor.y + 3 + running*12.0f + 8 };
                 ImDrawList* drawlist = ImGui::GetWindowDrawList();
-                drawlist->AddRectFilled(tl, br, ImGui::ToColor(0xFF'994466_argb));
+                drawlist->AddRectFilled(tl, br, ImGui::ToColor(ice::color::Green));
 
                 // Remove and swap places with last
                 concurrent[running] = nullptr;
@@ -169,6 +169,7 @@ namespace ice
 
         ImVec2 new_cursor{ cursor.x, cursor.y + 6 + 8 + max_running * 12 };
         ImGui::SetCursorScreenPos(new_cursor);
+        ImGui::Dummy({});
     }
 
 } // namespace ice

@@ -3,7 +3,7 @@
 
 #include "imgui_logger.hxx"
 
-#include <ice/color.hxx>
+//#include <ice/color.hxx>
 #include <ice/devui_imgui.hxx>
 #include <ice/log.hxx>
 #include <ice/math.hxx>
@@ -84,18 +84,21 @@ namespace ice::devui
 
     static inline auto severity_color(ice::LogSeverity sev) noexcept -> ImGuiColorCtx
     {
+        ice::Color constexpr color_error = ice::Color{ 0.475f, 0.180f, 26.5_deg, 1.f };
+        ice::Color constexpr color_warning = ice::Color{ 0.765f, 0.155f, 78.0_deg, 1.f };
+
         switch(sev)
         {
         case LogSeverity::Critical:
         case LogSeverity::Error:
             return {
-                { ImGuiCol_TableRowBg, ImGui::ToColor(0xAA'e83f48_argb) },
-                { ImGuiCol_TableRowBgAlt, ImGui::ToColor(0xCC'e83f48_argb) }
+                { ImGuiCol_TableRowBg, ImGui::ToColor(color_error) },
+                { ImGuiCol_TableRowBgAlt, ImGui::ToColor(color_error.darkened()) }
             };
         case LogSeverity::Warning:
             return {
-                { ImGuiCol_TableRowBg, ImGui::ToColor(0xAA'f6c409_argb) },
-                { ImGuiCol_TableRowBgAlt, ImGui::ToColor(0xCC'f6c409_argb) }
+                { ImGuiCol_TableRowBg, ImGui::ToColor(color_warning)},
+                { ImGuiCol_TableRowBgAlt, ImGui::ToColor(color_warning.darkened()) }
             };
         case LogSeverity::Retail:
             // return {

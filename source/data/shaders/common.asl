@@ -1,6 +1,14 @@
 
-#[glsl:type="vec2"]
-#[wgsl:type="vec2<f32>"]
+#[glsl:type="float"]
+#[wgsl:type="f32"]
+def Float native
+
+#[glsl:type="uint"]
+#[wgsl:type="u32"]
+def UInt native
+
+#[glsl:type="vec1"]
+#[wgsl:type="vec1<f32>"]
 def Vec1f native
 
 #[glsl:type="vec2"]

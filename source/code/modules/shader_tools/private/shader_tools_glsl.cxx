@@ -89,8 +89,15 @@ namespace ice
             }
             else
             {
-                arctic::String const atom_sub = atom.data().value.value;
-                out_code.push_format("{}", atom_sub);
+                arctic::Token atom_token = atom.data().value;
+                if (atom_token.type == TokenType::CT_Symbol)
+                {
+                    out_code.push_back(ice::String{ subs.get(detail::arc_hash(atom_token.value), atom_token.value) });
+                }
+                else
+                {
+                    out_code.push_back(ice::String{ atom_token.value });
+                }
             }
         }
 
@@ -195,30 +202,85 @@ namespace ice
             }
         }
 
-        auto generate_function(
+        void generate_function(
             ice::HeapString<>& result,
             ice::HashMap<arctic::String> const& subs,
             syntax::Function const& func,
             syntax::FunctionArg const& arg,
             syntax::Type const& ret,
-            SyntaxNode<> fnentry
+            SyntaxNode<> fnentry,
+            ice::u32 indentation = 4
+        ) noexcept;
+
+        void generate_branch(
+            ice::HeapString<>& result,
+            ice::HashMap<arctic::String> const& subs,
+            syntax::Function const& func,
+            syntax::FunctionArg const& arg,
+            syntax::Type const& ret,
+            SyntaxNode<syntax::Branch> node,
+            ice::u32 indentation
+        ) noexcept
+        {
+            IPT_ZONE_SCOPED;
+
+            do
+            {
+                result.push_format("{0:>{1}}", ' ', indentation);
+
+                syntax::Branch const& branch = node.data();
+                SyntaxNode block = node.child();
+                if (branch.is_else)
+                {
+                    result.push_back("else");
+                    result.push_back(branch.is_if ? " " : "\n");
+                }
+
+                if (branch.is_if)
+                {
+                    result.push_back("if (");
+                    generate_expression(result, subs, func, arg, block.child());
+                    result.push_back(")\n");
+                    block = block.sibling();
+                }
+                result.push_format("{0:>{1}}{{\n", ' ', indentation);
+                generate_function(result, subs, func, arg, ret, block.child(), indentation + 4);
+                result.push_format("{0:>{1}}}}\n", ' ', indentation);
+
+                node = node.sibling<syntax::Branch>();
+            } while (node);
+        }
+
+        void generate_function(
+            ice::HeapString<>& result,
+            ice::HashMap<arctic::String> const& subs,
+            syntax::Function const& func,
+            syntax::FunctionArg const& arg,
+            syntax::Type const& ret,
+            SyntaxNode<> fnentry,
+            ice::u32 indentation
         ) noexcept
         {
             IPT_ZONE_SCOPED;
 
             while (fnentry)
             {
-                result.push_back("    ");
 
                 if (SyntaxNode var = fnentry.to<syntax::Variable>(); var)
                 {
+                    result.push_format("{0:>{1}}", ' ', indentation);
                     generate_variable(result, subs, func, arg, ret, var);
                     result.push_back(";\n");
                 }
                 else if (SyntaxNode exp = fnentry.to<syntax::Expression>(); exp)
                 {
+                    result.push_format("{0:>{1}}", ' ', indentation);
                     generate_expression(result, subs, func, arg, exp.child());
                     result.push_back(";\n");
+                }
+                else if (SyntaxNode branch = fnentry.to<syntax::BranchTree>())
+                {
+                    generate_branch(result, subs, func, arg, ret, branch.child<syntax::Branch>(), indentation);
                 }
                 fnentry = fnentry.sibling<>();
             }
@@ -262,6 +324,8 @@ namespace ice
                 result.push_back("};\n\n");
             }
 
+            ice::HashMap<arctic::String> subs{ alloc };
+
             // Generate function definitions
             for (SyntaxNode<syntax::Function> func : shader._functions)
             {
@@ -269,9 +333,50 @@ namespace ice
                 {
                     continue;
                 }
+
+                // Find function return value
+                SyntaxNode<> func_ret = func.child();
+                while (func_ret && func_ret.type() != arctic::SyntaxEntity::D_Type)
+                {
+                    func_ret = func_ret.sibling();
+                }
+
+                ice::u64 const func_hash = detail::arc_hash(func.data().name.value);
+                subs.set(func_hash, "_a_result");
+
+                // Generate shader main
+                SyntaxNode<syntax::Type> ret = func_ret.to<syntax::Type>();
+                SyntaxNode<syntax::FunctionArg> arg = func.child<syntax::FunctionArg>();
+                SyntaxNode<syntax::FunctionBody> body = func_ret.sibling<syntax::FunctionBody>();
+                ICE_ASSERT_CORE(func_ret && body);
+
+                arctic::String const rettype = ret.data().name.value;
+
+                result.push_format("\n{} {}(", rettype, func.data().name.value);
+                //subs.set(detail::arc_hash(arg.data().name.value), arctic::String{ "_a_inputs" });
+                //subs.set(detail::arc_hash(shader._mainfunc.data().name.value), arctic::String{ "_a_outputs" });
+                while (arg)
+                {
+                    arctic::syntax::FunctionArg const& argd = arg.data();
+                    arctic::syntax::Type const& argt = arg.child<syntax::Type>().data();
+                    arctic::String const argk = (argd.is_reference && argt.is_mutable ? "inout" : "in");
+                    result.push_format("{} {} {}", argk, argt.name.value, argd.name.value);
+
+                    if (arg = arg.sibling<syntax::FunctionArg>(); arg)
+                    {
+                        result.push_back(", ");
+                    }
+                }
+                result.push_back(") {\n");
+                result.push_format("    {} _a_result;\n", rettype);
+                generate_function(result, subs, func.data(), arg.data(), ret.data(), body.child<>());
+                result.push_format("    return _a_result;\n", rettype);
+                result.push_back("}\n");
+
+                subs.remove(func_hash);
             }
 
-            ice::HashMap<arctic::String> subs{ alloc };
+            result.push_back("\n");
 
             // Generate shader inputs and outputs
             SyntaxNode<syntax::StructMember> member = shader._inputs.child<syntax::StructMember>();
@@ -465,7 +570,27 @@ namespace ice
                 arctic::create_word_processor(source, &matcher)
             );
 
-            arctic::ParserCreateInfo const parser_info{ .rules = arctic::grammar::Constant_GlobalRules };
+            arctic::ParserCreateInfo const parser_info{
+                .rules = arctic::grammar::Constant_GlobalRules,
+                .on_rule_group_enter = [](arctic::String context, arctic::MatchContext const& ctx) noexcept
+                {
+                    ICE_LOG_IF(
+                        context.empty() == false,
+                        LogSeverity::Error, LogTag::Asset,
+                        "Entered Group '{}' with token '{}'",
+                        context, ctx.token.value
+                    );
+                },
+                .on_rule_group_leave = [](arctic::String context, arctic::MatchContext const& ctx, arctic::ParseState state) noexcept
+                {
+                    ICE_LOG_IF(
+                        context.empty() == false,
+                        LogSeverity::Error, LogTag::Asset,
+                        "Left group '{}' with token '{}' with result: {}",
+                        context, ctx.token.value, state == arctic::ParseState::Success ? "Success" : "Error"
+                    );
+                }
+            };
             std::unique_ptr<arctic::Parser> parser = arctic::create_default_parser(parser_info);
 
             arctic::SyntaxVisitor* visitors[]{ &glsl_patcher, &asl_shaderfile, &asl_imports, &asl_shader };

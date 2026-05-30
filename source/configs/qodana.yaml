@@ -1,0 +1,38 @@
+version: '1.0'
+
+## Qodana Comunity for C++ does not support the 'profile' section. The following message is present during execution: 
+## - Found qodana.yaml. Note that only bootstrap command and inspection names from include and exclude sections are supported
+#profile: 
+#  base: 'default'
+#  # Customize inspections
+#  inspections:
+#    - inspection: 'bugprone-suspicious-include'
+#      severity: 'ERROR'
+#    - inspection: 'readability-implicit-bool-conversion'
+#      severity: 'WEAK WARNING'
+      
+exclude:
+  # Readability
+  - name: readability-convert-member-functions-to-static # It's marking coroutine necessary functions as possible to be made static
+  - name: readability-redundant-access-specifiers # We use additional access specifiers to categories parts of a types API
+  - name: readability-simplify-boolean-expr 
+  - name: readability-trailing-comma
+  # Portability
+  - name: portability-avoid-pragma-once
+  # Modernize
+  - name: modernize-use-trailing-return-type # We don't use TRT for `bool` and `void` types as these are same length as `auto` and do not improve readability to be at the end.
+  # Misc
+  - name: misc-non-private-member-variables-in-classes # IceShard allows more access to internals of some classes as it's a game engine not a security tool.
+  # LLVM
+  - name: llvm-header-guard # We use #pragma-once instead
+  # Fuchsia
+  - name: fuchsia-trailing-return # Goes against what IceShard wants
+  # LLVM-LibC - Exclude all, we don't use them.
+  - name: llvmlibc-callee-namespace
+  - name: llvmlibc-implementation-in-namespace
+  - name: llvmlibc-inline-function-decl
+  - name: llvmlibc-restrict-system-libc-headers
+  # Altera - We don't want any of these
+  - name: altera-unroll-loops
+  - name: altera-id-dependent-backward-branch
+  - name: altera-struct-pack-align

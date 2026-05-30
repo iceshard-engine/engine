@@ -9,6 +9,7 @@
 #include "core/memsys/memsys.bff"
 #include "core/collections/collections.bff"
 #include "core/modules/modules.bff"
+#include "core/logger/logger.bff"
 #include "core/utils/utils.bff"
 #include "core/tasks/tasks.bff"
 #include "core/devui/devui.bff"

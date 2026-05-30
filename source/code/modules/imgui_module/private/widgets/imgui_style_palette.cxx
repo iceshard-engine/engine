@@ -1,11 +1,64 @@
 /// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
-#include <ice/color.hxx>
+#include <ice/colors.hxx>
 #include <ice/devui_imgui.hxx>
 #include <ice/string_utils.hxx>
 #include "imgui_style_palette.hxx"
 
+namespace ice::devui
+{
+
+    namespace detail
+    {
+
+        constexpr auto to_imcolor(ice::color::OkLCH oklch) noexcept
+        {
+            ice::color::OkLCHu8 const oklchu8 = oklch.gammut_corrected().to_u8();
+            return ImColor{ oklchu8.hue128_lightness, oklchu8.chroma, oklchu8.hue, oklchu8.alpha };
+        }
+
+    } // namespace detail
+
+    DevUITheme::DevUITheme(ice::Color primary, ice::Color secondary, ice::Color accent) noexcept
+        : primary{ primary }
+        , secondary{ secondary }
+        , accent{ accent }
+        , status{ Constant_DefaultStatusColors }
+    {
+        // Text
+        resolved.text = detail::to_imcolor(status.neutral);
+        resolved.text_disabled = detail::to_imcolor(status.neutral.brightened(-0.6f));
+        // Windows/Popups
+        resolved.border = detail::to_imcolor(secondary.brightened(0.10f));
+        resolved.border_shadow = detail::to_imcolor(secondary.desaturated());
+        resolved.bg_window = detail::to_imcolor(primary);
+        resolved.bg_window_inner = detail::to_imcolor(primary.brightened(0.10f));
+        resolved.bg_title = detail::to_imcolor(secondary);
+        resolved.bg_title_focus = detail::to_imcolor(secondary.brightened(0.1f));
+        resolved.bg_title_disabled = detail::to_imcolor(secondary.desaturated(0.06f));
+        // Scrollbar
+        resolved.scroll_bg = resolved.bg_window_inner;
+        resolved.scroll_neutral = detail::to_imcolor(secondary);
+        resolved.scroll_hover = detail::to_imcolor(secondary.brightened(0.05f));
+        resolved.scroll_focus = detail::to_imcolor(secondary.brightened(0.05f).desaturated());
+        // Table
+        resolved.table_header_bg = detail::to_imcolor(secondary);
+        resolved.table_row0_bg = detail::to_imcolor(secondary.brightened(0.05f));
+        resolved.table_row1_bg = detail::to_imcolor(secondary.brightened(0.10f).saturated(0.04f));
+        resolved.table_border_outer = detail::to_imcolor(accent);
+        resolved.table_border_inner = detail::to_imcolor(accent.brightened(0.20f));
+        // Widgets
+        resolved.bg_widget = detail::to_imcolor(secondary);
+        resolved.bg_widget_hover = detail::to_imcolor({ secondary.lightness + 0.05f, accent.chroma, accent.hue, accent.alpha });
+        resolved.bg_widget_focus = detail::to_imcolor(accent);
+        // Menu
+        resolved.bg_menu = detail::to_imcolor(secondary);
+    }
+
+} // namespace
+
+#if 0
 #include <imgui/imgui.h>
 #undef assert
 
@@ -448,3 +501,4 @@ namespace ice::devui
     }
 
 } // namespace ice::devui
+#endif

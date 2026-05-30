@@ -88,19 +88,19 @@
 
   <!-- Native Visualization for the ice::String types -->
   <Type Name="ice::BasicString&lt;*&gt;">
-    <DisplayString>String {{ { _data,[_size]s8 } }}</DisplayString>
-    <StringView>_data,[_size]s8</StringView>
+    <DisplayString>String {{ { _data,[_count]s8 } }}</DisplayString>
+    <StringView>_data,[_count]s8</StringView>
     <Expand>
-      <Item Name="[size]">_size</Item>
-      <Item Name="[value]">_data,[_size]s8b</Item>
+      <Item Name="[size]">_count</Item>
+      <Item Name="[value]">_data,[_count]s8b</Item>
     </Expand>
   </Type>
   <Type Name="ice::BasicString&lt;wchar_t&gt;">
-    <DisplayString>String {{ { _data,[_size]su } }}</DisplayString>
-    <StringView>_data,[_size]</StringView>
+    <DisplayString>String {{ { _data,[_count]su } }}</DisplayString>
+    <StringView>_data,[_count]</StringView>
     <Expand>
-      <Item Name="[size]">_size</Item>
-      <Item Name="[value]">_data,[_size]sub</Item>
+      <Item Name="[size]">_count</Item>
+      <Item Name="[value]">_data,[_count]sub</Item>
     </Expand>
   </Type>
 

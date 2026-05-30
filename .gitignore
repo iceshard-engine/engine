@@ -1,6 +1,7 @@
 # Temporary paths to ignore
 /.vs/
 /.vscode/
+/.idea/
 /build/
 /test_files/
 
@@ -16,6 +17,7 @@
 !/tools/scripts/start.moon
 
 # Temporary files to ignore
+ibt-ci.ps1
 compile_commands.json
 settings.VisualStudio.json
 *.patch

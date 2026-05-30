@@ -7,8 +7,10 @@
 
 #include <ice/assert.hxx>
 #include <ice/devui_imgui.hxx>
+#include <ice/devui_widgets.hxx>
 #include <ice/heap_string.hxx>
 #include <ice/static_string.hxx>
+#include <ice/colors.hxx>
 
 #if ISP_WINDOWS
 #include <imguizmo/ImGuizmo.h>
@@ -76,7 +78,8 @@ namespace ice::devui
         , _widget_manager{ _allocator }
         , _widget_frame{ }
         , _widget_logger{ _allocator }
-        , _widget_style{ _allocator }
+        , _widget_colorpicker{ }
+        //, _widget_style{ _allocator }
     {
         _builtin_widgets.push_back(create_allocator_tree_widget(_allocator));
         // ice::array::push_back(_builtin_widgets, (ice::UniquePtr<ice::DevUIWidget>) ice::make_unique<ImGuiLogger>(_allocator, _allocator));
@@ -84,7 +87,8 @@ namespace ice::devui
         // Register all built-in's
         _widget_manager.add_widget(&_widget_manager); // Add self...
         _widget_manager.add_widget(&_widget_logger); // Add logger
-        _widget_manager.add_widget(&_widget_style); // Add style editor
+        _widget_manager.add_widget(&_widget_colorpicker);
+        //_widget_manager.add_widget(&_widget_style); // Add style editor
         for (ice::UniquePtr<ice::DevUIWidget> const& widget : _builtin_widgets)
         {
             _widget_manager.add_widget(widget.get());
@@ -216,6 +220,20 @@ namespace ice::devui
         ImGui::TextT("Vertices: {}", stats.draw_vertices);
         ImGui::SameLine(size.x * 0.5f);
         ImGui::TextT("Indices: {}", stats.draw_indices);
+    }
+
+    ImGui_ColorPicker_OkLCH::ImGui_ColorPicker_OkLCH() noexcept
+        : DevUIWidget{ DevUIWidgetInfo{.category = "Utility", .name = "OkCLH Color Picker"}}
+    {
+    }
+
+    void ImGui_ColorPicker_OkLCH::build_content() noexcept
+    {
+        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+        if (ImGui::ColorPickerOkLCH("OkLCH", newcolor, ImGui::OkLCHPickerFlags::Chroma_ClipToMax, &color); ImGui::IsItemHovered() == false)
+        {
+            color = newcolor;
+        }
     }
 
 } // namespace ice::devui

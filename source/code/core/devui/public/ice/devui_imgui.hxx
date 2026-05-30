@@ -4,7 +4,8 @@
 #pragma once
 #include <ice/heap_string.hxx>
 #include <ice/assert_core.hxx>
-#include <ice/color.hxx>
+#include <ice/colors.hxx>
+#include <ice/math.hxx>
 
 #ifdef IM_ASSERT
 #undef IM_ASSERT
@@ -19,6 +20,19 @@ namespace ImGui
 {
 
     // Helpers
+    namespace Compat
+    {
+
+        inline constexpr auto Vec2(ice::vec2f val) noexcept -> ImVec2 { return { val.v[0][0], val.v[0][1] }; };
+        inline constexpr auto Vec4(ice::vec4f val) noexcept -> ImVec4 { return { val.v[0][0], val.v[0][1], val.v[0][2], val.v[0][3] }; };
+
+        inline constexpr auto Color(ice::Color color) noexcept -> ImColor
+        {
+            ice::color::SRGB const srgb = color.gammut_corrected(ice::ColorSpace::SRGB, 0.0f).to_lrgb().to_srgb();
+            return ImGui::ColorConvertFloat4ToU32({ srgb.red, srgb.green, srgb.blue, srgb.alpha });
+        }
+
+    } // Details
 
     inline bool Begin(ice::String name, bool* inout_open = nullptr, ImGuiWindowFlags flags = 0) noexcept
     {
@@ -27,7 +41,7 @@ namespace ImGui
 
     inline bool BeginListBox(ice::String label, ice::vec2f size = {}) noexcept
     {
-        return ImGui::BeginListBox(label.begin(), ImVec2{ size.x, size.y });
+        return ImGui::BeginListBox(label.begin(), Compat::Vec2(size));
     }
 
     inline void TextUnformatted(ice::String text) noexcept
@@ -42,7 +56,7 @@ namespace ImGui
         ice::vec2f size = {}
     ) noexcept
     {
-        return ImGui::Selectable(label.begin(), selected, flags, ImVec2{ size.x, size.y });
+        return ImGui::Selectable(label.begin(), selected, flags, Compat::Vec2(size));
     }
 
     // Extensions
@@ -56,9 +70,9 @@ namespace ImGui
 
     } // namespace Detail
 
-    constexpr auto ToColor(ice::Color<ice::u8> color) noexcept -> ImU32
+    inline auto ToColor(ice::Color color) noexcept -> ImU32
     {
-        return ImU32{ ice::u32(color.a) << 24 | ice::u32(color.b) << 16 | ice::u32(color.g) << 8 | ice::u32(color.r) };
+        return Compat::Color(color);
     }
 
     constexpr auto ToVec2(ice::vec4f pos) noexcept -> ImVec2
@@ -79,7 +93,7 @@ namespace ImGui
     }
 
     template<typename... Args>
-    inline void TextColoredT(ice::Color<ice::u8> col, fmt::format_string<Args...> format, Args&&... args) noexcept
+    inline void TextColoredT(ice::Color col, fmt::format_string<Args...> format, Args&&... args) noexcept
     {
         ImGui::PushStyleColor(ImGuiCol_Text, ImGui::ToColor(col));
         TextT(format, ice::forward<Args>(args)...);
@@ -106,7 +120,7 @@ namespace ImGui
     }
 
     template<typename... Args>
-    inline void TextRightColoredT(ice::Color<ice::u8> col, fmt::format_string<Args...> format, Args&&... args) noexcept
+    inline void TextRightColoredT(ice::Color col, fmt::format_string<Args...> format, Args&&... args) noexcept
     {
         ImGui::PushStyleColor(ImGuiCol_Text, ImGui::ToColor(col));
         TextRightT(format, ice::forward<Args>(args)...);
@@ -127,5 +141,10 @@ namespace ImGui
     ) noexcept;
 
     void EndLargeButton() noexcept;
+
+    inline void SetCursorScreenPos2(ice::vec2f pos) noexcept
+    {
+        ImGui::SetCursorScreenPos(Compat::Vec2(pos));
+    }
 
 } // namespace ImGui

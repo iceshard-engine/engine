@@ -3,27 +3,22 @@
 
 .Project =
 [
-    .Name = 'utils'
+    .Name = 'logger'
     .Kind = .Kind_StaticLib
     .Group = 'Core'
 
-    .BaseDir = '$WorkspaceCodeDir$/core/utils'
+    .BaseDir = '$WorkspaceCodeDir$/core/logger'
 
     .Public =
     [
-        .Modules = {
-            'cli11'
-        }
         .Uses = {
-            'math'
-            'logger'
+            'modules'
         }
     ]
 
     .Private =
     [
         .Modules = {
-            'rapidjson'
         }
     ]
 ]

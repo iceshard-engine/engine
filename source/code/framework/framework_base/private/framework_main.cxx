@@ -71,15 +71,9 @@ struct FrameworkLog : ice::Module<ice::LogModule>
     IS_WORKAROUND_MODULE_INITIALIZATION(FrameworkLog);
 };
 
-template<typename T>
-void destroy_object(T* obj) noexcept
-{
-    obj->alloc.destroy(obj);
-}
-
 struct ice::app::Config
 {
-    Config(ice::Allocator& alloc) noexcept
+    explicit Config(ice::Allocator& alloc) noexcept
         : alloc{ alloc }
         , dev_dirs{ alloc }
     { }
@@ -89,7 +83,7 @@ struct ice::app::Config
 
     struct DeveloperDirectories
     {
-        DeveloperDirectories(ice::Allocator& alloc) noexcept
+        explicit DeveloperDirectories(ice::Allocator& alloc) noexcept
             : shaders{ alloc }
             , assets{ alloc }
         { }
@@ -168,13 +162,8 @@ struct ice::app::State
 
 struct Frame
 {
-    Frame() noexcept
-        : next{ nullptr }
-        , wait{ true }
-    { }
-
-    Frame* next;
-    ice::ManualResetEvent wait;
+    Frame* next = nullptr;
+    ice::ManualResetEvent wait{ true };
 };
 
 struct ice::app::Runtime
@@ -215,7 +204,7 @@ struct ice::app::Runtime
     bool render_enabled = true;
     bool resize_handled = true;
 
-    Runtime(ice::Allocator& alloc) noexcept
+    explicit Runtime(ice::Allocator& alloc) noexcept
         : alloc{ alloc }
         , render_alloc{ alloc, "renderer" }
         , runtime_alloc{ alloc, "runtime" }
@@ -272,7 +261,7 @@ void ice_args(
     IPT_ZONE_SCOPED;
 }
 
-auto ice_create_render_surface(
+static auto ice_create_render_surface(
     ice::platform::RenderSurface& platform_surface,
     ice::render::RenderDriver& render_driver
 ) noexcept -> ice::render::RenderSurface*
@@ -542,7 +531,7 @@ auto ice_resume(
         runtime.input_tracker->register_device_type(ice::input::DeviceType::Keyboard, ice::input::get_default_device_factory());
 
         //runtime.gfx_rendergraph_runtime = state.game->rendergraph(runtime.gfx_runner->device());
-        ice::wait_for(runtime.gfx_runner->update_rendergraph(state.game->rendergraph(runtime.gfx_runner->context())));
+        runtime.gfx_runner->update_rendergraph(state.game->rendergraph(runtime.gfx_runner->context()));
         runtime.gfx_wait.set();
     }
 
@@ -660,7 +649,7 @@ auto ice_update(
 
         //runtime.gfx_wait.wait();
         runtime.gfx_runner->context().recreate_swapchain();
-        ice::wait_for(runtime.gfx_runner->update_rendergraph(state.game->rendergraph(runtime.gfx_runner->context())));
+        runtime.gfx_runner->update_rendergraph(state.game->rendergraph(runtime.gfx_runner->context()));
     }
 
     // Since the frame updates the values we are safe to access them any time. They won't change until a new frame is awaited, and awaitng frames is happening on the same thread.

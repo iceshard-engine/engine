@@ -7,7 +7,7 @@
 #include <ice/mem_types.hxx>
 #include <ice/heap_string.hxx>
 #include <ice/clock_types.hxx>
-#include <ice/expected.hxx>
+#include <ice/error_codes.hxx>
 #include <fmt/format.h>
 
 
@@ -189,29 +189,6 @@ struct fmt::formatter<ice::ErrorCode>
     {
         fmt::string_view const type = value.type() == 'E' ? "Error" : "Success";
         return fmt::format_to(ctx.out(), "{}({}, '{}')", type, value.category(), value.description());
-    }
-};
-
-template<typename Val>
-struct fmt::formatter<ice::Expected<Val, ice::ErrorCode>>
-{
-    template<typename ParseContext>
-    constexpr auto parse(ParseContext& ctx)
-    {
-        return ctx.begin();
-    }
-
-    template<typename FormatContext>
-    constexpr auto format(ice::Expected<Val, ice::ErrorCode> const& value, FormatContext& ctx) const noexcept
-    {
-        if (value.succeeded())
-        {
-            return fmt::format_to(ctx.out(), "{}", ice::ErrorCode{ ice::S_Ok });
-        }
-        else
-        {
-            return fmt::format_to(ctx.out(), "{}", value.error());
-        }
     }
 };
 

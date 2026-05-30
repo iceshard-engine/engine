@@ -8,15 +8,27 @@
 #include <ice/mem_allocator_proxy.hxx>
 #include <ice/array.hxx>
 #include <ice/engine_frame.hxx>
+#include <ice/colors.hxx>
 
 #include "widgets/imgui_devui_manager.hxx"
 #include "widgets/imgui_logger.hxx"
-#include "widgets/imgui_style_palette.hxx"
 
 namespace ice::devui
 {
 
     struct ImGuiStats;
+
+    class ImGui_ColorPicker_OkLCH : public ice::DevUIWidget
+    {
+    public:
+        ImGui_ColorPicker_OkLCH() noexcept;
+
+        void build_content() noexcept override;
+
+    protected:
+        ice::Color color = ice::color::Red;
+        ice::Color newcolor = ice::color::Red;
+    };
 
     class ImGuiWidgetFrame final : public ice::DevUIFrame
     {
@@ -56,7 +68,8 @@ namespace ice::devui
         ice::devui::ImGuiDevUIManager _widget_manager;
         ice::devui::ImGuiWidgetFrame _widget_frame;
         ice::devui::ImGuiLogger _widget_logger;
-        ice::devui::ImGuiStylePalette _widget_style;
+        ice::devui::ImGui_ColorPicker_OkLCH _widget_colorpicker;
+        //ice::devui::ImGuiStylePalette _widget_style;
     };
 
 } // namespace ice::devui

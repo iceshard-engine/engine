@@ -139,16 +139,16 @@ namespace ice::devui
 #if ISP_WINDOWS && 0
             ImGuizmo::Initialize();
 #endif
-            ice::devui::styles::apply_color_theme(ice::devui::styles::Theme::Dark);
-            ice::devui::styles::apply_stylesheet();
+            //ice::devui::styles::apply_color_theme(ice::devui::styles::Theme::Dark);
+            //ice::devui::styles::apply_stylesheet();
             ice::LogModule::init(alloc, negotiator);
             return negotiator.register_api(v1_devui_system);
         }
 
         static void on_unload(ice::Allocator& alloc) noexcept
         {
-            ice::devui::styles::pop_stylesheet();
-            ice::devui::styles::pop_color_theme();
+            //ice::devui::styles::pop_stylesheet();
+            //ice::devui::styles::pop_color_theme();
 #if ISP_WINDOWS && 0
             ImGuizmo::Shutdown();
 #endif

@@ -196,6 +196,25 @@ namespace ice::render::vk
             "Couldn't create swapchain!"
         );
 
+#if 0
+        // https://docs.vulkan.org/refpages/latest/refpages/source/VkColorSpaceKHR.html
+        VkHdrMetadataEXT hdrMetadata{ VK_STRUCTURE_TYPE_HDR_METADATA_EXT };
+        hdrMetadata.displayPrimaryRed = { 0.708f, 0.292f };
+        hdrMetadata.displayPrimaryGreen = { 0.170f, 0.797f };
+        hdrMetadata.displayPrimaryBlue = { 0.131f, 0.046f };
+        hdrMetadata.whitePoint = { 0.3127f, 0.3290f };
+        hdrMetadata.maxLuminance = 1000.0f;
+        hdrMetadata.minLuminance = 0.1f;
+        hdrMetadata.maxContentLightLevel = 400.0f;
+        hdrMetadata.maxFrameAverageLightLevel = 200.0f;
+
+        PFN_vkSetHdrMetadataEXT fn_vkSetHdrMetadataEXT = (PFN_vkSetHdrMetadataEXT)vkGetDeviceProcAddr(_vk_device, "vkSetHdrMetadataEXT");
+        if (fn_vkSetHdrMetadataEXT != nullptr)
+        {
+            fn_vkSetHdrMetadataEXT(_vk_device, 1, &vk_swapchain, &hdrMetadata);
+        }
+#endif
+
         return _allocator.create<VulkanSwapchain>(
             vk_swapchain,
             selected_format.format,

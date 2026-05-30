@@ -118,6 +118,11 @@ namespace ice::render::vk
     {
         switch (image_format)
         {
+        case ImageFormat::SFLOAT_RGBA16:
+            return VK_FORMAT_R16G16B16A16_SFLOAT;
+        case ImageFormat::UNORM_A2BGR10:
+            return VK_FORMAT_A2B10G10R10_UNORM_PACK32;
+
         case ImageFormat::I32_RGBA:
             return VK_FORMAT_R8G8B8A8_SINT;
         case ImageFormat::UNORM_RGB:
@@ -147,6 +152,12 @@ namespace ice::render::vk
     {
         switch (image_format)
         {
+            // SRGB_nonlinear
+        case VK_FORMAT_R16G16B16A16_SFLOAT:
+            return ImageFormat::SFLOAT_RGBA16;
+        case VK_FORMAT_A2B10G10R10_UNORM_PACK32:
+            return ImageFormat::UNORM_A2BGR10;
+
         case VK_FORMAT_R8G8B8A8_SINT:
             return ImageFormat::I32_RGBA;
         case VK_FORMAT_R8G8B8_UNORM:

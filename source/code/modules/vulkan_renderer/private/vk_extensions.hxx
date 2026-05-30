@@ -26,6 +26,7 @@ namespace ice::render::vk
         VkD_DedicatedAllocation = 0x0000'0040,
         VkD_GetMemoryRequirements2 = 0x0000'0080,
         VkD_CalibratedTimestamps = 0x0000'0100,
+        VkD_HdrMetadata = 0x0000'0200,
 
         // Debug layers
         VkDbg_ValidationLayer = 0x8000'0000,

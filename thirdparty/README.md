@@ -1,6 +1,6 @@
 # Third Party Libraries
 
-A file generated from all in-used conan dependencies.
+Generated from all used conan dependencies.
 Listed alphabetically with general information about each third party dependency.
 For exact copies of eache license please follow the upstream link to look into [LICENSES.txt](LICENSES.txt).
 
@@ -113,3 +113,32 @@ Easy to integrate Vulkan memory allocation library.
 - **upstream:** https://github.com/conan-io/conan-center-index
 - **version:** 3.0.1
 - **license:** MIT
+
+
+
+# Licenses in source code 
+
+Found in code snippets availabe from various sources but don't have a dedicated Conan2 package.
+Listed alphabetically with general information about each third party dependency.
+For exact copies of eache license please follow the upstream link to look into [LICENSES.txt](LICENSES.txt).
+
+## OkLAB Color Space
+implementation details of the OkLAB color space and OkLCH color reperesentation.
+- **upstream:** https://bottosson.github.io/posts/oklab
+- **version:** 1.0.0
+- **license:** MIT
+- **usage:** [source/code/core/utils/public/ice/detail/color_details.hxx](/source/code/core/utils/public/ice/detail/color_details.hxx)
+
+## OkLAB Gammut Clipping
+Implementation details of gammut clipping done withing the OkLAB color space.
+- **upstream:** https://bottosson.github.io/posts/gamutclipping
+- **version:** 1.0.0
+- **license:** MIT
+- **usage:** [source/code/core/utils/public/ice/detail/color_details.hxx](/source/code/core/utils/public/ice/detail/color_details.hxx)
+
+## stb_image.h
+Image loading/decoding from file/memory: JPG, PNG, TGA, BMP, PSD, GIF, HDR, PIC
+- **upstream:** https://github.com/nothings/stb/blob/master/stb_image.h
+- **version:** 2.26
+- **license:** Public Domain
+- **usage:** [source/code/modules/iceshard_pipelines/private/asset_image_external/stb_image.h](/source/code/modules/iceshard_pipelines/private/asset_image_external/stb_image.h)

@@ -1,6 +1,3 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
-/// SPDX-License-Identifier: MIT
-
 /* stb_image - v2.26 - public domain image loader - http://nothings.org/stb
                                   no warranty implied; use at your own risk
 
@@ -122,6 +119,8 @@ RECENT REVISION HISTORY:
   80% of merge conflicts on stb PRs are due to people adding their name at the end
   of the credits.
 */
+
+// NOLINTBEGIN
 
 #ifndef STBI_INCLUDE_STB_IMAGE_H
 #define STBI_INCLUDE_STB_IMAGE_H
@@ -7537,6 +7536,8 @@ STBIDEF int stbi_is_16_bit_from_callbacks(stbi_io_callbacks const *c, void *user
 }
 
 #endif // STB_IMAGE_IMPLEMENTATION
+
+// NOLINTEND
 
 /*
    revision history:

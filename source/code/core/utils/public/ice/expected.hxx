@@ -5,6 +5,7 @@
 #include <ice/base.hxx>
 #include <ice/build/build.hxx>
 #include <ice/error_codes.hxx>
+#include <ice/log_formatters.hxx>
 #include <type_traits>
 
 namespace ice
@@ -196,3 +197,26 @@ namespace ice
     using Result = ice::Expected<ice::ErrorCode>;
 
 } // namespace ice
+
+template<typename Val>
+struct fmt::formatter<ice::Expected<Val, ice::ErrorCode>>
+{
+    template<typename ParseContext>
+    constexpr auto parse(ParseContext& ctx)
+    {
+        return ctx.begin();
+    }
+
+    template<typename FormatContext>
+    constexpr auto format(ice::Expected<Val, ice::ErrorCode> const& value, FormatContext& ctx) const noexcept
+    {
+        if (value.succeeded())
+        {
+            return fmt::format_to(ctx.out(), "{}", ice::ErrorCode{ ice::S_Ok });
+        }
+        else
+        {
+            return fmt::format_to(ctx.out(), "{}", value.error());
+        }
+    }
+};

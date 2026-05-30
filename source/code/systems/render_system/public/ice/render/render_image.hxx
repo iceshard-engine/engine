@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -31,6 +31,9 @@ namespace ice::render
         UNORM_D24_UINT_S8,
         SFLOAT_D32,
         SFLOAT_D32_UINT_S8,
+        // TODO: Finish HDR support
+        UNORM_A2BGR10,
+        SFLOAT_RGBA16,
     };
 
     enum class ImageUsageFlags : ice::u32

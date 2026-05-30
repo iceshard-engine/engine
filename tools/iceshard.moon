@@ -9,6 +9,7 @@ import ExecCommand from require 'ice.commands.exec'
 import AndroidCommand from require 'ice.commands.android'
 import WebAsmCommand from require 'ice.commands.webasm'
 import SettingsCommand from require 'ice.commands.settings'
+import LintCommand from require 'ice.commands.lint'
 import SDKCommand from require 'ice.commands.sdk'
 
 import RunCommand from require 'tools.run'
@@ -22,6 +23,7 @@ class IceShard extends Application
     @name: 'IceShard'
     @description: 'IceShard engine project tool.'
     @commands: {
+        'lint': LintCommand
         'build': BuildCommand
         'update': UpdateCommand
         'devenv': DevenvCommand

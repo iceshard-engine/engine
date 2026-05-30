@@ -3,6 +3,7 @@
 
 #include "imgui_trait.hxx"
 #include "imgui_system.hxx"
+#include "widgets/imgui_style_palette.hxx"
 
 #include <ice/engine.hxx>
 #include <ice/engine_devui.hxx>
@@ -29,6 +30,7 @@
 #include <ice/task_utils.hxx>
 #include <ice/string_utils.hxx>
 #include <ice/task.hxx>
+#include <ice/colors.hxx>
 
 namespace ice::devui
 {
@@ -272,6 +274,51 @@ namespace ice::devui
         ice::u8* pixels;
         ice::i32 font_texture_width, font_texture_height;
         io.Fonts->GetTexDataAsRGBA32(&pixels, &font_texture_width, &font_texture_height);
+
+        DevUITheme const theme{
+            ice::Color{0.15f, 0.04f, 250.0_deg, 1.0f},
+            ice::Color{0.20f, 0.07f, 250.0_deg, 1.0f},
+            //ice::Color{0.15f, 0.04f, 280.f, 1.0f},
+            ice::Color{0.40f, 0.07f, 175.0_deg, 1.0f}
+        };
+
+        ImGuiStyle& style = ImGui::GetStyle();
+
+        ice::color::OkLCHu8 const colu8 = ice::color::Blue.brightened(-0.3f).gammut_corrected().to_u8();
+        ImVec4 const imcol{ colu8.hue128_lightness / 255.f, colu8.chroma / 255.f, colu8.hue / 255.f, colu8.alpha / 255.f };
+
+        if constexpr (false)
+        {
+            // Text
+            style.Colors[ImGuiCol_Text] = theme.resolved.text;
+            style.Colors[ImGuiCol_TextDisabled] = theme.resolved.text_disabled;
+            // Windows/Popups
+            style.Colors[ImGuiCol_TitleBg] = theme.resolved.bg_title;
+            style.Colors[ImGuiCol_TitleBgActive] = theme.resolved.bg_title_focus;
+            style.Colors[ImGuiCol_TitleBgCollapsed] = theme.resolved.bg_title_disabled;
+            style.Colors[ImGuiCol_WindowBg] = theme.resolved.bg_window;
+            style.Colors[ImGuiCol_ChildBg] = theme.resolved.bg_window_inner;
+            style.Colors[ImGuiCol_PopupBg] = theme.resolved.bg_window_inner;
+            style.Colors[ImGuiCol_Border] = theme.resolved.border;
+            style.Colors[ImGuiCol_BorderShadow] = theme.resolved.border_shadow;
+            // Scrollbar
+            style.Colors[ImGuiCol_ScrollbarBg] = theme.resolved.scroll_bg;
+            style.Colors[ImGuiCol_ScrollbarGrab] = theme.resolved.scroll_neutral;
+            style.Colors[ImGuiCol_ScrollbarGrabHovered] = theme.resolved.scroll_hover;
+            style.Colors[ImGuiCol_ScrollbarGrabActive] = theme.resolved.scroll_focus;
+            // Table Widget
+            style.Colors[ImGuiCol_TableHeaderBg] = theme.resolved.table_header_bg;
+            style.Colors[ImGuiCol_TableRowBg] = theme.resolved.table_row0_bg;
+            style.Colors[ImGuiCol_TableRowBgAlt] = theme.resolved.table_row1_bg;
+            style.Colors[ImGuiCol_TableBorderStrong] = theme.resolved.table_border_outer;
+            style.Colors[ImGuiCol_TableBorderLight] = theme.resolved.table_border_inner;
+            // Widgets
+            style.Colors[ImGuiCol_FrameBg] = theme.resolved.bg_widget;
+            style.Colors[ImGuiCol_FrameBgHovered] = theme.resolved.bg_widget_hover;
+            style.Colors[ImGuiCol_FrameBgActive] = theme.resolved.bg_widget_focus;
+            // Menu
+            style.Colors[ImGuiCol_MenuBarBg] = theme.resolved.bg_menu;
+        }
         co_return;
     }
 

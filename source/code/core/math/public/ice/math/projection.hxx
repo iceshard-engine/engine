@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -65,7 +65,7 @@ namespace ice::math
         f32 far_plane
     ) noexcept -> mat<4, 4, f32>
     {
-        f32 const tan_half_fovx = ice::math::tan(rad{ field_of_view_horizontal.value * 0.5f });
+        f32 const tan_half_fovx = ice::math::tan(field_of_view_horizontal * 0.5f);
 
         f32 right = tan_half_fovx * near_plane;
         f32 left = -right;
@@ -82,7 +82,7 @@ namespace ice::math
         f32 far_plane
     ) noexcept -> mat<4, 4, f32>
     {
-        f32 const tan_half_fovy = ice::math::tan(rad{ field_of_view_vertical.value * 0.5f });
+        f32 const tan_half_fovy = ice::math::tan(field_of_view_vertical * 0.5f);
 
         f32 top = tan_half_fovy * near_plane;
         f32 bottom = -top;
