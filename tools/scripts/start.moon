@@ -10,7 +10,8 @@ unless Dir\exists build_dir then error "Binaries directory '#{build_dir}' does n
 
 pipeline_dir = nil
 for name in Dir\list build_dir
-    if name\match arch
+    Log\debug "Comparing 'arch = #{arch}' with directory '#{name}'"
+    if name == arch
         pipeline_dir = Path\join build_dir, name
         break
 

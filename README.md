@@ -11,26 +11,26 @@ Depending if you are working on windows or linux you would user `ice.sh` or `ice
 #### _(optional)_ Initialize the IBT CLI
 > This happens automatically on any executed command. However executing it directly might help identify issues in the tools configuration.
 ```bash
-ice init
+./ice init
 ```
 
 #### Generate projects for supported IDE's
 ```bash
-ice devenv --ide vstudio # Generates a `.sln` file _(and necessary project files)_ using FastBuild as the generator.
-ice devenv --ide vscode # Generates `.vscode/*.json` files that define various build, run and debug targets.
+./ice devenv --ide vstudio # Generates a `.sln` file _(and necessary project files)_ using FastBuild as the generator.
+./ice devenv --ide vscode # Generates `.vscode/*.json` files that define various build, run and debug targets.
 ```
 
 Once the project is generated you can build and debug the project in that specific IDE.
 > _For Visual Studio Code it's necessary to have the LLDB debugger extension installed. (win:'cppvsdbg', unix:'lldb-dap')_
 
 #### _(command-line)_ Build the project
-```
-ice build all-x64-Debug # Builds the debug build for x64 bit windows/linux.
+```bash
+./ice build all-x64-Debug # Builds the debug build for x64 bit windows/linux.
 ```
 
 #### _(command-line)_ Start the project
-```
-ice script start -- Debug # Starts the Debug build created in the previous step.
+```bash
+./ice script start -- Debug # Starts the Debug build created in the previous step.
 ```
 
 ## Features
