@@ -2,6 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #include "webasm_app.hxx"
+#include <ice/module.hxx>
 #include <ice/log_module.hxx>
 
 #include <emscripten.h>

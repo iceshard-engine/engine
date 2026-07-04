@@ -8,6 +8,8 @@
 namespace ice
 {
 
+    class TraitArchive;
+
     static constexpr ice::StringID Constant_TraitName_DevUI
         = "ice.iceshard-engine.trait-devui"_sid;
 

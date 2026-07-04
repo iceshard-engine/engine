@@ -28,7 +28,10 @@ namespace ice
         ice::DefaultAssetStorage& storage,
         ice::Array<ice::UniquePtr<ice::AssetShelve::DevUI>> shelves
     ) noexcept
-        : DevUIWidget{ DevUIWidgetInfo{ .category = "Tools", .name = "Assets" } }
+        : DevUIWidget{ DevUIWidgetInfo{
+            .category = "builtin.devui.strings/menu.category.tools|Tools"_i18n,
+            .name = "builtin.devui.strings/widget.asset-storage.name|Assets"_i18n,
+        } }
         , _storage{ storage }
         , _shelves{ ice::move(shelves) }
     {

@@ -1,8 +1,8 @@
 version: '1.0'
 
-## Qodana Comunity for C++ does not support the 'profile' section. The following message is present during execution: 
+## Qodana Comunity for C++ does not support the 'profile' section. The following message is present during execution:
 ## - Found qodana.yaml. Note that only bootstrap command and inspection names from include and exclude sections are supported
-#profile: 
+#profile:
 #  base: 'default'
 #  # Customize inspections
 #  inspections:
@@ -10,12 +10,12 @@ version: '1.0'
 #      severity: 'ERROR'
 #    - inspection: 'readability-implicit-bool-conversion'
 #      severity: 'WEAK WARNING'
-      
+
 exclude:
   # Readability
   - name: readability-convert-member-functions-to-static # It's marking coroutine necessary functions as possible to be made static
   - name: readability-redundant-access-specifiers # We use additional access specifiers to categories parts of a types API
-  - name: readability-simplify-boolean-expr 
+  - name: readability-simplify-boolean-expr
   - name: readability-trailing-comma
   - name: readability-else-after-return # Not an actuall issue
   - name: readability-redundant-inline-specifier
@@ -23,6 +23,8 @@ exclude:
   - name: portability-avoid-pragma-once
   # Modernize
   - name: modernize-use-trailing-return-type # We don't use TRT for `bool` and `void` types as these are same length as `auto` and do not improve readability to be at the end.
+  # CoreGuidelines
+  - name: cppcoreguidelines-special-member-functions # We don't puth that much emphasis on this "issue"
   # Misc
   - name: misc-include-cleaner # This one seems to be broken? Could be because Qodana seems to be running into issues with built-in includes.
   - name: misc-non-private-member-variables-in-classes # IceShard allows more access to internals of some classes as it's a game engine not a security tool.
@@ -35,7 +37,7 @@ exclude:
   - name: fuchsia-statically-constructed-objects # What about `static constexpr`?
   - name: fuchsia-overloaded-operator # Sounds like we actually don't like C++
   - name: fuchsia-multiple-inheritance # Have you heard of a programming concept called "Interfaces"? Hmm...........?
-  - name: fuchsia-default-arguments-declarations # I think, we will keep `fuchsia` checks always disabled. 
+  - name: fuchsia-default-arguments-declarations # I think, we will keep `fuchsia` checks always disabled.
   # LLVM
   - name: llvm-header-guard # We use #pragma-once instead
   - name: llvm-else-after-return # Not an actuall issue

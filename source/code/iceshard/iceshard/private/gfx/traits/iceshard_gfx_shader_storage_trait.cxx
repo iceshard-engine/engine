@@ -30,7 +30,10 @@ namespace ice::gfx
 
     Trait_GfxShaderStorage::Trait_GfxShaderStorage(ice::TraitContext& ctx, ice::Allocator& alloc) noexcept
         : ice::Trait{ ctx }
-        , ice::TraitDevUI{ {.category="Engine/Gfx", .name="Shaders"} }
+        , ice::TraitDevUI{ {
+            .category = "builtin.devui.strings/menu.category.engine-gfx|Engine/Gfx"_i18n,
+            .name = "builtin.devui.strings/widget.shader-storage.name|Shaders"_i18n,
+        } }
         , _loaded_shaders{ alloc }
     {
         _context.bind<&Trait_GfxShaderStorage::gfx_update, Render>(ice::gfx::ShardID_RenderFrameUpdate);

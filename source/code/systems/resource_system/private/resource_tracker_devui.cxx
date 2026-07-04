@@ -33,7 +33,10 @@ namespace ice
         ice::Allocator& alloc,
         ice::ResourceTrackerImplementation& tracker
     ) noexcept
-        : DevUIWidget{ DevUIWidgetInfo{ .category = "Tools", .name = "Resources" } }
+        : DevUIWidget{ DevUIWidgetInfo{
+            .category = "builtin.devui.strings/menu.category.tools|Tools"_i18n,
+            .name = "builtin.devui.strings/widget.resource-tracker.name|Resources"_i18n,
+        } }
         , _tracker{ tracker }
     {
         ice::devui_register_widget(this);

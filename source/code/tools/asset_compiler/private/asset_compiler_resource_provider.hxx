@@ -5,7 +5,6 @@
 #include <ice/resource.hxx>
 #include <ice/resource_provider.hxx>
 #include <ice/native_file.hxx>
-#include <ice/task.hxx>
 #include <ice/uri.hxx>
 
 class AssetCompilerResource final : public ice::Resource
@@ -18,12 +17,19 @@ public:
     ) noexcept;
     ~AssetCompilerResource() noexcept override;
 
+    [[nodiscard]]
     auto uri() const noexcept -> ice::URI const& override;
+
+    [[nodiscard]]
     auto flags() const noexcept -> ice::ResourceFlags override;
 
+    [[nodiscard]]
     auto name() const noexcept -> ice::String override;
+
+    [[nodiscard]]
     auto origin() const noexcept -> ice::Path override;
 
+    [[nodiscard]]
     auto file() const noexcept -> ice::native_file::File const& { return _handle; }
 
     ice::u32 idx;

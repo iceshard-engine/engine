@@ -14,7 +14,10 @@ namespace ice
     {
         if (ice::devui_available())
         {
-            static const ice::DevUIWidgetInfo info{.category = "Engine", .name = "World Manager"};
+            static const ice::DevUIWidgetInfo info{
+                .category = "builtin.devui.strings/menu.category.engine|Engine"_i18n,
+                .name = "builtin.devui.strings/widget.world-manager.name|World Manager"_i18n,
+            };
             return ice::make_unique<DevUI>(_allocator, _allocator, info, *this);
         }
         return {};

@@ -82,7 +82,7 @@ struct WorldActivationTrait : ice::Trait, ice::DevUIWidget
 
     WorldActivationTrait(ice::TraitContext& context) noexcept
         : ice::Trait{ context }
-        , ice::DevUIWidget{ { .category = "Test", .name = "Test" } }
+        , ice::DevUIWidget{ { .category = "Test"_str, .name = "Test"_str } }
     {
         ice::devui_register_widget(this);
         _context.bind<&WorldActivationTrait::logic>();

@@ -36,7 +36,10 @@ namespace ice
         ice::IceshardWorld& world,
         ice::IceshardWorldContext& context
     ) noexcept
-        : DevUIWidget{ {.category = "Engine/Worlds", .name=ice::stringid_hint(world.worldID)} }
+        : DevUIWidget{ {
+            .category = "builtin.devui.strings/menu.category.engine-worlds|Engine/Worlds"_i18n,
+            .name = ice::String{ ice::stringid_hint(world.worldID) }
+        } }
         , _allocator{ alloc }
         , _world{ world }
         , _context{ context }

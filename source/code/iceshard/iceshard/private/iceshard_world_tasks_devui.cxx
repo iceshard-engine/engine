@@ -10,7 +10,10 @@ namespace ice
 {
 
     TraitTasksTrackerDevUI::TraitTasksTrackerDevUI(ice::Allocator& alloc) noexcept
-        : ice::DevUIWidget{ {.category="Engine", .name="Tasks Tracker"} }
+        : ice::DevUIWidget{ {
+            .category = "builtin.devui.strings/menu.category.engine|Engine"_i18n,
+            .name = "builtin.devui.strings/widget.task-tracker.name|Task Tracker"_i18n,
+        } }
         , _allocator{ alloc }
         , _current_event_count{ 1 }
         , _tracked_task_events{ _allocator }

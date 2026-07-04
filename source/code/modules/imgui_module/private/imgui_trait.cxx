@@ -246,7 +246,10 @@ namespace ice::devui
 
     ImGuiTrait::ImGuiTrait(ice::TraitContext& ctx, ice::Allocator& alloc, ImGuiSystem& system) noexcept
         : ice::Trait{ ctx }
-        , ice::TraitDevUI{ {.category="Traits/Debug",.name="ImGUI-DevUI"} }
+        , ice::TraitDevUI{ {
+            .category = "builtin.devui.strings/menu.category.engine-traits|Engine/Traits"_i18n,
+            .name = "builtin.devui.strings/widget.trait-imgui.name|ImGui DevUI"_i18n,
+        } }
         , _allocator{ alloc, "trait:devui-imgui" }
         , _system{ system }
         , _stats{ }

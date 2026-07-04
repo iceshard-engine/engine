@@ -31,7 +31,7 @@ configure<ApplicationExtension> {
         // Defines a user-friendly version name for your app.
         versionName = "$(VersionName)"
 
-        // By default keep debug symbols, just remove it in release afterwards
+        // By default, keep debug symbols, just remove it in release afterward
         packaging.jniLibs.keepDebugSymbols += "**/*.so"
 
         $(IBTBuildSystemIntegration)

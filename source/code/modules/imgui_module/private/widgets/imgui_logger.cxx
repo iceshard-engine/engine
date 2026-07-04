@@ -61,7 +61,10 @@ namespace ice::devui
     };
 
     ImGuiLogger::ImGuiLogger(ice::Allocator& a) noexcept
-        : ice::DevUIWidget{ DevUIWidgetInfo{ .category = "Tools", .name = "Logger" } }
+        : ice::DevUIWidget{ DevUIWidgetInfo{
+            .category = "builtin.devui.strings/menu.category.tools|Tools"_i18n,
+            .name = "builtin.devui.strings/widget.logger.name|Logger"_i18n,
+        } }
         , _entries{ LoggerAlloc }
         , _entries_visible{ LoggerAlloc }
     {

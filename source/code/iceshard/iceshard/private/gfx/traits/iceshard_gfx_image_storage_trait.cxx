@@ -36,7 +36,10 @@ namespace ice::gfx
 
     Trait_GfxImageStorage::Trait_GfxImageStorage(ice::TraitContext& ctx, ice::Allocator& alloc) noexcept
         : ice::Trait{ ctx }
-        , ice::TraitDevUI{ {.category = "Engine/Gfx", .name = "Images"} }
+        , ice::TraitDevUI{ {
+            .category = "builtin.devui.strings/menu.category.engine-gfx|Engine/Gfx"_i18n,
+            .name = "builtin.devui.strings/widget.image-storage.name|Images"_i18n,
+        } }
         , _allocator{ alloc, "gfx-image-storage" }
         , _loaded_images{ _allocator }
     {
