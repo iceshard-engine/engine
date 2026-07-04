@@ -141,24 +141,24 @@ namespace ice
 
 #elif ISP_UNIX
 
-        static auto now() noexcept -> ice::Timestamp
+        auto now() noexcept -> ice::Timestamp
         {
             return { std::chrono::high_resolution_clock::now().time_since_epoch().count() };
         }
 
-        static auto clock_frequency() noexcept -> ice::ClockFrequency
+        auto clock_frequency() noexcept -> ice::ClockFrequency
         {
             static constexpr auto UnixClockFrequency = 1'000'000'000LLU;
             return { UnixClockFrequency };
         }
 
-        static auto create_clock() noexcept -> ice::SystemClock
+        auto create_clock() noexcept -> ice::SystemClock
         {
             ice::Timestamp const now = ice::clock::now();
             return ice::SystemClock{ now, now };
         }
 
-        static auto create_clock(ice::Clock const& clock, ice::f32 modifier) noexcept -> ice::CustomClock
+        auto create_clock(ice::Clock const& clock, ice::f32 modifier) noexcept -> ice::CustomClock
         {
             ice::CustomClock result{
                 ._clock_base = &clock,
@@ -169,7 +169,7 @@ namespace ice
             return result;
         }
 
-        static void update([[maybe_unused]] ice::SystemClock& clock) noexcept
+        void update([[maybe_unused]] ice::SystemClock& clock) noexcept
         {
             clock._ts_previous = clock._ts_latest;
             clock._ts_latest = ice::clock::now();
@@ -177,13 +177,13 @@ namespace ice
 
 #endif // ISP_WINDOWS
 
-        static void update(ice::CustomClock& clock) noexcept
+        void update(ice::CustomClock& clock) noexcept
         {
             clock._ts_previous = clock._ts_latest;
             clock._ts_latest += (clock._clock_base->_ts_latest - clock._clock_base->_ts_previous) * clock.modifier;
         }
 
-        static void update_max_delta(
+        void update_max_delta(
             ice::CustomClock& clock,
             ice::Tns max_delta
         ) noexcept
@@ -195,12 +195,12 @@ namespace ice
             clock._ts_latest += ice::min(delta_ticks, delta_ticks_max);
         }
 
-        static auto elapsed(ice::Clock const& clock) noexcept -> ice::Tns
+        auto elapsed(ice::Clock const& clock) noexcept -> ice::Tns
         {
             return ice::clock::elapsed(clock._ts_previous, clock._ts_latest);
         }
 
-        static auto elapsed(ice::Timestamp start, ice::Timestamp end) noexcept -> ice::Tns
+        auto elapsed(ice::Timestamp start, ice::Timestamp end) noexcept -> ice::Tns
         {
             return ice::detail::elapsed_timestamp<ice::Tns>(start, end);
         }
