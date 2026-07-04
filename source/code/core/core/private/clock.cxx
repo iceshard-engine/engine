@@ -40,7 +40,7 @@ namespace ice
 
     static constexpr auto operator*(ice::ClockFrequency freq, ice::Tns time) noexcept -> ice::Timestamp
     {
-        return { static_cast<ice::i64>(static_cast<ice::f64>(time.value) * freq.value) / ice::Tns::Constant_Precision) };
+        return { static_cast<ice::i64>(static_cast<ice::f64>(time.value) * freq.value / ice::Tns::Constant_Precision) };
     }
 
     namespace detail
