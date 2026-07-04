@@ -12,11 +12,6 @@
 namespace ice
 {
 
-    static constexpr auto operator+(ice::Timestamp left, ice::Timestamp right) noexcept -> ice::Timestamp
-    {
-        return { left.value + right.value };
-    }
-
     static constexpr auto operator+=(ice::Timestamp& left, ice::Timestamp right) noexcept -> ice::Timestamp&
     {
         left.value += right.value;
@@ -60,9 +55,9 @@ namespace ice
             return clock != nullptr ? clock->_ts_latest : ice::clock::now();
         }
 
-        static auto timestamp_or_now(ice::Timestamp ts) noexcept -> ice::Timestamp
+        static auto timestamp_or_now(ice::Timestamp timestamp) noexcept -> ice::Timestamp
         {
-            return ts.value > 0 ? ts : ice::clock::now();
+            return timestamp.value > 0 ? timestamp : ice::clock::now();
         }
 
         static auto timestamp_sub_fp(ice::Timestamp left, ice::Timestamp right) noexcept -> ice::f64
@@ -79,10 +74,10 @@ namespace ice
         }
 
         template<typename T>
-        auto elapsed_alpha(ice::Timestamp from, ice::Timestamp to, ice::Timestamp range) noexcept -> T
+        static auto elapsed_alpha(ice::Timestamp start, ice::Timestamp end, ice::Timestamp range) noexcept -> T
         {
             return static_cast<T>(
-                timestamp_sub_fp(to, from) / static_cast<ice::f64>(range.value)
+                timestamp_sub_fp(end, start) / static_cast<ice::f64>(range.value)
             );
         }
 
@@ -146,24 +141,24 @@ namespace ice
 
 #elif ISP_UNIX
 
-        auto now() noexcept -> ice::Timestamp
+        static auto now() noexcept -> ice::Timestamp
         {
             return { std::chrono::high_resolution_clock::now().time_since_epoch().count() };
         }
 
-        auto clock_frequency() noexcept -> ice::ClockFrequency
+        static auto clock_frequency() noexcept -> ice::ClockFrequency
         {
             static constexpr auto UnixClockFrequency = 1'000'000'000LLU;
             return { UnixClockFrequency };
         }
 
-        auto create_clock() noexcept -> ice::SystemClock
+        static auto create_clock() noexcept -> ice::SystemClock
         {
             ice::Timestamp const now = ice::clock::now();
             return ice::SystemClock{ now, now };
         }
 
-        auto create_clock(ice::Clock const& clock, ice::f32 modifier) noexcept -> ice::CustomClock
+        static auto create_clock(ice::Clock const& clock, ice::f32 modifier) noexcept -> ice::CustomClock
         {
             ice::CustomClock result{
                 ._clock_base = &clock,
@@ -174,7 +169,7 @@ namespace ice
             return result;
         }
 
-        void update([[maybe_unused]] ice::SystemClock& clock) noexcept
+        static void update([[maybe_unused]] ice::SystemClock& clock) noexcept
         {
             clock._ts_previous = clock._ts_latest;
             clock._ts_latest = ice::clock::now();
@@ -182,13 +177,13 @@ namespace ice
 
 #endif // ISP_WINDOWS
 
-        void update(ice::CustomClock& clock) noexcept
+        static void update(ice::CustomClock& clock) noexcept
         {
             clock._ts_previous = clock._ts_latest;
             clock._ts_latest += (clock._clock_base->_ts_latest - clock._clock_base->_ts_previous) * clock.modifier;
         }
 
-        void update_max_delta(
+        static void update_max_delta(
             ice::CustomClock& clock,
             ice::Tns max_delta
         ) noexcept
@@ -200,14 +195,14 @@ namespace ice
             clock._ts_latest += ice::min(delta_ticks, delta_ticks_max);
         }
 
-        auto elapsed(ice::Clock const& clock) noexcept -> ice::Tns
+        static auto elapsed(ice::Clock const& clock) noexcept -> ice::Tns
         {
             return ice::clock::elapsed(clock._ts_previous, clock._ts_latest);
         }
 
-        auto elapsed(ice::Timestamp from, ice::Timestamp to) noexcept -> ice::Tns
+        static auto elapsed(ice::Timestamp start, ice::Timestamp end) noexcept -> ice::Tns
         {
-            return ice::detail::elapsed_timestamp<ice::Tns>(from, to);
+            return ice::detail::elapsed_timestamp<ice::Tns>(start, end);
         }
 
     } // namespace clock

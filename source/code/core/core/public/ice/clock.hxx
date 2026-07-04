@@ -88,7 +88,7 @@ namespace ice
 
         auto elapsed(ice::Clock const& clock) noexcept -> ice::Tns;
 
-        auto elapsed(ice::Timestamp from, ice::Timestamp to) noexcept -> ice::Tns;
+        auto elapsed(ice::Timestamp start, ice::Timestamp end) noexcept -> ice::Tns;
 
     } // namespace clock
 
