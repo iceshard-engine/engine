@@ -113,7 +113,10 @@ namespace ice
         {
             LARGE_INTEGER large_int;
             QueryPerformanceCounter(&large_int);
-            return ice::SystemClock{ large_int.QuadPart, large_int.QuadPart };
+            return ice::SystemClock{ Clock{
+                ._ts_previous = Timestamp{ large_int.QuadPart },
+                ._ts_latest = Timestamp{ large_int.QuadPart }
+            } };
         }
 
         auto create_clock(
@@ -326,12 +329,20 @@ namespace ice
 
         auto create_stopwatch() noexcept -> ice::Stopwatch
         {
-            return ice::Stopwatch{ nullptr, {0}, {0} };
+            return ice::Stopwatch{
+                .clock = nullptr,
+                ._ts_initial = {0},
+                ._ts_final = {0}
+            };
         }
 
         auto create_stopwatch(ice::Clock const& clock) noexcept -> ice::Stopwatch
         {
-            return ice::Stopwatch{ &clock, {0}, {0} };
+            return ice::Stopwatch{
+                .clock = &clock,
+                ._ts_initial = {0},
+                ._ts_final = {0}
+            };
         }
 
         auto elapsed(ice::Stopwatch const& stopwatch) noexcept -> ice::Tns

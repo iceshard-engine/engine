@@ -112,6 +112,8 @@ namespace ice
 
         auto elapsed(ice::Timer const& timer) noexcept -> ice::Tns;
 
+        auto elapsed_us(ice::Timer const& timer) noexcept -> ice::Tus;
+
         auto alpha(ice::Timer const& timer) noexcept -> ice::f32;
 
     } // namespace timer
@@ -125,6 +127,8 @@ namespace ice
 
         auto elapsed(ice::Timeline const& timeline) noexcept -> ice::Tns;
 
+        auto elapsed_us(ice::Timeline const& timeline) noexcept -> ice::Tus;
+
     } // namespace timeline
 
     namespace stopwatch
@@ -135,6 +139,7 @@ namespace ice
         auto create_stopwatch(ice::Clock const& clock) noexcept -> ice::Stopwatch;
 
         auto elapsed(ice::Stopwatch const& stopwatch) noexcept -> ice::Tns;
+        auto elapsed_us(ice::Stopwatch const& stopwatch) noexcept -> ice::Tus;
 
         void start(ice::Stopwatch& stopwatch) noexcept;
 
