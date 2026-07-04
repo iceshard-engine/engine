@@ -2,8 +2,8 @@
 /// SPDX-License-Identifier: MIT
 
 #include <ice/clock.hxx>
-#include <ice/os/windows.hxx>
 #include <ice/os/unix.hxx>
+#include <ice/os/windows.hxx>
 
 #if ISP_UNIX
 #include <chrono>
@@ -12,69 +12,69 @@
 namespace ice
 {
 
-    inline auto operator+(ice::Timestamp left, ice::Timestamp right) noexcept -> ice::Timestamp
+    static constexpr auto operator+(ice::Timestamp left, ice::Timestamp right) noexcept -> ice::Timestamp
     {
         return { left.value + right.value };
     }
 
-    inline auto operator+=(ice::Timestamp& left, ice::Timestamp right) noexcept -> ice::Timestamp&
+    static constexpr auto operator+=(ice::Timestamp& left, ice::Timestamp right) noexcept -> ice::Timestamp&
     {
         left.value += right.value;
         return left;
     }
 
-    inline auto operator-(ice::Timestamp left, ice::Timestamp right) noexcept -> ice::Timestamp
+    static constexpr auto operator-(ice::Timestamp left, ice::Timestamp right) noexcept -> ice::Timestamp
     {
         return { left.value - right.value };
     }
 
-    inline auto operator*(ice::Timestamp left, ice::f32 right) noexcept -> ice::Timestamp
+    static constexpr auto operator*(ice::Timestamp left, ice::f64 right) noexcept -> ice::Timestamp
     {
-        return { static_cast<ice::i64>(left.value * right) };
+        return { static_cast<ice::i64>(static_cast<ice::f64>(left.value) * right) };
     }
 
-    inline auto operator<=>(ice::Timestamp left, ice::Timestamp right) noexcept
+    static constexpr auto operator<=>(ice::Timestamp left, ice::Timestamp right) noexcept
     {
         return left.value <=> right.value;
     }
 
-    inline auto operator*(ice::ClockFrequency freq, ice::Tns time) noexcept -> ice::Timestamp
+    static constexpr auto operator*(ice::ClockFrequency freq, ice::Tns time) noexcept -> ice::Timestamp
     {
-        return { ice::i64((freq.value * time.value) / ice::Tns::Constant_Precision) };
+        return { static_cast<ice::i64>(static_cast<ice::f64>(time.value) * freq.value) / ice::Tns::Constant_Precision) };
     }
 
     namespace detail
     {
 
-        auto clock_frequency_1o0() noexcept -> ice::f64
+        static auto clock_frequency_1o0() noexcept -> ice::f64
         {
-            static ice::f64 const cpu_frequency_value = []() noexcept
+            static ice::f64 const cpu_frequency_value = [] noexcept
             {
                 return 1.0 / ice::clock::clock_frequency().value;
             }();
             return cpu_frequency_value;
         }
 
-        auto clock_or_now(ice::Clock const* clock) noexcept -> ice::Timestamp
+        static auto clock_or_now(ice::Clock const* clock) noexcept -> ice::Timestamp
         {
             return clock != nullptr ? clock->_ts_latest : ice::clock::now();
         }
 
-        auto timestamp_or_now(ice::Timestamp ts) noexcept -> ice::Timestamp
+        static auto timestamp_or_now(ice::Timestamp ts) noexcept -> ice::Timestamp
         {
             return ts.value > 0 ? ts : ice::clock::now();
         }
 
-        auto timestamp_sub_fp(ice::Timestamp left, ice::Timestamp right) noexcept -> ice::f64
+        static auto timestamp_sub_fp(ice::Timestamp left, ice::Timestamp right) noexcept -> ice::f64
         {
             return static_cast<ice::f64>(left.value - right.value);
         }
 
         template<ice::TimeType T>
-        auto elapsed_timestamp(ice::Timestamp from, ice::Timestamp to) noexcept -> T
+        static auto elapsed_timestamp(ice::Timestamp start, ice::Timestamp end) noexcept -> T
         {
             return T{
-                static_cast<T::ValueType>(timestamp_sub_fp(to, from) * (clock_frequency_1o0() * T::Constant_Precision))
+                static_cast<T::ValueType>(timestamp_sub_fp(end, start) * (clock_frequency_1o0() * T::Constant_Precision))
             };
         }
 
@@ -153,7 +153,8 @@ namespace ice
 
         auto clock_frequency() noexcept -> ice::ClockFrequency
         {
-            return { 1'000'000'000LLU };
+            static constexpr auto UnixClockFrequency = 1'000'000'000LLU;
+            return { UnixClockFrequency };
         }
 
         auto create_clock() noexcept -> ice::SystemClock
@@ -229,13 +230,13 @@ namespace ice
         auto create_timer(
             ice::Clock const& clock,
             ice::Tns timer_step,
-            ice::Timestamp _ts_initial
+            ice::Timestamp initial_timestamp
         ) noexcept -> ice::Timer
         {
             return ice::Timer{
                 ._clock_base = &clock,
                 ._timer_step = ice::clock::clock_frequency() * timer_step,
-                ._ts_latest = _ts_initial,
+                ._ts_latest = initial_timestamp,
             };
         }
 

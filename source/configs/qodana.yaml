@@ -19,6 +19,7 @@ exclude:
   - name: readability-trailing-comma
   - name: readability-else-after-return # Not an actuall issue
   - name: readability-redundant-inline-specifier
+  - name: readability-redundant-parentheses # Seems to report `(a - b) * c` as using "redundant" parentheses
   # Portability
   - name: portability-avoid-pragma-once
   # Modernize
