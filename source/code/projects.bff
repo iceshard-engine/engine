@@ -9,6 +9,7 @@
 #include "core/memsys/memsys.bff"
 #include "core/collections/collections.bff"
 #include "core/modules/modules.bff"
+#include "core/i18n/i18n.bff"
 #include "core/logger/logger.bff"
 #include "core/utils/utils.bff"
 #include "core/tasks/tasks.bff"
@@ -19,6 +20,7 @@
 #include "systems/render_system/render_system.bff"
 #include "systems/input_system/input_system.bff"
 #include "systems/input_action_system/input_action_system.bff"
+#include "systems/i18n_system/i18n_system.bff"
 #include "systems/font_system/font_system.bff"
 #include "systems/ui_system/ui_system.bff"
 

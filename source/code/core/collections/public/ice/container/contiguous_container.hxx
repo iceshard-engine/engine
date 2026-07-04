@@ -13,13 +13,13 @@ namespace ice::container
     struct ContiguousContainer : ice::container::BasicContainer
     {
         template<ice::concepts::ContiguousContainer Self>
-        constexpr auto first(this Self && self) noexcept -> ice::container::ValueRef<Self>
+        constexpr auto first(this Self&& self) noexcept -> ice::container::ValueRef<Self>
         {
             return self.data()[0];
         }
 
         template<ice::concepts::ContiguousContainer Self>
-        constexpr auto last(this Self && self) noexcept -> ice::container::ValueRef<Self>
+        constexpr auto last(this Self&& self) noexcept -> ice::container::ValueRef<Self>
         {
             return self.data()[self.size() - 1];
         }
@@ -93,6 +93,43 @@ namespace ice::container
         constexpr auto rend(this Self&& self) noexcept -> ice::container::ReverseIterator<Self>
         {
             return ice::container::ReverseIterator<Self>{ self.data() };
+        }
+
+        // Search interface
+        template<ice::concepts::ContiguousContainer Self>
+        constexpr auto index_of(this Self const& self, ice::container::ValueRef<Self> value) noexcept -> ice::nindex
+        {
+            ice::nindex result = ice::nindex_none;
+
+            auto const* data_ptr = self.data();
+            ice::u32 const count = self.size().u32();
+            for (ice::u32 idx = 0; result.is_valid() == false && idx < count; ++idx)
+            {
+                if (data_ptr[idx] == value)
+                {
+                    result = ice::nindex{ idx, self.size()._width };
+                }
+            }
+
+            return result;
+        }
+
+        template<ice::concepts::ContiguousContainer Self, typename Predicate, typename... Args>
+        constexpr auto index_of(this Self const& self, Predicate const& predicate, Args const&... args) noexcept -> ice::nindex
+        {
+            ice::nindex result = ice::nindex_none;
+
+            auto const* data_ptr = self.data();
+            ice::u32 const count = self.size().u32();
+            for (ice::u32 idx = 0; result.is_valid() == false && idx < count; ++idx)
+            {
+                if (predicate(data_ptr[idx], args...))
+                {
+                    result = ice::nindex{ idx, self.size()._width };
+                }
+            }
+
+            return result;
         }
 
         // Operators

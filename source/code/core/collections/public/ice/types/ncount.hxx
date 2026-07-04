@@ -39,7 +39,7 @@ namespace ice
     }
 
     inline constexpr ncount::ncount(nvalue value) noexcept
-        : nvalue{ value }
+        : nvalue{ value._width, value._value }
     { }
 
     inline constexpr ncount::ncount(base_type value) noexcept

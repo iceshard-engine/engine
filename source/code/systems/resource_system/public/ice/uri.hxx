@@ -5,6 +5,7 @@
 #include <ice/string.hxx>
 #include <ice/stringid.hxx>
 #include <ice/path_utils.hxx>
+#include <ice/uri_tools.hxx>
 
 namespace ice
 {
@@ -31,6 +32,9 @@ namespace ice
         constexpr auto path() const noexcept -> ice::Path;
         constexpr auto query() const noexcept -> ice::String;
         constexpr auto fragment() const noexcept -> ice::String;
+
+        // Query Parsing
+        constexpr auto parameter(ice::String name, ice::String fallback_value) const noexcept -> ice::String;
 
         // Authority
         constexpr auto authority() const noexcept -> ice::String;
@@ -78,102 +82,6 @@ namespace ice
             return scheme_idx;
         }
 
-        constexpr bool get_scheme_size(ice::String raw_uri, ice::u8& out_size) noexcept
-        {
-            ice::nindex const scheme_end = raw_uri.find_first_of(':');
-            if (scheme_end.is_valid())
-            {
-                out_size = scheme_end.u8() + 1;
-            }
-            return scheme_end.is_valid();
-        }
-
-        constexpr bool get_authority_sizes(
-            ice::String uri,
-            ice::u8& out_authority,
-            ice::u8& out_user,
-            ice::u8& out_host,
-            ice::u8& out_port
-        ) noexcept
-        {
-            if (uri[0] == '/' && uri[1] == '/')
-            {
-                ice::nindex const authority_end = uri.find_first_of('/', 2);
-                ICE_ASSERT_CORE(authority_end.is_valid());
-                if (authority_end.is_valid() == false)
-                {
-                    return false;
-                }
-
-                out_authority = authority_end.u8();
-
-                ice::nindex offset = 0;
-                ice::String const authority_uri = uri.substr(2, authority_end.u32() - 2);
-                ice::nindex const authority_user = authority_uri.find_first_of('@', offset);
-                if (authority_user.is_valid())
-                {
-                    // Include the '@' character in the size, since it can be easily removed in the 'userinfo()' method
-                    //  and helps with calculations.
-                    offset = out_user = (authority_user - offset).u8() + 1;
-                }
-
-                ice::nindex const authority_port = authority_uri.find_first_of(':', offset);
-                if (authority_port.is_valid())
-                {
-                    // If we have a port set the length of host to up to the ':' character
-                    out_host = (authority_port - offset).u8();
-
-                    // After that it's the 'port' value (without the ':') character
-                    //  Because the host needs to exist we can always add +1, and keep the port size the actual size.
-                    out_port = (authority_uri.size() - (authority_port + 1)).u8();
-                }
-                else
-                {
-                    // The rest of the authority string is the host
-                    out_host = (authority_uri.size() - offset).u8();
-                }
-            }
-            return true;
-        }
-
-        constexpr bool get_path_query_fragment_sizes(
-            ice::String uri,
-            ice::u8& out_path,
-            ice::u8& out_query,
-            ice::u8& out_fragment
-        ) noexcept
-        {
-            ice::nindex path_separator = uri.find_first_of("?#");
-            if (path_separator == nindex_none)
-            {
-                out_path = uri.size().u8();
-                return out_path > 0;
-            }
-
-            // We continue after assigning path length
-            out_path = path_separator.u8();
-
-            // Do we have a query?
-            if (uri[path_separator] == '?')
-            {
-                // Get the next separator if necessary
-                path_separator = uri.find_last_of('#');
-                if (path_separator == nindex_none)
-                {
-                    // We take te remaining query with the starting '?' character
-                    out_query = (uri.size() - out_path).u8();
-                    return true;
-                }
-
-                // The everything up to '#' including the '?' character.
-                out_query = (path_separator - out_path).u8();
-            }
-
-            // Take everything remaining including the '#' character.
-            out_fragment = (uri.size() - path_separator).u8();
-            return true;
-        }
-
     } // namespace detail
 
     constexpr URI::URI() noexcept
@@ -208,15 +116,15 @@ namespace ice
         , _fragment{ }
     {
         ice::u8 scheme_size = 0;
-        if (detail::get_scheme_size(uri_raw, scheme_size))
+        if (ice::uri::get_scheme_size(uri_raw, scheme_size))
         {
             _scheme = scheme_size;
         }
-        detail::get_authority_sizes(
+        ice::uri::get_authority_sizes(
             uri_raw.substr(_scheme),
             _authority, _userinfo, _host, _port
         );
-        detail::get_path_query_fragment_sizes(
+        ice::uri::get_path_query_fragment_sizes(
             uri_raw.substr(_scheme + _authority),
             _path, _query, _fragment
         );
@@ -291,6 +199,39 @@ namespace ice
     constexpr auto URI::fragment() const noexcept -> ice::String
     {
         return ice::String{ _uri + _scheme + _authority + _path + _query, _fragment };
+    }
+
+    constexpr auto URI::parameter(ice::String name, ice::String fallback_value) const noexcept -> ice::String
+    {
+        ice::String parameters = query().substr(1); // Remove the initial '?' query character
+        if (parameters.is_empty())
+        {
+            return fallback_value;
+        }
+
+        ice::String result{};
+        do
+        {
+            ice::nindex const param_sep = parameters.find_first_of('&');
+            ice::String const param_keyval = parameters.substr(0, param_sep);
+            ice::nindex const value_sep = param_keyval.find_first_of('=');
+            if (param_keyval.substr(0, value_sep) == name)
+            {
+                result = param_keyval.substr(value_sep + 1);
+                parameters = {};
+            }
+            else if (param_sep == nindex_none)
+            {
+                parameters = {};
+            }
+            else
+            {
+                parameters = parameters.substr(param_sep + 1);
+            }
+        }
+        while (parameters.not_empty());
+
+        return result;
     }
 
     // Authority

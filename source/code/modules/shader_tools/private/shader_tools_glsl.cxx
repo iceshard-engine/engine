@@ -576,7 +576,7 @@ namespace ice
                 {
                     ICE_LOG_IF(
                         context.empty() == false,
-                        LogSeverity::Error, LogTag::Asset,
+                        LogSeverity::Debug, LogTag::Asset,
                         "Entered Group '{}' with token '{}'",
                         context, ctx.token.value
                     );
@@ -585,7 +585,7 @@ namespace ice
                 {
                     ICE_LOG_IF(
                         context.empty() == false,
-                        LogSeverity::Error, LogTag::Asset,
+                        LogSeverity::Debug, LogTag::Asset,
                         "Left group '{}' with token '{}' with result: {}",
                         context, ctx.token.value, state == arctic::ParseState::Success ? "Success" : "Error"
                     );

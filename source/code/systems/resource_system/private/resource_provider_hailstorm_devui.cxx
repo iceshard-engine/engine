@@ -80,7 +80,10 @@ namespace ice
         ice::HeapString<> name,
         ice::HailStormResourceProvider const& provider
     ) noexcept
-        : DevUIWidget{ DevUIWidgetInfo{ .category = "Tools", .name = name } }
+        : DevUIWidget{ DevUIWidgetInfo{
+            .category = "builtin.devui.strings/menu.category.tools|Tools"_i18n,
+            .name = name.substr(0)
+        } }
         , _name{ ice::move(name) } // Store the string so it's valid through the widget lifetime
         , _provider{ provider }
     {
@@ -96,7 +99,7 @@ namespace ice
     {
         if (ImGui::BeginMenu("Resource Providers", true))
         {
-            ImGui::MenuItem(widget_info.name.begin(), nullptr, &state.active);
+            ImGui::MenuItem(name().begin(), nullptr, &state.active);
             ImGui::EndMenu();
         }
         return false;

@@ -65,8 +65,8 @@ namespace ice::detail::webasm
     void alert_assert(
         ice::String condition,
         ice::String message,
-        fmt::format_args args,
-        ice::detail::LogLocation location
+        fmt::format_args const& args,
+        ice::detail::LogLocation const& location
     ) noexcept
     {
         char header_buffer_raw[128 + 256];
@@ -142,8 +142,8 @@ namespace ice::detail::webasm
         ice::LogSeverity severity,
         ice::LogTag tag,
         ice::String message,
-        fmt::format_args args,
-        ice::detail::LogLocation location
+        fmt::format_args const& args,
+        ice::detail::LogLocation const& location
     ) noexcept
     {
         detail::LogState const* const log_state = detail::internal_log_state;

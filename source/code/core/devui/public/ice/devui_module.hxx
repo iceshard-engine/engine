@@ -2,17 +2,17 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/stringid.hxx>
-#include <ice/mem_unique_ptr.hxx>
-#include <ice/module_types.hxx>
 #include <ice/devui_types.hxx>
-#include <ice/string.hxx>
+#include <ice/module_types.hxx>
 #include <ice/span.hxx>
+#include <ice/stringid.hxx>
 
-namespace ice::api
+namespace ice
 {
 
-    namespace devui::v1
+    class I18NReference;
+
+    namespace api::devui::v1
     {
 
         struct DevUI_API
@@ -25,7 +25,7 @@ namespace ice::api
 
             using FnContextSetupCallback = ice::FnDevUIContextSetupCallback;
             using FnContextSetup = void(*)(FnContextSetupCallback callback, void* userdata) noexcept;
-            using FnContextSetupMenu = void(*)(ice::Span<ice::String> categories) noexcept;
+            using FnContextSetupMenu = void(*)(ice::Span<ice::I18NReference> categories) noexcept;
             using FnContextRegisterWidget = void(*)(ice::DevUIWidget* widget, ice::DevUIWidget* owning_widget) noexcept;
             using FnContextRemoveWidget = void(*)(ice::DevUIWidget* widget) noexcept;
             using FnContextTraitName = auto(*)() noexcept -> ice::StringID;
@@ -39,9 +39,6 @@ namespace ice::api
             FnContextTraitName fn_context_trait_name;
         };
 
-    } // inline namespace devui::v1
+    } // namespace ice::api::devui::v1
 
-    // The default API namespace
-    using namespace devui::v1;
-
-} // namespace ice::api
+} // namespace ice

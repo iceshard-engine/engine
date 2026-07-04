@@ -1,0 +1,19 @@
+/// Copyright 2026 - 2026, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
+.Project =
+[
+    .Name = 'i18n_system'
+    .Kind = .Kind_StaticLib
+    .Group = 'Systems'
+
+    .BaseDir = '$WorkspaceCodeDir$/systems/i18n_system'
+
+    .Public =
+    [
+        .Uses = {
+            'resource_system'
+        }
+    ]
+]
+.Projects + .Project

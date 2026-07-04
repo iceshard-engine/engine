@@ -21,6 +21,7 @@
             'input_system'
             'input_action_system'
             'render_system'
+            'i18n_system'
         }
     ]
 

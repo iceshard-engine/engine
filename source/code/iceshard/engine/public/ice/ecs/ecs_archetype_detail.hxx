@@ -85,12 +85,11 @@ namespace ice::ecs::detail
     //! \pre The input list contains at least ALL component identifiers that are passed as type arguments.
     //!   This means that if components A, B and C are passed as template arguments the input argument requires these components to exist in that list.
     //!   Otherwise the resulting array is considered incomplete and accessing data using is undefined. The input list may contain additional entries.
+    //! \details When called with types `<A, C, B>` with a list containing `(B, D, C, A)` the resulting array holds values `(3, 2, 0)`
     //!
     //! \tparam ...Components The component types which indicies we want to map to the locations in the input list.
     //! \param in_list_mapped_into The list we want the components to be mapped to.
     //! \return A static size array of `sizeof...(Components)` containing the index where each `Component::Identifier == in_list_mapped_into[indexof(Component)]`
-    //!
-    //! \example When called with types `<A, C, B>` with a list containing `(B, D, C, A)` the resulting array holds values `(3, 2, 0)`
     template<ice::ecs::Component... Components>
     constexpr auto make_argument_idx_map(
         ice::Span<ice::StringID const> in_list_mapped_into

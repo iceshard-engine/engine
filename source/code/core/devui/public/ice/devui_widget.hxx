@@ -1,17 +1,17 @@
-/// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
+ /// Copyright 2025 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/devui_types.hxx>
-#include <ice/string.hxx>
+#include <ice/i18n_string.hxx>
 
-namespace ice
+ namespace ice
 {
 
     struct DevUIWidgetInfo
     {
-        ice::String category;
-        ice::String name;
+        ice::I18NString category;
+        ice::I18NString name;
     };
 
     class IDevUIWidget
@@ -31,8 +31,8 @@ namespace ice
         DevUIWidget(ice::DevUIWidgetInfo const& info) noexcept;
         virtual ~DevUIWidget() noexcept = default;
 
-        virtual auto name() const noexcept -> ice::String override { return widget_info.name; }
-        virtual auto category() const noexcept -> ice::String override { return widget_info.category; }
+        virtual auto name() const noexcept -> ice::String override { return _widget_info.name; }
+        virtual auto category() const noexcept -> ice::String override { return _widget_info.category; }
 
         virtual void update_state(ice::DevUIWidgetState& state) noexcept { }
 
@@ -42,7 +42,8 @@ namespace ice
 
         virtual bool build_mainmenu(ice::DevUIWidgetState& state) noexcept;
 
-        ice::DevUIWidgetInfo const widget_info;
+    protected:
+        ice::DevUIWidgetInfo _widget_info;
     };
 
 } // namespace ice

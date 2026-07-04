@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/module.hxx>
+#include <ice/module_negotiator.hxx>
 
 namespace ice
 {

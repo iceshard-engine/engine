@@ -2,11 +2,11 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/profiler.hxx>
-#include <ice/string.hxx>
+#include <ice/i18n_string.hxx>
+#include <ice/log_formatters.hxx>
 #include <ice/log_severity.hxx>
 #include <ice/log_tag.hxx>
-#include <ice/log_formatters.hxx>
+#include <ice/profiler.hxx>
 
 namespace ice::detail
 {
@@ -21,6 +21,14 @@ namespace ice::detail
         ice::LogSeverity severity,
         ice::LogTag tag,
         ice::String message,
+        fmt::format_args args,
+        ice::detail::LogLocation location
+    ) noexcept;
+
+    void log(
+        ice::LogSeverity severity,
+        ice::LogTag tag,
+        ice::I18NString message,
         fmt::format_args args,
         ice::detail::LogLocation location
     ) noexcept;

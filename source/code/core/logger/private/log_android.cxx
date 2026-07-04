@@ -81,8 +81,8 @@ namespace ice::detail::android
     void logcat_assert(
         ice::String condition,
         ice::String message,
-        fmt::format_args args,
-        ice::detail::LogLocation location
+        fmt::format_args const& args,
+        ice::detail::LogLocation const& location
     ) noexcept
     {
         static ice::HostAllocator host_alloc{};
@@ -120,8 +120,8 @@ namespace ice::detail::android
         ice::LogSeverity severity,
         ice::LogTag tag,
         ice::String message,
-        fmt::format_args args,
-        ice::detail::LogLocation location
+        fmt::format_args const& args,
+        ice::detail::LogLocation const& location
     ) noexcept
     {
         // ice::String const tag_name = log_state->tag_name(tag);

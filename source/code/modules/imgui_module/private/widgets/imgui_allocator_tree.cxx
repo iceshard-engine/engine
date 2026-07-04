@@ -2,11 +2,13 @@
 /// SPDX-License-Identifier: MIT
 
 #include "imgui_allocator_tree.hxx"
+#include <ice/devui_imgui.hxx>
+#include <ice/i18n_reference.hxx>
 #include <ice/log_formatters.hxx>
 #include <ice/string.hxx>
-#include <ice/devui_imgui.hxx>
 
 #include <imgui/imgui.h>
+
 
 namespace ice::devui
 {
@@ -14,7 +16,7 @@ namespace ice::devui
     namespace detail
     {
 
-        void build_table_view(ice::AllocatorDebugInfo const& allocator, std::string_view filter, ice::i32 default_expanded = 2) noexcept
+        void build_table_view(ice::AllocatorDebugInfo const& allocator, ice::String filter, ice::i32 default_expanded = 2) noexcept
         {
             ice::AllocatorDebugInfo const* child_alloc = allocator.child_allocator();
 
@@ -24,8 +26,7 @@ namespace ice::devui
                 alloc_name = "<unnamed_allocator>";
             }
 
-            bool const filtered_out = filter.empty() == false
-                && alloc_name.find(filter) == std::string_view::npos;
+            bool const filtered_out = filter.not_empty() && alloc_name.find(filter) == std::string_view::npos;
 
             bool open = child_alloc != nullptr;
             if (filtered_out == false)
@@ -118,9 +119,9 @@ namespace ice::devui
 
     } // namespace detail
 
-    static constexpr DevUIWidgetInfo Constant_WidgetInfo{
-        .category = "Tools",
-        .name = "Allocator Tree",
+    static DevUIWidgetInfo Constant_WidgetInfo{
+        .category = "builtin.devui.strings/menu.category.tools|Tools"_i18n,
+        .name = "builtin.devui.strings/widget.allocator-tree.name|Allocator Tree"_i18n,
     };
 
     ImGui_AllocatorTreeWidget::ImGui_AllocatorTreeWidget(
@@ -158,7 +159,10 @@ namespace ice::devui
             | ImGuiTableFlags_BordersV
             | ImGuiTableFlags_RowBg;
 
-        ImGui::InputText("Filter", _filter, sizeof(_filter), ImGuiInputTextFlags_AutoSelectAll);
+        // TODO: Make our own wrapper for `ImGui::InputText`
+        ImGui::InputText("Filter", _filter.data(), _filter.capacity().u32(), ImGuiInputTextFlags_AutoSelectAll);
+        _filter._size = ice::string::detail::strptr_size(_filter.data());
+
         ImGui::SameLine();
         ImGui::Checkbox("Expand all", &_expanded);
 
@@ -173,9 +177,15 @@ namespace ice::devui
             ImGui::TableSetupColumn("Location", ImGuiTableColumnFlags_DefaultHide);
             ImGui::TableHeadersRow();
 
-            detail::build_table_view(_root_tracked_allocator, { _filter, strlen(_filter) },  _expanded ? 64 : 2);
+            detail::build_table_view(_root_tracked_allocator, _filter, _expanded ? 64 : 2);
             ImGui::EndTable();
         }
+    }
+
+    void ImGui_AllocatorTreeWidget::update_state(ice::DevUIWidgetState& state) noexcept
+    {
+        _widget_info.category.resolve();
+        _widget_info.name.resolve();
     }
 
     auto create_allocator_tree_widget(

@@ -14,7 +14,8 @@ import SDKCommand from require 'ice.commands.sdk'
 
 import RunCommand from require 'tools.run'
 import NatvisCommand from require 'tools.natvis'
-import DoxyCommand from require 'tools.doxy'
+import L10NCommand from require 'tools.l10n'
+import DocsCommand from require 'tools.docs'
 
 LicenseCommand.settings.authors = "Dandielo <dandielo@iceshard.net>"
 LicenseCommand.settings.license = "MIT"
@@ -23,21 +24,24 @@ class IceShard extends Application
     @name: 'IceShard'
     @description: 'IceShard engine project tool.'
     @commands: {
-        'lint': LintCommand
-        'build': BuildCommand
-        'update': UpdateCommand
+        -- Development
         'devenv': DevenvCommand
-        'exec': ExecCommand
-        'codestyle': CodeStyleCommand
-        'license': LicenseCommand
-        'script': ScriptCommand
+        'build': BuildCommand
+        'lint': LintCommand
+        -- Platform specific commands
         'android': AndroidCommand
         'webasm': WebAsmCommand
-        'settings': SettingsCommand
         'sdk': SDKCommand
+        -- Additional commands
+        'update': UpdateCommand
+        'settings': SettingsCommand
+        'license': LicenseCommand
+        'script': ScriptCommand
+        'exec': ExecCommand
         -- Custom commands
         'natvis': NatvisCommand
-        'doxy': DoxyCommand
+        'l10n': L10NCommand
+        'docs': DocsCommand
     }
 
 { :IceShard }

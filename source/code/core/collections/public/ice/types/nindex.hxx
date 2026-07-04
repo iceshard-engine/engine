@@ -35,7 +35,7 @@ namespace ice
     }
 
     inline constexpr nindex::nindex(nvalue value) noexcept
-        : nvalue{ value }
+        : nvalue{ value._width, value._value }
     { }
 
     inline constexpr nindex::nindex(base_type value) noexcept

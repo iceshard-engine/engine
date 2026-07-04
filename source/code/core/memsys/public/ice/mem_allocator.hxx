@@ -9,7 +9,6 @@
 namespace ice
 {
 
-
     template<bool WithDebugInfo>
     struct AllocatorBase
     {

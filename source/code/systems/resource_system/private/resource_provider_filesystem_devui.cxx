@@ -10,7 +10,10 @@ namespace ice
 {
 
     FileSystemResourceProvider::DevUI::DevUI(ice::HashMap<ice::FileSystemResource*> const& resources) noexcept
-        : DevUIWidget{ DevUIWidgetInfo{ .category = "Tools", .name = "Files" } }
+        : DevUIWidget{ DevUIWidgetInfo{
+            .category = "builtin.devui.strings/menu.category.tools|Tools"_i18n,
+            .name = "builtin.devui.strings/widget.file-resource-provider.name|Files"_i18n,
+        } }
         , _resources{ resources }
         , _filter{ }
     {
@@ -25,7 +28,7 @@ namespace ice
     {
         if (ImGui::BeginMenu("Resource Providers", true))
         {
-            ImGui::MenuItem(widget_info.name.begin(), nullptr, &state.active);
+            ImGui::MenuItem(name().begin(), nullptr, &state.active);
             ImGui::EndMenu();
         }
         return false;

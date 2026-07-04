@@ -23,4 +23,6 @@ namespace ice
         void do_deallocate(void*) noexcept override { }
     };
 
+    static NullAllocator Global_NullAllocator{};
+
 } // namespace ice

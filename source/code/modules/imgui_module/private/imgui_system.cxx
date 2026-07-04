@@ -8,7 +8,6 @@
 #include <ice/assert.hxx>
 #include <ice/devui_imgui.hxx>
 #include <ice/devui_widgets.hxx>
-#include <ice/heap_string.hxx>
 #include <ice/static_string.hxx>
 #include <ice/colors.hxx>
 
@@ -48,22 +47,22 @@ namespace ice::devui
     } // namespace detail
 
 
-    void ImGuiWidgetFrame::mainmenu(ice::DevUIWidgetInfo const& widget, ice::DevUIWidgetState& state) noexcept
+    void ImGuiWidgetFrame::mainmenu(ice::DevUIWidget const& widget, ice::DevUIWidgetState& state) noexcept
     {
-        ice::nindex const separator_pos = widget.category.find_first_of('/');
+        ice::nindex const separator_pos = widget.category().find_first_of('/');
         if (separator_pos == ice::nindex_none)
         {
-            ImGui::MenuItem(widget.name.begin(), nullptr, &state.active);
+            ImGui::MenuItem(widget.name().begin(), nullptr, &state.active);
             return;
         }
 
         ice::StaticString<32> helper;
-        detail::build_mainmenu(helper, widget.category.substr(separator_pos + 1), widget.name, state.active);
+        detail::build_mainmenu(helper, widget.category().substr(separator_pos + 1), widget.name(), state.active);
     }
 
-    bool ImGuiWidgetFrame::begin(ice::DevUIWidgetInfo const& widget, ice::DevUIWidgetState& state) noexcept
+    bool ImGuiWidgetFrame::begin(ice::DevUIWidget const& widget, ice::DevUIWidgetState& state) noexcept
     {
-        return ImGui::Begin(widget.name.begin(), &state.active);
+        return ImGui::Begin(widget.name().begin(), &state.active);
     }
 
     void ImGuiWidgetFrame::end() noexcept
@@ -95,7 +94,15 @@ namespace ice::devui
         }
 
         // Setup default main-menu categories
-        ice::String categories[]{ "File", "Settings", "Engine", "Tools", "Help" };
+        ice::I18NReference categories[]
+        {
+            "builtin.devui.strings/menu.category.file|File"_i18n,
+            "builtin.devui.strings/menu.category.settings|Settings"_i18n,
+            "builtin.devui.strings/menu.category.utility|Utility"_i18n,
+            "builtin.devui.strings/menu.category.engine|Engine"_i18n,
+            "builtin.devui.strings/menu.category.tools|Tools"_i18n,
+            "builtin.devui.strings/menu.category.help|Help"_i18n
+        };
         setup_mainmenu(categories);
     }
 
@@ -103,12 +110,12 @@ namespace ice::devui
     {
     }
 
-    void ImGuiSystem::setup_mainmenu(ice::Span<ice::String> categories) noexcept
+    void ImGuiSystem::setup_mainmenu(ice::Span<ice::I18NReference> categories) noexcept
     {
         _menu_categories.clear();
-        for (ice::String category : categories)
+        for (ice::I18NReference category : categories)
         {
-            _menu_categories.push_back({ _allocator, category });
+            _menu_categories.push_back(category);
         }
     }
 
@@ -127,10 +134,10 @@ namespace ice::devui
 
     void ImGuiSystem::update_widgets() noexcept
     {
-        ImGuiIO const& io = ImGui::GetIO();
+        ImGuiIO const& imgui_io = ImGui::GetIO();
 
         // If display size is not set we return quickly
-        if (io.DisplaySize.x <= 0.f || io.DisplaySize.y <= 0.f)
+        if (imgui_io.DisplaySize.x <= 0.F || imgui_io.DisplaySize.y <= 0.F)
         {
             return;
         }
@@ -140,10 +147,15 @@ namespace ice::devui
         ImGui::NewFrame();
 #if ISP_WINDOWS
         ImGuizmo::BeginFrame();
-        ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
+        ImGuizmo::SetRect(0, 0, imgui_io.DisplaySize.x, imgui_io.DisplaySize.y);
 #endif
 
         {
+            for (ice::I18NString& category : _menu_categories)
+            {
+                category.resolve();
+            }
+
             if (ImGui::BeginMainMenuBar())
             {
                 for (ice::String category : _menu_categories)
@@ -152,10 +164,10 @@ namespace ice::devui
                     {
                         for (auto const& runtime : _widget_manager.widgets())
                         {
-                            ice::DevUIWidgetInfo const& info = runtime->widget->widget_info;
-                            if (info.category.starts_with(category) && runtime->widget->build_mainmenu(runtime->state))
+                            ice::String const widget_category = runtime->widget->category();
+                            if (category.starts_with(widget_category) && runtime->widget->build_mainmenu(runtime->state))
                             {
-                                _widget_frame.mainmenu(info, runtime->state);
+                                _widget_frame.mainmenu(*runtime->widget, runtime->state);
                             }
                         }
 
@@ -223,17 +235,25 @@ namespace ice::devui
     }
 
     ImGui_ColorPicker_OkLCH::ImGui_ColorPicker_OkLCH() noexcept
-        : DevUIWidget{ DevUIWidgetInfo{.category = "Utility", .name = "OkCLH Color Picker"}}
+        : DevUIWidget{ DevUIWidgetInfo{
+            .category = "builtin.devui.strings/menu.category.utility|Utility"_i18n,
+            .name = "builtin.devui.strings/widget.color-picker-oklch.name|OkLCH Color Picker"_i18n
+        } }
     {
     }
 
     void ImGui_ColorPicker_OkLCH::build_content() noexcept
     {
         ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
-        if (ImGui::ColorPickerOkLCH("OkLCH", newcolor, ImGui::OkLCHPickerFlags::Chroma_ClipToMax, &color); ImGui::IsItemHovered() == false)
+        if (ImGui::ColorPickerOkLCH(_widget_info.name, newcolor, ImGui::OkLCHPickerFlags::Chroma_ClipToMax, &color); ImGui::IsItemHovered() == false)
         {
             color = newcolor;
         }
     }
 
+    void ImGui_ColorPicker_OkLCH::update_state(ice::DevUIWidgetState& state) noexcept
+    {
+        _widget_info.category.resolve();
+        _widget_info.name.resolve();
+    }
 } // namespace ice::devui

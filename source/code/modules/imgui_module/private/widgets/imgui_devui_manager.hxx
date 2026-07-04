@@ -21,7 +21,7 @@ namespace ice::devui
     {
     public:
         ImGuiDevUIManager(ice::Allocator& alloc) noexcept;
-        ~ImGuiDevUIManager() noexcept;
+        ~ImGuiDevUIManager() noexcept override;
 
         void add_widget(
             ice::DevUIWidget* widget,
@@ -32,6 +32,7 @@ namespace ice::devui
         auto widgets() noexcept -> ice::Span<ice::UniquePtr<ImGuiDevUIWidget> const> { return _widgets.tailspan(); }
 
         void build_content() noexcept override;
+        void update_state(ice::DevUIWidgetState& state) noexcept override;
 
     private:
         ice::Allocator& _allocator;

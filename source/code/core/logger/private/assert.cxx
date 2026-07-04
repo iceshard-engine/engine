@@ -47,8 +47,8 @@ namespace ice::detail
     void default_assert_fn(
         ice::String condition,
         ice::String message,
-        fmt::format_args args,
-        ice::detail::LogLocation location
+        fmt::format_args const& args,
+        ice::detail::LogLocation const& location
     ) noexcept
     {
         char header_buffer_raw[128 + 256];
@@ -110,14 +110,14 @@ namespace ice::detail
     void uninitialized_assert_fn(
         ice::String condition,
         ice::String message,
-        fmt::format_args args,
-        ice::detail::LogLocation location
+        fmt::format_args const& args,
+        ice::detail::LogLocation const& location
     ) noexcept
     {
         fmt::vprintln(
             stderr,
             fmt_string(message),
-            ice::move(args)
+            args
         );
     }
 

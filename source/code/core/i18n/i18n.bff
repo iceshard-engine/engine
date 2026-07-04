@@ -1,0 +1,20 @@
+/// Copyright 2026 - 2026, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
+.Project =
+[
+    .Name = 'i18n'
+    .Kind = .Kind_StaticLib
+    .Group = 'Core'
+
+    .BaseDir = '$WorkspaceCodeDir$/core/i18n'
+
+    .Public =
+    [
+        .Uses = {
+            'collections'
+            'modules'
+        }
+    ]
+]
+.Projects + .Project

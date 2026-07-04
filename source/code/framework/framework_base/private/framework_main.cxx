@@ -48,7 +48,10 @@
 #include <ice/input/input_tracker.hxx>
 #include <ice/input_action_stack.hxx>
 
+#include <ice/i18n_api.hxx>
+#include <ice/i18n_database.hxx>
 #include <ice/log_module.hxx>
+#include <ice/log_sink.hxx>
 #include <ice/log.hxx>
 #include <ice/assert.hxx>
 
@@ -105,6 +108,7 @@ struct ice::app::State
     ice::UniquePtr<ice::ResourceTracker> resources;
     ice::UniquePtr<ice::framework::Game> game;
     ice::UniquePtr<ice::ModuleRegister> modules;
+    ice::UniquePtr<ice::I18NDatabase> i18ndb;
 
     ice::UniquePtr<ice::AssetStorage> assets;
     ice::UniquePtr<ice::Engine> engine;
@@ -157,6 +161,14 @@ struct ice::app::State
             .flags_io_wait = ice::TaskFlags{ }
         };
         resources = ice::create_resource_tracker(resources_alloc, resource_info);
+        i18ndb = ice::create_i18n_database(resources_alloc, *resources);
+
+        // Set the I18N database for the global I18N module.
+        ice::api::i18n::v1::I18NModuleAPI api;
+        if (modules->query_api(api))
+        {
+            api.fn_set_i18n_database(i18ndb.get());
+        }
     }
 };
 
@@ -399,6 +411,10 @@ auto ice_setup(
             }
         }
     }
+
+    // Load all available strings and set the default language.
+    state.i18ndb->load_available_languages();
+    state.i18ndb->set_default_language("en");
 
     // Run game setup
     ice::UniquePtr<ice::ecs::ArchetypeIndex> archetypes = ice::make_unique<ice::ecs::ArchetypeIndex>(state.alloc, state.alloc);
@@ -778,6 +794,7 @@ auto ice_shutdown(
 
     state.renderer.reset();
     state.engine.reset();
+    state.i18ndb.reset();
     state.resources.reset();
     state.platform.render_surface->destroy();
 

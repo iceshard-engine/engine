@@ -18,9 +18,9 @@ namespace ice
     public:
         virtual ~DevUIFrame() noexcept = default;
 
-        virtual void mainmenu(ice::DevUIWidgetInfo const& widget, ice::DevUIWidgetState& state) noexcept = 0;
+        virtual void mainmenu(ice::DevUIWidget const& widget, ice::DevUIWidgetState& state) noexcept = 0;
 
-        virtual bool begin(ice::DevUIWidgetInfo const& widget, ice::DevUIWidgetState& state) noexcept = 0;
+        virtual bool begin(ice::DevUIWidget const& widget, ice::DevUIWidgetState& state) noexcept = 0;
         virtual void end() noexcept = 0;
     };
 

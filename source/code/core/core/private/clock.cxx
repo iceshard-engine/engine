@@ -153,7 +153,7 @@ namespace ice
 
         auto clock_frequency() noexcept -> ice::ClockFrequency
         {
-            return { 1'000'000'000llu };
+            return { 1'000'000'000LLU };
         }
 
         auto create_clock() noexcept -> ice::SystemClock

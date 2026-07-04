@@ -24,6 +24,6 @@ namespace ice
     using LogSinkFn = void(*)(void* userdata, ice::LogSinkMessage const& message) noexcept;
 
     auto log_module_register_sink(LogSinkFn fn_sink, void* userdata) noexcept -> ice::LogSinkID;
-    void log_module_unregister_sink(ice::LogSinkID sinkid) noexcept;
+    void log_module_unregister_sink(ice::LogSinkID sink_id) noexcept;
 
 } // namespace ice

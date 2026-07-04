@@ -24,7 +24,7 @@ namespace ice
         return global_context_trait_name != nullptr && global_context_register_widget != nullptr;
     }
 
-    void devui_setup_mainmenu(ice::Span<ice::String> categories) noexcept
+    void devui_setup_mainmenu(ice::Span<ice::I18NReference> categories) noexcept
     {
         if (global_context_setup_menu != nullptr)
         {
@@ -102,7 +102,7 @@ namespace ice
         void* userdata
     ) noexcept
     {
-        api::DevUI_API api;
+        ice::api::devui::v1::DevUI_API api;
         if (query.query_api(api))
         {
             ICE_ASSERT_CORE(api.fn_context_setup != nullptr);
@@ -125,7 +125,7 @@ namespace ice
     {
         ice::UniquePtr<ice::DevUIContext> result{};
 
-        api::DevUI_API api;
+        ice::api::devui::v1::DevUI_API api;
         if (query.query_api(api))
         {
             ICE_ASSERT_CORE(api.fn_create_context != nullptr);

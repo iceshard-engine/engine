@@ -11,7 +11,7 @@ namespace ice::ecs
     //! \brief A static compile-time definition of a Query that can be executed during frame.
     //! \tparam ...QueryComponents Component types, with decorators, we want to access in the qyery.
     //!
-    //! \example QueryDefinition<ComponentB&, const ComponentA*>
+    //! \details An example query defintion would look like this: `QueryDefinition<ComponentB&, const ComponentA*>`
     template<ice::ecs::QueryArg... QueryComponents>
     struct QueryDefinition
     {
@@ -47,7 +47,7 @@ namespace ice::ecs
     //! \brief A static compile-time definition of a Query that can be executed during frame.
     //! \tparam ...QueryComponents Component types, with decorators, we want to access in the qyery.
     //!
-    //! \example QueryDefinition<ComponentB&, const ComponentA*>
+    //! \details An example query defintion would look like this: `QueryDefinition<ComponentB&, const ComponentA*>`
     template<ice::ecs::QueryTagType... Tags>
     struct QueryTagsDefinition
     {

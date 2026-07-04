@@ -10,13 +10,13 @@ namespace ice
 
     DevUIWidget::DevUIWidget(ice::DevUIWidgetInfo const& info) noexcept
         : IDevUIWidget{ }
-        , widget_info{ info }
+        , _widget_info{ info }
     {
     }
 
     void DevUIWidget::build_widget(ice::DevUIFrame& frame, ice::DevUIWidgetState& state) noexcept
     {
-        if (frame.begin(widget_info, state))
+        if (frame.begin(*this, state))
         {
             this->build_menu();
             this->build_content();

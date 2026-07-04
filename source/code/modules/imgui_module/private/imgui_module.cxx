@@ -6,10 +6,11 @@
 #include "widgets/imgui_devui_manager.hxx"
 #include "widgets/imgui_style_palette.hxx"
 
-#include <ice/mem_allocator.hxx>
+#include <ice/devui_module.hxx>
+#include <ice/i18n_core_module.hxx>
 #include <ice/log_module.hxx>
 #include <ice/log_sink.hxx>
-#include <ice/devui_module.hxx>
+#include <ice/mem_allocator.hxx>
 #include <ice/world/world_trait_module.hxx>
 
 #if ISP_WINDOWS
@@ -56,7 +57,7 @@ namespace ice::devui
         alloc.destroy(context);
     }
 
-    void imgui_context_setup(ice::api::DevUI_API::FnContextSetupCallback cb, void* userdata) noexcept
+    void imgui_context_setup(ice::api::devui::v1::DevUI_API::FnContextSetupCallback cb, void* userdata) noexcept
     {
         DevUIContextSetupParams setup_params{
             .native_context = ImGui::GetCurrentContext(),
@@ -82,7 +83,7 @@ namespace ice::devui
         return "devui.world-trait.imgui"_sid;
     }
 
-    void imgui_setup_mainmenu(ice::Span<ice::String> categories) noexcept
+    void imgui_setup_mainmenu(ice::Span<ice::I18NReference> categories) noexcept
     {
         if (global_ImGuiContext != nullptr)
         {
@@ -118,7 +119,7 @@ namespace ice::devui
 
     struct ImGuiDevUIModule : ice::Module<ImGuiDevUIModule>
     {
-        static void v1_devui_system(ice::api::DevUI_API& api) noexcept
+        static void v1_devui_system(ice::api::devui::v1::DevUI_API& api) noexcept
         {
             api.fn_create_context = imgui_create_context;
             api.fn_destry_context = imgui_destroy_context;
@@ -142,6 +143,7 @@ namespace ice::devui
             //ice::devui::styles::apply_color_theme(ice::devui::styles::Theme::Dark);
             //ice::devui::styles::apply_stylesheet();
             ice::LogModule::init(alloc, negotiator);
+            ice::I18NCoreModule::init(alloc, negotiator);
             return negotiator.register_api(v1_devui_system);
         }
 

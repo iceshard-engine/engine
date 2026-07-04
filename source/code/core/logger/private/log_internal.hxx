@@ -2,12 +2,13 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/heap_string.hxx>
 #include <ice/hashmap.hxx>
-#include <ice/log_tag.hxx>
+#include <ice/heap_string.hxx>
+#include <ice/log.hxx>
 #include <ice/log_severity.hxx>
 #include <ice/log_sink.hxx>
-#include <ice/log.hxx>
+#include <ice/log_tag.hxx>
+#include <ice/mem_allocator_null.hxx>
 
 #include <fmt/format.h>
 #include <fmt/chrono.h>
@@ -17,8 +18,8 @@ namespace ice::detail
 
     struct LogTagInfo
     {
-        ice::HeapString<> name;
-        bool enabled;
+        ice::HeapString<> name{ ice::Global_NullAllocator };
+        bool enabled = false;
     };
 
     class LogState final
@@ -28,6 +29,8 @@ namespace ice::detail
 
         LogState(ice::Allocator& alloc) noexcept;
         ~LogState() noexcept;
+
+        auto resolve(ice::I18NReference const& i18n_string, fmt::format_args const& args) const noexcept -> ice::String;
 
         void register_tag(ice::LogTagDefinition tag_def) noexcept;
         auto register_sink(ice::LogSinkFn fn_sink, void* userdata) noexcept -> ice::LogSinkID;
@@ -42,7 +45,6 @@ namespace ice::detail
 
     private:
         ice::Allocator& _allocator;
-
         ice::detail::LogTagInfo _empty_tag;
         ice::HashMap<ice::detail::LogTagInfo, ice::ContainerLogic::Complex> _tags;
 
@@ -67,15 +69,15 @@ namespace ice::detail
         ice::LogSeverity severity,
         ice::LogTag tag,
         ice::String message,
-        fmt::format_args args,
-        ice::detail::LogLocation location
+        fmt::format_args const& args,
+        ice::detail::LogLocation const& location
     ) noexcept;
 
     void default_assert_fn(
         ice::String condition,
         ice::String message,
-        fmt::format_args args,
-        ice::detail::LogLocation location
+        fmt::format_args const& args,
+        ice::detail::LogLocation const& location
     ) noexcept;
 
     using RegisterLogSinkFn = auto(ice::LogSinkFn fn_sink, void* userdata) noexcept -> ice::LogSinkID;
@@ -94,8 +96,8 @@ namespace ice::detail
         ice::LogSeverity severity,
         ice::LogTag tag,
         ice::String message,
-        fmt::format_args args,
-        ice::detail::LogLocation location
+        fmt::format_args const& args,
+        ice::detail::LogLocation const& location
     ) noexcept;
 
     extern LogFn* log_fn;
@@ -103,15 +105,15 @@ namespace ice::detail
     using AssertFn = void (
         ice::String condition,
         ice::String message,
-        fmt::format_args args,
-        ice::detail::LogLocation location
+        fmt::format_args const& args,
+        ice::detail::LogLocation const& location
     ) noexcept;
 
     extern AssertFn* assert_fn;
 
     constexpr auto tag_hash(ice::LogTag tag) noexcept -> ice::u64
     {
-        return ice::bit_cast<ice::u64>(tag) & 0x0000'0000'ffff'ffffllu;
+        return ice::bit_cast<ice::u64>(tag) & 0x0000'0000'ffff'ffffLLU;
     }
 
     constexpr auto fmt_string(char const* begin, char const* end) noexcept -> fmt::string_view

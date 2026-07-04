@@ -4,20 +4,15 @@
 #include "input_actions.hxx"
 
 #include <ice/assert.hxx>
+#include <ice/clock.hxx>
 #include <ice/devui_imgui.hxx>
-#include <ice/mem_allocator_host.hxx>
 #include <ice/engine.hxx>
-#include <ice/engine_shards.hxx>
 #include <ice/engine_runner.hxx>
+#include <ice/engine_shards.hxx>
 #include <ice/input_action_info.hxx>
 #include <ice/input_action_layer.hxx>
-#include <ice/input_action_layer_builder.hxx>
 #include <ice/input_action_stack.hxx>
-#include <ice/input/input_controller.hxx>
-#include <ice/input/input_keyboard.hxx>
-#include <ice/input/input_mouse.hxx>
 #include <ice/world/world_updater.hxx>
-#include <ice/clock.hxx>
 
 namespace ice
 {
@@ -26,7 +21,10 @@ namespace ice
 
     InputActionsTrait::InputActionsTrait(ice::TraitContext& context, ice::Allocator& alloc) noexcept
         : ice::Trait{ context }
-        , ice::TraitDevUI{ {.category="Engine/Traits", .name = trait_name()} }
+        , ice::TraitDevUI{ {
+            .category = "builtin.devui.strings/menu.category.engine-traits|Engine/Traits"_i18n,
+            .name = trait_name()
+        } }
         , _allocator{ alloc, "trait :: input-actions" }
         , _layers{ _allocator }
     {
@@ -62,8 +60,6 @@ namespace ice
         {
             _layers = ice::parse_input_action_layer(_allocator, ice::string_from_data<char>(data));
         }
-
-
 
         for (ice::UniquePtr<ice::InputActionLayer> const& layer : _layers)
         {

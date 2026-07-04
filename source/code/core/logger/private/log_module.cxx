@@ -1,11 +1,10 @@
 /// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
-#include <ice/module.hxx>
 #include <ice/module_negotiator.hxx>
+#include <ice/i18n_core_module.hxx>
 #include <ice/log_module.hxx>
 #include <ice/log.hxx>
-#include <ice/assert.hxx>
 #include <ice/stringid.hxx>
 
 #include "log_internal.hxx"
@@ -92,6 +91,10 @@ namespace ice
             *current_api.assert_fn = ice::detail::default_assert_fn;
         }
 
+
+        ice::ModuleNegotiatorBase negotiator{ api, ctx };
+        ice::I18NCoreModule::init(*alloc, negotiator);
+
         api->fn_register_api(ctx, "ice.logger"_sid_hash, get_log_api);
     }
 
@@ -104,10 +107,10 @@ namespace ice
 
     void log_module_init(ice::Allocator& alloc, ice::ModuleNegotiatorBase const& negotiator) noexcept
     {
-        detail::LogAPI new_api{ };
+        ice::detail::LogAPI new_api{ };
         if (negotiator.query_api(new_api))
         {
-            detail::LogAPI const current_api{ };
+            constexpr ice::detail::LogAPI current_api{ };
             *current_api.reg_log_sink_fn = *new_api.reg_log_sink_fn;
             *current_api.reg_log_tag_fn = *new_api.reg_log_tag_fn;
             *current_api.ena_log_tag_fn = *new_api.ena_log_tag_fn;
@@ -118,14 +121,14 @@ namespace ice
 
     auto log_module_register_sink(LogSinkFn fn_sink, void* userdata) noexcept -> ice::LogSinkID
     {
-        static detail::LogAPI const current_api{ };
+        static constexpr detail::LogAPI const current_api{ };
         return (*current_api.reg_log_sink_fn)(fn_sink, userdata);
     }
 
-    void log_module_unregister_sink(ice::LogSinkID sinkid) noexcept
+    void log_module_unregister_sink(ice::LogSinkID sink_id) noexcept
     {
-        static detail::LogAPI const current_api{ };
-        return (*current_api.unreg_log_sink_fn)(sinkid);
+        static constexpr detail::LogAPI current_api{ };
+        (*current_api.unreg_log_sink_fn)(sink_id);
     }
 
     void LogModule::init(ice::Allocator& alloc, ice::ModuleNegotiatorBase const& negotiator) noexcept

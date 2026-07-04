@@ -33,7 +33,24 @@ namespace ice::detail
             severity,
             tag,
             message,
-            ice::move(args),
+            args,
+            location
+        );
+    }
+
+    void log(
+        ice::LogSeverity severity,
+        ice::LogTag tag,
+        ice::I18NString message,
+        fmt::format_args args,
+        ice::detail::LogLocation location
+    ) noexcept
+    {
+        log_fn(
+            severity,
+            tag,
+            message,
+            args,
             location
         );
     }
@@ -74,8 +91,8 @@ namespace ice::detail
         ice::LogSeverity severity,
         ice::LogTag tag,
         ice::String message,
-        fmt::format_args args,
-        ice::detail::LogLocation location
+        fmt::format_args const& args,
+        ice::detail::LogLocation const& location
     ) noexcept
     {
         detail::LogState const* const log_state = detail::internal_log_state;
@@ -162,11 +179,11 @@ namespace ice::detail
         ice::LogSeverity /*severity*/,
         ice::LogTag /*tag*/,
         ice::String message,
-        fmt::format_args args,
-        ice::detail::LogLocation /*location*/
+        fmt::format_args const& args,
+        ice::detail::LogLocation const& /*location*/
     ) noexcept
     {
-        fmt::vprint(fmt_string(message), ice::move(args));
+        fmt::vprint(fmt_string(message), args);
         fmt::print("\n");
     }
 

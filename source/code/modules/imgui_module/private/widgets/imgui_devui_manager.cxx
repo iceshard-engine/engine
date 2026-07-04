@@ -2,6 +2,8 @@
 /// SPDX-License-Identifier: MIT
 
 #include "imgui_devui_manager.hxx"
+
+#include <ice/engine_devui.hxx>
 #include <ice/sort.hxx>
 
 #include <imgui/imgui.h>
@@ -19,7 +21,10 @@ namespace ice::devui
 {
 
     ImGuiDevUIManager::ImGuiDevUIManager(ice::Allocator& alloc) noexcept
-        : DevUIWidget{ DevUIWidgetInfo{ .category = "Help", .name = "Widget Manager" } }
+        : DevUIWidget{ DevUIWidgetInfo{
+            .category = "builtin.devui.strings/menu.category.help"_i18n,
+            .name = "builtin.devui.strings/widget.widget-manager.name|Widget Manager"_i18n
+        } }
         , _allocator{ alloc }
         , _widgets{ alloc }
     {
@@ -59,26 +64,15 @@ namespace ice::devui
         );
     }
 
-    void ImGuiDevUIManager::remove_widget(ice::DevUIWidget *widget) noexcept
+    void ImGuiDevUIManager::remove_widget(ice::DevUIWidget* widget) noexcept
     {
-        // TODO: ice::array::remove_at
-
-        ice::u32 const count = _widgets.size().u32();
-        if (count == 0)
-        {
-            return;
-        }
-        ice::u32 idx = 0;
-        for (; idx < count; ++idx)
-        {
-            if (_widgets[idx]->widget == widget)
+        ice::nindex const widget_idx = _widgets.index_of(
+            [](ice::UniquePtr<ImGuiDevUIWidget> const& entry, ice::DevUIWidget const* item) noexcept
             {
-                break;
-            }
-        }
-
-        _widgets[idx] = ice::move(_widgets[count - 1]);
-        _widgets.pop_back();
+                return entry->widget == item;
+            }, widget
+        );
+        _widgets.remove_at(widget_idx);
     }
 
     void ImGuiDevUIManager::build_content() noexcept
@@ -111,11 +105,11 @@ namespace ice::devui
                 ImGui::PushID(widget->widget);
                 if (ImGui::TableNextColumn()) // Name
                 {
-                    ImGui::StringUnformatted(widget->widget->widget_info.name);
+                    ImGui::StringUnformatted(widget->widget->name());
                 }
                 if (ImGui::TableNextColumn()) // Category
                 {
-                    ImGui::StringUnformatted(widget->widget->widget_info.category);
+                    ImGui::StringUnformatted(widget->widget->category());
                 }
                 if (ImGui::TableNextColumn()) // Visible
                 {
@@ -126,6 +120,12 @@ namespace ice::devui
 
             ImGui::EndTable();
         }
+    }
+
+    void ImGuiDevUIManager::update_state(ice::DevUIWidgetState& state) noexcept
+    {
+        _widget_info.name.resolve();
+        _widget_info.category.resolve();
     }
 
 } // namespace ice::devui

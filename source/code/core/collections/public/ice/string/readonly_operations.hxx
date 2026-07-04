@@ -25,15 +25,15 @@ namespace ice::string
         }
 
         template<StringType Self>
-        inline auto front(this Self const& self) noexcept -> typename Self::CharType
+        constexpr auto front(this Self const& self) noexcept -> typename Self::CharType
         {
             return self.data()[0];
         }
 
         template<StringType Self>
-        inline auto back(this Self const& self) noexcept -> typename Self::CharType
+        constexpr auto back(this Self const& self) noexcept -> typename Self::CharType
         {
-            return self.data()[self.size() - 1];
+            return self.data()[self.size().native() - 1];
         }
 
         template<StringType Self>
@@ -68,7 +68,7 @@ namespace ice::string
         template<StringType Self>
         constexpr auto starts_with(this Self const& self, StringType auto prefix) noexcept
         {
-            return self.substr(0, prefix.size()) == prefix;
+            return self.substr(0, prefix.size()) == typename Self::StringType{ prefix };
         }
 
         template<StringType Self>
@@ -298,7 +298,7 @@ namespace ice::string
         template<StringType Self>
         constexpr auto operator[](this Self const& self, ice::nindex index) noexcept -> typename Self::ValueType
         {
-            return self.data()[index];
+            return self.data()[index.native()];
         }
 
         template<StringType Self>

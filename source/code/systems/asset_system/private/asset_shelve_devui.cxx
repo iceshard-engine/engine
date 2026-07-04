@@ -11,7 +11,10 @@ namespace ice
 {
 
     AssetShelve::DevUI::DevUI(ice::AssetShelve& shelve) noexcept
-        : DevUIWidget{ DevUIWidgetInfo{ .category = "Tools",  } }
+        : DevUIWidget{ DevUIWidgetInfo{
+            .category = "builtin.devui.strings/menu.category.tools|Tools"_i18n,
+            .name = "builtin.devui.strings/widget.asset-shelve.name|Asset Shelve"_i18n
+        } }
         , _shelve{ shelve }
     {
     }

@@ -12,6 +12,7 @@
     .Public =
     [
         .Uses = {
+            'i18n'
             'modules'
         }
     ]

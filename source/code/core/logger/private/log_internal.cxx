@@ -4,6 +4,7 @@
 #include "log_internal.hxx"
 #include <ice/hashmap.hxx>
 #include <ice/heap_string.hxx>
+#include <ice/i18n_core_module.hxx>
 
 namespace ice::detail
 {
@@ -21,6 +22,11 @@ namespace ice::detail
 
     LogState::~LogState() noexcept = default;
 
+    auto LogState::resolve(ice::I18NReference const& i18n_string, fmt::format_args const& args) const noexcept -> ice::String
+    {
+        return I18NCoreModule::resolve(i18n_string, args);
+    }
+
     void LogState::register_tag(ice::LogTagDefinition tag_def) noexcept
     {
         _tags.set(
@@ -32,7 +38,7 @@ namespace ice::detail
     auto LogState::register_sink(ice::LogSinkFn fn_sink, void* userdata) noexcept -> ice::LogSinkID
     {
         ice::u32 const sinkidx = _sinks.size().u32();
-        // Pottentially an error when sinks are added and remove all the time!
+        // Potentially an error when sinks are added and remove all the time!
         // NOTE: Once added sinks should only be reset when a module was reloaded!
         ICE_ASSERT_CORE(sinkidx < 50);
         _sinks.push_back(Sink{ fn_sink, userdata });

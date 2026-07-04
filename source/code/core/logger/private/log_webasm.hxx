@@ -10,16 +10,16 @@ namespace ice::detail::webasm
     void alert_assert(
         ice::String condition,
         ice::String message,
-        fmt::format_args args,
-        ice::detail::LogLocation location
+        fmt::format_args const& args,
+        ice::detail::LogLocation const& location
     ) noexcept;
 
     void console_message(
         ice::LogSeverity severity,
         ice::LogTag tag,
         ice::String message,
-        fmt::format_args args,
-        ice::detail::LogLocation location
+        fmt::format_args const& args,
+        ice::detail::LogLocation const& location
     ) noexcept;
 
 } // namespace ice

@@ -11,12 +11,12 @@
 namespace ice
 {
 
-    //! \brief A simple contaier storing items in contignous memory.
+    //! \brief A simple container storing items in continuous memory.
     //!
     //! \details Manages a memory block big enough to hold the items that it holds.
     //!
     //! \tparam Logic The logic used during memory operations for the given type.
-    //!   This value cab be set by the user to enforce expected behavior for stored types.
+    //!   The user can set this value to enforce expected behavior for stored types.
     template<typename Type, ice::ContainerLogic Logic = ice::Constant_DefaultContainerLogic<Type>>
     struct Array
         : public ice::container::ContiguousContainer
@@ -78,6 +78,8 @@ namespace ice
         inline void push_back(ContainerT const& other) noexcept;
 
         inline void pop_back(ice::ncount count = 1_count) noexcept;
+
+        inline void remove_at(ice::nindex index) noexcept;
 
         // API Requirements Of: Data and Memory
         constexpr auto data_view(this Array const& self) noexcept -> ice::Data;
@@ -374,6 +376,16 @@ namespace ice
         }
 
         _count = final_count.u32();
+    }
+
+    template <typename Type, ice::ContainerLogic Logic>
+    inline void Array<Type, Logic>::remove_at(ice::nindex index) noexcept
+    {
+        if (_count > 1 && index.is_valid())
+        {
+            _data[index.native()] = ice::move(_data[_count - 1]);
+        }
+        this->pop_back();
     }
 
     template<typename Type, ice::ContainerLogic Logic>
