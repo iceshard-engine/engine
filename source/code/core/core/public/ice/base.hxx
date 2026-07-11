@@ -23,6 +23,7 @@
 #include <utility>
 #include <bit>
 
+//! \brief Root namespace for all APIs part of the IceShard engine project.
 namespace ice
 {
 
@@ -39,6 +40,12 @@ namespace ice
     using std::addressof;
     using std::bit_cast;
 
+    //! \brief Utility function able to return the number of elements of a C array.
+    //!
+    //! \tparam T Element type of the C array type being evaluated. <i>(unused by this function)</i>
+    //! \tparam Size The size evaluated at compile-time and returned by this function.
+    //!
+    //! \note This function may have additional overrides for container types.
     template<typename T, ice::u32 Size>
     constexpr auto count(T const (&)[Size]) noexcept -> ice::u32
     {
