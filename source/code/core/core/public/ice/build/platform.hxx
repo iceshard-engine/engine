@@ -189,7 +189,7 @@ namespace ice::build
 #   endif
 #   define ISP_HW_DESTRUCTIVE_INTERFERENCE 64 // NOT CHECKED
 #   define ISP_TEXT(val) val
-#elif defined(EMSCRIPTEN)
+#elif defined(__EMSCRIPTEN__)
 #   define ISP_UNIX 1
 #   define ISP_LINUX 0
 #   define ISP_WINDOWS 0

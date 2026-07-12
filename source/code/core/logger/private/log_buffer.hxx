@@ -9,7 +9,7 @@
 namespace ice::detail
 {
 
-    class LogMessageBuffer final : public fmt::v11::detail::buffer<char>
+    class LogMessageBuffer final : public fmt::v12::detail::buffer<char>
     {
     public:
         LogMessageBuffer(ice::Allocator& alloc, ice::u32 initial_allocation) noexcept;

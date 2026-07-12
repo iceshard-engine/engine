@@ -428,7 +428,9 @@ public:
 
             if (_output_std)
             {
-                fmt::println("{}", ice::String{ (char const*)final_asset_data.location, (ice::u32)final_asset_data.size.value });
+                ice::String const final_output = ice::string_from_data<char>(final_asset_data);
+                // NOTE: In fmt-v12.2.0 we can't use println as it fails to compile with 'unreachable code' warning under msvc.
+                fmt::vprintln(stdout, "{}", fmt::make_format_args(final_output));
             }
 
             _allocator.deallocate(final_asset_data);

@@ -35,7 +35,7 @@
     "webasm": {
         "emscripten": {
             "location": "build/webasm",
-            "version": "4.0.18"
+            "version": "6.0.2"
         }
     },
     "doxy": {
