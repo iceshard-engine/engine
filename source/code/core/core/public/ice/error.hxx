@@ -11,20 +11,42 @@
 namespace ice
 {
 
-    //! \note Error code ranges:
-    //! \note - [0000 - 2000) - Core engine codes
-    //! \note - [2000 - 4000) - Framework codes
-    //! \note - [4000 - 9999] - Game codes
+    //! \brief Compile-time defined error code with extended information.
+    //!
+    //! \details Error codes defined with this structure provide four different information values.
+    //!   * \b type - Either `S` standing for \b Success or `E` standing for \b Error.
+    //!   * \b code - Number value assigned to this error code. Value between `0` and `9999`. _(should be unique to ensure easy error identification)_
+    //!   * \b category - User readable value that can be used to quickly indentify the source project of the error.
+    //!   * \b description - User readable description of the error that can be logged to the output or other locations. 
+    //! \details Although error codes should be mainly used to report errors and problems that resulted in expected behavior not being executed,
+    //!   it is allowed to defined a \b Success code, and provide additional information if necessary. For example: _"Loading an asset succeeded but
+    //!   because editor data was not parsable, debug settings were reset."_
+    //! 
+    //! \remark Currently error codes also follow some specific error ranges. 
+    //!   * <b>[0000 - 2000)</b> - Core engine codes
+    //!   * <b>[2000 - 4000)</b> - Framework codes
+    //!   * <b>[4000 - 9999]</b> - Game codes
     struct ErrorCode
     {
         constexpr explicit ErrorCode(char const* definition) noexcept;
 
+        //! \returns Character that defines the error code type. _(either `S` or `E`)_
         constexpr auto type() const noexcept -> char;
+
+        //! \returns Parsed number value found in the definition string.
         constexpr auto code() const noexcept -> ice::i32;
+
+        //! \returns Category of the error. May allow quicker identification of the actual issue.
         constexpr auto category() const noexcept -> std::string_view;
+  
+        //! \returns Description of the error.
         constexpr auto description() const noexcept -> std::string_view;
 
+        //! \brief Implicit cast to a boolean value.
+        //! \returns `true` if this error code is considered a `Success` value, `false` otherwise.
         constexpr operator bool() const noexcept { return type() != 'E'; }
+
+        //! \brief Explicit conversion operator to `i32` value.
         constexpr explicit operator i32() const noexcept { return code(); }
 
         char const* value;
