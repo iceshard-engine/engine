@@ -5,12 +5,20 @@ Focusing on the best solution for a given problem while not trying to solve ever
 
 More info about the development approach can be found in our [wiki](https://github.com/iceshard-engine/engine/wiki).
 
+> [!IMPORTANT]
+> With my recent move to full-time linux usage, I'm fixing a lot of issues that should have been fixed long time ago.
+>
+> Until this is finished, the project might not be fully working even on Windows.
+
+> [!WARNING]
+> The current information below is outdated and may not reflect the projects current state.
 
 ## Quick Start
 Depending if you are working on windows or linux you would user `ice.sh` or `ice.bat` to run the commands below.
 
 
 ### Prerequisites
+
 To build this engine you will need the following tools and SDKs installed:
 * [Conan Package Manager](https://conan.io/) - Used to manage project dependencies.
    * This also requires python3 as a dependency.
