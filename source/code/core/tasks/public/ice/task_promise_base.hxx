@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -39,6 +39,15 @@ namespace ice
 #if !ICE_RELEASE
     public: // Override to track allocations of task objects
         using TaskDebugAllocator = ice::detail::TaskDebugAllocator;
+
+        // TODO: We can actually do magic here!
+        // struct TaskShort { };
+        // auto operator new(size_t size, auto& self, TaskShort) noexcept -> void*
+        // {
+        //     void* const ptr = TaskDebugAllocator::allocate(size);
+        //     IPT_ALLOC_POOL(ptr, size, TaskDebugAllocator::pool());
+        //     return ptr;
+        // }
 
         inline auto operator new(size_t size) noexcept -> void*
         {

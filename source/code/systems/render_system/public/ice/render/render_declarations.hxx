@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -8,6 +8,7 @@
 namespace ice::render
 {
 
+    class NativeSurface;
     class RenderDriver;
     class RenderDevice;
     class RenderSurface;
@@ -16,7 +17,7 @@ namespace ice::render
     class RenderCommands;
     class RenderFence;
 
-    struct SurfaceInfo;
+    struct NativeSurfaceInfo;
     struct RenderpassInfo;
     struct ResourceSetLayoutBinding;
     struct ResourceSetUpdateInfo;

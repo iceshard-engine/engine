@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "android_app.hxx"
@@ -17,7 +17,7 @@ namespace ice::platform
         return FeatureFlags::Core
             | FeatureFlags::Threads
             | FeatureFlags::StoragePaths
-            | FeatureFlags::RenderSurface;
+            | FeatureFlags::DrawSurface;
     }
 
     auto initialize(
@@ -73,8 +73,8 @@ namespace ice::platform
         case FeatureFlags::StoragePaths:
             out_api_ptr = static_cast<ice::platform::StoragePaths*>(instance_ptr);
             break;
-        case FeatureFlags::RenderSurface:
-            out_api_ptr = instance_ptr->render_surface();
+        case FeatureFlags::DrawSurface:
+            out_api_ptr = instance_ptr->draw_surface();
             break;
         default:
             return E_InvalidArgument;
@@ -86,7 +86,7 @@ namespace ice::platform
     auto query_apis(ice::platform::FeatureFlags flags, void** out_api_ptrs) noexcept -> ice::Result
     {
         ice::Result result = S_Success;
-        for (FeatureFlags flag : { FeatureFlags::Core, FeatureFlags::RenderSurface })
+        for (FeatureFlags flag : { FeatureFlags::Core, FeatureFlags::DrawSurface })
         {
             if (ice::has_all(flags, flag))
             {

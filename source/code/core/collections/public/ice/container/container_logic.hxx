@@ -28,9 +28,10 @@ namespace ice
     //!
     //! \note Only plain-old-data types use trivial collection logic by default.
     template<typename Type>
-    static constexpr ice::ContainerLogic Constant_DefaultContainerLogic = (std::is_pod_v<Type> || std::is_enum_v<Type>)
-        ? ContainerLogic::Trivial
-        : ContainerLogic::Complex;
+    static constexpr ice::ContainerLogic Constant_DefaultContainerLogic =
+        std::is_trivially_constructible_v<Type> && std::is_trivially_copyable_v<Type>
+            ? ContainerLogic::Trivial
+            : ContainerLogic::Complex;
 
 
 } // namespace ice

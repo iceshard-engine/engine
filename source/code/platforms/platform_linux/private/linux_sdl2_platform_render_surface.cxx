@@ -13,29 +13,29 @@
 namespace ice::platform::linux::sdl2
 {
 
-    RenderSurface_WaylandX11SDL2::RenderSurface_WaylandX11SDL2() noexcept
+    UnixWindow_X11WaylandSDL2::UnixWindow_X11WaylandSDL2() noexcept
     {
         SDL_InitSubSystem(SDL_INIT_VIDEO);
     }
 
-    RenderSurface_WaylandX11SDL2::~RenderSurface_WaylandX11SDL2() noexcept
+    UnixWindow_X11WaylandSDL2::~UnixWindow_X11WaylandSDL2() noexcept
     {
         ICE_ASSERT(_window == nullptr, "Render surface was not properly cleaned up!");
         if (_window != nullptr)
         {
-            RenderSurface_WaylandX11SDL2::destroy();
+            UnixWindow_X11WaylandSDL2::destroy();
         }
 
         SDL_VideoQuit();
     }
 
-    auto RenderSurface_WaylandX11SDL2::create(ice::platform::RenderSurfaceParams surface_params) noexcept -> ice::Result
+    auto UnixWindow_X11WaylandSDL2::create(ice::platform::DrawSurfaceParams const& surface_params) noexcept -> ice::Result
     {
         IPT_ZONE_SCOPED;
 
         if (_window != nullptr)
         {
-            return E_RenderSurfaceAlreadyExisting;
+            return E_DrawSurfaceAlreadyExisting;
         }
 
         if (surface_params.dimensions.x == 0 || surface_params.dimensions.y == 0)
@@ -45,7 +45,7 @@ namespace ice::platform::linux::sdl2
 
         using ice::render::RenderDriverAPI;
         ice::i32 creation_flags = SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE;
-        ice::StaticString<64> window_title{ surface_params.window_title };
+        ice::StaticString<64> window_title{ surface_params.surface_name };
         if (window_title.is_empty())
         {
             if (surface_params.driver == RenderDriverAPI::Vulkan)
@@ -64,10 +64,13 @@ namespace ice::platform::linux::sdl2
             window_title.data(),
             SDL_WINDOWPOS_CENTERED,
             SDL_WINDOWPOS_CENTERED,
-            surface_params.dimensions.x,
-            surface_params.dimensions.y,
+            static_cast<int>(surface_params.dimensions.x),
+            static_cast<int>(surface_params.dimensions.y),
             creation_flags
         );
+
+        int x, y;
+        SDL_GetWindowSize(_window, &x, &y);
 
         char errmsg[256];
         ICE_LOG_IF(
@@ -78,37 +81,81 @@ namespace ice::platform::linux::sdl2
         return _window == nullptr ? E_Fail : S_Ok;
     }
 
-    bool RenderSurface_WaylandX11SDL2::get_surface(ice::render::SurfaceInfo& out_surface_info) noexcept
+    auto UnixWindow_X11WaylandSDL2::render_driver() const noexcept -> ice::render::RenderDriverAPI
+    {
+        return _render_driver;
+    }
+
+    auto UnixWindow_X11WaylandSDL2::native_surface() const noexcept -> ice::render::NativeSurface const*
     {
         if (_window == nullptr)
         {
-            return false;
+            return nullptr;
         }
 
+        return this;
+    }
+
+    auto UnixWindow_X11WaylandSDL2::dimensions() const noexcept -> ice::vec2u
+    {
+        ice::i32 width = 0, height = 0;
+        SDL_GetWindowSize(_window, &width, &height);
+        return { static_cast<unsigned>(width), static_cast<unsigned>(height) };
+    }
+
+    void UnixWindow_X11WaylandSDL2::destroy() noexcept
+    {
+        SDL_DestroyWindow(ice::exchange(_window, nullptr));
+    }
+
+    bool UnixWindow_X11WaylandSDL2::is_valid() const noexcept
+    {
+        return _window != nullptr && surface_type() != ice::render::SurfaceType::Unknown;
+    }
+
+    auto UnixWindow_X11WaylandSDL2::surface_type() const noexcept -> ice::render::SurfaceType
+    {
         SDL_SysWMinfo wm_info{};
         SDL_VERSION(&wm_info.version);
         SDL_GetWindowWMInfo(_window, &wm_info);
+
+        if (wm_info.subsystem == SDL_SYSWM_WAYLAND)
+        {
+            return ice::render::SurfaceType::Wayland_Window;
+        }
+        else if (wm_info.subsystem == SDL_SYSWM_X11)
+        {
+            return ice::render::SurfaceType::X11_Window;
+        }
+        return ice::render::SurfaceType::Unknown;
+    }
+
+    void UnixWindow_X11WaylandSDL2::query_surface_info(ice::render::NativeSurfaceInfo& out_surface_info) const noexcept
+    {
+        SDL_SysWMinfo wm_info{};
+        SDL_VERSION(&wm_info.version);
+        SDL_GetWindowWMInfo(_window, &wm_info);
+
+        ICE_LOG_IF(
+            wm_info.subsystem != SDL_SYSWM_X11 && wm_info.subsystem != SDL_SYSWM_WAYLAND,
+            LogSeverity::Error, LogTag::Core,
+            "Unrecognized SDL2 Surface type!"
+        );
 
 #if defined(SDL_VIDEO_DRIVER_X11)
         ICE_LOG(LogSeverity::Info, LogTag::Core, "Checking for 'X11' video driver...");
         if (wm_info.subsystem == SDL_SYSWM_X11)
         {
             ICE_LOG(LogSeverity::Info, LogTag::Core, "Selected 'X11' video driver");
-            out_surface_info.type = ice::render::SurfaceType::X11_Window;
             out_surface_info.x11.display = wm_info.info.x11.display;
             out_surface_info.x11.window = wm_info.info.x11.window;
         }
 #endif
 #if defined(SDL_VIDEO_DRIVER_WAYLAND)
-        ICE_LOG_IF(
-            out_surface_info.type == ice::render::SurfaceType::Unknown,
-            LogSeverity::Info, LogTag::Core,
-            "Checking for 'Wayland' video driver..."
-        );
+        ICE_LOG(LogSeverity::Info, LogTag::Core, "Checking for 'Wayland' video driver...");
         if (wm_info.subsystem == SDL_SYSWM_WAYLAND)
         {
             ICE_LOG(LogSeverity::Info, LogTag::Core, "Selected 'Wayland' video driver");
-            out_surface_info.type = ice::render::SurfaceType::Wayland_Window;
             out_surface_info.wayland.surface = wm_info.info.wl.surface;
             out_surface_info.wayland.display = wm_info.info.wl.display;
         }
@@ -119,19 +166,7 @@ namespace ice::platform::linux::sdl2
             LogSeverity::Error, LogTag::Core,
             "The currently used SDL2 package does not support Wayland nor X11 surfaces!"
         );
-#else
-        ICE_LOG_IF(
-            out_surface_info.type == ice::render::SurfaceType::Unknown,
-            LogSeverity::Error, LogTag::Core,
-            "Unrecognized SDL2 Surface type!"
-        );
 #endif
-        return out_surface_info.type != ice::render::SurfaceType::Unknown;
-    }
-
-    void RenderSurface_WaylandX11SDL2::destroy() noexcept
-    {
-        SDL_DestroyWindow(ice::exchange(_window, nullptr));
     }
 
 } // namespace ice::platform::win32::sdl2

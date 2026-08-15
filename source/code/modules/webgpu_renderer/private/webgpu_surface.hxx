@@ -1,8 +1,7 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/platform_render_surface.hxx>
 #include <ice/render/render_surface.hxx>
 #include "webgpu_utils.hxx"
 
@@ -16,12 +15,12 @@ namespace ice::render::webgpu
             WGPUSurface wgpu_surface,
             WGPUTextureFormat wgpu_surface_format,
             WGPUPresentMode wgpu_present_mode,
-            ice::render::SurfaceInfo surface_info
+            ice::render::NativeSurface const* surface
         ) noexcept
             : _wgpu_surface{ wgpu_surface }
             , _wgpu_surface_format{ wgpu_surface_format }
             , _wgpu_present_mode{ wgpu_present_mode }
-            , _surface_info{ surface_info }
+            , _surface{ surface }
         {
         }
 
@@ -33,7 +32,7 @@ namespace ice::render::webgpu
         WGPUSurface const _wgpu_surface;
         WGPUTextureFormat _wgpu_surface_format;
         WGPUPresentMode _wgpu_present_mode;
-        ice::render::SurfaceInfo const _surface_info;
+        ice::render::NativeSurface const* _surface;
     };
 
 } // namespace ice::render::webgpu

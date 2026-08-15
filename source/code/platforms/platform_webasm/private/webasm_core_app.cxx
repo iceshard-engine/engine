@@ -82,7 +82,7 @@ namespace ice::platform::webasm
                 _initstage = 5;
             }
 
-            ice::vec2u const new_size = _render_surface.get_dimensions();
+            ice::vec2u const new_size = _render_surface.dimensions();
             if (_last_windows_size.x != new_size.x || _last_windows_size.y != new_size.y)
             {
                 _last_windows_size = ice::vec2i{ new_size };

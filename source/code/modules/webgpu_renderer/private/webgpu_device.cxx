@@ -42,8 +42,7 @@ namespace ice::render::webgpu
     ) noexcept -> ice::render::RenderSwapchain*
     {
         WebGPURenderSurface* const webgpu_surface = static_cast<WebGPURenderSurface*>(surface);
-        ice::platform::RenderSurface* const render_surface = reinterpret_cast<ice::platform::RenderSurface*>(webgpu_surface->_surface_info.webgpu.internal);
-        ice::vec2u const surface_dimensions = render_surface->get_dimensions();
+        ice::vec2u const surface_dimensions = webgpu_surface->_surface->dimensions();;
 
         WGPUSurfaceConfiguration config = WGPU_SURFACE_CONFIGURATION_INIT;
         config.device = _wgpu_device;

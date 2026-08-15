@@ -2,9 +2,6 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/span.hxx>
-#include <ice/stringid.hxx>
-#include <ice/mem_allocator.hxx>
 #include <ice/array.hxx>
 #include <ice/render/render_declarations.hxx>
 #include <ice/render/render_queue.hxx>
@@ -48,7 +45,7 @@ namespace ice::render
         virtual auto render_api() const noexcept -> ice::render::DriverAPI = 0;
 
         virtual auto create_surface(
-            ice::render::SurfaceInfo const& surface_info
+            ice::render::NativeSurface const* surface_info
         ) noexcept -> ice::render::RenderSurface* = 0;
 
         virtual void destroy_surface(

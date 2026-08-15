@@ -124,11 +124,21 @@ namespace ice::render::vk
             // If possible select UNORM istead of SRGB
             for (VkSurfaceFormatKHR format : surface_formats)
             {
-                if (format.format == VK_FORMAT_B8G8R8A8_UNORM)
+                if (format.colorSpace == VK_COLORSPACE_SRGB_NONLINEAR_KHR
+                    && format.format == VK_FORMAT_R8G8B8A8_UNORM)
                 {
                     selected_format = format;
+                    break;
                 }
             }
+        }
+
+        if (surface_capabilities.currentExtent.width == 0xFFFFFFFF
+            || surface_capabilities.currentExtent.height == 0xFFFFFFFF)
+        {
+            ice::vec2u const extend = vk_surface->dimensions();
+            surface_capabilities.currentExtent.width = extend.x;
+            surface_capabilities.currentExtent.height = extend.y;
         }
 
         VkSwapchainCreateInfoKHR swapchain_info{ VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR };

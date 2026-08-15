@@ -1,4 +1,4 @@
-/// Copyright 2024 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2024 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -29,7 +29,7 @@ namespace ice::render::webgpu
         void set_adapter(WGPUAdapter adapter) noexcept;
         void set_device(WGPUDevice device) noexcept;
 
-        auto create_surface(ice::render::SurfaceInfo const& surface_info) noexcept -> ice::render::RenderSurface* override;
+        auto create_surface(ice::render::NativeSurface const* surface) noexcept -> ice::render::RenderSurface* override;
         void destroy_surface(ice::render::RenderSurface* surface) noexcept override;
 
         void query_queue_infos(ice::Array<ice::render::QueueFamilyInfo>& queue_info) noexcept override;

@@ -246,7 +246,7 @@ namespace ice::platform::android
         IPT_MESSAGE("Android::OnSetup");
         ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Core, "Android::OnSetup");
 
-        _new_screen_size = ice::vec2f{ _app_surface.get_dimensions() };
+        _new_screen_size = ice::vec2f{ _app_surface.dimensions() };
 
         ICE_ASSERT_CORE(native_window() != nullptr);
         _app_surface.set_native_window(native_window());

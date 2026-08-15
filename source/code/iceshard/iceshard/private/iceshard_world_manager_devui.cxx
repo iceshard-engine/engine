@@ -79,7 +79,7 @@ namespace ice
                 idx += 1;
             }
             ImGui::TableNextColumn();
-            if (ImGui::BeginChild("##world-details", {}, ImGuiChildFlags_Border))
+            if (ImGui::BeginChild("##world-details", {}, ImGuiChildFlags_Borders))
             {
                 ice::IceshardWorldManager::Entry& world_entry = entries[_selected];
                 ice::IceshardWorld& world = *world_entry.world;

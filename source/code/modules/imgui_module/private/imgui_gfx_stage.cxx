@@ -396,12 +396,9 @@ namespace ice::devui
             return;
         }
 
-        float scale[2];
-        scale[0] = 2.0f / fb_width;
-        scale[1] = 2.0f / fb_height;
         float translate[2];
-        translate[0] = -1.0f; // -1.0f - width * scale[0];
-        translate[1] = -1.0f; //-1.0f - height * scale[1];
+        translate[0] = -1.0f;
+        translate[1] = -1.0f;
 
         ResourceSet last_resource = _resources[1];
 

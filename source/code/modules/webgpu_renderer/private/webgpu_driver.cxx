@@ -109,19 +109,25 @@ namespace ice::render::webgpu
     }
 
     auto WebGPUDriver::create_surface(
-        ice::render::SurfaceInfo const& surface_info
+        ice::render::NativeSurface const* native_surface
     ) noexcept -> ice::render::RenderSurface*
     {
+        ICE_ASSERT(native_surface != nullptr, "Unexpected 'nullptr' value for 'surface' parameter during 'WebGPUDriver::create_surface' call!");
+        ICE_ASSERT(native_surface->surface_type() == SurfaceType::HTML5_DOMCanvas, "Only 'HTML5 Canvas' surfaces are allowed!");
+
+        ice::render::NativeSurfaceInfo surface_info{};
+        native_surface->query_surface_info(surface_info);
+
         WGPUEmscriptenSurfaceSourceCanvasHTMLSelector canvas = WGPU_EMSCRIPTEN_SURFACE_SOURCE_CANVAS_HTML_SELECTOR_INIT;
         canvas.selector = wgpu_string(surface_info.webgpu.selector);
 
         WGPUSurfaceDescriptor descriptor = WGPU_SURFACE_DESCRIPTOR_INIT;
         descriptor.label = wgpu_string("HTML Canvas Surface");
         descriptor.nextInChain = &canvas.chain;
-        WGPUSurface const surface = wgpuInstanceCreateSurface(_wgpu_instance, &descriptor);
+        WGPUSurface const render_surface = wgpuInstanceCreateSurface(_wgpu_instance, &descriptor);
 
         WGPUSurfaceCapabilities capabilities = WGPU_SURFACE_CAPABILITIES_INIT;
-        wgpuSurfaceGetCapabilities(surface, _wgpu_adapter, &capabilities);
+        wgpuSurfaceGetCapabilities(render_surface, _wgpu_adapter, &capabilities);
         ICE_ASSERT(capabilities.formatCount > 0, "Failed to fetch surface capabilities!");
 
         bool supportsMailbox = false;
@@ -137,8 +143,7 @@ namespace ice::render::webgpu
         WGPUTextureFormat const surface_format = capabilities.formats[0];
         wgpuSurfaceCapabilitiesFreeMembers(capabilities);
 
-        ICE_ASSERT(surface_info.type == SurfaceType::HTML5_DOMCanvas, "Only 'HTML5 Canvas' surfaces are allowed!");
-        return _allocator.create<WebGPURenderSurface>(surface, surface_format, present_mode, surface_info);
+        return _allocator.create<WebGPURenderSurface>(render_surface, surface_format, present_mode, native_surface);
     }
 
     void WebGPUDriver::destroy_surface(

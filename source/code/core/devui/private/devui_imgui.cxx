@@ -93,7 +93,7 @@ namespace ImGui
         else ImGui::PushStyleColor(ImGuiCol_ChildBg, style.Colors[ImGuiCol_ButtonHovered]);
 #endif
 
-        if (ImGui::BeginChild(id, size_arg, ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY))
+        if (ImGui::BeginChild(id, size_arg, ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY))
         {
             ImGui::TextUnformatted(label.data());
 

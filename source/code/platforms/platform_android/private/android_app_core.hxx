@@ -9,7 +9,7 @@
 #include <android/native_activity.h>
 #include <android/native_window.h>
 
-#include "android_render_surface.hxx"
+#include "android_draw_surface.hxx"
 
 namespace ice::platform::android
 {

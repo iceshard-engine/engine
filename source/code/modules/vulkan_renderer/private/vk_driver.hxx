@@ -28,10 +28,10 @@ namespace ice::render::vk
 
         auto render_api() const noexcept -> ice::render::DriverAPI override;
 
-        [[deprecated]]
         auto create_surface(
-            ice::render::SurfaceInfo const& surface_info
+            ice::render::NativeSurface const* surface
         ) noexcept -> ice::render::RenderSurface* override;
+
         void destroy_surface(
             ice::render::RenderSurface* surface
         ) noexcept override;

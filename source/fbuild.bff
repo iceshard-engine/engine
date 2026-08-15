@@ -46,7 +46,7 @@ Settings
     Using( .Pipeline_Linux_x64 )
 
     .PipelineName = 'x64'
-    .PipelineToolchain = 'clang-20.0.0'
+    .PipelineToolchain = 'clang-21.0.0'
     .PipelineAllowUnityBuilds = true
     .PipelineTags = { 'DevPlatform' }
     .PipelineSteps = { 'Build', 'Link', 'Deploy' }
@@ -65,7 +65,10 @@ Settings
     .AndroidStdLib = 'Shared'
 
     .PipelineName = 'Android$AndroidAPILevel$-ARMv8'
+
+    ; .PipelineToolchain = 'ndk29-clang-21.0.0' // Fails to compile our codebase?
     .PipelineToolchain = 'ndk28-clang-19.0.0'
+
     .PipelineArchitecture = 'arm64'
     .PipelineAllowUnityBuilds = true
     .PipelineSteps = { 'Build', 'Link', 'Deploy' }
@@ -87,7 +90,10 @@ Settings
     .AndroidStdLib = 'Shared'
 
     .PipelineName = 'Android$AndroidAPILevel$-x64'
+
+    ; .PipelineToolchain = 'ndk29-clang-21.0.0' // Fails to compile our codebase
     .PipelineToolchain = 'ndk28-clang-19.0.0'
+
     .PipelineArchitecture = 'x86_64'
     .PipelineAllowUnityBuilds = true
     .PipelineSteps = { 'Build', 'Link', 'Deploy' }

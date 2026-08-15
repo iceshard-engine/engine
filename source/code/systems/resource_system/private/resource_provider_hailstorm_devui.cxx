@@ -122,7 +122,7 @@ namespace ice
             (char)((header.magic >> 0) & 0xff)
         );
         ImGui::SetItemTooltip("Hailstorm data format version and MAGIC value.");
-        if (ImGui::BeginChild("Pack Info", {}, ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY))
+        if (ImGui::BeginChild("Pack Info", {}, ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY))
         {
             ImGui::Text("Version: %hu.%hu.%hu", header.version[0], header.version[0], header.version[0]);
             ImGui::SetItemTooltip("Version of the DATA in the pack.");

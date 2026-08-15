@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "vk_render_surface.hxx"
@@ -8,11 +8,14 @@ namespace ice::render::vk
 
     VulkanRenderSurface::VulkanRenderSurface(
         VkInstance vk_instance,
-        VkSurfaceKHR vk_surface
+        VkSurfaceKHR vk_surface,
+        ice::render::NativeSurface const* native_surface
     ) noexcept
         : _vk_instance{ vk_instance }
         , _vk_surface{ vk_surface }
+        , _native_surface{ native_surface }
     {
+        ICE_ASSERT_CORE(_native_surface != nullptr);
     }
 
     VulkanRenderSurface::~VulkanRenderSurface() noexcept

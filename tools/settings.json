@@ -13,6 +13,11 @@
     "linux": {
         "project": {
             "script_file": "ice.sh"
+        },
+        "android": {
+          "sdk": {
+            "root": "~/.android/sdk"
+          }
         }
     },
     "project": {
@@ -24,7 +29,13 @@
     },
     "license": {
         "spdx": "MIT",
-        "authors": "Dandielo <dandielo@iceshard.net>"
+        "authors": "Dandielo <dandielo@iceshard.net>",
+        "mode_sources": {
+            "file_extensions": {
+                ".bff": true, ".inl": true,
+                ".hxx": true, ".cxx": true
+            }
+        }
     },
     "android": {
         "gradle": {

@@ -3,6 +3,7 @@
 
 #include <ice/platform.hxx>
 #include <ice/platform_event.hxx>
+#include <ice/platform_draw_surface.hxx>
 #include <ice/mem_allocator_host.hxx>
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/assert.hxx>
@@ -19,7 +20,6 @@ namespace ice::platform::linux::sdl2
         : _alloc{ alloc, "iceshard.platform-layer" }
         , _system_events{ _alloc }
         , _input_events{ _alloc }
-        , _render_surface{ }
     {
         _system_events.reserve(32);
         _input_events._events.reserve(512);
@@ -69,11 +69,11 @@ namespace ice::platform::linux::sdl2
                 _system_events.push_back(ice::platform::Shard_AppQuit);
 
                 _input_events.push(
-                    make_device_handle(DeviceType::Keyboard, DeviceIndex(0)),
+                    make_device_handle(DeviceType::Keyboard, static_cast<DeviceIndex>(0)),
                     DeviceMessage::DeviceDisconnected
                 );
                 _input_events.push(
-                    make_device_handle(DeviceType::Mouse, DeviceIndex(0)),
+                    make_device_handle(DeviceType::Mouse, static_cast<DeviceIndex>(0)),
                     DeviceMessage::DeviceDisconnected
                 );
                 break;
@@ -97,6 +97,8 @@ namespace ice::platform::linux::sdl2
                 case SDL_WINDOWEVENT_RESIZED:
                     _system_events.push_back(ice::platform::ShardID_WindowResized | window_size);
                     break;
+                    // Just ignore all other events
+                default: break;
                 }
             }
             case SDL_MOUSEBUTTONUP:
@@ -113,8 +115,10 @@ namespace ice::platform::linux::sdl2
             case SDL_TEXTINPUT:
                 ice::memcpy(text_buffer, current_event.text.text, 32);
                 _system_events.push_back(
-                    ice::platform::ShardID_InputText | (char const*)text_buffer
+                    ice::platform::ShardID_InputText | static_cast<char const*>(text_buffer)
                 );
+                // Just ignore all other events
+            default: break;
             }
         }
 
@@ -133,7 +137,7 @@ namespace ice::platform
     auto available_features() noexcept -> ice::platform::FeatureFlags
     {
         return FeatureFlags::Core
-            | FeatureFlags::RenderSurface
+            | FeatureFlags::DrawSurface
             | FeatureFlags::StoragePaths
             | FeatureFlags::Threads;
     }
@@ -203,8 +207,8 @@ namespace ice::platform
         case FeatureFlags::Threads:
             out_api_ptr = threads_feature.get();
             break;
-        case FeatureFlags::RenderSurface:
-            out_api_ptr = static_cast<ice::platform::RenderSurface*>(ice::addressof(instance_ptr->_render_surface));
+        case FeatureFlags::DrawSurface:
+            out_api_ptr = static_cast<ice::platform::DrawSurface*>(ice::addressof(instance_ptr->_window));
             break;
         default:
             return E_InvalidArgument;
@@ -216,7 +220,7 @@ namespace ice::platform
     auto query_apis(ice::platform::FeatureFlags flags, void** out_api_ptrs) noexcept -> ice::Result
     {
         ice::Result result = S_Success;
-        for (FeatureFlags flag : { FeatureFlags::Core, FeatureFlags::RenderSurface })
+        for (FeatureFlags const flag : { FeatureFlags::Core, FeatureFlags::DrawSurface })
         {
             if (ice::has_all(flags, flag))
             {

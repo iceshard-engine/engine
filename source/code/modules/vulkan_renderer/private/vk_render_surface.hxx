@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -13,15 +13,22 @@ namespace ice::render::vk
     public:
         VulkanRenderSurface(
             VkInstance vk_instance,
-            VkSurfaceKHR vk_surface
+            VkSurfaceKHR vk_surface,
+            ice::render::NativeSurface const* native_surface
         ) noexcept;
         ~VulkanRenderSurface() noexcept override;
 
+        [[nodiscard]]
         auto handle() const noexcept -> VkSurfaceKHR;
+
+        [[nodiscard]]
+        auto dimensions() const noexcept -> ice::vec2u { return _native_surface->dimensions(); }
 
     private:
         VkInstance _vk_instance;
         VkSurfaceKHR _vk_surface;
+
+        ice::render::NativeSurface const* _native_surface;
     };
 
 } // namespace ice::render::vk

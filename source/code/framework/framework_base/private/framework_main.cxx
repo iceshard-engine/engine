@@ -10,10 +10,9 @@
 
 #include <ice/platform.hxx>
 #include <ice/platform_core.hxx>
-#include <ice/platform_threads.hxx>
-#include <ice/platform_render_surface.hxx>
-#include <ice/platform_window_surface.hxx>
+#include <ice/platform_draw_surface.hxx>
 #include <ice/platform_storage.hxx>
+#include <ice/platform_threads.hxx>
 
 #include <ice/gfx/gfx_context.hxx>
 #include <ice/gfx/gfx_runner.hxx>
@@ -130,7 +129,7 @@ struct ice::app::State
     {
         ice::platform::Core* core;
         ice::platform::Threads* threads;
-        ice::platform::RenderSurface* render_surface;
+        ice::platform::DrawSurface* render_surface;
     } platform;
 
     State(ice::Allocator& alloc) noexcept
@@ -197,7 +196,7 @@ struct ice::app::Runtime
     ice::UniquePtr<ice::input::InputTracker> input_tracker;
     ice::Array<ice::input::InputEvent> input_events;
 
-    ice::UniquePtr<ice::platform::WindowSurface> window_surface;
+    ice::UniquePtr<ice::platform::DrawSurface> window_surface;
     ice::render::RenderDriver* render_driver;
 
     ice::SystemClock clock;
@@ -253,7 +252,7 @@ void ice_init(
         alloc,
         FeatureFlags::Core
         | FeatureFlags::StoragePaths
-        | FeatureFlags::RenderSurface
+        | FeatureFlags::DrawSurface
         | FeatureFlags::Threads,
         platform_params
     );
@@ -274,26 +273,25 @@ void ice_args(
 }
 
 static auto ice_create_render_surface(
-    ice::platform::RenderSurface& platform_surface,
+    ice::platform::DrawSurface& draw_surface,
     ice::render::RenderDriver& render_driver
 ) noexcept -> ice::render::RenderSurface*
 {
-    ice::platform::RenderSurfaceParams const surface_params{
+    constexpr ice::platform::DrawSurfaceParams surface_params{
         .driver = ice::render::RenderDriverAPI::Vulkan,
-        .dimensions = { 1600, 1080 },
+        .dimensions = { 1024, 760 },
     };
 
-    ice::Result const result = platform_surface.create(surface_params);
+    ice::Result const result = draw_surface.create(surface_params);
     ICE_ASSERT(
         result == ice::S_Success,
         "Failed to create render surface [ driver={}, dimensions={}x{} ]",
-        ice::u32(surface_params.driver), surface_params.dimensions.x, surface_params.dimensions.y
+        static_cast<ice::u32>(surface_params.driver), surface_params.dimensions.x, surface_params.dimensions.y
     );
 
-    ice::render::SurfaceInfo surface_info{ };
-    bool const valid_surface_info = platform_surface.get_surface(surface_info);
-    ICE_ASSERT(valid_surface_info, "Failed to access surface info!");
-    return render_driver.create_surface(surface_info);
+    ice::render::NativeSurface const* surface = draw_surface.native_surface();
+    ICE_ASSERT(surface != nullptr, "Failed to access surface info!");
+    return render_driver.create_surface(surface);
 }
 
 auto ice_setup(

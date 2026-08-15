@@ -1,8 +1,9 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/math.hxx>
+#include <ice/render/render_declarations.hxx>
 
 namespace ice::render
 {
@@ -13,7 +14,7 @@ namespace ice::render
         virtual ~RenderSurface() noexcept = default;
     };
 
-    enum class SurfaceType
+    enum class SurfaceType : ice::u8
     {
         Unknown,
         Win32_Window,
@@ -24,9 +25,21 @@ namespace ice::render
         HTML5_DOMCanvas
     };
 
-    struct SurfaceInfo
+    class NativeSurface
     {
-        SurfaceType type = SurfaceType::Unknown;
+    protected:
+        virtual ~NativeSurface() noexcept = default;
+
+    public:
+        virtual bool is_valid() const noexcept = 0;
+
+        virtual auto surface_type() const noexcept -> ice::render::SurfaceType = 0;
+        virtual void query_surface_info(ice::render::NativeSurfaceInfo& out_surface_info) const noexcept = 0;
+        virtual auto dimensions() const noexcept -> ice::vec2u = 0;
+    };
+
+    struct NativeSurfaceInfo
+    {
         union
         {
             struct

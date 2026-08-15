@@ -1,3 +1,6 @@
+/// Copyright 2026 - 2026, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include <ice/i18n_database.hxx>
 #include "i18n_resource_database.hxx"
 

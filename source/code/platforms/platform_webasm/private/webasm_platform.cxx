@@ -1,11 +1,11 @@
-/// Copyright 2023 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "webasm_app.hxx"
 
 #include <ice/platform_core.hxx>
 #include <ice/platform_storage.hxx>
-#include <ice/platform_render_surface.hxx>
+#include <ice/platform_draw_surface.hxx>
 
 #include <ice/mem_allocator_host.hxx>
 #include <ice/profiler.hxx>
@@ -20,7 +20,7 @@ namespace ice::platform
     {
         return FeatureFlags::Core
             | FeatureFlags::StoragePaths
-            | FeatureFlags::RenderSurface
+            | FeatureFlags::DrawSurface
             | FeatureFlags::Threads;
     }
 
@@ -77,7 +77,7 @@ namespace ice::platform
         case FeatureFlags::Threads:
             out_api_ptr = instance_ptr->threads();
             break;
-        case FeatureFlags::RenderSurface:
+        case FeatureFlags::DrawSurface:
             out_api_ptr = &instance_ptr->_render_surface;
             break;
         default:
@@ -90,7 +90,7 @@ namespace ice::platform
     auto query_apis(ice::platform::FeatureFlags flags, void** out_api_ptrs) noexcept -> ice::Result
     {
         ice::Result result = ice::S_Success;
-        for (FeatureFlags flag : { FeatureFlags::Core, FeatureFlags::RenderSurface })
+        for (FeatureFlags flag : { FeatureFlags::Core, FeatureFlags::DrawSurface })
         {
             if (ice::has_all(flags, flag))
             {

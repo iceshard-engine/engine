@@ -14,7 +14,7 @@
 #include <ice/app.hxx>
 
 #include <ice/input/device_event_queue.hxx>
-#include "webasm_render_surface.hxx"
+#include "webasm_draw_surface.hxx"
 #include "webasm_threads.hxx"
 
 namespace ice::platform::webasm
@@ -70,7 +70,7 @@ namespace ice::platform::webasm
         ice::vec2i _last_windows_size;
 
     public:
-        ice::platform::webasm::WebASM_RenderSurface _render_surface;
+        ice::platform::webasm::WebASM_DrawSurface _render_surface;
     };
 
 } // namespace ice::platform::webasm

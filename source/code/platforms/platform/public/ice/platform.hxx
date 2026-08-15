@@ -1,8 +1,7 @@
-/// Copyright 2022 - 2025, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2026, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/mem_allocator.hxx>
 #include <ice/expected.hxx>
 #include <ice/shard.hxx>
 #include <ice/span.hxx>
@@ -21,8 +20,8 @@ namespace ice::platform
         //! \brief Platform layer with the most basic features, allowing to query system and input events.
         Core = 0x0001,
 
-        //! \brief Represents the render surface layer. This allows to access the native drawable surface area.
-        RenderSurface = 0x0002,
+        //! \brief Represents the drawable surface layer. This allows to access the native drawable surface area.
+        DrawSurface = 0x0002,
 
         //! \brief Represents various device reported values and states. For example.: battery, temperature.
         //! \note Some properties maybe only be available on specific platforms.
@@ -41,7 +40,7 @@ namespace ice::platform
 
         //! \note Used to properly handle the binary 'not (~)' operation.
         //! \see ice::FlagType and ice::FlagTypeAll concepts for details.
-        All = Core | RenderSurface | Vitals | StoragePaths | ExecutionParams,
+        All = Core | DrawSurface | Vitals | StoragePaths | ExecutionParams,
     };
 
     //! \brief API type to platform FeatureFlags value mapping. Allows for easier API queries.
@@ -98,7 +97,7 @@ namespace ice::platform
 
     //! \brief Queries the platform for the specific feature API pointers.
     //!
-    //! \param flag [in] A set of flags representing the desired features.
+    //! \param flags [in] A set of flags representing the desired features.
     //! \param out_api_ptrs [in/out] A void pointer array where the API addresses will be stored.
     //!
     //! \note This API might not be available later.

@@ -14,7 +14,7 @@ namespace ice
     struct ParamsInternal;
     struct ParamInstanceBase;
 
-    using Params = ice::UniquePtr<ParamsInternal> const;
+    using Params = ice::UniquePtr<ParamsInternal>;
     using ParamsCustomCallback = bool(*)(void* userdata, ice::Span<ice::String const> results) noexcept;
 
     namespace concepts

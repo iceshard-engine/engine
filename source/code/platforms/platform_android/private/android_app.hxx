@@ -13,7 +13,7 @@
 #include <atomic>
 
 #include <android/native_activity.h>
-#include "android_render_surface.hxx"
+#include "android_draw_surface.hxx"
 #include "android_threads.hxx"
 #include "android_app_core.hxx"
 
@@ -36,7 +36,7 @@ namespace ice::platform::android
 
         void initialize(ice::Span<ice::Shard const> params) noexcept;
         auto threads() noexcept -> ice::platform::Threads* { return _threads.get(); }
-        auto render_surface() noexcept -> ice::platform::RenderSurface* { return &_app_surface; }
+        auto draw_surface() noexcept -> ice::platform::DrawSurface* { return &_app_surface; }
 
     public: // ice::platform::Core
         auto refresh_events() noexcept -> ice::Result override;
@@ -95,7 +95,7 @@ namespace ice::platform::android
 
         std::atomic_uint32_t _app_state;
         std::atomic<AInputQueue*> _app_queue;
-        AndroidRenderSurface _app_surface;
+        AndroidDrawSurface _app_surface;
 
         ice::StaticString<256> _app_modules;
         ice::StaticString<256> _app_internal_data;

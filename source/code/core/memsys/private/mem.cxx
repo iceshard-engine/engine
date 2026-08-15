@@ -6,7 +6,7 @@
 #include <ice/mem_memory.hxx>
 #include <ice/profiler.hxx>
 
-#if ISP_WEBAPP // Required to access posix_memalign
+#if ISP_WEBAPP || ISP_LINUX // Required to access posix_memalign
 #include <cstdlib>
 #endif
 
