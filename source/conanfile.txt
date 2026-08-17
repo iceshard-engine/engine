@@ -1,8 +1,6 @@
-[generators]
-FastBuildDeps
 
 [tool_requires]
-fastbuild-generator/0.4.2@iceshard/stable
+fastbuild-generator/1.0.0@iceshard/stable
 
 [requires]
 cli11/2.6.1@iceshard/stable
