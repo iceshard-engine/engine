@@ -11,16 +11,44 @@
 namespace ice
 {
 
-    struct AllocResult;
+    //! \brief Result of an allocation from an ice::Allocator object.
+    struct AllocResult
+    {
+        //! \brief Pointer holding the address of the allocated memory block.
+        void* memory;
+
+        //! \brief The final size of the allocated block.
+        //! \remarks Can never be smaller of what was requested.
+        ice::usize size;
+
+        //! \brief The actual alignment of this allocation.
+        //! \remarks Can never be smaller of what was requested.
+        ice::ualign alignment;
+
+        //! \brief Utility conversion to a Memory object.
+        constexpr operator ice::Memory() const noexcept;
+    };
+
+    //! \brief Data type containing \b size and \b alignment information for a single allocation.
+    //! \remarks The allocation will always be at least as big as the requested `alignment` value.
     struct AllocRequest
     {
+        //! \brief Number of bytes to allocate.
         ice::usize size = 0_B;
+
+        //! \brief Alignment requested for this allocation.
+        //! \remarks The default alignment might be different on different platforms.
         ice::ualign alignment = ice::ualign::b_default;
 
         constexpr AllocRequest() noexcept = default;
+
+        //! \brief Initializes the structure with \b size and an optional \b alignment value.
         constexpr AllocRequest(ice::usize size, ice::ualign alignment = ice::ualign::b_default) noexcept;
+
+        //! \brief Initializes the structure from a \b meminfo value.
         constexpr AllocRequest(ice::meminfo memory_info) noexcept;
 
+        //! \brief Initializes the structure from an alignment operation result. See ice::align_to for additional info.
         template<typename T> requires (std::is_pointer_v<T> == false)
         constexpr AllocRequest(ice::AlignResult<T> align_result) noexcept;
     };
@@ -38,15 +66,6 @@ namespace ice
         constexpr auto include(T*& ptrref, ice::u64 count) noexcept;
         constexpr void finalize(ice::AllocResult result) const noexcept;
         constexpr void reset() noexcept;
-    };
-
-    struct AllocResult
-    {
-        void* memory;
-        ice::usize size;
-        ice::ualign alignment;
-
-        constexpr operator ice::Memory() const noexcept;
     };
 
     auto alloc(ice::usize size) noexcept -> ice::AllocResult;
