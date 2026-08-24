@@ -11,33 +11,33 @@
 namespace ice
 {
 
-    //! \brief Result of an allocation from an ice::Allocator object.
+    //! \brief The result of an allocation from an ice::Allocator object.
     struct AllocResult
     {
-        //! \brief Pointer holding the address of the allocated memory block.
+        //! \brief A pointer holding the address of the allocated memory block.
         void* memory;
 
         //! \brief The final size of the allocated block.
-        //! \remarks Can never be smaller of what was requested.
+        //! \details Can never be smaller of what was requested.
         ice::usize size;
 
         //! \brief The actual alignment of this allocation.
-        //! \remarks Can never be smaller of what was requested.
+        //! \details Can never be smaller of what was requested.
         ice::ualign alignment;
 
         //! \brief Utility conversion to a Memory object.
         constexpr operator ice::Memory() const noexcept;
     };
 
-    //! \brief Data type containing \b size and \b alignment information for a single allocation.
-    //! \remarks The allocation will always be at least as big as the requested `alignment` value.
+    //! \brief A data type containing \b size and \b alignment information for a single allocation.
+    //! \details The allocation will always be at least as big as the requested `alignment` value.
     struct AllocRequest
     {
         //! \brief Number of bytes to allocate.
         ice::usize size = 0_B;
 
         //! \brief Alignment requested for this allocation.
-        //! \remarks The default alignment might be different on different platforms.
+        //! \details The default alignment might be different on different platforms.
         ice::ualign alignment = ice::ualign::b_default;
 
         constexpr AllocRequest() noexcept = default;
