@@ -1,3 +1,6 @@
+/// Copyright 2026 - 2026, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include <ice/mem_allocator_host.hxx>
 #include <ice/semaphore.hxx>
 

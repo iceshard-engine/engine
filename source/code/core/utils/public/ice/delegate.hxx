@@ -1,3 +1,6 @@
+/// Copyright 2026 - 2026, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/detail/delegate.hxx>
 #include <ice/assert_core.hxx>
