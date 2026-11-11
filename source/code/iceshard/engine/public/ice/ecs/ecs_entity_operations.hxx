@@ -55,6 +55,7 @@ namespace ice::ecs
         ice::usize filter_data_size;
         char filter_data[16]; // We assume filter data not requiring more than 16 bytes.
         ice::u32 mode = 0; // Default
+        ice::ecs::Entity single_entity = Entity::Invalid;
 
         struct Result
         {
@@ -71,6 +72,12 @@ namespace ice::ecs
         private:
             OperationBuilder& _builder;
         };
+
+        OperationBuilder(
+            ice::ecs::EntityOperations& operations,
+            ice::ecs::Archetype archetype,
+            ice::ecs::Entity entity
+        ) noexcept;
 
         OperationBuilder(
             ice::ecs::EntityOperations& operations,
@@ -227,6 +234,21 @@ namespace ice::ecs
     inline OperationBuilder::OperationBuilder(
         ice::ecs::EntityOperations& operations,
         ice::ecs::Archetype archetype,
+        ice::ecs::Entity entity
+    ) noexcept
+        : operations{ operations }
+        , archetype{ archetype }
+        , entities{ &single_entity, 1 }
+        , filter_data_size{ 0_B }
+        , filter_data{ }
+        , mode{ 1 }
+        , single_entity{ entity }
+    {
+    }
+
+    inline OperationBuilder::OperationBuilder(
+        ice::ecs::EntityOperations& operations,
+        ice::ecs::Archetype archetype,
         ice::Span<ice::ecs::Entity const> entities
     ) noexcept
         : operations{ operations }
@@ -257,7 +279,7 @@ namespace ice::ecs
         ice::ecs::Entity entity
     ) noexcept -> ice::ecs::OperationBuilder
     {
-        return this->set(ref, { &entity, 1 });
+        return ice::ecs::OperationBuilder{ *this, this->get_archetype(ref), entity };
     }
 
     inline auto EntityOperations::set(

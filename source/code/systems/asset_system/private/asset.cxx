@@ -34,7 +34,10 @@ namespace ice
     Asset::Asset(Asset const& other) noexcept
         : _handle{ other._handle }
     {
-        other._handle->_refcount.fetch_add(1, std::memory_order_relaxed);
+        if (_handle != nullptr)
+        {
+            other._handle->_refcount.fetch_add(1, std::memory_order_relaxed);
+        }
     }
 
     auto Asset::operator=(Asset&& other) noexcept -> ice::Asset&
@@ -132,14 +135,18 @@ namespace ice
         co_await self.data(state);
     }
 
-    auto Asset::data(this ice::Asset self, ice::AssetState state) noexcept -> ice::Task<ice::Data>
+    auto Asset::data(this ice::Asset self, ice::AssetState state) noexcept -> ice::TaskExpected<ice::Data>
     {
+        if (self._handle == nullptr)
+        {
+            ICE_LOG(LogSeverity::Warning, LogTag::Asset, "Trying to access value from 'null' asset");
+            co_return E_AssetInvalidHandle;
+        }
         co_return co_await self._handle->_shelve->storage.request(self, state);
     }
 
-    auto Asset::operator[](this ice::Asset self, ice::AssetState state) noexcept -> ice::Task<ice::Data>
+    auto Asset::operator[](this ice::Asset self, ice::AssetState state) noexcept -> ice::TaskExpected<ice::Data>
     {
-        ICE_ASSERT(self._handle != nullptr, "Invalid Asset object!");
         co_return co_await self.data(state);
     }
 

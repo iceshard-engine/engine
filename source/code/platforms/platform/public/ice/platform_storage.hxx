@@ -11,7 +11,7 @@ namespace ice::platform
 
     //! \brief Name of the application used to create sub directories in selected paths.
     //! \note This is optional, but allows to easily get paths that are already "unique" to your application.
-    static constexpr ice::ShardID Shard_StorageAppName = "platform/storage/app_name`char const*"_shardid;
+    static constexpr ice::ShardID PlatformParam_StorageAppName = "platform/storage/app_name`char const*"_shardid;
 
     //! \brief Provides access to various storage locations categorized for specific uses.
     //! \note All paths returned end with a backslash.

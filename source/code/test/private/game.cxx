@@ -227,7 +227,7 @@ auto test_factory(ice::Allocator& alloc, ice::TraitContext& context, void*) noex
 }
 auto actions_factory(ice::Allocator& alloc, ice::TraitContext& context, void*) noexcept -> UniquePtr<ice::Trait>
 {
-    return context.make_unique<ice::InputActionsTrait>(alloc, alloc);
+    return context.make_unique<ice::InputActionsTrait>(alloc);
 }
 
 bool test_reg_traits(ice::TraitArchive& arch) noexcept
@@ -261,6 +261,12 @@ TestGame::TestGame(ice::Allocator& alloc) noexcept
     GameTasksDebugAllocator::set_allocator(&_tasks_alloc);
 }
 
+void TestGame::on_config(ice::framework::Config& config) noexcept
+{
+    config.initial_surface_dimensions.x = 1920;
+    config.initial_surface_dimensions.y = 1080;
+}
+
 void TestGame::on_setup(ice::framework::State const& state) noexcept
 {
     // ICE_LOG(LogSeverity::Info, LogGame, "Hello, World!");
@@ -269,11 +275,9 @@ void TestGame::on_setup(ice::framework::State const& state) noexcept
     ice::ResourceTracker& res = state.resources;
 
     ice::HeapString<> shader_tools = ice::resolve_dynlib_path(res, _allocator, "shader_tools");
-    ice::HeapString<> pipelines_module = ice::resolve_dynlib_path(res, _allocator, "iceshard_pipelines");
     ice::HeapString<> vulkan_module = ice::resolve_dynlib_path(res, _allocator, "vulkan_renderer");
 
     mod.load_module(_allocator, shader_tools);
-    mod.load_module(_allocator, pipelines_module);
     mod.load_module(_allocator, vulkan_module);
 
     state.archetypes.new_archetype<C1, C2>("test-arch");

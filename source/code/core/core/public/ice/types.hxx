@@ -27,6 +27,7 @@ namespace ice
     using u64 = std::uint64_t;
 
     using uptr = std::uintptr_t;
+    using byte = std::uint8_t;
 
     // Forward declaration of ref types
     struct ref8;

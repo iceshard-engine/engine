@@ -80,8 +80,8 @@ namespace ice
         using FnFinalizeResource = auto(*)(
             ice::ResourceCompilerCtx& ctx,
             ice::ResourceHandle const& resource_handle,
-            ice::Span<ice::ResourceCompilerResult const> compiled_sources,
             ice::Span<ice::URI const> dependencies,
+            ice::Span<ice::ResourceCompilerResult> compiled_sources,
             ice::Allocator& result_alloc
         ) noexcept -> ice::Memory;
 
@@ -130,8 +130,8 @@ namespace ice
         auto fn_finalize_default(
             ice::ResourceCompilerCtx& ctx,
             ice::ResourceHandle const& resource_handle,
-            ice::Span<ice::ResourceCompilerResult const> compiled_sources,
             ice::Span<ice::URI const> dependencies,
+            ice::Span<ice::ResourceCompilerResult> compiled_sources,
             ice::Allocator& result_alloc
         ) noexcept -> ice::Memory;
 

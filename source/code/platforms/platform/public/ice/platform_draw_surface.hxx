@@ -10,6 +10,9 @@
 namespace ice::platform
 {
 
+    static constexpr ice::ShardID PlatformParam_InitialWindowSize = "platform::initial-window-size`ice::vec2u"_shardid;
+    static constexpr ice::ShardID PlatformParam_StartFullscreen = "platform::start-fullscreen`ice::u32"_shardid;
+
     struct DrawSurfaceParams
     {
         ice::render::RenderDriverAPI driver;

@@ -2,11 +2,12 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#include <ice/atomic_linked_queue.hxx>
+#include <ice/mem_allocator.hxx>
 #include <ice/native_aio.hxx>
 #include <ice/native_file.hxx>
-#include <ice/mem_allocator.hxx>
-#include <ice/atomic_linked_queue.hxx>
 #include <ice/os.hxx>
+#include <ice/semaphore.hxx>
 
 namespace ice::native_aio
 {
@@ -37,7 +38,7 @@ namespace ice::native_aio
     {
         ice::Allocator& _allocator;
         ice::AtomicLinkedQueue<AIORequestInternal> _requests;
-        sem_t _semaphore;
+        ice::Semaphore _semaphore;
         ice::u32 _worker_limit;
     };
 

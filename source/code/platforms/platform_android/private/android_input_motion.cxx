@@ -48,7 +48,7 @@ namespace ice::platform::android
                         AMotionEvent_getY(raw_event, idx)
                     );
                 }
-                IPT_MESSAGE("Motion: Action::Move");
+                IPT_MESSAGE(D, "Motion: Action::Move");
                 break;
             }
             case AMOTION_EVENT_ACTION_UP:

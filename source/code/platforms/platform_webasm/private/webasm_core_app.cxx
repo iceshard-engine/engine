@@ -60,14 +60,18 @@ namespace ice::platform::webasm
     {
         if (_initstage == 0) [[unlikely]]
         {
-            ice_init(_allocator, _factories);
-
-            _config = _factories.factory_config(_allocator);
-            ice_args(_allocator, _params, *_config);
-
-            _state = _factories.factory_state(_allocator);
-            _runtime = _factories.factory_runtime(_allocator);
-            _initstage = 1;
+            if (ice_configure(_allocator, _params, _config); _config == nullptr)
+            {
+                ICE_LOG(LogSeverity::Critical, LogTag::Engine, "Failed to initialize config");
+                _initstage = 5;
+            }
+            else
+            {
+                ice_init(_allocator, _factories);
+                _state = _factories.factory_state(_allocator);
+                _runtime = _factories.factory_runtime(_allocator);
+                _initstage = 1;
+            }
         }
         else if (_initstage == 1) [[unlikely]]
         {

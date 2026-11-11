@@ -32,6 +32,7 @@ namespace ice
         , _interface_selector{ nullptr }
         , _events{ world_context.allocator() }
         , _events_expired{ world_context.allocator() }
+        , _attached_objects_list{ }
     {
     }
 
@@ -42,6 +43,24 @@ namespace ice
     auto IceshardTraitContext::world() noexcept -> ice::World&
     {
         return _world_context.world();
+    }
+
+    bool IceshardTraitContext::attach(ice::UniquePtr<ice::TraitAttachedObject> object) noexcept
+    {
+        if (object == nullptr) // Guard against nullptr values
+        {
+            return false;
+        }
+
+        if (object->try_connect(_attached_objects_list))
+        {
+            // If it returns 'true', it means the object was moved out of the list
+            ICE_ASSERT_CORE(_attached_objects_list == nullptr);
+            _attached_objects_list = ice::move(object);
+            return true;
+        }
+        // Object will be deleted in this case, since we failed to connect it to the list
+        return false;
     }
 
     void IceshardTraitContext::send(ice::detail::TraitEvent event) noexcept

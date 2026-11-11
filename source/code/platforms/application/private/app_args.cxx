@@ -3,10 +3,10 @@
 
 #include <ice/app.hxx>
 
-void ice_args(
+void ice_configure(
     ice::Allocator& alloc,
     ice::Params& params,
-    ice::app::Config& config
+    ice::UniquePtr<ice::app::Config>& out_config
 ) noexcept
 {
 

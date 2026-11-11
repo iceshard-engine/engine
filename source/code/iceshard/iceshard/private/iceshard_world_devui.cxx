@@ -77,6 +77,10 @@ namespace ice
                     //     ImGui::EndChild();
                     // }
                 }
+                else
+                {
+                    ImGui::TextT("Trait {}", "unknown"_sid);
+                }
             }
         }
 

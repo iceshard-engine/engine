@@ -3,11 +3,17 @@
 
 #pragma once
 #include <ice/array.hxx>
+#include <ice/expected.hxx>
 #include <ice/params_types.hxx>
 #include <ice/path_utils.hxx>
 
 namespace ice
 {
+
+    //! \brief Result code returned whenever the parameter API received the '--help' parameter.
+    static constexpr ice::ErrorCode S_CommandLineHelpRequested{ "S.1000:CommandLine:User requested 'help' page for defined parameters." };
+    static constexpr ice::ErrorCode E_CommandLineInvalidParameter{ "E.1001:CommandLine:User passed invalid/unknown parameters." };
+    static constexpr ice::ErrorCode E_CommandLineInvalidResponseFile{ "E.1002:CommandLine:User passed invalid response file." };
 
     //! \brief Additional flags altering command line parameter behaviors.
     enum class ParamFlags : ice::u32
@@ -74,7 +80,7 @@ namespace ice
     ) noexcept -> ice::Params;
 
     [[nodiscard]]
-    auto params_process(ice::Params& params, int argc, char const* const* argv) noexcept -> ice::i32;
+    auto params_process(ice::Params const& params, int argc, char const* const* argv) noexcept -> ice::Result;
 
     template<typename T>
     bool params_define(ice::Params& params, ice::ParamDefinition const& definition, T& out_value) noexcept = delete;

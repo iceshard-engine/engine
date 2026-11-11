@@ -19,7 +19,7 @@ namespace ice
 
     // static constexpr ice::ShardID ShardID_ClickAction = "ice/input-action/A:click`ice::InputAction const*"_shardid;
 
-    InputActionsTrait::InputActionsTrait(ice::TraitContext& context, ice::Allocator& alloc) noexcept
+    InputActionsTrait::InputActionsTrait(ice::Allocator& alloc, ice::TraitContext& context) noexcept
         : ice::Trait{ context }
         , ice::TraitDevUI{ {
             .category = "builtin.devui.strings/menu.category.engine-traits|Engine/Traits"_i18n,

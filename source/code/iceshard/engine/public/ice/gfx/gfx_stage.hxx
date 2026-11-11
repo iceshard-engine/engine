@@ -18,11 +18,11 @@ namespace ice::gfx
             ice::gfx::GfxFrameStages& stages,
             ice::render::Renderpass renderpass,
             ice::u32 subpass
-        ) noexcept -> ice::Task<> { co_return; }
+        ) noexcept -> ice::TaskResult { co_return S_Ok; }
 
         virtual auto cleanup(
             ice::gfx::GfxContext& gfx
-        ) noexcept -> ice::Task<> { co_return; }
+        ) noexcept -> ice::TaskResult { co_return S_Ok; }
 
         virtual void update(
             ice::EngineFrame const& frame,

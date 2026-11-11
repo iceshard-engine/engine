@@ -15,14 +15,14 @@ namespace ice
     inline auto ptr_adv(void const* pointer, ice::usize offset, ice::ualign align) noexcept -> void const*;
 
     //! \return 'pointer' value advanced by the number of 'offset' bytes.
-    inline auto ptr_add(void* pointer, ice::usize offset) noexcept -> void*;
+    inline auto ptr_add(void* ptr, ice::usize offset) noexcept -> void*;
 
     //! \return 'pointer' value advanced by the number of 'offset' bytes.
-    inline auto ptr_add(void const* pointer, ice::usize offset) noexcept -> void const*;
+    inline auto ptr_add(void const* ptr, ice::usize offset) noexcept -> void const*;
 
 
     //! \return 'pointer' value retracted by the number of 'offset' bytes.
-    inline auto ptr_sub(void* pointer, ice::usize offset) noexcept -> void*;
+    inline auto ptr_sub(void* ptr, ice::usize offset) noexcept -> void*;
 
     //! \return 'pointer' value retracted by the number of 'offset' bytes.
     inline auto ptr_sub(void const* pointer, ice::usize offset) noexcept -> void const*;
@@ -31,14 +31,24 @@ namespace ice
     inline auto ptr_distance(void const* ptr_from, void const* ptr_to) noexcept -> ice::usize;
 
 
+    inline auto ptr_add(void* ptr, ice::isize offset) noexcept -> void*
+    {
+        return static_cast<char*>(ptr) + offset.value;
+    }
+
+    inline auto ptr_add(void const* ptr, ice::isize offset) noexcept -> void const*
+    {
+        return static_cast<char const*>(ptr) + offset.value;
+    }
+
     inline auto ptr_add(void* ptr, ice::usize offset) noexcept -> void*
     {
-        return reinterpret_cast<char*>(ptr) + offset.value;
+        return static_cast<char*>(ptr) + offset.value;
     }
 
     inline auto ptr_add(void const* ptr, ice::usize offset) noexcept -> void const*
     {
-        return reinterpret_cast<char const*>(ptr) + offset.value;
+        return static_cast<char const*>(ptr) + offset.value;
     }
 
     inline auto ptr_sub(void* ptr, ice::usize offset) noexcept -> void*
@@ -54,12 +64,18 @@ namespace ice
     inline auto ptr_distance(void const* ptr_from, void const* ptr_to) noexcept -> ice::usize
     {
         ICE_ASSERT_CORE(ptr_from <= ptr_to);
-        return { ice::usize::base_type(reinterpret_cast<char const*>(ptr_to) - reinterpret_cast<char const*>(ptr_from)) };
+        return { static_cast<ice::usize::base_type>(static_cast<char const*>(ptr_to) - static_cast<char const*>(ptr_from)) };
     }
 
     inline auto ptr_offset(void const* ptr_from, void const* ptr_to) noexcept -> ice::isize
     {
-        return { ice::isize::base_type(reinterpret_cast<char const*>(ptr_to) - reinterpret_cast<char const*>(ptr_from)) };
+        return { static_cast<char const*>(ptr_to) - static_cast<char const*>(ptr_from) };
+    }
+
+    constexpr auto ptr_offset_as_ptr(void const* ptr_from, void const* ptr_to) noexcept -> void*
+    {
+        ice::usize const offset = ptr_distance(ptr_from, ptr_to);
+        return ice::ptr_add(static_cast<void*>(nullptr), offset);
     }
 
 } // namespace ice

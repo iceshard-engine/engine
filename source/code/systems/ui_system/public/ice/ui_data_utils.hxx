@@ -25,7 +25,7 @@ namespace ice::ui
         {
             ice::ui::ConstantInfo const& constant = data.ui_constants[element.text.source_i];
             text = {
-                reinterpret_cast<char const*>(ice::ptr_add(data.additional_data, { constant.offset })),
+                reinterpret_cast<char const*>(ice::ptr_add(data.additional_data, ice::usize{ constant.offset })),
                 constant.size
             };
         }
@@ -84,7 +84,7 @@ namespace ice::ui
             ICE_ASSERT(matched_style->data_bg.source == DataSource::ValueConstant, "Colors cannot be defined outside of constants for now!");
             ice::ui::ConstantInfo const& constant_loc = data.ui_constants[matched_style->data_bg.source_i];
 
-            void const* color_data = ice::ptr_add(data.additional_data, { constant_loc.offset });
+            void const* color_data = ice::ptr_add(data.additional_data, ice::usize{ constant_loc.offset });
             out_color = reinterpret_cast<ice::ui::StyleColor const*>(color_data);
         }
         return found;

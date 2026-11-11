@@ -31,7 +31,7 @@ namespace ice::devui
         , public ice::InterfaceSelectorOf<ImGuiTrait, ice::TraitDevUI>
     {
     public:
-        ImGuiTrait(ice::TraitContext& ctx, ice::Allocator& alloc, ImGuiSystem& system) noexcept;
+        ImGuiTrait(ice::Allocator& alloc, ice::TraitContext& ctx, ImGuiSystem& system) noexcept;
         ~ImGuiTrait() noexcept override;
 
         auto activate(ice::WorldStateParams const& params) noexcept -> ice::Task<> override;

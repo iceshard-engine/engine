@@ -126,7 +126,7 @@ namespace ice::ecs
 
                     helper_pointer_array[arg_idx] = ice::ptr_add(
                         block->block_data,
-                        { arch->component_offsets[cmp_idx] }
+                        ice::usize{ arch->component_offsets[cmp_idx] }
                     );
                 }
             }
@@ -233,7 +233,7 @@ namespace ice::ecs
 
                             helper_pointer_array[arg_idx] = ice::ptr_add(
                                 block->block_data,
-                                { arch->component_offsets[cmp_idx] }
+                                ice::usize{ arch->component_offsets[cmp_idx] }
                             );
                         }
                     }
@@ -372,7 +372,7 @@ namespace ice::ecs
 
                     helper_pointer_array[arg_idx] = ice::ptr_add(
                         block->block_data,
-                        { arch->component_offsets[cmp_idx] }
+                        ice::usize{ arch->component_offsets[cmp_idx] }
                     );
                 }
             }
@@ -432,7 +432,7 @@ namespace ice::ecs
 
                             helper_pointer_array[arg_idx] = ice::ptr_add(
                                 block->block_data,
-                                { arch->component_offsets[cmp_idx] }
+                                ice::usize{ arch->component_offsets[cmp_idx] }
                             );
                         }
                     }
@@ -504,7 +504,7 @@ namespace ice::ecs
 
                             helper_pointer_array[arg_idx] = ice::ptr_add(
                                 block->block_data,
-                                { arch->component_offsets[cmp_idx] }
+                                ice::usize{ arch->component_offsets[cmp_idx] }
                             );
                         }
                     }
@@ -579,7 +579,7 @@ namespace ice::ecs
 
                             helper_pointer_array[arg_idx] = ice::ptr_add(
                                 block->block_data,
-                                { arch->component_offsets[cmp_idx] }
+                                ice::usize{ arch->component_offsets[cmp_idx] }
                             );
                         }
                     }
@@ -628,7 +628,7 @@ namespace ice::ecs
 
                             helper_pointer_array[arg_idx] = ice::ptr_add(
                                 block->block_data,
-                                { arch->component_offsets[cmp_idx] }
+                                ice::usize{ arch->component_offsets[cmp_idx] }
                             );
                         }
                     }

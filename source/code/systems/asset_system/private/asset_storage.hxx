@@ -60,7 +60,7 @@ namespace ice
         auto request(
             ice::Asset const& asset,
             ice::AssetState requested_state
-        ) noexcept -> ice::Task<ice::Data> override;
+        ) noexcept -> ice::TaskExpected<ice::Data> override;
 
         auto request_asset_runtime(
             ice::AssetStateTransaction& transaction

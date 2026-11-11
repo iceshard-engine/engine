@@ -63,7 +63,7 @@ namespace ice
         constexpr explicit ChunkedAllocRequest() noexcept = default;
 
         template<typename T>
-        constexpr auto include(T*& ptrref, ice::u64 count) noexcept;
+        constexpr auto include(T*& ptrref, ice::u64 count) noexcept -> ice::usize;
         constexpr void finalize(ice::AllocResult result) const noexcept;
         constexpr void reset() noexcept;
     };
@@ -107,21 +107,23 @@ namespace ice
     }
 
     template<typename T>
-    inline constexpr auto ChunkedAllocRequest::include(T*& ptrref, ice::u64 count) noexcept
+    inline constexpr auto ChunkedAllocRequest::include(T*& ptrref, ice::u64 count) noexcept -> ice::usize
     {
         ICE_ASSERT_CORE(_chunk_count < 14); // You sure you need that much? (Refactor if more are required)
 
+        ice::usize data_offset = 0_B;
         if (_chunk_count == 0)
         {
             _request_meminfo = ice::meminfo_of<T> * count;
         }
         else
         {
-            ice::usize const offset = _request_meminfo += ice::meminfo_of<T> * count;
-            _chunk_offsets[_chunk_count - 1] = offset;
+            data_offset = _request_meminfo += ice::meminfo_of<T> * count;
+            _chunk_offsets[_chunk_count - 1] = data_offset;
         }
         _chunk_pointers[_chunk_count] = reinterpret_cast<void**>(ice::addressof(ptrref));
         _chunk_count += 1;
+        return data_offset;
     }
 
     inline constexpr void ChunkedAllocRequest::finalize(ice::AllocResult result) const noexcept

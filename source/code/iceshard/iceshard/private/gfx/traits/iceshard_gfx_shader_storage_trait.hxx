@@ -28,7 +28,7 @@ namespace ice::gfx
         , public ice::InterfaceSelectorOf<Trait_GfxShaderStorage, ice::TraitDevUI>
     {
     public: // Implementation of: ice::Trait
-        Trait_GfxShaderStorage(ice::TraitContext& ctx, ice::Allocator& alloc) noexcept;
+        Trait_GfxShaderStorage(ice::Allocator& alloc, ice::TraitContext& ctx) noexcept;
         ~Trait_GfxShaderStorage() noexcept override = default;
 
     public: // Implementation of: ice::TraitDevUI

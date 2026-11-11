@@ -83,13 +83,33 @@ namespace ice::detail
 
 #if IPT_ENABLED
 
+namespace ice::tracy_
+{
+
+    consteval auto map_severity(ice::LogSeverity severity) noexcept -> ::tracy::MessageSeverity
+    {
+        switch (severity)
+        {
+        case ice::LogSeverity::Trace: return ::tracy::MessageSeverity::Trace;
+        case ice::LogSeverity::Debug: return ::tracy::MessageSeverity::Debug;
+        case ice::LogSeverity::Verbose: return ::tracy::MessageSeverity::Debug;
+        case ice::LogSeverity::Info: return ::tracy::MessageSeverity::Info;
+        case ice::LogSeverity::Warning: return ::tracy::MessageSeverity::Warning;
+        case ice::LogSeverity::Error: return ::tracy::MessageSeverity::Error;
+        case ice::LogSeverity::Critical: return ::tracy::MessageSeverity::Fatal;
+        default: return ::tracy::MessageSeverity::Debug;
+        }
+    }
+
+} // namespace ice::tracy_
+
 #define IPT_LOG(severity, tag, format, ...) \
-    IPT_MESSAGE(format); \
+    IUM_IPT_MESSAGE_VAR(ice::tracy_::map_severity(severity), format); \
     ICE_LOG(severity, tag, format, __VA_ARGS__)
 
 #define IPT_ZONE_LOG(severity, tag, format, ...) \
     IPT_ZONE_SCOPED; \
-    IPT_MESSAGE(format); \
+    IUM_IPT_MESSAGE_VAR(ice::tracy_::map_severity(severity), format); \
     ICE_LOG(severity, tag, format, __VA_ARGS__)
 
 #else

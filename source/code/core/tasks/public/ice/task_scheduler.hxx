@@ -14,6 +14,9 @@ namespace ice
     public:
         inline explicit TaskScheduler(ice::TaskQueue& queue) noexcept;
 
+        inline TaskScheduler(TaskScheduler const&) noexcept;
+        inline TaskScheduler& operator=(TaskScheduler const&) noexcept;
+
         inline auto schedule() noexcept;
         inline auto schedule(ice::TaskFlags flags) noexcept;
         inline auto schedule_delayed(ice::u32 delay_ms) noexcept;
@@ -23,7 +26,7 @@ namespace ice
     private:
         struct SchedulerAwaitable;
 
-        ice::TaskQueue& _queue;
+        ice::TaskQueue* _queue;
     };
 
     struct TaskScheduler::SchedulerAwaitable
@@ -56,8 +59,22 @@ namespace ice
     };
 
     inline TaskScheduler::TaskScheduler(ice::TaskQueue& queue) noexcept
-        : _queue{ queue }
+        : _queue{ ice::addressof(queue) }
     {
+    }
+
+    inline TaskScheduler::TaskScheduler(TaskScheduler const& other) noexcept
+        : _queue{ other._queue}
+    {
+    }
+
+    inline auto TaskScheduler::operator=(TaskScheduler const& other) noexcept -> TaskScheduler&
+    {
+        if (ice::addressof(other) != this)
+        {
+            _queue = other._queue;
+        }
+        return *this;
     }
 
     inline auto TaskScheduler::schedule() noexcept
@@ -72,7 +89,7 @@ namespace ice
             { }
         };
 
-        return Awaitable{ _queue };
+        return Awaitable{ *_queue };
     }
 
     inline auto TaskScheduler::schedule(ice::TaskFlags flags) noexcept
@@ -93,7 +110,7 @@ namespace ice
             { }
         };
 
-        return Awaitable{ _queue, flags };
+        return Awaitable{ *_queue, flags };
     }
 
     inline auto TaskScheduler::schedule_delayed(ice::u32 delay_ms) noexcept
@@ -114,7 +131,7 @@ namespace ice
             { }
         };
 
-        return Awaitable{ _queue, delay_ms };
+        return Awaitable{ *_queue, delay_ms };
     }
 
     inline auto TaskScheduler::operator co_await() noexcept

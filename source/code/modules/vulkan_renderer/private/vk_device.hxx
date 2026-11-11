@@ -115,6 +115,7 @@ namespace ice::render::vk
             ice::Span<ice::render::ImageBarrier const> image_barriers
         ) noexcept override;
 
+        [[deprecated]]
         void update_texture(
             ice::render::CommandBuffer cmds,
             ice::render::Image image,

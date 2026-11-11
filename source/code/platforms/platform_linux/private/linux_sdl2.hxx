@@ -7,3 +7,4 @@
 
 #undef None
 #undef main
+#undef Success

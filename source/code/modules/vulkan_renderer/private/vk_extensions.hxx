@@ -14,10 +14,14 @@ namespace ice::render::vk
 
         // Core instance extensions
         VkI_Surface = 0x0000'0001,
+#if ISP_WINDOWS
         VkI_Win32Surface = 0x0000'0002, // The three surfaces are mutually exclusive so they may share the same value
+#elif ISP_ANDROID
         VkI_AndroidSurface = 0x0000'0002,
+#elif ISP_LINUX
         VkI_WaylandSurface = 0x0000'0002,
         VkI_XLibSurface = 0x0000'0004,
+#endif
         VkI_GetPhysicalDeviceProperties2 = 0x0000'0008,
 
         // Core device extensions

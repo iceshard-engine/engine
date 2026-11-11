@@ -17,13 +17,29 @@ int main(int argc, char const** argv)
     {
         ice::HostAllocator host_alloc{ };
 
+        // Define all platform-specific options
+        ice::Params params = ice::create_params(host_alloc, "iceshard", "0.0.1", "IceShard engine parameters");
+        ice::params_register_globals(params);
+
+        // Define program-specific options
+        ice::UniquePtr<ice::app::Config> config;
+        if (ice_configure(host_alloc, params, config); config == nullptr)
+        {
+            ICE_LOG(ice::LogSeverity::Error, ice::LogTag::Core, "{}", "Failed to initialize config");
+            return 1;
+        }
+
+        ice::Result const res = ice::params_process(params, argc, argv);
+        if (res == ice::E_Error || res == ice::S_CommandLineHelpRequested)
+        {
+            ice::platform::shutdown();
+            config.reset();
+            params.reset();
+            return 1;
+        }
+
         ice::app::Factories app_factories{ };
         ice_init(host_alloc, app_factories);
-
-        ice::Params params = ice::create_params(host_alloc, "iceshard", "0.0.1", "IceShard engine parameters");
-        ice::UniquePtr<ice::app::Config> config = app_factories.factory_config(host_alloc);
-
-        ice_args(host_alloc, params, *config);
 
         ice::UniquePtr<ice::app::State> state = app_factories.factory_state(host_alloc);
 

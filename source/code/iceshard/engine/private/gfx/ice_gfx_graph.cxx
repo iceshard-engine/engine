@@ -240,14 +240,39 @@ namespace ice::gfx
         return _stages._ready.load(std::memory_order_relaxed) == 0;
     }
 
-    auto initialize_stage(ice::Task<> init_task, std::atomic_uint32_t& ready_count) noexcept -> ice::Task<>
+    auto shutdown_stage(ice::TaskResult shutdown_task) noexcept -> ice::Task<>
     {
-        co_await init_task;
+        ice::Result const result = co_await shutdown_task;
+        ICE_LOG_IF(
+            result == false,
+            LogSeverity::Error, LogTag::System,
+            "Failed to shutdown GfxStage with error: {}", result
+        );
+    }
+
+    auto initialize_stage(
+        ice::gfx::IceshardGfxGraphStages::Entry& entry,
+        ice::gfx::GfxContext& gfx,
+        ice::gfx::GfxFrameStages stages,
+        ice::render::Renderpass renderpass,
+        ice::u32 subpass,
+        std::atomic_uint32_t& ready_count
+    ) noexcept -> ice::Task<>
+    {
+        ice::Result const result = co_await entry.stage->initialize(
+            gfx, stages, renderpass, subpass
+        );
+        ICE_LOG_IF(
+            result == false,
+            LogSeverity::Error, LogTag::System,
+            "Failed to initialize GfxStage with error: {}", result
+        );
+        entry.initialized_successfully = result == true;
         ready_count.fetch_sub(1, std::memory_order_relaxed);
     }
 
     bool IceshardGfxGraphRuntime::prepare(
-        ice::gfx::GfxFrameStages& stages,
+        ice::gfx::GfxFrameStages& frame_stages,
         ice::gfx::GfxStageRegistry const& stage_registry,
         ice::TaskContainer& out_tasks
     ) noexcept
@@ -278,8 +303,10 @@ namespace ice::gfx
                     // Push the cleanup task
                     if (entry->initialized)
                     {
-                        out_tasks.create_tasks(1, "gfx.graph-runtime.state-cleanup"_shardid)[0] = entry->stage->cleanup(_context);
+                        out_tasks.create_tasks(1, "gfx.graph-runtime.state-cleanup"_shardid)[0] =
+                            shutdown_stage(entry->stage->cleanup(_context));
                         entry->initialized = false;
+                        entry->initialized_successfully = false;
                     }
 
                     // Only remove if a new stage is not there to replace the current one
@@ -338,7 +365,11 @@ namespace ice::gfx
                         entry->initialized = true;
 
                         init_tasks[init_task_idx++] = initialize_stage(
-                            entry->stage->initialize(_context, stages, _renderpass, pass_idx),
+                            *entry,
+                            _context,
+                            frame_stages,
+                            _renderpass,
+                            pass_idx,
                             _stages._ready
                         );
                     }

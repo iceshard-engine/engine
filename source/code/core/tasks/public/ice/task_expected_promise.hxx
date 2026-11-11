@@ -15,7 +15,8 @@ namespace ice
     template<typename Result, typename ErrorType>
     struct TaskExpectedPromise final : public ice::TaskInfoPromise<ice::TaskExpected<Result, ErrorType>>
     {
-        TaskExpectedPromise() noexcept
+        explicit TaskExpectedPromise() noexcept
+            : _value{}
         {
             this->_info = new TaskInfo{ };
         }
@@ -142,6 +143,98 @@ namespace ice
         };
 
         ErrorType* _error_pointer{ &_error_value };
+        std::coroutine_handle<> _error_continuation{ std::noop_coroutine() };
+    };
+
+    template<>
+    struct TaskExpectedPromise<ice::ErrorCode, ice::ErrorCode> final : public ice::TaskInfoPromise<ice::ErrorCode>
+    {
+        explicit TaskExpectedPromise() noexcept
+        {
+            this->_info = new TaskInfo{ };
+        }
+
+        ~TaskExpectedPromise() noexcept = default;
+
+        // Support all other TaskInfo tag extensions. (ex.: TaskCancelationToken)
+        using TaskInfoPromise<ice::ErrorCode>::TaskInfoPromise;
+
+        inline auto get_return_object() noexcept -> ice::TaskExpected<ice::ErrorCode>;
+
+        struct ExpectedFinalAwaiter : public ice::TaskPromiseBase::FinalAwaitable
+        {
+            constexpr bool await_ready() const noexcept { return false; }
+
+            template<typename Promise>
+            inline auto await_suspend(std::coroutine_handle<Promise> coro) noexcept -> std::coroutine_handle<>
+            {
+                TaskInfo* const info = coro.promise()._info;
+
+                if (info->has_any(TaskState::Canceled))
+                {
+                    info->state.store(TaskState::Failed | TaskState::Canceled, std::memory_order_relaxed);
+                }
+
+                // Don't resume anything when we got canceled or failed
+                if (info->has_any(TaskState::Failed))
+                {
+                    return coro.promise()._error_continuation;
+                }
+
+                // Mark as successful
+                info->state.store(TaskState::Succeeded, std::memory_order_release);
+
+                // Call the parent suspend
+                return TaskPromiseBase::FinalAwaitable::await_suspend(coro);
+            }
+
+            constexpr void await_resume() const noexcept { }
+        };
+
+        constexpr auto final_suspend() noexcept
+        {
+            return ExpectedFinalAwaiter{ };
+        }
+
+        inline void return_value(ice::Result expected) noexcept
+        {
+            ICE_ASSERT_CORE(expected.valid());
+            return_value(expected.value());
+        }
+
+        inline void return_value(ice::ErrorCode error) noexcept
+        {
+            ICE_ASSERT_CORE(_error_pointer != nullptr);
+            if (error == S_Success)
+            {
+                this->_info->state.store(TaskState::Succeeded, std::memory_order_relaxed);
+                _error_value = error;
+            }
+            else
+            {
+                this->_info->state.store(TaskState::Failed, std::memory_order_relaxed);
+                *_error_pointer = error;
+            }
+        }
+
+        inline auto expected() noexcept -> ice::Expected<ice::ErrorCode>
+        {
+            return _error_value;
+        }
+
+        // TODO: Cleanup-this-mess
+        inline auto expected_moved() noexcept -> ice::Expected<ice::ErrorCode>
+        {
+            return _error_value;
+        }
+
+        inline auto result() noexcept -> ice::ErrorCode
+        {
+            return _error_value;
+        }
+
+        ice::ErrorCode _error_value = E_Error;
+        ice::ErrorCode* _error_pointer{ &_error_value };
         std::coroutine_handle<> _error_continuation{ std::noop_coroutine() };
     };
 

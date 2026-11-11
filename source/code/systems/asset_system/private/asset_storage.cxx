@@ -191,7 +191,7 @@ namespace ice
                     alloc,
                     AssetState::Baked,
                     meta.finalize(alloc),
-                    compiler.fn_finalize(ctx, resource, compiled_sources, dependencies, alloc)
+                    compiler.fn_finalize(ctx, resource, dependencies, compiled_sources, alloc)
                 );
             }
 
@@ -406,16 +406,24 @@ namespace ice
     auto DefaultAssetStorage::request(
         ice::Asset const& asset,
         ice::AssetState requested_state
-    ) noexcept -> ice::Task<ice::Data>
+    ) noexcept -> ice::TaskExpected<ice::Data>
     {
-        ICE_ASSERT(asset.valid(), "Invalid asset object");
+        if (asset.empty())
+        {
+            co_return E_AssetInvalidHandle;
+        }
+        if (requested_state < ice::AssetState::Raw)
+        {
+            ICE_LOG(LogSeverity::Error, LogTag::Asset, "Trying to access data for invalid state");
+            co_return E_InvalidArgument;
+        }
 
         // This object might be unused (it's only alive for the request duration)
         ice::AssetStateTrackers trackers{};
         ice::AssetStateTransaction transaction = asset.start_transaction(requested_state, trackers);
         ICE_ASSERT(asset.valid(), "Invalid asset object");
 
-        ice::Expected<ice::Data, ice::ErrorCode> result{ };
+        ice::Expected<ice::Data> result{ };
         switch (transaction.target_state)
         {
         case AssetState::Raw:
@@ -430,17 +438,14 @@ namespace ice
         case AssetState::Runtime:
             result = co_await this->request_asset_runtime(transaction);
             break;
+        default:
+            // Getting here is quite the critical error!
+            result = E_CriticalInternalError;
         }
 
         ice::Asset temp{ ice::addressof(transaction.asset) };
         temp.finish_transaction(transaction);
-
-        if (result.failed())
-        {
-            ICE_LOG(LogSeverity::Error, LogTag::Asset, "Requesting asset data failed with {}", result.error());
-            co_return {};
-        }
-        co_return result.value();
+        co_return result;
     }
 
     auto DefaultAssetStorage::request_asset_runtime(
@@ -505,8 +510,18 @@ namespace ice
                     co_return E_RequestEvaluationFailed;
                 }
 
-                result = ice::data_view(load_result);
-                transaction.set_result_data(transaction.shelve.asset_allocator(), AssetState::Loaded, load_result);
+                // Check if the baked result is also considered to be 'loaded' (only required when coming from Raw)
+                if (load_result.location == nullptr)
+                {
+                    result = baked_result;
+                    // Promote the existing Baked data to 'Loaded' state.
+                    transaction.promote_to_loaded();
+                }
+                else
+                {
+                    result = ice::data_view(load_result);
+                    transaction.set_result_data(transaction.shelve.asset_allocator(), AssetState::Loaded, load_result);
+                }
             }
 
             co_await ice::await_filtered_queue_on(transaction.trackers.tasks_queue, _info.task_scheduler, detail::filter_states<AssetState::Loaded>);
@@ -546,6 +561,10 @@ namespace ice
                     }
 
                     result = ice::asset_data_find(transaction.asset._data, AssetState::Baked);
+                }
+                else
+                {
+                    co_return E_RequestEvaluationFailed;
                 }
             }
             else

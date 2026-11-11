@@ -8,10 +8,20 @@
 //#include "mesh_pipeline/mesh_pipeline.hxx"
 #include "asset_font.hxx"
 #include "asset_image.hxx"
+#include "asset_mesh.hxx"
 #include "pipeline_ui/ip_ui_asset.hxx"
 
 namespace ice
 {
+
+    static void asset_category_definitions(
+        ice::AssetCategoryArchive& asset_category_archive,
+        ice::ModuleQuery const& module_query
+    ) noexcept
+    {
+        ice::asset_category_image_definition(asset_category_archive, module_query);
+        ice::asset_category_mesh_definition(asset_category_archive, module_query);
+    }
 
     struct IceShardPipelinesModule : ice::Module<IceShardPipelinesModule>
     {
@@ -28,7 +38,7 @@ namespace ice
 
     void IceShardPipelinesModule::v1_archive_api(ice::detail::asset_system::v1::AssetArchiveAPI& api) noexcept
     {
-        api.fn_register_categories = ice::asset_category_image_definition;
+        api.fn_register_categories = ice::asset_category_definitions;
     }
 
 } // namespace ice

@@ -14,6 +14,7 @@ namespace ice::render::vk
 
     auto create_vulkan_driver(ice::Allocator& alloc) noexcept -> ice::render::RenderDriver*
     {
+        IPT_ZONE_SCOPED;
         ice::UniquePtr<VulkanAllocator> vk_alloc = ice::make_unique<VulkanAllocator>(alloc, alloc);
 
         VkApplicationInfo app_info{ VK_STRUCTURE_TYPE_APPLICATION_INFO };
@@ -30,7 +31,13 @@ namespace ice::render::vk
         ice::u32 extension_count = 0;
         extensions |= extensions_gather_names(names, extension_count, ExtensionTarget::InstanceExtension);
         ICE_ASSERT_CORE(ice::has_all(extensions, Extension::VkI_Surface));
-        ICE_ASSERT_CORE(ice::has_any(extensions, Extension::VkI_AndroidSurface | Extension::VkI_Win32Surface));
+#if ISP_WINDOWS
+        ICE_ASSERT_CORE(ice::has_any(extensions, Extension::VkI_Win32Surface));
+#elif ISP_ANDROID
+        ICE_ASSERT_CORE(ice::has_any(extensions, Extension::VkI_AndroidSurface));
+#elif ISP_LINUX
+        ICE_ASSERT_CORE(ice::has_any(extensions, Extension::VkI_WaylandSurface | Extension::VkI_XLibSurface));
+#endif
 
         VkInstanceCreateInfo instance_create_info{ VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
         instance_create_info.flags = 0;

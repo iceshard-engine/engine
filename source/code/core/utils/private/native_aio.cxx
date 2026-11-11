@@ -3,6 +3,7 @@
 
 #include "native_aio.hxx"
 #include <ice/assert.hxx>
+#include <ice/semaphore.hxx>
 
 namespace ice::native_aio
 {
@@ -205,7 +206,7 @@ namespace ice::native_aio
             &bytes,
             &key,
             &overlapped,
-            limits.timeout_ms
+            limits.timeout.value
         ) != FALSE;
 
         DWORD const last_error = GetLastError();
@@ -241,14 +242,15 @@ namespace ice::native_aio
         ice::native_aio::AIOPortInfo const& info
     ) noexcept -> ice::native_aio::AIOPort
     {
-        AIOPortInternal* result = alloc.create<AIOPortInternal>(alloc);
-        result->_worker_limit = std::max(info.worker_limit, 1u);
-
-        if (sem_init(&result->_semaphore, 0 /*thread shared unnamed-semaphore*/, 0 /*start at 0*/) != 0)
+        ice::Semaphore semaphore = ice::create_semaphore(alloc, 0);
+        if (semaphore == nullptr)
         {
-            alloc.destroy(result);
             return nullptr;
         }
+
+        AIOPortInternal* result = alloc.create<AIOPortInternal>(alloc);
+        result->_worker_limit = std::max(info.worker_limit, 1u);
+        result->_semaphore = ice::move(semaphore);
         return result;
     }
 
@@ -266,7 +268,7 @@ namespace ice::native_aio
     {
         if (port != nullptr)
         {
-            sem_destroy(&port->_semaphore);
+            port->_semaphore.reset();
             port->_allocator.destroy(port);
         }
     }
@@ -295,6 +297,7 @@ namespace ice::native_aio
         ice::Memory memory
     ) noexcept -> ice::native_file::FileRequestStatus
     {
+        IPT_ZONE_SCOPED;
         ICE_ASSERT_CORE(memory.location != nullptr);
         AIORequestInternal& internal = reinterpret_cast<AIORequestInternal&>(request);
         internal._next = nullptr;
@@ -306,7 +309,7 @@ namespace ice::native_aio
         request._port->_requests.push_back(ice::addressof(internal));
 
         // Increment the semaphore
-        sem_post(&request._port->_semaphore);
+        request._port->_semaphore->post();
         return ice::native_file::FileRequestStatus::Pending;
     }
 
@@ -340,7 +343,7 @@ namespace ice::native_aio
         request._port->_requests.push_back(ice::addressof(internal));
 
         // Increment the semaphore
-        sem_post(&request._port->_semaphore);
+        request._port->_semaphore->post();
         return ice::native_file::FileRequestStatus::Pending;
     }
 
@@ -352,20 +355,11 @@ namespace ice::native_aio
     ) noexcept
     {
         ICE_ASSERT_CORE(port);
-
-        timespec timeval;
-        if (clock_gettime(CLOCK_REALTIME, &timeval) != 0)
+        if (port->_semaphore == nullptr)
         {
             return false;
         }
-
-        // Set seconds to wait
-        timeval.tv_sec += limits.timeout_ms / 1000;
-        limits.timeout_ms -= timeval.tv_sec * 1000;
-        // Set remaining to wait
-        timeval.tv_nsec += limits.timeout_ms * 1000 * 1000;
-
-        if (sem_timedwait(&port->_semaphore, &timeval))
+        if (port->_semaphore->wait(limits.timeout) == false)
         {
             return false;
         }
@@ -373,10 +367,12 @@ namespace ice::native_aio
         AIORequestInternal* internal = port->_requests.take_front();
         if (internal)
         {
+            IPT_ZONE_SCOPED;
             out_request = reinterpret_cast<AIORequest const*>(internal);
 
             if (internal->request_type == 1)
             {
+                IPT_ZONE_SCOPED_NAMED("pread");
                 // TODO: Handle sizes / offsets above 4gb
                 ssize_t const bytes_read = pread(
                     internal->native_file_handle,
@@ -391,6 +387,7 @@ namespace ice::native_aio
             }
             else
             {
+                IPT_ZONE_SCOPED_NAMED("pwrite");
                 ssize_t const bytes_written = pwrite(
                     internal->native_file_handle,
                     internal->data_location,
@@ -405,8 +402,10 @@ namespace ice::native_aio
         }
         else
         {
+            // TODO: Make a debug message?
+            IPT_MESSAGE(D, "missed AIO request");
             // Repost the semaphore, because we missed a request.
-            sem_post(&port->_semaphore);
+            port->_semaphore->post();
         }
         return out_size > 0_B;
     }
@@ -496,7 +495,7 @@ namespace ice::native_aio
         ice::usize& out_size
     ) noexcept
     {
-        DWORD result = WaitForSingleObject(port->_semaphore, limits.timeout_ms);
+        DWORD result = WaitForSingleObject(port->_semaphore, limits.timeout.value);
         if (result == ERROR_TIMEOUT)
         {
             return false;
@@ -555,8 +554,8 @@ namespace ice::native_aio
             // TODO: Allow different requests
             bool const iocompleted = aio_file_await_request(port, limits, request, bytes);
 
-            // After the first successful request we will timeout on the next one immediatly if nothing else remains to be done.
-            limits.timeout_ms = 0;
+            // After the first successful request we will timeout on the next one immediately if nothing else remains to be done.
+            limits.timeout = 0_Tms;
 
             if (iocompleted)
             {

@@ -56,7 +56,6 @@ namespace ice
                 native_filepath.push_back(ISP_PATH_LITERAL(".isrm"));
             }
 
-            IPT_MESSAGE_STR(filepath);
             ice::Expected<ice::native_file::File> handle = ice::native_file::open_file(aioport, native_filepath);
             if (handle)
             {
@@ -207,6 +206,7 @@ namespace ice
         ice::usize const metaoffset = ice::align_to(_datasize, ice::ualign::b_8).value;
         if (memory.location == nullptr)
         {
+            IPT_MESSAGE(T, ice::String{_origin_path});
             memory = alloc.allocate(metaoffset + _metasize);
 
             ice::Memory targetmem = memory;

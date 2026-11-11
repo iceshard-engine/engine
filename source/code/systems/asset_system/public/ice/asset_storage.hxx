@@ -57,7 +57,7 @@ namespace ice
         virtual auto request(
             ice::Asset const& entry,
             ice::AssetState requested_state
-        ) noexcept -> ice::Task<ice::Data> = 0;
+        ) noexcept -> ice::TaskExpected<ice::Data> = 0;
 
         virtual auto aquire_request(
             ice::AssetCategory_Arg category,

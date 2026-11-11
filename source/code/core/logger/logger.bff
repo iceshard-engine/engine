@@ -13,6 +13,7 @@
     [
         .Uses = {
             'i18n'
+            'math'
             'modules'
         }
     ]

@@ -101,7 +101,7 @@ namespace ice
     }
 
     auto params_process_with_responsefile(
-        ice::Params& params,
+        ice::Params const& params,
         ice::String response_file,
         std::string& out_cmdline
     ) noexcept -> ice::Result
@@ -127,9 +127,9 @@ namespace ice
             .alignment = ice::ualign::b_1
         };
 
-        ice::usize const dataread = ice::native_file::read_file(file, size_file, cmdline_mem);
+        ice::usize const data_read = ice::native_file::read_file(file, size_file, cmdline_mem);
         // Failed to read the whole response file.
-        if (dataread.value < cmdline.size())
+        if (data_read.value < cmdline.size())
         {
             return E_Fail;
         }
@@ -138,7 +138,11 @@ namespace ice
         return S_Ok;
     }
 
-    auto params_process(ice::Params& params, int argc, char const* const* argv) noexcept -> ice::i32
+    auto params_process(
+        ice::Params const& params,
+        int argc,
+        char const* const* argv
+    ) noexcept -> ice::Result
     {
         // Handle response files
         if (argc == 2 && argv[1][0] == '@')
@@ -147,30 +151,32 @@ namespace ice
             if (params_process_with_responsefile(params, ice::String{ argv[1] + 1 }, cmdline) == E_Fail)
             {
                 // TODO: Log the error once proper errors are defined
-                return 1;
+                return E_CommandLineInvalidResponseFile;
             }
 
             try
             {
-                (params->_app).parse(std::move(cmdline), false);
+                params->_app.parse(std::move(cmdline), false);
             }
             catch (const CLI::ParseError& e)
             {
-                return (params->_app).exit(e);
+                ice::i32 const exit_code = params->_app.exit(e);
+                return exit_code == 0 ? S_CommandLineHelpRequested : E_CommandLineInvalidParameter;
             };
         }
         else
         {
             try
             {
-                (params->_app).parse(argc, argv);
+                params->_app.parse(argc, argv);
             }
             catch (const CLI::ParseError& e)
             {
-                return (params->_app).exit(e);
+                ice::i32 const exit_code = params->_app.exit(e);
+                return exit_code == 0 ? S_CommandLineHelpRequested : E_CommandLineInvalidParameter;
             };
         }
-        return 0;
+        return S_Ok;
     }
 
     auto params_setup(CLI::Option* opt, ice::ParamDefinition const& definition, bool is_array_or_custom = false) noexcept

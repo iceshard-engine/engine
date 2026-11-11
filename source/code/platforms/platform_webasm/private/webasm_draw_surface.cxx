@@ -10,10 +10,22 @@ namespace ice::platform::webasm
 
     auto WebASM_DrawSurface::create(ice::platform::DrawSurfaceParams const& surface_params) noexcept -> ice::Result
     {
+        ice::vec2i canvas_dimensions = ice::vec2i(surface_params.dimensions);
+        if (canvas_dimensions.x == 0 || canvas_dimensions.y == 0)
+        {
+            ICE_LOG(
+                LogSeverity::Warning, LogTag::Core,
+                "Trying to create a draw surface with zero dimensions."
+                "\nFalling back to default values: 1024 x 756."
+            );
+            canvas_dimensions.x = 1024;
+            canvas_dimensions.y = 756;
+        }
+
         int const result = emscripten_set_canvas_element_size(
             "#canvas",
-            static_cast<i32>(surface_params.dimensions.x),
-            static_cast<i32>(surface_params.dimensions.y)
+            canvas_dimensions.x,
+            canvas_dimensions.y
         );
         _initialized = result == EMSCRIPTEN_RESULT_SUCCESS;
 

@@ -15,7 +15,12 @@ namespace ice
         using TypeTag = ice::StrongNumeric;
         using base_type = std::conditional_t<ice::build::is_x64, ice::i64, ice::i32>;
 
-        constexpr auto to_usize() const noexcept;
+        //! \returns Value as 'usize' and clamps the value to [0, <max>] if necessary.
+        constexpr auto to_usize() const noexcept -> ice::usize;
+
+        //! \returns Value as 'usize' without clamping the value.
+        //! \note This function may return a massive value if it's value is below 0.
+        constexpr auto to_usize_noclamp() const noexcept -> ice::usize;
 
         base_type value;
     };
@@ -81,9 +86,18 @@ namespace ice
 
     // EXPLICIT OPERATORS
 
-    constexpr auto isize::to_usize() const noexcept
+    constexpr auto isize::to_usize() const noexcept -> ice::usize
     {
-        return ice::usize{ static_cast<ice::usize::base_type>(value) };
+        if (value < 0)
+        {
+            return {};
+        }
+        return to_usize_noclamp();
+    }
+
+    constexpr auto isize::to_usize_noclamp() const noexcept -> ice::usize
+    {
+        return { static_cast<ice::usize::base_type>(value) };
     }
 
     constexpr usize::operator isize() const noexcept

@@ -4,6 +4,7 @@
 #pragma once
 #include <ice/render/render_declarations.hxx>
 #include <ice/engine_types.hxx>
+#include <ice/task_scheduler.hxx>
 #include <ice/task_stage.hxx>
 
 namespace ice::gfx
@@ -23,7 +24,7 @@ namespace ice::gfx
 
     struct GfxFrameStages
     {
-        ice::TaskScheduler& scheduler;
+        ice::TaskScheduler scheduler;
         ice::TaskStage<ice::render::CommandBuffer> frame_transfer;
         ice::TaskStage<> frame_end;
     };

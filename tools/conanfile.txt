@@ -1,6 +1,6 @@
 [requires]
 fastbuild-installer/1.18@iceshard/stable
-ice-build-tools/1.13.2@iceshard/stable
+ice-build-tools/1.13.3@iceshard/stable
 
 [generators]
 VirtualRunEnv

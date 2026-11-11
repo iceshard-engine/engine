@@ -17,6 +17,7 @@ namespace ice
         Info,
         Verbose,
         Debug,
+        Trace,
 
         None = 0x0,
         All = 0xffff'ffff

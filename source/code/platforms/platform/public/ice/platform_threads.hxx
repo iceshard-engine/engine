@@ -10,7 +10,7 @@
 namespace ice::platform
 {
 
-    static constexpr ice::ShardID Shard_ThreadPoolSize = "platform/threads/thread-pool-size`ice::u32"_shardid;
+    static constexpr ice::ShardID PlatformParam_ThreadPoolSize = "platform/threads/thread-pool-size`ice::u32"_shardid;
 
     //! \brief Provides access to specific platform thread schedulers.
     struct Threads

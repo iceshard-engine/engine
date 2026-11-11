@@ -30,16 +30,16 @@ namespace ice
         ) const noexcept -> ice::AssetState;
 
         void set_result_data(
-            ice::Allocator& alloc,
+            ice::Allocator& data_alloc,
             ice::AssetState min_state,
             ice::Memory metadata,
             ice::Memory data
         ) noexcept;
 
-        void set_result_data(ice::Allocator& alloc, ice::AssetState state, ice::AssetResolveData const& resolved_data) noexcept;
-        void set_result_data(ice::Allocator& alloc, ice::AssetState state, ice::Memory data) noexcept;
+        void set_result_data(ice::Allocator& data_alloc, ice::AssetState state, ice::AssetResolveData const& resolved_data) noexcept;
+        void set_result_data(ice::Allocator& data_alloc, ice::AssetState state, ice::Memory data) noexcept;
         void set_result_data(ice::AssetState state, ice::Data data) noexcept;
-
+        void promote_to_loaded() noexcept;
 
         ice::AssetState const target_state;
         ice::Allocator& alloc;
@@ -147,42 +147,48 @@ namespace ice
     }
 
     inline void AssetStateTransaction::set_result_data(
-        ice::Allocator& dataalloc,
+        ice::Allocator& data_alloc,
         ice::AssetState min_state,
         ice::Memory metadata,
         ice::Memory data
     ) noexcept
     {
-        ice::Config const meta = ice::config::from_data(ice::data_view(metadata));
-        ice::AssetState const state = calculate_state(min_state, meta);
+        ice::AssetState state = min_state;
+        if (metadata.location != nullptr)
+        {
+            ice::Config const meta = ice::config::from_data(ice::data_view(metadata));
+            state = calculate_state(min_state, meta);
 
-        // Create new metadata entry and assign as next
-        ice::UniquePtr<ice::AssetData> entry_meta = ice::create_asset_data_entry(alloc, state, dataalloc, metadata, AssetDataFlags::Metadata);
-        entry_meta->_next = ice::move(asset._data);
+            // Create new metadata entry and assign as next
+            ice::UniquePtr<ice::AssetData> entry_meta = ice::create_asset_data_entry(alloc, state, data_alloc, metadata, AssetDataFlags::Metadata);
+            entry_meta->_next = ice::move(asset._data);
+            asset._data = ice::move(entry_meta);
+        }
 
         // Set the asset data and point to the meta entry
-        asset._data = ice::create_asset_data_entry(alloc, state, dataalloc, data);
-        asset._data->_next = ice::move(entry_meta);
-    }
-
-    inline void AssetStateTransaction::set_result_data(
-        ice::Allocator& dataalloc,
-        ice::AssetState state,
-        ice::AssetResolveData const& resolved_data
-    ) noexcept
-    {
-        ice::UniquePtr<ice::AssetData> entry_data = ice::create_asset_data_entry(alloc, state, dataalloc, resolved_data.memory);
+        ice::UniquePtr<ice::AssetData> entry_data = ice::create_asset_data_entry(alloc, state, data_alloc, data);
         entry_data->_next = ice::move(asset._data);
         asset._data = ice::move(entry_data);
     }
 
     inline void AssetStateTransaction::set_result_data(
-        ice::Allocator& dataalloc,
+        ice::Allocator& data_alloc,
+        ice::AssetState state,
+        ice::AssetResolveData const& resolved_data
+    ) noexcept
+    {
+        ice::UniquePtr<ice::AssetData> entry_data = ice::create_asset_data_entry(alloc, state, data_alloc, resolved_data.memory);
+        entry_data->_next = ice::move(asset._data);
+        asset._data = ice::move(entry_data);
+    }
+
+    inline void AssetStateTransaction::set_result_data(
+        ice::Allocator& data_alloc,
         ice::AssetState state,
         ice::Memory memory
     ) noexcept
     {
-        ice::UniquePtr<ice::AssetData> entry_data = ice::create_asset_data_entry(alloc, state, dataalloc, memory);
+        ice::UniquePtr<ice::AssetData> entry_data = ice::create_asset_data_entry(alloc, state, data_alloc, memory);
         entry_data->_next = ice::move(asset._data);
         asset._data = ice::move(entry_data);
     }
@@ -195,6 +201,12 @@ namespace ice
         ice::UniquePtr<ice::AssetData> entry_data = ice::create_asset_data_entry(alloc, state, data);
         entry_data->_next = ice::move(asset._data);
         asset._data = ice::move(entry_data);
+    }
+
+    inline void AssetStateTransaction::promote_to_loaded() noexcept
+    {
+        ICE_ASSERT_CORE(asset._data->_state == AssetState::Baked);
+        asset._data->_state = AssetState::Loaded;
     }
 
 } // namespace ice

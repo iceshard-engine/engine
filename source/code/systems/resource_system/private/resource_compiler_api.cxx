@@ -75,28 +75,17 @@ namespace ice::api::resource_compiler::v1
     auto fn_finalize_default(
         ice::ResourceCompilerCtx& ctx,
         ice::ResourceHandle const& resource_handle,
-        ice::Span<ice::ResourceCompilerResult const> compiled_sources,
         ice::Span<ice::URI const> dependencies,
+        ice::Span<ice::ResourceCompilerResult> compiled_sources,
         ice::Allocator& result_alloc
     ) noexcept -> ice::Memory
     {
-        ice::usize total_size = 0_B;
-        for (ice::ResourceCompilerResult const& source : compiled_sources)
-        {
-            total_size += source.result.size;
-        }
+        // If we have less that 1, that means compilation actually failed, else what are we doing here?
+        // If we have more than 1, then we need to provide our own custom finalizer, else how do we access the data?
+        ICE_ASSERT_CORE(compiled_sources.size() == 1);
 
-        ice::Memory const result = result_alloc.allocate(total_size);
-
-        ice::Memory copytarget = result;
-        for (ice::ResourceCompilerResult const& source : compiled_sources)
-        {
-            // We copy the data as-is in the default implementation.
-            ice::memcpy(copytarget, ice::data_view(source.result));
-            copytarget = ice::ptr_add(copytarget, source.result.size);
-        }
-
-        return result;
+        // Move the allocated memory away from the compiled source, we don't want it to be deallocated.
+        return ice::exchange(compiled_sources[0].result, {});
     }
 
 } // namespace ice::api::resource_compiler::v1

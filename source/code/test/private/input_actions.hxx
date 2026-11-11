@@ -16,7 +16,7 @@ namespace ice
         , public ice::InterfaceSelectorOf<ice::InputActionsTrait, ice::TraitDevUI>
     {
     public:
-        InputActionsTrait(ice::TraitContext& context, ice::Allocator& alloc) noexcept;
+        InputActionsTrait(ice::Allocator& alloc, ice::TraitContext& context) noexcept;
 
         auto activate(ice::WorldStateParams const& world_update) noexcept -> ice::Task<> override;
         auto deactivate(ice::WorldStateParams const& world_update) noexcept -> ice::Task<> override;

@@ -83,6 +83,8 @@ struct ice::app::Config
     ice::Allocator& alloc;
     ice::String app_name = "Test App";
 
+    ice::vec2u initial_surface_dimensions = {};
+
     struct DeveloperDirectories
     {
         explicit DeveloperDirectories(ice::Allocator& alloc) noexcept
@@ -153,7 +155,7 @@ struct ice::app::State
         ice::platform::query_api(platform.threads);
         ice::platform::query_api(platform.render_surface);
 
-        ResourceTrackerCreateInfo const resource_info{
+        constexpr ResourceTrackerCreateInfo resource_info{
             .predicted_resource_count = 10000,
             .io_dedicated_threads = ice::build::is_webapp ? 0 : 1,
             .flags_io_complete = ice::TaskFlags{ },
@@ -216,19 +218,22 @@ struct ice::app::Runtime
     bool resize_handled = true;
 
     explicit Runtime(ice::Allocator& alloc) noexcept
-        : alloc{ alloc }
-        , render_alloc{ alloc, "renderer" }
-        , runtime_alloc{ alloc, "runtime" }
-        , app_alloc{ alloc, "application" }
-        , main_scheduler{ main_queue }
-        , runner{ }
-        , frame{ }
-        , gfx_runner{ }
-        , input_tracker{ }
-        , input_events{ runtime_alloc }
-        , window_surface{ }
+        : alloc{alloc}
+        , render_alloc{alloc, "renderer"}
+        , runtime_alloc{alloc, "runtime"}
+        , app_alloc{alloc, "application"}
+        , main_scheduler{main_queue}
+        , runner{}
+        , frame{}
+        , gfx_runner{}
+        , input_tracker{}
+        , input_events{runtime_alloc}
+        , window_surface{}
+        , render_driver{nullptr}
+        , clock{}
+        , game_clock{}
         , frames{}
-        , previous{ frames + 1 }
+        , previous{frames + 1}
     {
         frames[0].next = &frames[1];
         frames[1].next = &frames[0];
@@ -246,7 +251,7 @@ void ice_init(
     using ice::platform::FeatureFlags;
 
     ice::Shard const platform_params[]{
-        ice::platform::Shard_StorageAppName | "IceShard"
+        ice::platform::PlatformParam_StorageAppName | "IceShard"
     };
     ice::Result const res = ice::platform::initialize_with_allocator(
         alloc,
@@ -258,28 +263,30 @@ void ice_init(
     );
     ICE_ASSERT(res == true, "Failed to initialize platform!");
 
-    factories.factory_config = Factories::create_default<ice::app::Config>();
     factories.factory_state = Factories::create_default<ice::app::State>();
     factories.factory_runtime = Factories::create_default<ice::app::Runtime>();
 }
 
-void ice_args(
+void ice_configure(
     ice::Allocator& alloc,
     ice::Params& params,
-    ice::app::Config& config
+    ice::UniquePtr<ice::app::Config>& out_config
 ) noexcept
 {
     IPT_ZONE_SCOPED;
+    out_config = ice::app::Factories::create_default_object<ice::app::Config>(alloc);
 }
 
 static auto ice_create_render_surface(
     ice::platform::DrawSurface& draw_surface,
-    ice::render::RenderDriver& render_driver
+    ice::render::RenderDriver& render_driver,
+    ice::framework::Config const& config
 ) noexcept -> ice::render::RenderSurface*
 {
-    constexpr ice::platform::DrawSurfaceParams surface_params{
+    IPT_ZONE_SCOPED;
+    ice::platform::DrawSurfaceParams const surface_params{
         .driver = ice::render::RenderDriverAPI::Vulkan,
-        .dimensions = { 1024, 760 },
+        .dimensions = config.initial_surface_dimensions,
     };
 
     ice::Result const result = draw_surface.create(surface_params);
@@ -320,6 +327,7 @@ auto ice_setup(
         return ice::app::E_FailedApplicationSetup;
     }
 
+    // IPT_MESSAGE("requesting access to native storage");
     ice::platform::StoragePaths* storage = nullptr;
     ice::platform::query_api(storage);
     ICE_ASSERT_CORE(storage != nullptr);
@@ -348,6 +356,7 @@ auto ice_setup(
         resource_paths.push_back(storage->data_locations());
     }
 
+    // IPT_MESSAGE("initializing game config");
     ice::framework::Config game_config{
         .module_dir = dylib_path,
         .resource_dirs = resource_paths
@@ -358,6 +367,7 @@ auto ice_setup(
     // There are no modules on the webapp platform
     if constexpr(ice::build::is_webapp == false)
     {
+        // IPT_MESSAGE("initializing dynamic modules");
         state.resources->attach_provider(
             ice::create_resource_provider_dlls(
                 state.resources_alloc, game_config.module_dir
@@ -366,8 +376,16 @@ auto ice_setup(
     }
     state.resources->sync_resources();
 
-    if (ice::build::is_debug || ice::build::is_develop)
+    // Load pipelines module to get access to all supported resource types
     {
+        ice::HeapString<> const pipelines_module = ice::resolve_dynlib_path(*state.resources, alloc, "iceshard_pipelines");
+        bool const loaded = state.modules->load_module(state.modules_alloc, pipelines_module);
+        ICE_LOG_IF(loaded, ice::LogSeverity::Info, ice::LogTag::Engine, "Loaded resource pipelines library");
+    }
+
+    if constexpr (ice::build::is_debug || ice::build::is_develop)
+    {
+        // IPT_MESSAGE("loading devui (imgui) module");
         ice::HeapString<> imgui_module = ice::resolve_dynlib_path(*state.resources, alloc, "imgui_module");
         state.modules->load_module(state.modules_alloc, imgui_module);
 
@@ -375,6 +393,7 @@ auto ice_setup(
     }
 
     // Load resources
+    // IPT_MESSAGE("initializing game resource provider");
     state.resources->attach_provider(
         ice::create_resource_provider(
             state.resources_alloc,
@@ -382,18 +401,20 @@ auto ice_setup(
             ice::build::current_platform == ice::build::System::WebApp
                 ? nullptr
                 : &state.platform.threads->threadpool(),
-            state.platform.threads->aio_port()
+            state.platform.threads->aio_port(),
+            "engine"
         )
     );
 
+    IPT_MESSAGE(I, "synchronizing resources");
     state.resources->sync_resources();
 
     if constexpr (ice::build::is_android || ice::build::is_windows)
     {
         ice::URI constexpr packs[]{ "urn:data.hsc"_uri, "urn:shaders.hsc"_uri };
-        for (ice::URI const& packuri : packs)
+        for (ice::URI const& pack_uri : packs)
         {
-            auto shaders_pak = state.resources->find_resource(packuri);
+            auto shaders_pak = state.resources->find_resource(pack_uri);
             if (shaders_pak)
             {
                 ICE_ASSERT(shaders_pak != nullptr, "Failed to locate shader pack!");
@@ -411,12 +432,14 @@ auto ice_setup(
     }
 
     // Load all available strings and set the default language.
+    // IPT_MESSAGE("initializing text localizations");
     state.i18ndb->load_available_languages();
     state.i18ndb->set_default_language("en");
 
     // Run game setup
     ice::UniquePtr<ice::ecs::ArchetypeIndex> archetypes = ice::make_unique<ice::ecs::ArchetypeIndex>(state.alloc, state.alloc);
 
+    // IPT_MESSAGE("executing game setup");
     ice::framework::State const framework_state{
         .modules = *state.modules,
         .resources = *state.resources,
@@ -424,8 +447,8 @@ auto ice_setup(
     };
     state.game->on_setup(framework_state);
 
-    // Load everything to resume the game.
-    ice::HeapString<> engine_module = ice::resolve_dynlib_path(*state.resources, state.alloc, "iceshard");
+    // IPT_MESSAGE("loading IceShard engine module");
+    const ice::HeapString<> engine_module = ice::resolve_dynlib_path(*state.resources, state.alloc, "iceshard");
 
     // TODO: Add another build constant to check for "Monolith" builds.
     if constexpr (ice::build::is_webapp == false)
@@ -442,6 +465,7 @@ auto ice_setup(
         .action_stack = ice::create_input_action_stack(alloc, "")
     };
     {
+        // IPT_MESSAGE("initializing asset storage module");
         ice::UniquePtr<ice::AssetCategoryArchive> asset_categories = ice::create_asset_category_archive(state.engine_alloc);
         ice::load_asset_category_definitions(state.engine_alloc, *state.modules, *asset_categories);
         ice::AssetStorageCreateInfo const asset_storage_info{
@@ -453,15 +477,18 @@ auto ice_setup(
     }
 
     {
+        // IPT_MESSAGE("initializing world traits");
         engine_create_info.traits = ice::create_default_trait_archive(state.engine_alloc, *engine_create_info.archetypes, *engine_create_info.states);
         ice::load_trait_descriptions(state.engine_alloc, *state.modules, *engine_create_info.traits);
     }
 
+    // IPT_MESSAGE("creating engine instance");
     state.engine = ice::create_engine(state.engine_alloc, *state.modules, ice::move(engine_create_info));
     if (state.engine == nullptr)
     {
         return ice::framework::E_FailedCreateEngineObject;
     }
+    // IPT_MESSAGE("creating renderer");
     state.renderer = ice::render::create_render_driver(alloc, *state.modules);
     if (state.renderer == nullptr)
     {
@@ -473,15 +500,17 @@ auto ice_setup(
         return ice::app::E_FailedApplicationSetup;
     }
 
+    // IPT_MESSAGE("creating render surface");
     state.render_surface = ice_create_render_surface(
         *state.platform.render_surface,
-        *state.renderer
+        *state.renderer,
+        game_config
     );
 
     return ice::app::S_ApplicationSetupPending;
 }
 
-auto ice_game_frame(
+static auto ice_game_frame(
     ice::app::Runtime& runtime,
     ice::app::State const& state,
     ice::EngineRunner& logic,
@@ -520,7 +549,7 @@ auto ice_resume(
                 .name = "default"_sid,
                 .flags = ice::render::QueueFlags::Graphics | ice::render::QueueFlags::Present
             },
-            // TODO: Implement a proper implementation for an optional trasfer queue
+            // TODO: Implement a proper implementation for an optional transfer queue
             // ice::gfx::GfxQueueDefinition {
             //     .name = "transfer"_sid,
             //     .flags = ice::render::QueueFlags::Transfer
@@ -559,7 +588,7 @@ auto ice_resume(
     return ice::app::S_ApplicationUpdate;
 }
 
-void ice_process_input_events(ice::Span<ice::input::InputEvent const> events, ice::ShardContainer& out_shards) noexcept
+static void ice_process_input_events(ice::Span<ice::input::InputEvent const> events, ice::ShardContainer& out_shards) noexcept
 {
     for (ice::input::InputEvent const input_event : events)
     {
@@ -585,13 +614,13 @@ auto ice_game_frame(
     ice::clock::update(runtime.game_clock);
 
     ice::UniquePtr<ice::EngineFrame> new_frame = co_await logic.aquire_frame();
-    ICE_ASSERT(new_frame != nullptr, "Failed to aquire next frame!");
+    ICE_ASSERT(new_frame != nullptr, "Failed to acquire next frame!");
 
     // Push system events
     new_frame->shards().push_back(system_events);
 
     // Push previous frame events
-    //   Also runs other logic that should be done without interfeerence from
+    //   Also runs other logic that should be done without interference from
     //   game systems and logic
     co_await runtime.runner->pre_update(new_frame->shards());
 
@@ -666,7 +695,7 @@ auto ice_update(
         runtime.gfx_runner->update_rendergraph(state.game->rendergraph(runtime.gfx_runner->context()));
     }
 
-    // Since the frame updates the values we are safe to access them any time. They won't change until a new frame is awaited, and awaitng frames is happening on the same thread.
+    // Since the frame updates the values we are safe to access them any time. They won't change until a new frame is awaited, and awaiting frames is happening on the same thread.
     ice::ShardContainer const& system_events = state.platform.core->system_events();
 
     // Query platform events into the frame and input device handler.

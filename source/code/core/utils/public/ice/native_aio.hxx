@@ -2,6 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#include <ice/clock_types.hxx>
 #include <ice/string.hxx>
 
 namespace ice::native_aio
@@ -61,7 +62,7 @@ namespace ice::native_aio
 
     struct AIOProcessLimits
     {
-        ice::u32 timeout_ms = ice::u32_max;
+        ice::Tms timeout = ice::Tms{ice::u32_max};
         ice::u32 events_max = ice::u32_max;
     };
 

@@ -16,10 +16,14 @@
 namespace ice::platform::linux::sdl2
 {
 
-    Platform_LinuxSDL2::Platform_LinuxSDL2(ice::Allocator& alloc) noexcept
+    Platform_LinuxSDL2::Platform_LinuxSDL2(
+        ice::Allocator& alloc,
+        ice::Span<ice::Shard const> params
+    ) noexcept
         : _alloc{ alloc, "iceshard.platform-layer" }
         , _system_events{ _alloc }
         , _input_events{ _alloc }
+        , _window{ params }
     {
         _system_events.reserve(32);
         _input_events._events.reserve(512);
@@ -182,7 +186,7 @@ namespace ice::platform
         }
 
         // Initialize the global platform instance. We don't use the allocator so we don't leak this pointer.
-        core_feature = new (instance_buffer) linux::sdl2::Platform_LinuxSDL2{ alloc };
+        core_feature = new (instance_buffer) linux::sdl2::Platform_LinuxSDL2{ alloc, params };
         return S_Success;
     }
 

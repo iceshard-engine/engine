@@ -3,6 +3,7 @@
 
 #pragma once
 #include <ice/math/matrix.hxx>
+#include <ice/math/common.hxx>
 
 namespace ice::math
 {

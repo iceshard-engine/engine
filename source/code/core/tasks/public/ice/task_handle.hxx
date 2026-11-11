@@ -230,6 +230,99 @@ namespace ice
         }
     };
 
+
+    template<>
+    struct TaskInfoPromise<ice::ErrorCode> : public ice::TaskPromiseBase
+    {
+        ice::TaskInfo* _info;
+
+        TaskInfoPromise() noexcept = default;
+
+        template<typename... Args>
+        TaskInfoPromise(ice::TaskHandle& handle, Args const&...) noexcept
+            : _info{ new ice::TaskInfo{} }
+        {
+            if (handle._info)
+            {
+                handle._info->release();
+            }
+            handle._info = _info->aquire();
+        }
+
+        template<typename Class, typename... Args>
+        TaskInfoPromise(Class const&, ice::TaskHandle& handle, Args const&...) noexcept
+            : _info{ new ice::TaskInfo{} }
+        {
+            if (handle._info)
+            {
+                handle._info->release();
+            }
+            handle._info = _info->aquire();
+        }
+
+        ~TaskInfoPromise() noexcept
+        {
+            if (_info != nullptr)
+            {
+                if (_info->has_any(ice::TaskState::Canceled))
+                {
+                    _info->state.store(ice::TaskState::Canceled | ice::TaskState::Failed, std::memory_order_relaxed);
+                }
+                _info->release();
+            }
+        }
+
+        struct ExtendedFinalAwaitable : ice::TaskPromiseBase::FinalAwaitable
+        {
+            template<typename Promise>
+            inline auto await_suspend(ice::coroutine_handle<Promise> coro) noexcept
+            {
+                ice::TaskInfo* const info = coro.promise()._info;
+                if (info != nullptr)
+                {
+                    if (info->has_any(ice::TaskState::Canceled))
+                    {
+                        info->state.store(ice::TaskState::Succeeded | ice::TaskState::Canceled);
+                    }
+                    else
+                    {
+                        info->state.store(ice::TaskState::Succeeded);
+                    }
+                }
+
+                return ice::TaskPromiseBase::FinalAwaitable::template await_suspend<Promise>(coro);
+            }
+        };
+
+        struct InitialAwaitable
+        {
+            ice::TaskInfo* _info;
+
+            constexpr bool await_ready() const noexcept { return this->_info->has_any(ice::TaskState::Canceled); }
+
+            constexpr void await_suspend(ice::coroutine_handle<>) const noexcept { }
+
+            inline void await_resume() const noexcept
+            {
+                if (this->_info != nullptr)
+                {
+                    ICE_ASSERT_CORE(this->_info->has_any(ice::TaskState::Canceled) == false);
+                    this->_info->state.store(ice::TaskState::Running);
+                }
+            }
+        };
+
+        inline auto initial_suspend() const noexcept
+        {
+            return InitialAwaitable{ this->_info };
+        }
+
+        inline auto final_suspend() const noexcept
+        {
+            return ExtendedFinalAwaitable{ };
+        }
+    };
+
     struct TaskTokenBase
     {
         TaskTokenBase(ice::TaskHandle& handle) noexcept : _handle{ handle } { }

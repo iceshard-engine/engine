@@ -81,6 +81,14 @@ namespace ice::render
             ice::u32 buffer_size
         ) noexcept -> ice::render::Buffer = 0;
 
+        virtual auto create_buffer(
+            ice::render::BufferType buffer_type,
+            ice::usize size
+        ) noexcept -> ice::render::Buffer
+        {
+            return create_buffer(buffer_type, static_cast<ice::u32>(size.value));
+        }
+
         virtual void destroy_buffer(
             ice::render::Buffer buffer
         ) noexcept = 0;

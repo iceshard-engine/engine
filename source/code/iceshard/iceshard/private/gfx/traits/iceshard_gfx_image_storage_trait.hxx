@@ -2,6 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#include <ice/devui.hxx>
 #include <ice/hashmap.hxx>
 #include <ice/render/render_image.hxx>
 #include <ice/world/world_trait.hxx>
@@ -18,6 +19,11 @@ namespace ice::gfx
         ice::Asset asset;
         ice::render::Image image;
         bool released = false;
+
+#if ICE_WITH_DEVUI
+        ice::render::ImageInfo info;
+        bool image_preview = false;
+#endif
     };
 
     class Trait_GfxImageStorage final
@@ -27,7 +33,7 @@ namespace ice::gfx
         , public ice::InterfaceSelectorOf<Trait_GfxImageStorage, ice::TraitDevUI>
     {
     public: // Implementation of: ice::Trait
-        Trait_GfxImageStorage(ice::TraitContext& ctx, ice::Allocator& alloc) noexcept;
+        Trait_GfxImageStorage(ice::Allocator& alloc, ice::TraitContext& ctx) noexcept;
         ~Trait_GfxImageStorage() noexcept override = default;
 
     public: // Implementation of: ice::TraitDevUI

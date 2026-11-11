@@ -13,9 +13,13 @@
 #include "vk_fence.hxx"
 
 #include <ice/assert.hxx>
+#include <ice/sort.hxx>
 
 namespace ice::render::vk
 {
+
+    static constexpr VkFormat AcceptableSwapChainFormats[]{ VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM };
+    static constexpr VkColorSpaceKHR AcceptableSwapChainColorSpaces[]{ VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
 
     auto native_handle(CommandBuffer cmds) noexcept -> VkCommandBuffer;
     auto native_handle(Renderpass renderpass) noexcept -> VkRenderPass;
@@ -121,15 +125,19 @@ namespace ice::render::vk
         VkSurfaceFormatKHR selected_format = surface_formats.first();
         if constexpr (ice::build::is_linux)
         {
-            // If possible select UNORM istead of SRGB
+            // If possible select UNORM instead of SRGB
             for (VkSurfaceFormatKHR format : surface_formats)
             {
-                if (format.colorSpace == VK_COLORSPACE_SRGB_NONLINEAR_KHR
-                    && format.format == VK_FORMAT_R8G8B8A8_UNORM)
+                ice::u32 at = ice::u32_max;
+                if (ice::search(ice::Span{ AcceptableSwapChainFormats }, format.format, at) == false)
                 {
-                    selected_format = format;
-                    break;
+                    continue;
                 }
+                if (ice::search(ice::Span{ AcceptableSwapChainColorSpaces }, format.colorSpace, at) == false)
+                {
+                    continue;
+                }
+                selected_format = format;
             }
         }
 

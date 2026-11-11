@@ -56,8 +56,10 @@ namespace ice
 
     template<typename T> Span(ice::Span<T>&&) noexcept -> Span<T>;
     template<typename T> Span(ice::Span<T> const&) noexcept -> Span<T>;
-    template<typename T, ContainerLogic Logic, template<typename, ContainerLogic> typename Container> Span(Container<T, Logic> const&) noexcept -> Span<T>;
     template<typename T, ice::u64 Size> Span(T(&)[Size]) noexcept -> Span<T>;
+
+    template<typename T, ContainerLogic Logic, template<typename, ContainerLogic> typename Container>
+    Span(Container<T, Logic> const&) noexcept -> Span<T const>;
 
     template<typename Type, size_t Size>
     static constexpr auto make_span(std::array<Type, Size>& std_array) noexcept -> Span<Type>;

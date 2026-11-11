@@ -185,6 +185,12 @@ namespace ice
         ice::ResourceHandle const& resource_handle
     ) noexcept -> ice::Task<ice::ResourceResult>
     {
+        if (resource_handle.valid() == false)
+        {
+            ICE_LOG(LogSeverity::Error, LogTag::Engine, "Trying to load resource from 'null' handle");
+            co_return {};
+        }
+
         ice::TaskTransaction transaction;
         ice::ResourceLoadTransaction load_transaction{ resource_handle, transaction };
         if (co_await load_transaction == E_ResourceLoadNeeded)
@@ -357,6 +363,8 @@ namespace ice
         ice::ResourceFlags flags
     ) const noexcept -> ice::ResourceHandle
     {
+        IPT_ZONE_SCOPED;
+        IPT_ZONE_TEXT_STR(resource_urn.path());
         ICE_ASSERT(
             resource_urn.scheme() == ice::stringid_hash(Scheme_URN),
             "Invalid URI object. Expected resource name got [{}]",
@@ -380,6 +388,8 @@ namespace ice
         ice::ResourceFlags flags
     ) const noexcept -> ice::ResourceHandle
     {
+        IPT_ZONE_SCOPED;
+        IPT_ZONE_TEXT_STR(resource_uri.path());
         ice::ResourceHandle handle;
         ice::Resource const* resource = nullptr;
         ice::ResourceProvider const* provider = nullptr;

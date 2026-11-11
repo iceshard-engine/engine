@@ -199,7 +199,7 @@ namespace ice::devui
                 info->format = ImageFormat::UNORM_RGBA;
                 info->type = ImageType::Image2D;
                 info->usage = ImageUsageFlags::Sampled | ImageUsageFlags::TransferDst;
-                info->data = texmem.location;
+                info->data.set_from_pointer(texmem.location);
                 this->content = ice::data_view(_texdata);
             }
 
@@ -244,7 +244,7 @@ namespace ice::devui
     } // namespace detail
 
 
-    ImGuiTrait::ImGuiTrait(ice::TraitContext& ctx, ice::Allocator& alloc, ImGuiSystem& system) noexcept
+    ImGuiTrait::ImGuiTrait( ice::Allocator& alloc, ice::TraitContext& ctx, ImGuiSystem& system) noexcept
         : ice::Trait{ ctx }
         , ice::TraitDevUI{ {
             .category = "builtin.devui.strings/menu.category.engine-traits|Engine/Traits"_i18n,

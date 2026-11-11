@@ -1,6 +1,6 @@
 #!/bin/bash
 
-conan_profile='linux_x64_clang21'
+conan_profile='default'
 script_path="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 saved_cwd="$(pwd)"
 

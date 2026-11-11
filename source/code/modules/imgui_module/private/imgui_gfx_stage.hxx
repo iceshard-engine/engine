@@ -25,11 +25,11 @@ namespace ice::devui
             ice::gfx::GfxFrameStages& stages,
             ice::render::Renderpass renderpass,
             ice::u32 subpass
-        ) noexcept -> ice::Task<> override;
+        ) noexcept -> ice::TaskResult override;
 
         auto cleanup(
             ice::gfx::GfxContext& gfx
-        ) noexcept -> ice::Task<> override;
+        ) noexcept -> ice::TaskResult override;
 
         void update(
             ice::EngineFrame const& frame,

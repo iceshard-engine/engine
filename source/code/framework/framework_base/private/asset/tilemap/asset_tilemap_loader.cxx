@@ -62,7 +62,7 @@ namespace ice
 
             resolved_tilesets[idx] = tilemap->tilesets[idx];
             resolved_tilesets[idx].asset = ice::String{
-                reinterpret_cast<char const*>(ice::ptr_add(asset_tilemap, { tileset_asset_names_offset + offset })),
+                reinterpret_cast<char const*>(ice::ptr_add(asset_tilemap, ice::usize{ tileset_asset_names_offset + offset })),
                 lenght
             };
         }

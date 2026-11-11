@@ -367,7 +367,7 @@ namespace ice::render::vk
         {
         case PrimitiveTopology::LineStrip:
             return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
-        case PrimitiveTopology::LineStripWithAdjency:
+        case PrimitiveTopology::LineStripWithAdjacency:
             return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY;
         case PrimitiveTopology::TriangleList:
             return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;

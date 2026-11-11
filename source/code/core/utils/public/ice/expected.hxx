@@ -168,6 +168,8 @@ namespace ice
         }
 
         bool valid() const noexcept { return true; }
+        bool succeeded() const noexcept { return _value == S_Ok; }
+        bool failed() const noexcept { return _value == E_Fail; }
 
         auto value() const noexcept -> ice::ErrorCode
         {

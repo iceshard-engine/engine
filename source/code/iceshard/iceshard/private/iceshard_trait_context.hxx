@@ -25,6 +25,7 @@ namespace ice
 
         auto world() noexcept -> ice::World& override;
 
+        bool attach(ice::UniquePtr<ice::TraitAttachedObject> object) noexcept override;
         void send(ice::detail::TraitEvent event) noexcept override;
         void sync(ice::ShardContainer& out_shards) noexcept;
 
@@ -46,6 +47,7 @@ namespace ice
 
         ice::Array<ice::detail::TraitEvent> _events;
         ice::Array<ice::detail::TraitEvent> _events_expired;
+        ice::UniquePtr<ice::TraitAttachedObject> _attached_objects_list;
     };
 
 } // namespace ice

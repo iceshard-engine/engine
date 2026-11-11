@@ -20,6 +20,7 @@ namespace ice
     static constexpr ice::ErrorCode E_NullPointerData{ "E.0006:General:Passed 'Data{nullptr}' object to function expecting valid data." };
     static constexpr ice::ErrorCode E_NullPointerMemory{ "E.0007:General:Passed 'Memory{nullptr}' object to function expecting valid memory." };
     static constexpr ice::ErrorCode E_TaskCanceled{ "E.1001:Tasks:Task canceled" };
+    static constexpr ice::ErrorCode E_CriticalInternalError{ "E.1999:General:Critical internal error!" };
 
     // Aliases are comparable
     static_assert(S_Ok == S_Success);

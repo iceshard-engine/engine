@@ -203,7 +203,7 @@ namespace ice
             }
 
             // Move the free pointer by the given amount of bytes.
-            _free = ice::ptr_add(alloc_header, { alloc_header->allocated_size.value & detail::Constant_FreeMemoryMask });
+            _free = ice::ptr_add(alloc_header, ice::usize{ alloc_header->allocated_size.value & detail::Constant_FreeMemoryMask });
             if (ptr_distance(_free, _end) <= ice::size_of<mem::AllocationHeader>)
             {
                 _free = _begin;

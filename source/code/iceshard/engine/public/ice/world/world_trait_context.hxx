@@ -19,6 +19,33 @@ namespace ice
         virtual auto engine() const noexcept -> ice::Engine& = 0;
     };
 
+    class TraitAttachedObject
+    {
+    public:
+        virtual ~TraitAttachedObject() noexcept = default;
+
+        bool try_connect(ice::UniquePtr<ice::TraitAttachedObject>& object) noexcept;
+
+    private:
+        ice::UniquePtr<ice::TraitAttachedObject> _next;
+    };
+
+    inline bool TraitAttachedObject::try_connect(ice::UniquePtr<ice::TraitAttachedObject>& object) noexcept
+    {
+        // We allow the first attached object to try to connecto to a nullptr value.
+        if (object == nullptr)
+        {
+            return _next == nullptr;
+        }
+        // All other connections require that the connecting object has nothing set for _next
+        if (_next == nullptr)
+        {
+            _next = ice::move(object);
+            return true;
+        }
+        return false;
+    }
+
     class TraitContext
     {
     public:
@@ -27,6 +54,7 @@ namespace ice
         virtual auto tools() noexcept -> ice::ToolsContext* { return nullptr; }
         virtual auto world() noexcept -> ice::World& = 0;
 
+        virtual bool attach(ice::UniquePtr<ice::TraitAttachedObject> object) noexcept = 0;
         virtual void send(ice::detail::TraitEvent event) noexcept = 0;
 
         virtual auto checkpoint(ice::StringID id) noexcept -> ice::TaskCheckpointGate = 0;
@@ -52,7 +80,7 @@ namespace ice
         template<typename T, typename... Args>
         auto make_unique(ice::Allocator& alloc, Args&&... args) noexcept -> ice::UniquePtr<T>
         {
-            ice::UniquePtr<T> result = ice::make_unique<T>(alloc, *this, ice::forward<Args>(args)...);
+            ice::UniquePtr<T> result = ice::make_unique<T>(alloc, alloc, *this, ice::forward<Args>(args)...);
             if constexpr (std::derived_from<T, ice::InterfaceSelector>)
             {
                 this->register_interface_selector(result.get());
@@ -95,5 +123,20 @@ namespace ice
             ice::detail::trait_task_binding<MemberPtr, TaskType, DataType>(event, userdata)
         );
     }
+
+    namespace detail
+    {
+
+        template<typename Trait>
+        inline auto default_trait_factory(
+            ice::Allocator& alloc,
+            ice::TraitContext& context,
+            void* userdata
+        ) noexcept -> ice::UniquePtr<ice::Trait>
+        {
+            return context.make_unique<Trait>(alloc);
+        }
+
+    } // namespace detail
 
 } // namespace ice

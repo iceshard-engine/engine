@@ -28,7 +28,7 @@ namespace ice::gfx
         co_await final_thread;
     }
 
-    Trait_GfxShaderStorage::Trait_GfxShaderStorage(ice::TraitContext& ctx, ice::Allocator& alloc) noexcept
+    Trait_GfxShaderStorage::Trait_GfxShaderStorage(ice::Allocator& alloc, ice::TraitContext& ctx) noexcept
         : ice::Trait{ ctx }
         , ice::TraitDevUI{ {
             .category = "builtin.devui.strings/menu.category.engine-gfx|Engine/Gfx"_i18n,
@@ -60,7 +60,7 @@ namespace ice::gfx
             {
                 if (entry.asset.available(ice::AssetState::Raw))
                 {
-                    ice::Data const rawdata = ice::wait_for_result(entry.asset.data(ice::AssetState::Raw));
+                    ice::Data const rawdata = ice::wait_for_expected(entry.asset.data(ice::AssetState::Raw));
                     ImGui::TextUnformatted((char const*)rawdata.location,(char const*)rawdata.location + rawdata.size.value);
                     ImGui::Separator();
                 }

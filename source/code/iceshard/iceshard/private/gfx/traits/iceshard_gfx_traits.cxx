@@ -6,13 +6,15 @@
 #include <ice/world/world_trait_module.hxx>
 #include <ice/module.hxx>
 
+#include "iceshard_gfx_mesh_storage_trait.hxx"
+
 namespace ice::gfx
 {
 
     template<typename TraitType>
     static auto gfx_trait_factory(ice::Allocator& alloc, ice::TraitContext& ctx, void*) noexcept -> UniquePtr<ice::Trait>
     {
-        return ctx.make_unique<TraitType>(alloc, alloc);
+        return ctx.make_unique<TraitType>(alloc);
     }
 
     struct IceshardModule_GfxTraits : ice::Module<IceshardModule_GfxTraits>
@@ -21,6 +23,7 @@ namespace ice::gfx
         {
             archive.register_trait({ .name = ice::TraitID_GfxShaderStorage, .fn_factory = gfx_trait_factory<Trait_GfxShaderStorage> });
             archive.register_trait({ .name = ice::TraitID_GfxImageStorage, .fn_factory = gfx_trait_factory<Trait_GfxImageStorage> });
+            archive.register_trait({ .name = ice::TraitID_GfxMeshStorage, .fn_factory = gfx_trait_factory<Trait_GfxMeshStorage> });
             return true;
         }
 

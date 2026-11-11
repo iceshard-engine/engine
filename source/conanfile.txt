@@ -1,14 +1,13 @@
-
 [tool_requires]
 fastbuild-generator/1.0.0@iceshard/stable
 
 [requires]
 cli11/2.6.1@iceshard/stable
 fmt/12.2.0@iceshard/stable
-tracy/0.13.1@iceshard/stable
+tracy/0.14.1@iceshard/stable
 imgui/1.92.5-docking@iceshard/stable
-hailstorm/0.4.0@iceshard/stable
-# chipmunk2d/7.0.3+@iceshard/stable
+hailstorm/0.5.0@iceshard/stable
+box2d/3.1.1@iceshard/stable
 arctic/0.2.4@iceshard/stable
 
 rapidxml/1.13
@@ -21,7 +20,7 @@ vulkan-memory-allocator/3.0.1
 [requires-Windows-MSVC]
 catch2/3.12.0@iceshard/stable
 
-assimp/5.2.5@iceshard/stable
+assimp/6.0.5@iceshard/stable
 sdl2/2.32.10@iceshard/stable
 
 freetype/2.14.1@iceshard/stable
@@ -34,7 +33,7 @@ imguizmo/1.91.5@iceshard/stable
 [requires-Linux-Clang]
 catch2/3.12.0@iceshard/stable
 
-assimp/5.2.5@iceshard/stable
+assimp/6.0.5@iceshard/stable
 sdl2/2.32.10@iceshard/stable
 
 freetype/2.14.1@iceshard/stable

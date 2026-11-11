@@ -38,12 +38,17 @@ namespace ice::render::webgpu
         switch(topology)
         {
         case PrimitiveTopology::LineStrip: return WGPUPrimitiveTopology_LineStrip;
-        case PrimitiveTopology::LineStripWithAdjency: return WGPUPrimitiveTopology_LineList;
+        case PrimitiveTopology::LineStripWithAdjacency: return WGPUPrimitiveTopology_LineList;
         case PrimitiveTopology::TriangleList: return WGPUPrimitiveTopology_TriangleList;
         case PrimitiveTopology::TriangleStrip: return WGPUPrimitiveTopology_TriangleStrip;
-        case PrimitiveTopology::TriangleFan: // [[fallthrough]]
-        case PrimitiveTopology::PatchList: return WGPUPrimitiveTopology_Undefined;
+        case PrimitiveTopology::PatchList: return WGPUPrimitiveTopology_PointList;
+        // ReSharper disable once CppDeprecatedEntity
+        case PrimitiveTopology::TriangleFan:
+            ICE_LOG_WGPU(LogSeverity::Error, "'TriangleFan' topology is not supported on WebGPU targets.");
+        default:
+            ICE_LOG_WGPU(LogSeverity::Critical, "Received unknown primitive topology.");
         }
+        return WGPUPrimitiveTopology_Undefined;
     }
 
 } // namespace ice::render::webgpu

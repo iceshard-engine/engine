@@ -11,6 +11,7 @@
 #include <ice/shard_container.hxx>
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/devui_widget.hxx>
+#include <ice/engine_frame.hxx>
 
 namespace ice
 {
@@ -21,8 +22,8 @@ namespace ice
         Trait(ice::TraitContext& context) noexcept;
         virtual ~Trait() noexcept = default;
 
-        virtual auto activate(ice::WorldStateParams const& world_update) noexcept -> ice::Task<> { co_return; }
-        virtual auto deactivate(ice::WorldStateParams const& world_update) noexcept -> ice::Task<> { co_return; }
+        virtual auto activate(ice::WorldStateParams const& params) noexcept -> ice::Task<> { co_return; }
+        virtual auto deactivate(ice::WorldStateParams const& params) noexcept -> ice::Task<> { co_return; }
 
     public:
         static constexpr ice::TraitTaskType Logic = ice::TraitTaskType::Logic;
@@ -37,6 +38,9 @@ namespace ice
         void send(ice::ShardID shardid, ice::Asset handle, SendMode = SendMode::Default) noexcept;
         void send(ice::ShardID shardid, ice::ResourceHandle handle, SendMode = SendMode::Default) noexcept;
 
+        template<typename C, typename V>
+        void respond(ice::EngineFrame& frame, ice::ShardID shard_id,void(C::*method_ptr)(V const&)noexcept) noexcept;
+
         auto entities() noexcept -> ice::ecs::EntityIndex&;
         auto entity_operations() noexcept -> ice::ecs::EntityOperations&;
         auto entity_queries() noexcept -> ice::ecs::QueryStorage&;
@@ -50,6 +54,20 @@ namespace ice
     protected:
         ice::TraitContext& _context;
     };
+
+    template<typename C, typename V>
+    void Trait::respond(
+        ice::EngineFrame& frame,
+        ice::ShardID shard_id,
+        void(C::*method_ptr)(V const&)noexcept
+    ) noexcept
+    {
+        V value;
+        if (frame.shards().inspect_last(shard_id, value))
+        {
+            (static_cast<C*>(this)->*method_ptr)(value);
+        }
+    }
 
     class TraitDevUI : public ice::DevUIWidget
     {
@@ -69,5 +87,6 @@ namespace ice
 
     static constexpr ice::StringID TraitID_GfxImageStorage = "trait.gfx-image-storage"_sid;
     static constexpr ice::StringID TraitID_GfxShaderStorage = "trait.gfx-shader-storage"_sid;
+    static constexpr ice::StringID TraitID_GfxMeshStorage = "trait.gfx-mesh-storage"_sid;
 
 } // namespace ice

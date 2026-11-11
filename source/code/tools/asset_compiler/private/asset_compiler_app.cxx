@@ -367,15 +367,15 @@ public:
 
             if (ice::wait_for_result(resource_compiler->fn_build_metadata(ctx, res, *resource_tracker, results, dependencies, meta)) == false)
             {
-                ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Falied building metadata for {}.", final_asset_name);
+                ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Failed building metadata for {}.", final_asset_name);
                 return 1;
             }
 
             // Build the final asset object
-            ice::Memory const final_asset_data = resource_compiler->fn_finalize(ctx, res, results, dependencies, _allocator);
+            ice::Memory const final_asset_data = resource_compiler->fn_finalize(ctx, res, dependencies, results, _allocator);
             if (final_asset_data.location == nullptr)
             {
-                ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Falied finalizing asset data for {}.", final_asset_name);
+                ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Failed finalizing asset data for {}.", final_asset_name);
                 return 1;
             }
 

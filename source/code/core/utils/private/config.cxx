@@ -68,7 +68,7 @@ namespace ice
         Value const* config_values = root_value + 1;
 
         char const* config_strings = reinterpret_cast<char const*>(root_value + config_size);
-        void const* config_data = ice::ptr_add(root, { root_value->internal });
+        void const* config_data = ice::ptr_add(root, ice::usize{ root_value->internal });
 
         Config result;
         result._keys = config_keys;

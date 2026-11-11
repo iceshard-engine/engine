@@ -19,6 +19,7 @@ class TestGame : public Game
 public:
     TestGame(ice::Allocator& alloc) noexcept;
 
+    void on_config(ice::framework::Config& config) noexcept override;
     void on_setup(ice::framework::State const& state) noexcept override;
     void on_shutdown(ice::framework::State const& state) noexcept override;
 

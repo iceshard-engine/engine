@@ -3,6 +3,7 @@
 
 #pragma once
 #include <ice/asset_types.hxx>
+#include <ice/asset_errors.hxx>
 #include <ice/uri.hxx>
 
 namespace ice
@@ -62,9 +63,12 @@ namespace ice
         auto resource() const noexcept -> ice::Resource const*;
 
         auto preload(this ice::Asset self, ice::AssetState state) noexcept -> ice::Task<>;
-        auto data(this ice::Asset self, ice::AssetState state) noexcept -> ice::Task<ice::Data>;
+        auto data(this ice::Asset self, ice::AssetState state) noexcept -> ice::TaskExpected<ice::Data>;
 
-        auto operator[](this ice::Asset self, ice::AssetState state) noexcept -> ice::Task<ice::Data>;
+        auto operator[](this ice::Asset self, ice::AssetState state) noexcept -> ice::TaskExpected<ice::Data>;
+
+        template <typename T>
+        auto object(this ice::Asset self, ice::AssetState state = AssetState::Runtime) noexcept -> ice::TaskExpected<T const*>;
 
     public:
         auto start_transaction(
@@ -74,5 +78,21 @@ namespace ice
 
         void finish_transaction(ice::AssetStateTransaction& transaction) const noexcept;
     };
+
+    template<typename T>
+    auto Asset::object(this ice::Asset self, ice::AssetState state) noexcept -> ice::TaskExpected<T const*>
+    {
+        ice::Data data = co_await self[state];
+        if (data.location == nullptr)
+        {
+            ice::u8 const error_result_idx = std::to_underlying(state) - std::to_underlying(AssetState::Raw);
+            co_return E_AssetDataNotFound[error_result_idx];
+        }
+        else if (data.size != ice::size_of<T> || data.alignment < ice::align_of<T>)
+        {
+            co_return E_AssetInvalidObjectData;
+        }
+        co_return static_cast<T const*>(data.location);
+    }
 
 } // namespace ice

@@ -7,6 +7,8 @@
 namespace ice
 {
 
+    using TaskResult = ice::TaskExpected<ice::ErrorCode>;
+
     template<typename Result, typename ErrorType>
     struct TaskExpected final
     {
@@ -30,10 +32,8 @@ namespace ice
         inline auto valid() const noexcept;
 
         //! \returns The result value stored when task was successful.
-        inline auto result() & noexcept -> Result&;
-
-        //! \returns The result value stored when task was successful.
-        inline auto result() && noexcept -> Result&&;
+        template<typename Self>
+        inline auto result(this Self&& self) noexcept;
 
         //! \returns The error value stored when task has failed.
         inline auto error() const noexcept -> ErrorType;
@@ -189,17 +189,14 @@ namespace ice
     }
 
     template<typename Result, typename ErrorType>
-    inline auto TaskExpected<Result, ErrorType>::result() & noexcept -> Result&
+    template<typename Self>
+    auto TaskExpected<Result, ErrorType>::result(this Self&& self) noexcept
     {
-        ICE_ASSERT_CORE(this->_coroutine && this->_coroutine.promise()._info->has_any(TaskState::Succeeded));
-        return this->_coroutine.promise().result();
-    }
-
-    template<typename Result, typename ErrorType>
-    inline auto TaskExpected<Result, ErrorType>::result() && noexcept -> Result&&
-    {
-        ICE_ASSERT_CORE(this->_coroutine && this->_coroutine.promise()._info->has_any(TaskState::Succeeded));
-        return ice::move(this->_coroutine.promise().result());
+        ICE_ASSERT_CORE(self._coroutine && self._coroutine.promise()._info->has_any(TaskState::Succeeded));
+        if constexpr (std::is_void_v<Result> == false)
+        {
+            return ice::forward_like<Self>(self._coroutine.promise().result());
+        }
     }
 
     template<typename Result, typename ErrorType>
@@ -276,6 +273,11 @@ namespace ice
     inline auto TaskExpectedPromise<Result, ErrorType>::get_return_object() noexcept -> ice::TaskExpected<Result, ErrorType>
     {
         return ice::TaskExpected<Result, ErrorType>{ ice::coroutine_handle<ice::TaskExpectedPromise<Result, ErrorType>>::from_promise(*this) };
+    }
+
+    inline auto TaskExpectedPromise<ice::ErrorCode, ice::ErrorCode>::get_return_object() noexcept -> ice::TaskExpected<ice::ErrorCode>
+    {
+        return ice::TaskExpected<ice::ErrorCode>{ ice::coroutine_handle<ice::TaskExpectedPromise<ice::ErrorCode, ice::ErrorCode>>::from_promise(*this) };
     }
 
 } // namespace ice

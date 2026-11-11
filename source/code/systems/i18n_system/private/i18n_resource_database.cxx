@@ -48,12 +48,15 @@ namespace ice
 
     void I18NResourceDatabase::load_available_languages() noexcept
     {
+        IPT_ZONE_SCOPED;
         ice::detail::I10NStringsFilter filter;
         ice::Array<ice::URI> resource_uris{ _allocator };
         if (ice::wait_for_expected(_resources.filter_resource_uris(filter, resource_uris)) > 0)
         {
             for (ice::URI const& uri : resource_uris)
             {
+                IPT_ZONE_SCOPED_NAMED("load_language");
+                IPT_ZONE_TEXT_STR(uri.path());
                 ice::ResourceHandle const handle = _resources.find_resource(uri);
                 ice::ResourceResult const loaded = ice::wait_for_result(_resources.load_resource(handle));
                 if (loaded.resource_status == ice::ResourceStatus::Loaded)

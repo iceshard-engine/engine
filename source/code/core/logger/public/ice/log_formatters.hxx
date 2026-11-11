@@ -9,6 +9,7 @@
 #include <ice/clock_types.hxx>
 #include <ice/error_codes.hxx>
 #include <fmt/format.h>
+#include <ice/math/matrix.hxx>
 
 
 template<>
@@ -171,7 +172,7 @@ struct fmt::formatter<ice::isize> : fmt::formatter<ice::usize>
             output = fmt::format_to(ctx.out(), "-");
             value = -value;
         }
-        return fmt::formatter<ice::usize>::format(value.to_usize(), ctx);
+        return fmt::formatter<ice::usize>::format(value.to_usize_noclamp(), ctx);
     }
 };
 
@@ -187,8 +188,8 @@ struct fmt::formatter<ice::ErrorCode>
     template<typename FormatContext>
     constexpr auto format(ice::ErrorCode value, FormatContext& ctx) const noexcept
     {
-        fmt::string_view const type = value.type() == 'E' ? "Error" : "Success";
-        return fmt::format_to(ctx.out(), "{}({}, '{}')", type, value.category(), value.description());
+        fmt::string_view const type = value.type() == 'E' ? "E" : "S";
+        return fmt::format_to(ctx.out(), "{}({}) '{}' [{}]", type, value.code(), value.description(), value.category());
     }
 };
 
@@ -256,6 +257,36 @@ struct fmt::formatter<T>
             case 'n':
             default: return fmt::format_to(ctx.out(), "{:.{}f}ns", ice::Tns(value).value * 1.0, floatingp);
             }
+        }
+    }
+};
+
+template<ice::u32 Rows, ice::u32 Columns, typename T>
+struct fmt::formatter<ice::math::mat<Rows, Columns, T>>
+{
+    template<typename ParseContext>
+    constexpr auto parse(ParseContext& ctx)
+    {
+        return ctx.begin();
+    }
+
+    template<typename FormatContext>
+    constexpr auto format(ice::math::mat<Rows, Columns, T> value, FormatContext& ctx) const noexcept
+    {
+        if (Columns == 1) // Rows
+        {
+            switch (Rows)
+            {
+            case 1: return fmt::format_to(ctx.out(), "({})", value.v[0][0]);
+            case 2: return fmt::format_to(ctx.out(), "({},{})", value.v[0][0], value.v[0][1]);
+            case 3: return fmt::format_to(ctx.out(), "({},{},{})", value.v[0][0], value.v[0][1], value.v[0][2]);
+            case 4: return fmt::format_to(ctx.out(), "({},{},{},{})", value.v[0][0], value.v[0][1], value.v[0][2], value.v[0][3]);
+            default: return fmt::format_to(ctx.out(), "<vector {}>", Rows);
+            }
+        }
+        else // Matrices
+        {
+            return fmt::format_to(ctx.out(), "<matrix {}x{}>", Rows, Columns);
         }
     }
 };

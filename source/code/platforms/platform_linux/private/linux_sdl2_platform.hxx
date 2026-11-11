@@ -19,7 +19,10 @@ namespace ice::platform::linux::sdl2
 
     struct Platform_LinuxSDL2 final : Core
     {
-        Platform_LinuxSDL2(ice::Allocator& alloc) noexcept;
+        Platform_LinuxSDL2(
+            ice::Allocator& alloc,
+            ice::Span<ice::Shard const> params
+        ) noexcept;
         ~Platform_LinuxSDL2() noexcept;
 
         auto refresh_events() noexcept -> ice::Result override;

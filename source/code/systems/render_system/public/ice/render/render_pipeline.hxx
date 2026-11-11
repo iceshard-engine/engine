@@ -43,10 +43,10 @@ namespace ice::render
     enum class PrimitiveTopology : ice::u32
     {
         LineStrip,
-        LineStripWithAdjency,
+        LineStripWithAdjacency,
         TriangleList,
         TriangleStrip,
-        TriangleFan,
+        TriangleFan [[deprecated("Not supported on modern hardware")]],
         PatchList,
     };
 

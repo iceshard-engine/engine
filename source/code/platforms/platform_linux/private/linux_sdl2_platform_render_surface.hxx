@@ -2,7 +2,9 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#include <ice/params_types.hxx>
 #include <ice/platform_draw_surface.hxx>
+#include <ice/shard_container.hxx>
 #include <ice/render/render_driver.hxx>
 #include <ice/render/render_surface.hxx>
 
@@ -16,7 +18,11 @@ namespace ice::platform::linux::sdl2
         , public ice::render::NativeSurface
     {
     public:
-        UnixWindow_X11WaylandSDL2() noexcept;
+        static void define_options(ice::Params& params) noexcept;
+        static void initialize_subsystem() noexcept;
+        static void shutdown_subsystem() noexcept;
+
+        UnixWindow_X11WaylandSDL2(ice::Span<ice::Shard const> params) noexcept;
         ~UnixWindow_X11WaylandSDL2() noexcept override;
 
         auto create(ice::platform::DrawSurfaceParams const& surface_params) noexcept -> ice::Result override;
@@ -42,6 +48,10 @@ namespace ice::platform::linux::sdl2
 
     private:
         ice::render::RenderDriverAPI _render_driver = ice::render::RenderDriverAPI::None;
+
+        ice::vec2u _initial_dimensions = {};
+        ice::u32 _initial_fullscreen = 0;
+
         SDL_Window* _window = nullptr;
     };
 

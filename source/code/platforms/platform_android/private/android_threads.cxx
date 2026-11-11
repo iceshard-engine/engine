@@ -25,7 +25,7 @@ namespace ice::platform::android
 
         for (ice::Shard const option : params)
         {
-            if (option == Shard_ThreadPoolSize)
+            if (option == PlatformParam_ThreadPoolSize)
             {
                 tp_size = ice::shard_shatter<ice::u32>(option, tp_size);
             }

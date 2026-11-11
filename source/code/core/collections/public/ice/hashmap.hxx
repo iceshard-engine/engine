@@ -368,7 +368,7 @@ namespace ice
                 // NOTE: We keep the original entry + data indices, they don't need to change.
 
                 // Copy all the entries, this is always a POD type.
-                static_assert(std::is_pod_v<EntryType>, "HashMap::EntryType should not be changed!");
+                static_assert(std::is_trivially_copyable_v<EntryType>, "HashMap::EntryType should not be changed!");
                 std::memcpy(new_entries_ptr, this->_entries, sizeof(EntryType) * _count);
 
                 // If the value is a complex type, properly move construct it in the new location + destroy in the old one.

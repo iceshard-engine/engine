@@ -29,7 +29,7 @@ namespace ice::ecs
         {
             void* const entity_array_ptr = ice::ptr_add(
                 data_details.block_data,
-                { info.offsets[0] }
+                ice::usize{ info.offsets[0] }
             );
 
             return ice::Span<ice::ecs::Entity>(
@@ -124,7 +124,7 @@ namespace ice::ecs
                 // If components do not match, skip the copy and clear memory
                 if (src_info.names[src_component_index] != dst_info.names[dst_component_index])
                 {
-                    void* const ptr = ice::ptr_add(dst_data_details.block_data, { dst_offset });
+                    void* const ptr = ice::ptr_add(dst_data_details.block_data, ice::usize{ dst_offset });
 
                     ice::memset(ptr, '\0', dst_size * entity_count);
                     continue;
@@ -143,8 +143,8 @@ namespace ice::ecs
                     ice::hash(dst_info.names[dst_component_index])
                 );
 
-                void const* const src_ptr = ice::ptr_add(src_data_details.block_data, { src_offset });
-                void* const dst_ptr = ice::ptr_add(dst_data_details.block_data, { dst_offset });
+                void const* const src_ptr = ice::ptr_add(src_data_details.block_data, ice::usize{ src_offset });
+                void* const dst_ptr = ice::ptr_add(dst_data_details.block_data, ice::usize{ dst_offset });
 
                 // Do a plain copy (we require components to be standard layout and trivially copyable)
                 ice::memcpy(dst_ptr, src_ptr, src_size * entity_count);
@@ -239,8 +239,8 @@ namespace ice::ecs
                     ice::hash(dst_info.names[dst_component_index])
                 );
 
-                void const* const src_ptr = ice::ptr_add(src_data_details.block_data, { src_offset });
-                void* const dst_ptr = ice::ptr_add(dst_data_details.block_data, { dst_offset });
+                void const* const src_ptr = ice::ptr_add(src_data_details.block_data, ice::usize{ src_offset });
+                void* const dst_ptr = ice::ptr_add(dst_data_details.block_data, ice::usize{ dst_offset });
 
                 // Do a plain copy (we require components to be standard layout and trivially copyable)
                 ice::memcpy(dst_ptr, src_ptr, src_size * entity_count);
@@ -278,7 +278,7 @@ namespace ice::ecs
                     continue;
                 }
 
-                void* const ptr = ice::ptr_add(data_details.block_data, { offset });
+                void* const ptr = ice::ptr_add(data_details.block_data, ice::usize{ offset });
 
                 ice::memset(ptr, '\0', size * entity_count);
             }
@@ -428,14 +428,14 @@ namespace ice::ecs
                 for (ice::u32 idx = 0; idx < dtor_count; ++idx)
                 {
                     // Get the pointers to the specific arrays
-                    void const* const ent = ice::ptr_add(del_data_details.block_data, { archetype_infos[0]->component_offsets[0] });
-                    void* ptr1 = ice::ptr_add(del_data_details.block_data, { dtor_components_offsets[idx * 2] });
-                    void* ptr2 = ice::ptr_add(del_data_details.block_data, { dtor_components_offsets[idx * 2 + 1] });
+                    void const* const ent = ice::ptr_add(del_data_details.block_data, ice::usize{ archetype_infos[0]->component_offsets[0] });
+                    void* ptr1 = ice::ptr_add(del_data_details.block_data, ice::usize{ dtor_components_offsets[idx * 2] });
+                    void* ptr2 = ice::ptr_add(del_data_details.block_data, ice::usize{ dtor_components_offsets[idx * 2 + 1] });
 
                     // Move pointers to the first deleted entity index
                     ice::ecs::Entity const* const entities = reinterpret_cast<ice::ecs::Entity const*>(ent) + del_data_details.block_offset;
-                    ptr1 = ice::ptr_add(ptr1, { del_data_details.block_offset * dtor_components_sizes[idx * 2] });
-                    ptr2 = ice::ptr_add(ptr1, { del_data_details.block_offset * dtor_components_sizes[idx * 2 + 1] });
+                    ptr1 = ice::ptr_add(ptr1, ice::usize{ del_data_details.block_offset * dtor_components_sizes[idx * 2] });
+                    ptr2 = ice::ptr_add(ptr1, ice::usize{ del_data_details.block_offset * dtor_components_sizes[idx * 2 + 1] });
 
                     // Call on each destructor
                     dtors[idx]->fn(dtors[idx]->userdata, span_size, entities, ptr1, ptr2);
@@ -777,8 +777,8 @@ namespace ice::ecs
             ArchetypeInstanceInfo const* src_instance_info[1]{ nullptr };
             if (slot_info.archetype != 0)
             {
-                ArchetypeInstance const src_isntance[1]{ ArchetypeInstance{ slot_info.archetype } };
-                _archetype_index.fetch_archetype_instance_infos(src_isntance, src_instance_info);
+                ArchetypeInstance const src_instance[1]{ ArchetypeInstance{ slot_info.archetype } };
+                _archetype_index.fetch_archetype_instance_infos(src_instance, src_instance_info);
             }
 
             DataBlockPool* dst_instance_pool = nullptr;
@@ -806,7 +806,7 @@ namespace ice::ecs
             }
 
             // We have a valid destination archetype...
-            if (dst_instance_info != nullptr)
+            if (dst_instance_info != nullptr && src_instance_info[0] != dst_instance_info)
             {
                 ice::u32 const dst_instance_idx = static_cast<ice::u32>(dst_instance_info->archetype_instance);
 

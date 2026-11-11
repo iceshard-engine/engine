@@ -43,6 +43,18 @@ namespace ice
             { t.alignment } -> std::convertible_to<ice::ualign>;
         };
 
+        template<typename T>
+        concept PointerType = std::is_pointer_v<T>;
+
+        template<typename T>
+        concept SizeType = std::is_same_v<T, ice::usize> || std::is_same_v<T, ice::isize>;
+
+        template<typename T>
+        concept VoidPointer = std::is_same_v<T, void const*> || std::is_same_v<T, void*>;
+
     } // namespace concepts
+
+    template<ice::concepts::PointerType T>
+    using as_void_ptr_t = ice::const_correct_t<std::remove_pointer_t<T>, void>*;
 
 } // namespace ice

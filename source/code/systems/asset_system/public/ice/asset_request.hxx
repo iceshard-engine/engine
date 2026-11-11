@@ -45,9 +45,21 @@ namespace ice
 
         virtual auto allocate(ice::usize size) const noexcept -> ice::Memory = 0;
 
+        template<typename T>
+        auto new_result(ice::AssetResolveData& out_resolve_data) noexcept -> T&;
+
         virtual auto resolve(
             ice::AssetResolveData resolve_data
         ) noexcept -> ice::Asset = 0;
     };
+
+    template<typename T>
+    inline auto AssetRequest::new_result(ice::AssetResolveData& out_resolve_data) noexcept -> T&
+    {
+        out_resolve_data.memory = this->allocate(ice::size_of<T>);
+        T* result_object = new (out_resolve_data.memory.location) T{};
+        ICE_ASSERT_CORE(result_object != nullptr);
+        return *result_object;
+    }
 
 } // namespace ice

@@ -2,8 +2,9 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/asset_category.hxx>
 #include <ice/render/render_declarations.hxx>
+#include <ice/render/render_assets.hxx>
+#include <ice/mem_relative_ptr.hxx>
 
 namespace ice::render
 {
@@ -63,7 +64,33 @@ namespace ice::render
         ice::render::ImageUsageFlags usage;
         ice::u32 width;
         ice::u32 height;
-        void const* data;
+        ice::relative_ptr<void const> data;
+
+        auto image_data() const noexcept -> ice::Data
+        {
+            ice::u32 const pixel_size = [this] noexcept
+            {
+                switch (format)
+                {
+                case ImageFormat::UNORM_RGB: return 3;
+                case ImageFormat::UNORM_RGBA: return 4;
+                default: return 0;
+                }
+            }();
+
+            // Early out if the image "does not exist"
+            if (pixel_size == 0 || width == 0 || height == 0)
+            {
+                return ice::Data{};
+            }
+
+            return ice::Data{
+                .location = data.ptr(),
+                .size = width * height * pixel_size,
+                // We assume this is a header type and the data is right after it.
+                .alignment = ice::align_of<ImageInfo>,
+            };
+        }
     };
 
     struct ImageBarrier
@@ -120,7 +147,5 @@ namespace ice::render
 
         bool normalized_coordinates = true;
     };
-
-    static constexpr ice::AssetCategory AssetCategory_Texture2D = ice::make_asset_category("ice/render_system/texture-2d");
 
 } // namespace ice::render

@@ -33,7 +33,7 @@ namespace ice::devui
         ice::gfx::GfxFrameStages& stages,
         ice::render::Renderpass renderpass,
         ice::u32 subpass
-    ) noexcept -> ice::Task<>
+    ) noexcept -> ice::TaskResult
     {
         using namespace ice::gfx;
         using namespace ice::render;
@@ -191,12 +191,12 @@ namespace ice::devui
         _index_buffers.push_back(device.create_buffer(BufferType::Index, 1024 * 1024 * 64));
         _vertex_buffers.push_back(device.create_buffer(BufferType::Vertex, 1024 * 1024 * 64));
 
-        co_return;
+        co_return S_Ok;
     }
 
     auto ImGuiGfxStage::cleanup(
         ice::gfx::GfxContext& gfx
-    ) noexcept -> ice::Task<>
+    ) noexcept -> ice::TaskResult
     {
         ice::render::RenderDevice& device = gfx.device();
 
@@ -219,7 +219,7 @@ namespace ice::devui
         device.destroy_resourcesets(_resources);
         device.destroy_resourceset_layout(_resource_layout[0]);
         device.destroy_resourceset_layout(_resource_layout[1]);
-        co_return;
+        co_return S_Ok;
     }
 
     void ImGuiGfxStage::update(
@@ -329,7 +329,7 @@ namespace ice::devui
 
             BufferUpdateInfo& vtx_info = buffer_updates[buffer_update_count];
             vtx_info.buffer = _vertex_buffers[0];
-            vtx_info.offset = vtx_buffer_offset * sizeof(ImDrawVert);
+            vtx_info.offset.value = vtx_buffer_offset * sizeof(ImDrawVert);
             vtx_info.data = ice::Data{ cmd_list->VtxBuffer.Data, ice::size_of<ImDrawVert> *cmd_list->VtxBuffer.Size, ice::align_of<ImDrawVert> };
             vtx_buffer_offset += cmd_list->VtxBuffer.Size;
 
@@ -355,7 +355,7 @@ namespace ice::devui
 
         BufferUpdateInfo& idx_info = buffer_updates[buffer_update_count];
         idx_info.buffer = _index_buffers[0];
-        idx_info.offset = 0;
+        idx_info.offset = 0_B;
         idx_info.data = { _index_buffer_host, { idx_buffer_offset * ice::u32(sizeof(ice::u16)) }, ice::ualign::b_4 };
         buffer_update_count += 1;
 

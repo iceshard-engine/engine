@@ -20,6 +20,23 @@ namespace ice
         ice::ualign alignment;
     };
 
+    constexpr auto data_slice(
+        ice::Data const& data,
+        ice::usize new_size,
+        ice::usize offset = 0_B
+    ) noexcept -> ice::Data
+    {
+        void const* new_location = ice::ptr_add(data.location, offset);
+        ICE_ASSERT_CORE(ice::is_aligned(new_location, data.alignment)); // Ensure we are still aligned
+
+        ice::usize const remaining_size = (data.size - offset).to_usize();
+        return {
+            .location = new_location,
+            .size = ice::min(new_size, remaining_size),
+            .alignment = data.alignment
+        };
+    }
+
     template<typename Type>
     inline auto data_view(Type const& var) noexcept
     {

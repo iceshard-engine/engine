@@ -331,7 +331,7 @@ namespace ice
             for (ice::u32 idx = 0; idx < _pack.header.count_resources; ++idx)
             {
                 v1::HailstormResource const& res = _pack.resources[idx];
-                ice::String const respath = ice::String{ (char const*)ice::ptr_add(_pack.paths_data.location, { res.path_offset }), res.path_size };
+                ice::String const respath = ice::String{ (char const*)ice::ptr_add(_pack.paths_data.location, ice::usize{ res.path_offset }), res.path_size };
 
                 ice::URI const res_uri{ Scheme_HailStorm, respath };
 

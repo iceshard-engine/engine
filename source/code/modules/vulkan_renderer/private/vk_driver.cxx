@@ -40,6 +40,8 @@ namespace ice::render::vk
         , _vk_queue_family_properties{ _allocator }
         , _vk_instance_extensions{ instance_extensions }
     {
+        IPT_ZONE_SCOPED;
+
         // Get extension methods
         vk_get_proc_address(
             vk_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT,

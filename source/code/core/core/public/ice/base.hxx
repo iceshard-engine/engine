@@ -34,6 +34,7 @@ namespace ice
     using std::swap;
     using std::move;
     using std::forward;
+    using std::forward_like;
     using std::exchange;
     using std::memcpy;
     using std::memset;

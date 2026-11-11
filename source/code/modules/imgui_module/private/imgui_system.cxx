@@ -191,11 +191,14 @@ namespace ice::devui
 
             for (auto const& runtime : _widget_manager.widgets())
             {
+                IPT_ZONE_SCOPED_NAMED("update widget state");
+                IPT_ZONE_TEXT_STR(runtime->widget->name());
                 DevUIWidgetState const* const owner_state = runtime->state.owner;
 
                 runtime->widget->update_state(runtime->state);
                 if (runtime->state.active)
                 {
+                    IPT_ZONE_SCOPED_NAMED("build widget")
                     ICE_ASSERT(runtime->state.owner == owner_state, "It's prohibited to change the owner pointer!");
                     runtime->widget->build_widget(_widget_frame, runtime->state);
                 }

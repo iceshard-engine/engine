@@ -248,7 +248,7 @@ namespace ice
         ice::StringID_Hash world_name;
         if (ice::shard_inspect(trigger_shard, world_name))
         {
-            Entry * const entry = _worlds.try_get(ice::hash(world_name));
+            Entry* const entry = _worlds.try_get(ice::hash(world_name));
             ICE_ASSERT_CORE(entry != nullptr);
 
             // Activated

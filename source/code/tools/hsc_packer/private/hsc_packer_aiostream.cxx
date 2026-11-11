@@ -28,6 +28,11 @@ struct HailstormAllocator final : hailstorm::Allocator
         _backing.deallocate(ptr);
     }
 
+    void deallocate(hailstorm::Memory mem) noexcept override
+    {
+        this->deallocate(mem.location);
+    }
+
     ice::Allocator& _backing;
 };
 

@@ -8,7 +8,6 @@ void ice_init(
     ice::app::Factories& factories
 ) noexcept
 {
-    factories.factory_config = [](ice::Allocator&) noexcept -> ice::UniquePtr<ice::app::Config> { return {}; };
     factories.factory_state = [](ice::Allocator&) noexcept -> ice::UniquePtr<ice::app::State> { return {}; };
     factories.factory_runtime = [](ice::Allocator&) noexcept -> ice::UniquePtr<ice::app::Runtime> { return {}; };
 }

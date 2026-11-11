@@ -20,7 +20,6 @@ namespace ice::app
         template<typename Type>
         using FactoryFn = auto(*)(ice::Allocator&) noexcept -> ice::UniquePtr<Type>;
 
-        FactoryFn<ice::app::Config> factory_config;
         FactoryFn<ice::app::State> factory_state;
         FactoryFn<ice::app::Runtime> factory_runtime;
 
@@ -62,10 +61,10 @@ void ice_init(
     ice::app::Factories& factories
 ) noexcept;
 
-void ice_args(
+void ice_configure(
     ice::Allocator& alloc,
     ice::Params& params,
-    ice::app::Config& config
+    ice::UniquePtr<ice::app::Config>& out_config
 ) noexcept;
 
 auto ice_setup(

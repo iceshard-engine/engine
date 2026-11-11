@@ -437,7 +437,7 @@ namespace ice
 
                     ice::memcpy(additional_data, resource.font_data.font_name.begin(), fonts[idx_font].font_name_size);
 
-                    additional_data = ice::ptr_add(additional_data, { fonts[idx_font].font_name_size });
+                    additional_data = ice::ptr_add(additional_data, ice::usize{ fonts[idx_font].font_name_size });
                     additional_data_offset += fonts[idx_font].font_name_size;
 
                     idx_font += 1;
@@ -467,7 +467,7 @@ namespace ice
 
                     ice::memcpy(additional_data, ice::addressof(style.background.color), constant_ref.size);
 
-                    additional_data = ice::ptr_add(additional_data, { constant_ref.size });
+                    additional_data = ice::ptr_add(additional_data, ice::usize{ constant_ref.size });
                     additional_data_offset += constant_ref.size;
                     constants_ref.idx += 1;
                 }
@@ -584,7 +584,7 @@ namespace ice
             ice::u32 const span_offset = values[0];
             ice::u32 const span_size = values[1];
 
-            void const* span_data = ice::ptr_add(base_ptr, { span_offset });
+            void const* span_data = ice::ptr_add(base_ptr, ice::usize{ span_offset });
 
             span_value = {
                 reinterpret_cast<typename ice::clear_type_t<decltype(span_value)>::ValueType const*>(span_data),

@@ -160,7 +160,7 @@ namespace ice
         else
         {
             co_return Data{
-                ice::ptr_add(memory.location, {_header.offset - _header.meta_offset}),
+                ice::ptr_add(memory.location, ice::usize{_header.offset - _header.meta_offset}),
                 {_header.size},
                 ice::ualign::b_default
             };

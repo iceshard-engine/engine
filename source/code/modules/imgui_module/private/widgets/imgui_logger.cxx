@@ -204,35 +204,37 @@ namespace ice::devui
             }
             ImGui::PopTabStop();
 
-            for (ImGuiLogEntry& entry : _entries)
-            {
-                entry.filter_match = rapidfuzz::fuzz::partial_token_ratio(
-                    (ice::String) (char const*)filter_message,
-                    (ice::String) entry.message
-                );
-            }
+            // TODO: Fix filtering
+            // for (ImGuiLogEntry& entry : _entries)
+            // {
+            //     entry.filter_match = rapidfuzz::fuzz::partial_token_ratio(
+            //         (ice::String) (char const*)filter_message,
+            //         (ice::String) entry.message
+            //     );
+            // }
 
             std::lock_guard lk{ mtx };
 
-            ice::f64 const max_match = _entries[_entries_visible[0]].filter_match;
-            ice::sort_indices(
-                _entries.tailspan(0),
-                _entries_visible.tailspan(0),
-                [max_match](ImGuiLogEntry const& l, ImGuiLogEntry const& r) noexcept
-                {
-                    if (l.filter_match == r.filter_match && r.filter_match >= max_match)
-                    {
-                        return rapidfuzz::levenshtein_normalized_distance(
-                            (ice::String) (char const*)filter_message,
-                            (ice::String) l.message
-                        ) <= rapidfuzz::levenshtein_normalized_distance(
-                            (ice::String) (char const*)filter_message,
-                            (ice::String) r.message
-                        );
-                    }
-                    return l.filter_match >= r.filter_match;
-                }
-            );
+            // TODO: Fix filtering
+            // ice::f64 const max_match = _entries[_entries_visible[0]].filter_match;
+            // ice::sort_indices(
+            //     _entries.tailspan(0),
+            //     _entries_visible.tailspan(0),
+            //     [max_match](ImGuiLogEntry const& l, ImGuiLogEntry const& r) noexcept
+            //     {
+            //         if (l.filter_match == r.filter_match && r.filter_match >= max_match)
+            //         {
+            //             return rapidfuzz::levenshtein_normalized_distance(
+            //                 (ice::String) (char const*)filter_message,
+            //                 (ice::String) l.message
+            //             ) <= rapidfuzz::levenshtein_normalized_distance(
+            //                 (ice::String) (char const*)filter_message,
+            //                 (ice::String) r.message
+            //             );
+            //         }
+            //         return l.filter_match >= r.filter_match;
+            //     }
+            // );
 
             ImGui::TableNextRow();
 

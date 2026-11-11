@@ -7,15 +7,111 @@
 #include <ice/profiler.hxx>
 #include <ice/assert.hxx>
 #include <ice/log.hxx>
+#include <ice/log_formatters.hxx>
+#include <ice/params.hxx>
 
 #include "linux_sdl2.hxx"
 
 namespace ice::platform::linux::sdl2
 {
 
-    UnixWindow_X11WaylandSDL2::UnixWindow_X11WaylandSDL2() noexcept
+    static bool Global_EnabledVideoDrivers[3]{};
+    static ice::StaticString<32> Global_SupportedVideoDrivers[3]{};
+
+    static auto video_driver_count() noexcept -> ice::u32
+    {
+        return ice::min<ice::u32>(
+            SDL_GetNumVideoDrivers(),
+            ice::count(Global_SupportedVideoDrivers)
+        );
+    }
+
+    void UnixWindow_X11WaylandSDL2::define_options(ice::Params& params) noexcept
+    {
+        ice::u32 const driver_num = video_driver_count();
+        for (ice::u32 i = 0; i < driver_num && i < 5; ++i)
+        {
+            ice::StaticString<32>& driver_name = Global_SupportedVideoDrivers[i];
+            driver_name.push_format("--{}", SDL_GetVideoDriver(i));
+
+            if (driver_name != "--x11" && driver_name != "--wayland")
+            {
+                continue;
+            }
+            ice::params_define(params, ice::ParamDefinition{
+                .name = driver_name,
+                .group = "video options"_str,
+            }, Global_EnabledVideoDrivers[i]);
+        }
+    }
+
+    void UnixWindow_X11WaylandSDL2::initialize_subsystem() noexcept
+    {
+        ice::u32 const driver_num = video_driver_count();
+
+        ice::String driver_selected{};
+        for (ice::u32 i = 0; i < driver_num && i < 5; ++i)
+        {
+            if (Global_EnabledVideoDrivers[i])
+            {
+                if (driver_selected.is_empty())
+                {
+                    driver_selected = Global_SupportedVideoDrivers[i].substr(2);
+                    SDL_VideoInit(driver_selected.data());
+                    IPT_LOG(LogSeverity::Retail, LogTag::Engine, "Force selected video-driver: {}", driver_selected);
+                }
+                else
+                {
+                    IPT_LOG(LogSeverity::Warning, LogTag::Engine, "Ignoring additional video-driver options.");
+                }
+            }
+        }
+    }
+
+    void UnixWindow_X11WaylandSDL2::shutdown_subsystem() noexcept
+    {
+        ice::u32 const driver_num = video_driver_count();
+        for (ice::u32 i = 0; i < driver_num && i < 5; ++i)
+        {
+            // We call SDL_VideoQuit only if we used VideoInit previously.
+            if (Global_EnabledVideoDrivers[i])
+            {
+                SDL_VideoQuit();
+                return;
+            }
+        }
+    }
+
+    UnixWindow_X11WaylandSDL2::UnixWindow_X11WaylandSDL2(
+        ice::Span<ice::Shard const> params
+    ) noexcept
     {
         SDL_InitSubSystem(SDL_INIT_VIDEO);
+
+        for (ice::Shard const shard : params)
+        {
+            bool param_error = false;
+            if (shard.id == PlatformParam_InitialWindowSize)
+            {
+                param_error = ice::shard_inspect(shard, _initial_dimensions) == false;
+                ICE_LOG_IF(
+                    param_error == false,
+                    LogSeverity::Info, LogTag::Core,
+                    "Initial surface dimensions set to: {}",
+                    _initial_dimensions
+                );
+            }
+            if (shard.id == PlatformParam_StartFullscreen)
+            {
+                param_error = ice::shard_inspect(shard, _initial_fullscreen) == false;
+            }
+            ICE_LOG_IF(
+                param_error,
+                LogSeverity::Error, LogTag::Core,
+                "Invalid value type for {} platform parameter.",
+                shard.id.name.value
+            );
+        }
     }
 
     UnixWindow_X11WaylandSDL2::~UnixWindow_X11WaylandSDL2() noexcept
@@ -38,9 +134,15 @@ namespace ice::platform::linux::sdl2
             return E_DrawSurfaceAlreadyExisting;
         }
 
-        if (surface_params.dimensions.x == 0 || surface_params.dimensions.y == 0)
+        ice::vec2u surface_dimensions = surface_params.dimensions;
+        if (surface_dimensions.x == 0 || surface_dimensions.y == 0)
         {
-            return E_InvalidArgument;
+            if (_initial_dimensions.x == 0 || _initial_dimensions.y == 0)
+            {
+                ICE_LOG(LogSeverity::Critical, LogTag::Core, "Failed to provide surface dimensions");
+                return E_InvalidArgument;
+            }
+            surface_dimensions = _initial_dimensions;
         }
 
         using ice::render::RenderDriverAPI;
@@ -64,8 +166,8 @@ namespace ice::platform::linux::sdl2
             window_title.data(),
             SDL_WINDOWPOS_CENTERED,
             SDL_WINDOWPOS_CENTERED,
-            static_cast<int>(surface_params.dimensions.x),
-            static_cast<int>(surface_params.dimensions.y),
+            static_cast<int>(surface_dimensions.x),
+            static_cast<int>(surface_dimensions.y),
             creation_flags
         );
 

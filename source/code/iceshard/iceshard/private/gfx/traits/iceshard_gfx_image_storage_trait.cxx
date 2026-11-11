@@ -23,18 +23,7 @@
 namespace ice::gfx
 {
 
-    auto internal_load_image(
-        ice::AssetRequest* request,
-        ice::TaskScheduler& final_thread,
-        ice::HashMap<ice::gfx::GfxImageEntry>& entries
-    ) noexcept -> ice::Task<>
-    {
-        request->data();
-
-        co_await final_thread;
-    }
-
-    Trait_GfxImageStorage::Trait_GfxImageStorage(ice::TraitContext& ctx, ice::Allocator& alloc) noexcept
+    Trait_GfxImageStorage::Trait_GfxImageStorage(ice::Allocator& alloc, ice::TraitContext& ctx) noexcept
         : ice::Trait{ ctx }
         , ice::TraitDevUI{ {
             .category = "builtin.devui.strings/menu.category.engine-gfx|Engine/Gfx"_i18n,
@@ -49,39 +38,36 @@ namespace ice::gfx
 
     void Trait_GfxImageStorage::build_content() noexcept
     {
-        static ice::i32 selected = -1;
-        ice::Span<GfxImageEntry const> images = _loaded_images.values();
-
-        ice::String const preview = selected < 0 ? "<asset-uri>" : ice::stringid_hint(images[selected].asset.name());
-
-        if (ImGui::BeginCombo("Loaded Image", preview.begin()))
+#if ICE_WITH_DEVUI
+        ImGui::TextT("Loaded image count: {}", _loaded_images.size());
+        for (GfxImageEntry& entry : _loaded_images.values())
         {
-            if (ImGui::Selectable("##empty"))
+            ice::String name = ice::stringid_hint(entry.asset.name());
+            if (ImGui::TreeNodeEx(name.data()))
             {
-                selected = -1;
-            }
-
-            ice::i32 idx = 0;
-            for (GfxImageEntry const& entry : images)
-            {
-                if (ImGui::Selectable(ice::stringid_hint(entry.asset.name()), selected == idx))
+                ice::Resource const* const resource = entry.asset.resource();
+                if (resource == nullptr)
                 {
-                    selected = idx;
+                    ImGui::TextUnformatted("resource: <runtime-only>");
                 }
-                idx += 1;
+                else
+                {
+                    ImGui::TextT("resource: {}", resource->origin());
+                }
+
+                ImGui::Checkbox("Preview", &entry.image_preview);
+                if (entry.image_preview)
+                {
+                    ImGui::Begin(name, &entry.image_preview, ImGuiWindowFlags_AlwaysAutoResize);
+
+                    ImTextureRef const ref{ static_cast<ImTextureID>(entry.image) };
+                    ImGui::Image(ref, { static_cast<float>(entry.info.width), static_cast<float>(entry.info.height) });
+                    ImGui::End();
+                }
+                ImGui::TreePop();
             }
-            ImGui::EndCombo();
         }
-
-        if (selected >= 0)
-        {
-            GfxImageEntry const& selected_entry = images[selected];
-            ImTextureRef const ref{ ImTextureID(selected_entry.image) };
-            float const avail_width = ImGui::GetContentRegionAvail().x;
-            ImVec2 const size{ avail_width, avail_width };
-
-            ImGui::Image(ref, size);
-        }
+#endif
     }
 
     auto Trait_GfxImageStorage::on_asset_released(ice::Asset const& asset) noexcept -> ice::Task<>
@@ -107,7 +93,7 @@ namespace ice::gfx
         ice::render::Buffer transfer_buffers[4];
         ice::render::BufferUpdateInfo update_infos[4];
         ice::render::Image created_images[4];
-        ice::vec2u created_extents[4];
+        ice::render::ImageInfo created_extents[4];
 
         while(request != nullptr && upload_count < 4)
         {
@@ -118,9 +104,8 @@ namespace ice::gfx
             GfxImageEntry* entry = _loaded_images.try_get(ice::hash(nameid));
             if (entry && entry->image != Image::Invalid)
             {
-                // Allocates a handle for it... (TODO: Rework?)
-                resolve_success.memory = request->allocate(ice::size_of<ice::render::Image>);
-                *reinterpret_cast<Image*>(resolve_success.memory.location) = entry->image;
+                Image& image = request->new_result<Image>(resolve_success);
+                image = entry->image;
 
                 // Return the existing image object
                 // TODO: Handle updates in later version.
@@ -138,12 +123,8 @@ namespace ice::gfx
 
             // Get the image data
             Data const request_data = request->data();
-            ImageInfo const* image_info = reinterpret_cast<ImageInfo const*>(request_data.location);
-            Data const image_data{
-                .location = image_info->data,
-                .size = ice::usize::subtract(request_data.size, ice::size_of<ImageInfo>),
-                .alignment = ice::ualign::b_4,
-            };
+            ImageInfo const* image_info = static_cast<ImageInfo const*>(request_data.location);
+            Data const image_data = image_info->image_data();
 
             // Create image and transfer buffer
             created_images[upload_count] = device.create_image(*image_info, image_data);
@@ -156,14 +137,13 @@ namespace ice::gfx
             // Store upload data
             uploading_requests[upload_count] = request;
 
-            created_extents[upload_count].x = image_info->width;
-            created_extents[upload_count].y = image_info->height;
+            created_extents[upload_count] = *image_info;
 
             transfer_buffers[upload_count] = device.create_buffer(BufferType::Transfer, ice::u32(image_data.size.value));
             update_infos[upload_count] = BufferUpdateInfo{
                 .buffer = transfer_buffers[upload_count],
                 .data = image_data,
-                .offset = 0
+                .offset = 0_B
             };
 
             // Increase the upload count
@@ -208,7 +188,7 @@ namespace ice::gfx
                     cmds,
                     created_images[idx],
                     transfer_buffers[idx],
-                    created_extents[idx]
+                    { created_extents[idx].width, created_extents[idx].height }
                 );
             }
 
@@ -244,17 +224,22 @@ namespace ice::gfx
                     uploaded_request->asset_name()
                 );
 
-                // Allocates a handle for it... (TODO: Rework?)
-                resolve_success.memory = uploaded_request->allocate(ice::size_of<Image>);
-                *reinterpret_cast<Image*>(resolve_success.memory.location) = created_images[idx];
+                Image& image = uploaded_request->new_result<Image>(resolve_success);
+                image = created_images[idx];
 
                 ice::u64 const asset_hash = ice::hash(uploaded_request->asset_name());
                 ice::Asset asset = uploaded_request->resolve(resolve_success);
 
+                // Make the result
+                GfxImageEntry image_entry{ .asset = ice::move(asset), .image = created_images[idx] };
+#if ICE_WITH_DEVUI
+                image_entry.info = created_extents[idx];
+#endif
+
                 // Save the image handle
                 _loaded_images.set(
                     asset_hash,
-                    { .asset = ice::move(asset), .image = created_images[idx] }
+                    ice::move(image_entry)
                 );
             }
         }

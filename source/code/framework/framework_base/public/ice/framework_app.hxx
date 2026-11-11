@@ -22,6 +22,7 @@ namespace ice::framework
     {
         ice::String module_dir;
         ice::Span<ice::String const> resource_dirs;
+        ice::vec2u initial_surface_dimensions;
     };
 
     struct State

@@ -55,6 +55,7 @@ namespace ice::render::webgpu
         wgpuSurfaceConfigure(webgpu_surface->_wgpu_surface, &config);
 
         ICE_ASSERT(surface != nullptr, "Invalid render surface object!");
+        ICE_LOG_WGPU(LogSeverity::Debug, "Created SwapChain with dimensions: {}", surface_dimensions);
         return _allocator.create<WebGPUSwapchain>(webgpu_surface->_wgpu_surface, webgpu_surface->_wgpu_surface_format, surface_dimensions);
     }
 
@@ -485,7 +486,13 @@ namespace ice::render::webgpu
     {
         for (BufferUpdateInfo const& info : update_infos)
         {
-            wgpuQueueWriteBuffer(_wgpu_queue, WebGPUBuffer::native(info.buffer)->wgpu_buffer, info.offset, info.data.location, info.data.size.value);
+            wgpuQueueWriteBuffer(
+                _wgpu_queue,
+                WebGPUBuffer::native(info.buffer)->wgpu_buffer,
+                info.offset.value,
+                info.data.location,
+                info.data.size.value
+            );
         }
     }
 
@@ -529,7 +536,8 @@ namespace ice::render::webgpu
         descriptor.mipLevelCount = 1;
         descriptor.sampleCount = 1;
 
-        WGPUTexture texture = wgpuDeviceCreateTexture(_wgpu_device, &descriptor);
+        WGPUTexture const texture = wgpuDeviceCreateTexture(_wgpu_device, &descriptor);
+        ICE_LOG(LogSeverity::Debug, LogTag::Core, "Created texture with dimensions: {}", ice::vec2u{ image_info.width, image_info.height });
 
         if (data.location != nullptr && data.size > 0_B)
         {
@@ -561,7 +569,7 @@ namespace ice::render::webgpu
             view_descriptor.aspect = WGPUTextureAspect_All;
         }
 
-        WGPUTextureView texture_view = wgpuTextureCreateView(texture, &view_descriptor);
+        WGPUTextureView const texture_view = wgpuTextureCreateView(texture, &view_descriptor);
         return WebGPUImage::handle(_allocator.create<WebGPUImage>(WebGPUImage{ texture, texture_view }));
     }
 

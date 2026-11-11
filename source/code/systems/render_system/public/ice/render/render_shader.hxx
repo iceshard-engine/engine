@@ -4,7 +4,7 @@
 #pragma once
 #include <ice/mem_data.hxx>
 #include <ice/span.hxx>
-#include <ice/asset_category.hxx>
+#include <ice/render/render_assets.hxx>
 
 namespace ice::render
 {
@@ -58,7 +58,5 @@ namespace ice::render
         ice::u32 instanced;
         ice::Span<ice::render::ShaderInputAttribute const> attributes;
     };
-
-    static constexpr ice::AssetCategory AssetCategory_Shader = ice::make_asset_category("ice/render_system/shader");
 
 } // namespace ice::render

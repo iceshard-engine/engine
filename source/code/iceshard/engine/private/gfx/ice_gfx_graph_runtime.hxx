@@ -51,6 +51,7 @@ namespace ice::gfx
             ice::gfx::GfxStage* stage;
             ice::u32 revision = 0;
             bool initialized = false;
+            bool initialized_successfully = false;
         };
 
         ice::HashMap<Entry*> _stages;
@@ -59,7 +60,7 @@ namespace ice::gfx
         void apply_stages(ice::StringID_Arg key, Method fn, Args&&... args) noexcept
         {
             Entry* const entry = _stages.get(key, nullptr);
-            if (entry != nullptr)
+            if (entry != nullptr && entry->initialized_successfully)
             {
                 ((entry->stage)->*fn)(ice::forward<Args>(args)...);
             }

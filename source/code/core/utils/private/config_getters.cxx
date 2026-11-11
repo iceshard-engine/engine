@@ -13,7 +13,7 @@ namespace ice::config::detail
     ) noexcept -> ice::u64
     {
         // TODO: Is unaligned access worse than performing 32bit moves?
-        ice::u32 const* bitdata = reinterpret_cast<ice::u32 const*>(ice::ptr_add(config._data, {value->internal}));
+        ice::u32 const* bitdata = reinterpret_cast<ice::u32 const*>(ice::ptr_add(config._data, ice::usize{value->internal}));
         ice::u64 result = bitdata[1];
         result <<= 32;
         result += bitdata[0];

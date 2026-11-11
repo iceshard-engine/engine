@@ -76,7 +76,7 @@ namespace ice::platform::linux
             if (out_path.is_empty())
             {
                 create_known_path(out_path, home, fallback, appname);
-                ICE_LOG(LogSeverity::Info, LogTag::Core, "Known path ID {} not found, using fallback: {}", known_path_id, out_path);
+                ICE_LOG(LogSeverity::Info, LogTag::Core, "Known path ID {} NOT found, using fallback: {}", known_path_id, out_path);
             }
         }
 
@@ -109,7 +109,7 @@ namespace ice::platform::linux
         char const* app_name = "iceshard";
         for (ice::Shard param : params)
         {
-            if (param == Shard_StorageAppName)
+            if (param == PlatformParam_StorageAppName)
             {
                 ice::shard_inspect(param, app_name);
                 // TODO: Warning if shard value was not valid.
@@ -156,13 +156,13 @@ namespace ice::platform::linux
         _pictures_location.clear();
         _other_location.clear();
 
-        ICE_LOG(LogSeverity::Info, LogTag::Core, "Checking for XDG {} file...", _config_file);
+        ICE_LOG(LogSeverity::Debug, LogTag::Core, "Checking for XDG {} file...", _config_file);
         if (ice::native_file::exists_file(_config_file))
         {
-            ICE_LOG(LogSeverity::Info, LogTag::Core, "Found, parsing for known directories...");
+            ICE_LOG(LogSeverity::Debug, LogTag::Core, "Found XDG file. parsing for known directories...");
             ice::native_file::File const file = ice::native_file::open_file(_config_file);
             ice::Memory const contents_mem = _allocator.allocate(ice::native_file::sizeof_file(file));
-            ice::String contents = ice::String{ reinterpret_cast<char const*>(contents_mem.location), contents_mem.size.value };
+            ice::String const contents = ice::String{ static_cast<char const*>(contents_mem.location), contents_mem.size.value };
 
             if (ice::native_file::read_file(file, contents_mem.size, contents_mem) > 0_B)
             {

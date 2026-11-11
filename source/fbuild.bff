@@ -46,7 +46,7 @@ Settings
     Using( .Pipeline_Linux_x64 )
 
     .PipelineName = 'x64'
-    .PipelineToolchain = 'clang-21.0.0'
+    .PipelineToolchain = 'clang-23.0.0'
     .PipelineAllowUnityBuilds = true
     .PipelineTags = { 'DevPlatform' }
     .PipelineSteps = { 'Build', 'Link', 'Deploy' }

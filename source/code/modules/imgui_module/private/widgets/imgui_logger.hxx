@@ -18,6 +18,7 @@ namespace ice::devui
         ice::LogTag tag;
         ice::String tagname;
         ice::HeapString<> message;
+        ice::f64 filter_distance = 0.0f;
         ice::f64 filter_match = 1.0;
     };
 

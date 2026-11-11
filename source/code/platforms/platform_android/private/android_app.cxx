@@ -183,19 +183,19 @@ namespace ice::platform::android
                     break;
                 }
                 case AINPUT_EVENT_TYPE_KEY:
-                    IPT_MESSAGE("AndroidEvent::Key");
+                    IPT_MESSAGE(D, "AndroidEvent::Key");
                     ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Core, "AndroidEvent::Key");
                     break;
                 case AINPUT_EVENT_TYPE_DRAG:
-                    IPT_MESSAGE("AndroidEvent::Drag");
+                    IPT_MESSAGE(D,"AndroidEvent::Drag");
                     ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Core, "AndroidEvent::Drag");
                     break;
                 case AINPUT_EVENT_TYPE_FOCUS:
-                    IPT_MESSAGE("AndroidEvent::Focus");
+                    IPT_MESSAGE(D,"AndroidEvent::Focus");
                     ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Core, "AndroidEvent::Focus");
                     break;
                 case AINPUT_EVENT_TYPE_TOUCH_MODE:
-                    IPT_MESSAGE("AndroidEvent::TouchMode");
+                    IPT_MESSAGE(D,"AndroidEvent::TouchMode");
                     ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Core, "AndroidEvent::TouchMode");
                     break;
                 default:
@@ -228,14 +228,13 @@ namespace ice::platform::android
     void AndroidApp::on_init() noexcept
     {
         IPT_ZONE_SCOPED;
-        IPT_MESSAGE("Android::OnInit");
+        IPT_MESSAGE(D,"Android::OnInit");
         ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Core, "Android::OnInit");
 
+        ice_configure(_allocator, _params, _config);
+        ICE_ASSERT(_config != nullptr, "Failed to initialize config");
+
         ice_init(_allocator, _factories);
-
-        _config = _factories.factory_config(_allocator);
-        ice_args(_allocator, _params, *_config);
-
         _state = _factories.factory_state(_allocator);
         _runtime = _factories.factory_runtime(_allocator);
     }
@@ -243,7 +242,7 @@ namespace ice::platform::android
     void AndroidApp::on_setup() noexcept
     {
         IPT_ZONE_SCOPED;
-        IPT_MESSAGE("Android::OnSetup");
+        IPT_MESSAGE(D, "Android::OnSetup");
         ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Core, "Android::OnSetup");
 
         _new_screen_size = ice::vec2f{ _app_surface.dimensions() };
@@ -265,7 +264,7 @@ namespace ice::platform::android
     void AndroidApp::on_resume() noexcept
     {
         IPT_ZONE_SCOPED;
-        IPT_MESSAGE("Android::OnResume");
+        IPT_MESSAGE(D, "Android::OnResume");
         ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Core, "Android::OnResume");
 
         ice_resume(*_config, *_state, *_runtime);
@@ -280,7 +279,7 @@ namespace ice::platform::android
     void AndroidApp::on_suspend() noexcept
     {
         IPT_ZONE_SCOPED;
-        IPT_MESSAGE("Android::OnSuspend");
+        IPT_MESSAGE(D, "Android::OnSuspend");
         ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Core, "Android::OnSuspend");
 
         ice_suspend(*_config, *_state, *_runtime);
@@ -289,7 +288,7 @@ namespace ice::platform::android
     void AndroidApp::on_shutdown() noexcept
     {
         IPT_ZONE_SCOPED;
-        IPT_MESSAGE("Android::OnShutdown");
+        IPT_MESSAGE(D, "Android::OnShutdown");
         ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Core, "Android::OnShutdown");
 
         ice_shutdown(_allocator, *_config, *_state);
@@ -337,7 +336,7 @@ namespace ice::platform::android
     void AndroidApp::native_callback_on_destroy(ANativeActivity* activity)
     {
         IPT_ZONE_SCOPED;
-        IPT_MESSAGE("Android::OnDestroy");
+        IPT_MESSAGE(D, "Android::OnDestroy");
         ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Core, "Android::OnDestroy");
 
         AndroidApp* core = core_instance(activity);
@@ -366,7 +365,7 @@ namespace ice::platform::android
 
     void AndroidApp::native_inputqueue_on_created(ANativeActivity* activity, AInputQueue* inputs)
     {
-        IPT_MESSAGE("Android::InputQueue::Created");
+        IPT_MESSAGE(D, "Android::InputQueue::Created");
         ice::platform::android::AndroidApp* core = core_instance(activity);
         ICE_ASSERT(
             core->_app_queue == nullptr,
@@ -378,7 +377,7 @@ namespace ice::platform::android
 
     void AndroidApp::native_inputqueue_on_destroyed(ANativeActivity* activity, AInputQueue* inputs)
     {
-        IPT_MESSAGE("Android::InputQueue::Destroyed");
+        IPT_MESSAGE(D, "Android::InputQueue::Destroyed");
         ice::platform::android::AndroidApp* core = core_instance(activity);
 
         AInputQueue* expected_queue = inputs;

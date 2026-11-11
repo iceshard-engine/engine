@@ -64,6 +64,12 @@ namespace ice
         return ice::ncount{ value };
     }
 
+    template<typename T, ice::usize::base_type Size>
+    constexpr auto count_of(T(&)[Size]) noexcept -> ice::ncount
+    {
+        return ice::ncount{ Size, sizeof(T) };
+    }
+
     static constexpr ice::meminfo Test_Meminfo = ice::meminfo_of<ice::ncount>;
     // For x64 platforms, size of size_t, for x32 platforms 2x32
     static_assert(Test_Meminfo.size == 8_B);
